@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.scripting.effects.ChooseActionEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.ReflexiveTriggerEffect
+import com.wingedsheep.sdk.scripting.effects.SelectTargetEffect
 import com.wingedsheep.sdk.scripting.targets.TargetPlayer
 import com.wingedsheep.sdk.scripting.targets.TargetOpponent
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
@@ -68,13 +69,11 @@ class ReflexiveTriggerEffectExecutor(
         effect: ReflexiveTriggerEffect,
         context: EffectContext
     ): EffectResult {
-        // If the action is a ChooseActionEffect with no feasible choices, skip the decision
-        if (effect.action is ChooseActionEffect) {
-            val chooseEffect = effect.action as ChooseActionEffect
-            val anyFeasible = chooseEffect.choices.any { choice ->
-                checkFeasibility(state, context.controllerId, choice.feasibilityCheck)
-            }
-            if (!anyFeasible) return EffectResult.success(state)
+        // If the action can't be performed, skip the may decision entirely. Saying "yes"
+        // to "you may [action]. If you do, [reflexive]" is meaningless when [action] is
+        // impossible — the reflexive payoff must not fire.
+        if (!isActionFeasible(state, effect.action, context)) {
+            return EffectResult.success(state)
         }
 
         val playerId = context.controllerId
@@ -130,6 +129,36 @@ class ReflexiveTriggerEffectExecutor(
                 )
             )
         )
+    }
+
+    /**
+     * Check whether the action half of a "you may [action]. If you do, [reflexive]"
+     * trigger can actually be performed. When false, presenting a yes/no decision is
+     * meaningless — saying yes would silently no-op the action while still firing the
+     * reflexive payoff.
+     *
+     * Walks the action effect tree looking for gating sub-effects:
+     *  - [SelectTargetEffect] with no legal targets → infeasible
+     *  - [ChooseActionEffect] with no feasible choice → infeasible
+     *  - [CompositeEffect] → feasible iff every step is feasible (top-level sequencing)
+     *  - any other effect → assumed feasible (don't gate on shapes we don't recognize)
+     */
+    private fun isActionFeasible(
+        state: GameState,
+        action: Effect,
+        context: EffectContext
+    ): Boolean = when (action) {
+        is SelectTargetEffect -> targetFinder.findLegalTargets(
+            state = state,
+            requirement = action.requirement,
+            controllerId = context.controllerId,
+            sourceId = context.sourceId
+        ).isNotEmpty()
+        is ChooseActionEffect -> action.choices.any { choice ->
+            checkFeasibility(state, context.controllerId, choice.feasibilityCheck)
+        }
+        is CompositeEffect -> action.effects.all { isActionFeasible(state, it, context) }
+        else -> true
     }
 
     /**
