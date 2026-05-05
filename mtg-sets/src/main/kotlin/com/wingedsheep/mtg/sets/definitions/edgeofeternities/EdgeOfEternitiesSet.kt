@@ -69,6 +69,7 @@ object EdgeOfEternitiesSet {
         IllvoiGaleblade,
         IllvoiLightJammer,
         IntrepidTenderfoot,
+        InvasiveManeuvers,
         KavaronHarrier,
         KavaronTurbodrone,
         LostInSpace,

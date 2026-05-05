@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 80 / 261
+**Implemented:** 81 / 261
 
 ---
 
@@ -116,7 +116,7 @@
 - [ ] Insatiable Skittermaw
 - [ ] Interceptor Mechan
 - [x] Intrepid Tenderfoot
-- [ ] Invasive Maneuvers
+- [x] Invasive Maneuvers
 - [x] Kavaron Harrier
 - [ ] Kavaron, Memorial World
 - [ ] Kavaron Skywarden
