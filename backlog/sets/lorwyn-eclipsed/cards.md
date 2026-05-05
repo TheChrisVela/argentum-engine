@@ -2,12 +2,12 @@
 
 **Set Size:** 273 cards (main set, per Scryfall `set:ecl`)
 **Release Date:** January 23, 2026
-**Implemented:** 236 / 273
+**Implemented:** 237 / 273
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 39    | 36   |
-| Blue       | 39    | 34   |
+| Blue       | 39    | 35   |
 | Black      | 38    | 33   |
 | Red        | 39    | 31   |
 | Green      | 39    | 32   |
@@ -91,7 +91,7 @@
 - [x] Silvergill Peddler
 - [x] Spell Snare
 - [x] Stratosoarer
-- [ ] Summit Sentinel
+- [x] Summit Sentinel
 - [ ] Sunderflock
 - [x] Swat Away
 - [x] Tanufel Rimespeaker

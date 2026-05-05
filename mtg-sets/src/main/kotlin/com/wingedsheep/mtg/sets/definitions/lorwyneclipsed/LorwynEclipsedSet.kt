@@ -211,6 +211,7 @@ object LorwynEclipsedSet {
         SpiralIntoSolitude,
         StoicGroveGuide,
         Stratosoarer,
+        SummitSentinel,
         SunDappledCelebrant,
         SurlyFarrier,
         SwatAway,
