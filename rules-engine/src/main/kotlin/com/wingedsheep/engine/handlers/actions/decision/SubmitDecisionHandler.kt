@@ -130,6 +130,35 @@ class SubmitDecisionHandler(
                 )
             }
 
+            // The chain paused (or errored). When paused, events emitted during the
+            // chain (e.g., BecomesTargetEvent from putting a triggered ability on the
+            // stack mid-chain) may fire additional triggers (e.g., Valiant) that the
+            // success path's trigger-detection at line 108 would catch — but the paused
+            // path returns before reaching it, so those triggers would be lost.
+            // Detect them here and queue as a PendingTriggersContinuation BELOW the
+            // topmost continuation so they fire after the in-flight one resolves.
+            // Mirrors PassPriorityHandler.resolveTopOfStack's mid-resolution handling.
+            if (result.isPaused) {
+                val deferredTriggers = triggerDetector.detectTriggers(result.state, result.events)
+                if (deferredTriggers.isNotEmpty()) {
+                    val pending = PendingTriggersContinuation(
+                        decisionId = "submit-deferred-triggers-${java.util.UUID.randomUUID()}",
+                        remainingTriggers = deferredTriggers
+                    )
+                    val stack = result.state.continuationStack
+                    val newStack = if (stack.isNotEmpty()) {
+                        stack.dropLast(1) + pending + stack.last()
+                    } else {
+                        listOf(pending)
+                    }
+                    return ExecutionResult.paused(
+                        result.state.copy(continuationStack = newStack),
+                        result.pendingDecision!!,
+                        listOf(submittedEvent) + result.events
+                    )
+                }
+            }
+
             // Prepend the submitted event
             return if (result.isSuccess || result.isPaused) {
                 ExecutionResult(
