@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 79 / 261
+**Implemented:** 80 / 261
 
 ---
 
@@ -94,7 +94,7 @@
 - [x] Glacier Godmaw
 - [x] Godless Shrine
 - [x] Gravblade Heavy
-- [ ] Gravkill
+- [x] Gravkill
 - [x] Gravpack Monoist
 - [ ] Haliya, Ascendant Cadet
 - [ ] Haliya, Guided by Light

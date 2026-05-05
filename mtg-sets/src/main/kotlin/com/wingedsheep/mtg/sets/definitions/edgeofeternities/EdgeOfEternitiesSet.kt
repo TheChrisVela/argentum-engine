@@ -57,6 +57,7 @@ object EdgeOfEternitiesSet {
         GlacierGodmaw,
         GodlessShrine,
         GravbladeHeavy,
+        Gravkill,
         GravpackMonoist,
         HardlightContainment,
         HarmoniousGrovestrider,
