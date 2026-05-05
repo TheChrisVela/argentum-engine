@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 83 / 261
+**Implemented:** 84 / 261
 
 ---
 
@@ -152,7 +152,7 @@
 - [ ] Moonlit Meditation
 - [ ] Mouth of the Storm
 - [ ] Mutinous Massacre
-- [ ] Nanoform Sentinel
+- [x] Nanoform Sentinel
 - [ ] Nebula Dragon
 - [ ] Nova Hellkite
 - [ ] Nutrient Block

@@ -81,6 +81,7 @@ object EdgeOfEternitiesSet {
         MolecularModifier,
         MmmenonUthrosExile,
         MonoistSentry,
+        NanoformSentinel,
         RadiantStrike,
         RemnantElemental,
         RerouteSystems,
