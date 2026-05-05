@@ -1924,6 +1924,28 @@ class ClientStateTransformer(
                         icon = "type-change"
                     )
                 )
+            } else if (!hasSetCreatureSubtypes) {
+                // AddSubtype floating effects (e.g. Curious Colossus "becomes a Coward
+                // in addition to its other types") don't replace the printed subtypes,
+                // so the projected vs base diff is the right signal — but we read the
+                // values straight from the floating effects so CHANGELING (which
+                // projects every creature type) doesn't flood the badge.
+                val addedSubtypes = state.floatingEffects
+                    .filter { entityId in it.effect.affectedEntities }
+                    .mapNotNull { (it.effect.modification as? SerializableModification.AddSubtype)?.subtype }
+                    .filter { it !in baseSubtypes }
+                    .distinct()
+                if (addedSubtypes.isNotEmpty()) {
+                    val joined = addedSubtypes.joinToString(" ")
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "type_added",
+                            name = "+$joined",
+                            description = "Also a $joined in addition to its other types",
+                            icon = "type-change"
+                        )
+                    )
+                }
             }
 
             // Surface a single "color-change" badge when a ChangeColor floating effect
