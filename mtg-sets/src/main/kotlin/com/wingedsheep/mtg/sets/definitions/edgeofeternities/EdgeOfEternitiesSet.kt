@@ -88,6 +88,7 @@ object EdgeOfEternitiesSet {
         MeltstridersResolve,
         MmmenonUthrosExile,
         MolecularModifier,
+        MonoistCircuitFeeder,
         MonoistSentry,
         NanoformSentinel,
         NebulaDragon,
