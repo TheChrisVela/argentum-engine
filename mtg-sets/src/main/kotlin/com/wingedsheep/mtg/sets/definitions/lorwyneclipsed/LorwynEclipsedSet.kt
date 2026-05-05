@@ -221,6 +221,7 @@ object LorwynEclipsedSet {
         ThoughtweftLieutenant,
         TimidShieldbearer,
         TributaryVaulter,
+        TrystanCallousCultivator,
         TrystansCommand,
         TwilightDiviner,
         TwinflameTravelers,

@@ -2,7 +2,7 @@
 
 **Set Size:** 273 cards (main set, per Scryfall `set:ecl`)
 **Release Date:** January 23, 2026
-**Implemented:** 226 / 273
+**Implemented:** 227 / 273
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -12,7 +12,7 @@
 | Red        | 39    | 29   |
 | Green      | 39    | 30   |
 | Multicolor | 49    | 43   |
-| Colorless  | 18    | 14   |
+| Colorless  | 18    | 15   |
 | Land       | 12    | 11   |
 
 > **Note:** Before implementing any card, check the `effects/` directory in this folder for any
@@ -299,7 +299,7 @@
 - [x] Springleaf Drum
 - [x] Stalactite Dagger
 - [ ] Sygg, Wanderwine Wisdom // Sygg, Wanderbrine Shield
-- [ ] Trystan, Callous Cultivator // Trystan, Penitent Culler
+- [x] Trystan, Callous Cultivator // Trystan, Penitent Culler
 
 ## Land (12)
 
