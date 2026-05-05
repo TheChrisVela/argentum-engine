@@ -866,7 +866,9 @@ sealed interface ServerMessage {
     @SerialName("spectatorCountChanged")
     data class SpectatorCountChanged(
         val gameSessionId: String,
-        val count: Int
+        val count: Int,
+        /** Names of currently-active spectators, for hover/tooltip display. */
+        val spectatorNames: List<String> = emptyList()
     ) : ServerMessage
 
     // =========================================================================

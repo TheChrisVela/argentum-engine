@@ -43,6 +43,8 @@ export interface GameplaySliceState {
   autoTapEnabled: boolean
   /** Number of spectators currently watching this player's game (0 if none). */
   spectatorCount: number
+  /** Names of currently-active spectators (for hover display on the badge). */
+  spectatorNames: readonly string[]
 }
 
 export interface GameplaySliceActions {
@@ -102,6 +104,7 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
   opponentDisconnectCountdown: null,
   autoTapEnabled: localStorage.getItem('argentum-auto-tap') !== 'false',
   spectatorCount: 0,
+  spectatorNames: [],
 
   // Actions
   createGame: (deckList, setCode) => {
@@ -448,6 +451,7 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
       gameOverState: null,
       lastError: null,
       spectatorCount: 0,
+      spectatorNames: [],
       // Preserve the drafted deck in tournament mode — the user may still want to
       // view it or save it to My Decks from the standings screen, including after
       // the final round has ended.

@@ -634,6 +634,8 @@ export type GameStore = {
   autoTapEnabled: boolean
   /** Number of spectators currently watching this player's game (0 if none). */
   spectatorCount: number
+  /** Names of currently-active spectators (for hover display on the badge). */
+  spectatorNames: readonly string[]
   createGame: (deckList: Record<string, number>, setCode?: string) => void
   createAiGame: (deckList: Record<string, number>, setCode?: string) => void
   joinGame: (sessionId: string, deckList: Record<string, number>) => void

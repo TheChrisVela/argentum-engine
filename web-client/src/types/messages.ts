@@ -1191,6 +1191,8 @@ export interface SpectatorCountChangedMessage {
   readonly type: 'spectatorCountChanged'
   readonly gameSessionId: string
   readonly count: number
+  /** Names of currently-active spectators, for hover/tooltip display. */
+  readonly spectatorNames?: readonly string[]
 }
 
 // ============================================================================

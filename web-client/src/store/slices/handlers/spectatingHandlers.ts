@@ -112,7 +112,10 @@ export function createSpectatingHandlers(set: SetState, get: GetState): Pick<Mes
     },
 
     onSpectatorCountChanged: (msg) => {
-      set({ spectatorCount: msg.count })
+      set({
+        spectatorCount: msg.count,
+        spectatorNames: msg.spectatorNames ?? [],
+      })
     },
 
     onOpponentAttackerTargets: (msg) => {

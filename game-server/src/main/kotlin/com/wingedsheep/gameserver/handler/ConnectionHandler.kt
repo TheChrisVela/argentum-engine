@@ -200,9 +200,11 @@ class ConnectionHandler(
                     // Re-sync the spectator-count badge for the reconnecting player.
                     // Spectator joins/leaves only push to currently-connected players, so a
                     // mid-game reconnect would otherwise see count = 0 until the next change.
+                    val currentSpectators = gameSession.getSpectators()
                     sender.send(session, ServerMessage.SpectatorCountChanged(
                         gameSessionId = gameSession.sessionId,
-                        count = gameSession.getSpectators().size
+                        count = currentSpectators.size,
+                        spectatorNames = currentSpectators.map { it.playerName }
                     ))
 
                     if (gameSession.isStarted) {
