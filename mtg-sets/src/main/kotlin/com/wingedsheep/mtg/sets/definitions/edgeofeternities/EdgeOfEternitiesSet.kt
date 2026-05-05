@@ -106,6 +106,7 @@ object EdgeOfEternitiesSet {
         VirusBeetle,
         WedgelightRammer,
         WateryGrave,
+        ZookeeperMechan,
 
         // Basic lands
     ) + EdgeOfEternitiesBasicLands

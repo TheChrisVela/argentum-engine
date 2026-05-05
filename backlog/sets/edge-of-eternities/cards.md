@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 87 / 261
+**Implemented:** 88 / 261
 
 ---
 
@@ -266,4 +266,4 @@
 - [ ] Xu-Ifit, Osteoharmonist
 - [ ] Zealous Display
 - [ ] Zero Point Ballad
-- [ ] Zookeeper Mechan
+- [x] Zookeeper Mechan
