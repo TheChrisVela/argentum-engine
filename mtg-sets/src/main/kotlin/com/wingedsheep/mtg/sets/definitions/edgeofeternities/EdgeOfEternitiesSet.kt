@@ -93,6 +93,7 @@ object EdgeOfEternitiesSet {
         MouthOfTheStorm,
         NanoformSentinel,
         NebulaDragon,
+        NutrientBlock,
         RadiantStrike,
         RemnantElemental,
         RerouteSystems,

@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 97 / 261
+**Implemented:** 98 / 261
 
 ---
 
@@ -155,7 +155,7 @@
 - [x] Nanoform Sentinel
 - [x] Nebula Dragon
 - [ ] Nova Hellkite
-- [ ] Nutrient Block
+- [x] Nutrient Block
 - [ ] Orbital Plunge
 - [ ] Oreplate Pangolin
 - [ ] Ouroboroid
