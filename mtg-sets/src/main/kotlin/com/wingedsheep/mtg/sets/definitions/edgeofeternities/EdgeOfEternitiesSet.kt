@@ -42,6 +42,7 @@ object EdgeOfEternitiesSet {
         CryogenRelic,
         Cryoshatter,
         DarkEndurance,
+        DauntlessScrapbot,
         DawnsireSunstarDreadnought,
         DebrisFieldCrusher,
         Depressurize,
