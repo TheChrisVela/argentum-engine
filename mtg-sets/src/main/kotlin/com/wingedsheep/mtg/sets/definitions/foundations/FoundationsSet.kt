@@ -24,5 +24,6 @@ object FoundationsSet {
      */
     val allCards = listOf(
         Negate,
+        SpringbloomDruid,
     )
 }
