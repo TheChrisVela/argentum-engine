@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 100 / 261
+**Implemented:** 101 / 261
 
 ---
 
@@ -187,7 +187,7 @@
 - [ ] Sami, Wildcat Captain
 - [x] Scour for Scrap
 - [ ] Scout for Survivors
-- [ ] Scrounge for Eternity
+- [x] Scrounge for Eternity
 - [x] Seam Rip
 - [x] Secluded Starforge
 - [x] Seedship Agrarian

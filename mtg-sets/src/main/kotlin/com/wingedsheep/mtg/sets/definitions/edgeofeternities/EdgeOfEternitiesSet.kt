@@ -103,6 +103,7 @@ object EdgeOfEternitiesSet {
         SacredFoundry,
         SamisCuriosity,
         ScourForScrap,
+        ScroungeForEternity,
         SeamRip,
         SecludedStarforge,
         SeedshipAgrarian,
