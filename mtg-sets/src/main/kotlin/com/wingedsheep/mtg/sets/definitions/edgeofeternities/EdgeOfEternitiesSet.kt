@@ -102,6 +102,7 @@ object EdgeOfEternitiesSet {
         RustHarvester,
         SacredFoundry,
         SamisCuriosity,
+        ScourForScrap,
         SeamRip,
         SecludedStarforge,
         SeedshipAgrarian,
