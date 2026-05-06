@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 88 / 261
+**Implemented:** 99 / 261
 
 ---
 
@@ -24,7 +24,7 @@
 - [ ] Bioengineered Future
 - [x] Biomechan Engineer
 - [x] Biosynthic Burst
-- [ ] Biotech Specialist
+- [x] Biotech Specialist
 - [ ] Blade of the Swarm
 - [x] Blooming Stinger
 - [x] Bombard
@@ -47,10 +47,10 @@
 - [x] Cryoshatter
 - [ ] Cut Propulsion
 - [x] Dark Endurance
-- [ ] Dauntless Scrapbot
-- [ ] Dawnsire, Sunstar Dreadnought
+- [x] Dauntless Scrapbot
+- [x] Dawnsire, Sunstar Dreadnought
 - [ ] Dawnstrike Vanguard
-- [ ] Debris Field Crusher
+- [x] Debris Field Crusher
 - [ ] Decode Transmissions
 - [x] Depressurize
 - [ ] Desculpting Blast
@@ -68,7 +68,7 @@
 - [ ] Elegy Acolyte
 - [x] Embrace Oblivion
 - [x] Emergency Eject
-- [ ] Emissary Escort
+- [x] Emissary Escort
 - [ ] Entropic Battlecruiser
 - [x] Eumidian Terrabotanist
 - [ ] Eusocial Engineering
@@ -111,7 +111,7 @@
 - [x] Illvoi Galeblade
 - [ ] Illvoi Infiltrator
 - [x] Illvoi Light Jammer
-- [ ] Illvoi Operative
+- [x] Illvoi Operative
 - [ ] Infinite Guideline Station
 - [ ] Insatiable Skittermaw
 - [ ] Interceptor Mechan
@@ -125,14 +125,14 @@
 - [ ] Knight Luminary
 - [ ] Larval Scoutlander
 - [ ] Lashwhip Predator
-- [ ] Lightless Evangel
+- [x] Lightless Evangel
 - [ ] Lightstall Inquisitor
 - [ ] Lithobraking
 - [ ] Loading Zone
 - [x] Lost in Space
 - [x] Lumen-Class Frigate
 - [ ] Luxknight Breacher
-- [ ] Mechan Assembler
+- [x] Mechan Assembler
 - [x] Mechan Navigator
 - [ ] Mechanozoa
 - [ ] Mechan Shieldmate
@@ -147,22 +147,22 @@
 - [ ] Mm'menon, the Right Hand
 - [x] Mm'menon, Uthros Exile
 - [x] Molecular Modifier
-- [ ] Monoist Circuit-Feeder
+- [x] Monoist Circuit-Feeder
 - [x] Monoist Sentry
 - [ ] Moonlit Meditation
-- [ ] Mouth of the Storm
+- [x] Mouth of the Storm
 - [ ] Mutinous Massacre
 - [x] Nanoform Sentinel
 - [x] Nebula Dragon
 - [ ] Nova Hellkite
-- [ ] Nutrient Block
+- [x] Nutrient Block
 - [ ] Orbital Plunge
 - [ ] Oreplate Pangolin
 - [ ] Ouroboroid
 - [ ] Pain for All
 - [ ] Perigee Beckoner
 - [ ] Pinnacle Emissary
-- [ ] Pinnacle Kill-Ship
+- [x] Pinnacle Kill-Ship
 - [ ] Pinnacle Starcage
 - [ ] Plasma Bolt
 - [ ] Possibility Technician

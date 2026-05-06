@@ -41,7 +41,7 @@ val DubiousDelicacy = card("Dubious Delicacy") {
             Costs.SacrificeSelf
         )
         
-        effect = Effects.GainLife(3, com.wingedsheep.sdk.scripting.targets.EffectTarget.Controller)
+        effect = Effects.GainLife(3)
     }
 
     // Activated ability 2: {2}, {T}, Sacrifice this artifact: Target opponent loses 3 life

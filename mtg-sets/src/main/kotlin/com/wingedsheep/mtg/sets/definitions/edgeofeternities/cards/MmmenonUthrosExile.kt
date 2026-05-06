@@ -30,7 +30,6 @@ val MmmenonUthrosExile = card("Mm'menon, Uthros Exile") {
 
     keywords(Keyword.FLYING)
 
-    // Trigger: whenever an artifact you control enters, put a +1/+1 counter on target creature
     triggeredAbility {
         trigger = TriggerSpec(
             event = ZoneChangeEvent(
@@ -43,6 +42,7 @@ val MmmenonUthrosExile = card("Mm'menon, Uthros Exile") {
 
         val targetCreature = target("target creature", Targets.Creature)
         effect = Effects.AddCounters("+1/+1", 1, targetCreature)
+        description = "Whenever an artifact you control enters, put a +1/+1 counter on target creature."
     }
 
     metadata {
