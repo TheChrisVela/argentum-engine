@@ -1,13 +1,11 @@
 package com.wingedsheep.mtg.sets.definitions.bloomburrow.cards
 
-import com.wingedsheep.sdk.core.Counters
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.Conditions
-import com.wingedsheep.sdk.dsl.Effects
-import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.EntersWithCounters
+import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 
 /**
  * Frilled Sparkshooter
@@ -26,11 +24,12 @@ val FrilledSparkshooter = card("Frilled Sparkshooter") {
 
     keywords(Keyword.MENACE, Keyword.REACH)
 
-    triggeredAbility {
-        trigger = Triggers.EntersBattlefield
-        triggerCondition = Conditions.OpponentLostLifeThisTurn
-        effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
-    }
+    replacementEffect(EntersWithCounters(
+        counterType = CounterTypeFilter.PlusOnePlusOne,
+        count = 1,
+        selfOnly = true,
+        condition = Conditions.OpponentLostLifeThisTurn
+    ))
 
     metadata {
         rarity = Rarity.COMMON

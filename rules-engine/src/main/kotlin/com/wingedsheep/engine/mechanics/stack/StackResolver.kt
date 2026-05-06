@@ -1396,6 +1396,7 @@ class StackResolver(
     // =========================================================================
 
     private val dynamicAmountEvaluator = DynamicAmountEvaluator()
+    private val conditionEvaluator = com.wingedsheep.engine.handlers.ConditionEvaluator()
 
     /**
      * Apply "enters with counters" replacement effects to a permanent.
@@ -1417,6 +1418,14 @@ class StackResolver(
         for (effect in cardDef.script.replacementEffects) {
             when (effect) {
                 is EntersWithCounters -> {
+                    if (effect.condition != null) {
+                        val condContext = EffectContext(
+                            sourceId = entityId,
+                            controllerId = controllerId,
+                            opponentId = newState.turnOrder.firstOrNull { it != controllerId }
+                        )
+                        if (!conditionEvaluator.evaluate(newState, effect.condition!!, condContext)) continue
+                    }
                     val counterType = resolveCounterType(effect.counterType)
                     val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(
                         newState, entityId, counterType, effect.count, placerId = controllerId

@@ -232,6 +232,11 @@ data class EntersTapped(
 /**
  * Permanent/creature enters with counters.
  * Example: Master Biomancer, Metallic Mimic
+ *
+ * @param condition When non-null, the counters are only added if this condition evaluates true
+ *                  at the moment the permanent enters the battlefield. Used for cards like
+ *                  Frilled Sparkshooter ("This creature enters with a +1/+1 counter on it if
+ *                  an opponent lost life this turn.").
  */
 @SerialName("EntersWithCounters")
 @Serializable
@@ -239,17 +244,23 @@ data class EntersWithCounters(
     val counterType: CounterTypeFilter = CounterTypeFilter.PlusOnePlusOne,
     val count: Int,
     val selfOnly: Boolean = false,
+    val condition: Condition? = null,
     override val appliesTo: GameEvent = GameEvent.ZoneChangeEvent(
         filter = GameObjectFilter.Creature.youControl(),
         to = Zone.BATTLEFIELD
     )
 ) : ReplacementEffect {
-    override val description: String =
-        "If ${appliesTo.description}, it enters with $count ${counterType.description} counters"
+    override val description: String = buildString {
+        append("If ${appliesTo.description}, it enters with $count ${counterType.description} counters")
+        if (condition != null) append(" if ${condition.description}")
+    }
 
     override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
         val newAppliesTo = appliesTo.applyTextReplacement(replacer)
-        return if (newAppliesTo !== appliesTo) copy(appliesTo = newAppliesTo) else this
+        val newCondition = condition?.applyTextReplacement(replacer)
+        return if (newAppliesTo !== appliesTo || newCondition !== condition)
+            copy(appliesTo = newAppliesTo, condition = newCondition)
+        else this
     }
 }
 

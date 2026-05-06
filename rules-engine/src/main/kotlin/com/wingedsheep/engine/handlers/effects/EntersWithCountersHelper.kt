@@ -33,6 +33,7 @@ object EntersWithCountersHelper {
 
     private val dynamicAmountEvaluator = DynamicAmountEvaluator()
     private val predicateEvaluator = PredicateEvaluator()
+    private val conditionEvaluator = com.wingedsheep.engine.handlers.ConditionEvaluator()
 
     /**
      * Apply both the entering entity's own [EntersWithCounters] / [EntersWithDynamicCounters]
@@ -62,6 +63,14 @@ object EntersWithCountersHelper {
         for (effect in cardDef.script.replacementEffects) {
             when (effect) {
                 is EntersWithCounters -> {
+                    if (effect.condition != null) {
+                        val condContext = EffectContext(
+                            sourceId = enteringEntityId,
+                            controllerId = enteringControllerId,
+                            opponentId = newState.turnOrder.firstOrNull { it != enteringControllerId }
+                        )
+                        if (!conditionEvaluator.evaluate(newState, effect.condition!!, condContext)) continue
+                    }
                     val counterType = resolveCounterType(effect.counterType)
                     val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(
                         newState, enteringEntityId, counterType, effect.count, placerId = enteringControllerId
@@ -134,6 +143,14 @@ object EntersWithCountersHelper {
                     is EntersWithCounters -> {
                         if (effect.selfOnly) continue
                         if (!matchesEnterFilter(effect.appliesTo, enteringEntityId, sourceControllerId, newState)) continue
+                        if (effect.condition != null) {
+                            val condContext = EffectContext(
+                                sourceId = sourceId,
+                                controllerId = sourceControllerId,
+                                opponentId = newState.turnOrder.firstOrNull { it != sourceControllerId }
+                            )
+                            if (!conditionEvaluator.evaluate(newState, effect.condition!!, condContext)) continue
+                        }
                         val counterType = resolveCounterType(effect.counterType)
                         val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(
                             newState, enteringEntityId, counterType, effect.count, placerId = enteringControllerId
