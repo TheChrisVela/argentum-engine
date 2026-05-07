@@ -24,6 +24,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.sdk.scripting.CanBlockAnyNumber
+import com.wingedsheep.sdk.scripting.CantBeBlockedByMoreThan
 import com.wingedsheep.sdk.scripting.CantBlock
 import com.wingedsheep.sdk.scripting.CantBlockUnless
 import com.wingedsheep.sdk.scripting.StaticTarget
@@ -71,6 +72,12 @@ internal class BlockPhaseManager(
         val menaceValidation = validateMenaceRequirements(state, blockers)
         if (menaceValidation != null) {
             return ExecutionResult.error(state, menaceValidation)
+        }
+
+        // Check max-blocker restrictions on attackers (CantBeBlockedByMoreThan)
+        val maxBlockersValidation = validateMaxBlockersRequirements(state, blockers)
+        if (maxBlockersValidation != null) {
+            return ExecutionResult.error(state, maxBlockersValidation)
         }
 
         // Check "must be blocked" requirements (Alluring Scent, etc.)
@@ -425,6 +432,40 @@ internal class BlockPhaseManager(
             }
         }
 
+        return null
+    }
+
+    /**
+     * Validate `CantBeBlockedByMoreThan` restrictions (CR 509.1b).
+     * Each attacker with this static ability caps the number of creatures that may block it.
+     */
+    private fun validateMaxBlockersRequirements(
+        state: GameState,
+        blockers: Map<EntityId, List<EntityId>>
+    ): String? {
+        val attackerToBlockerCount = mutableMapOf<EntityId, Int>()
+        for (attackerIds in blockers.values) {
+            for (attackerId in attackerIds) {
+                attackerToBlockerCount.merge(attackerId, 1, Int::plus)
+            }
+        }
+
+        for ((attackerId, count) in attackerToBlockerCount) {
+            val attackerContainer = state.getEntity(attackerId) ?: continue
+            if (attackerContainer.has<FaceDownComponent>()) continue
+            val attackerCard = attackerContainer.get<CardComponent>() ?: continue
+            val cardDef = cardRegistry.getCard(attackerCard.cardDefinitionId) ?: continue
+
+            val limit = cardDef.staticAbilities
+                .filterIsInstance<CantBeBlockedByMoreThan>()
+                .filter { it.target == StaticTarget.SourceCreature }
+                .minOfOrNull { it.maxBlockers } ?: continue
+
+            if (count > limit) {
+                val countText = if (limit == 1) "more than one creature" else "more than $limit creatures"
+                return "${attackerCard.name} can't be blocked by $countText"
+            }
+        }
         return null
     }
 
