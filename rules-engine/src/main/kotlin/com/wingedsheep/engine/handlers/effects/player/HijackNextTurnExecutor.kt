@@ -6,16 +6,24 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.player.PlayerTurnHijackedComponent
 import com.wingedsheep.sdk.scripting.effects.HijackNextTurnEffect
 import kotlin.reflect.KClass
 
 /**
  * Executor for HijackNextTurnEffect.
  *
- * PR 1 ships this as a no-op that emits a [TurnHijackedEvent] for logging and downstream
- * wiring. The full Mindslaver-style mechanic — input routing, hand visibility, end-of-turn
- * cleanup — lands in a follow-up PR alongside the new player-level component and
- * decision-routing seam in TurnManager / SubmitDecisionHandler / GameSession.getLegalActions.
+ * Attaches a [PlayerTurnHijackedComponent] to the targeted player in [SCHEDULED]
+ * state. [TurnManager] transitions it to [ACTIVE] when that player's next real
+ * turn begins (skipped turns wait per the Scryfall ruling), and removes it during
+ * end-of-turn cleanup of the controlled turn.
+ *
+ * Multiple hijacks affecting the same player overwrite each other (latest wins);
+ * we replace any existing component unconditionally.
+ *
+ * The accompanying [TurnHijackedEvent] is emitted twice in the lifecycle:
+ *  - here, on resolution, so the log shows the hijack was scheduled;
+ *  - again from [TurnManager.startTurn] when control actually engages.
  */
 class HijackNextTurnExecutor : EffectExecutor<HijackNextTurnEffect> {
 
@@ -32,8 +40,17 @@ class HijackNextTurnExecutor : EffectExecutor<HijackNextTurnEffect> {
         val sourceId = context.sourceId ?: hijackedPlayerId
         val sourceName = state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Hijack"
 
+        val newState = state.updateEntity(hijackedPlayerId) { container ->
+            container.with(
+                PlayerTurnHijackedComponent(
+                    controllerId = context.controllerId,
+                    state = PlayerTurnHijackedComponent.HijackState.SCHEDULED
+                )
+            )
+        }
+
         return EffectResult.success(
-            state,
+            newState,
             listOf(
                 TurnHijackedEvent(
                     controllerId = context.controllerId,

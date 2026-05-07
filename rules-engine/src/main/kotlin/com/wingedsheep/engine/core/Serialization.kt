@@ -364,6 +364,7 @@ val engineSerializersModule = SerializersModule {
         subclass(SacrificedFoodThisTurnComponent::class)
         subclass(PutCounterOnCreatureThisTurnComponent::class)
         subclass(SkipNextTurnComponent::class)
+        subclass(PlayerTurnHijackedComponent::class)
 
         // Stack components
         subclass(SpellOnStackComponent::class)

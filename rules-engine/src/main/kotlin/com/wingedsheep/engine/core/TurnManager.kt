@@ -17,6 +17,7 @@ import com.wingedsheep.engine.state.components.player.ManaSpentOnSpellsThisTurnC
 import com.wingedsheep.engine.state.components.player.LoseAtEndStepComponent
 import com.wingedsheep.engine.state.components.player.LossReason
 import com.wingedsheep.engine.state.components.player.PlayerLostComponent
+import com.wingedsheep.engine.state.components.player.PlayerTurnHijackedComponent
 import com.wingedsheep.engine.state.components.player.SkipCombatPhasesComponent
 import com.wingedsheep.engine.state.components.player.SkipNextTurnComponent
 import com.wingedsheep.sdk.core.Keyword
@@ -118,10 +119,27 @@ class TurnManager(
             }
         }
 
-        return ExecutionResult.success(
-            newState,
-            listOf(TurnChangedEvent(newState.turnNumber, playerId))
-        )
+        val events = mutableListOf<GameEvent>(TurnChangedEvent(newState.turnNumber, playerId))
+
+        // Activate a Mindslaver-style hijack scheduled on this player. Per Scryfall ruling,
+        // a scheduled hijack waits through any skipped turns and engages on the next turn
+        // the affected player actually takes.
+        val scheduledHijack = newState.getEntity(playerId)?.get<PlayerTurnHijackedComponent>()
+        if (scheduledHijack != null && scheduledHijack.state == PlayerTurnHijackedComponent.HijackState.SCHEDULED) {
+            newState = newState.updateEntity(playerId) { container ->
+                container.with(
+                    scheduledHijack.copy(state = PlayerTurnHijackedComponent.HijackState.ACTIVE)
+                )
+            }
+            events += TurnHijackedEvent(
+                controllerId = scheduledHijack.controllerId,
+                hijackedPlayerId = playerId,
+                sourceId = playerId,
+                sourceName = "Hijack engaged"
+            )
+        }
+
+        return ExecutionResult.success(newState, events)
     }
 
     /**

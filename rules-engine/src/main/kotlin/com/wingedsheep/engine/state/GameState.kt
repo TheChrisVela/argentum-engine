@@ -237,6 +237,23 @@ data class GameState(
         return turnOrder.find { it != playerId }
     }
 
+    /**
+     * Returns the player who currently has *input authority* for [playerId] — that is,
+     * who clicks the buttons and answers the decisions. Normally this is [playerId]
+     * itself; during a Mindslaver-style hijacked turn this resolves to the hijacker.
+     *
+     * Resource ownership (mana, cards, life) is unaffected — it always stays with
+     * [playerId]. This helper is only consulted at the input-routing seam: legal
+     * action enumeration, decision validation, and per-action seat checks.
+     */
+    fun actorFor(playerId: EntityId): EntityId {
+        val hijack = getEntity(playerId)
+            ?.get<com.wingedsheep.engine.state.components.player.PlayerTurnHijackedComponent>()
+        return if (hijack != null &&
+            hijack.state == com.wingedsheep.engine.state.components.player.PlayerTurnHijackedComponent.HijackState.ACTIVE
+        ) hijack.controllerId else playerId
+    }
+
     // =========================================================================
     // Stack Operations
     // =========================================================================

@@ -39,6 +39,7 @@ import com.wingedsheep.engine.state.components.player.PlayerEffectRemoval
 import com.wingedsheep.engine.state.components.player.MayCastCreaturesFromGraveyardWithForageComponent
 import com.wingedsheep.engine.state.components.player.PlayerHexproofComponent
 import com.wingedsheep.engine.state.components.player.PlayerShroudComponent
+import com.wingedsheep.engine.state.components.player.PlayerTurnHijackedComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.Duration
@@ -285,6 +286,13 @@ class CleanupPhaseManager(
                 var result = container
                 if (result.has<AdditionalCombatPhasesComponent>()) {
                     result = result.without<AdditionalCombatPhasesComponent>()
+                }
+                // Drop a Mindslaver-style hijack at end of the controlled turn (ACTIVE state).
+                // Scheduled hijacks (SCHEDULED) survive cleanup so they fire on the player's
+                // actual next turn, even if intervening turns are skipped.
+                val hijack = result.get<PlayerTurnHijackedComponent>()
+                if (hijack != null && hijack.state == PlayerTurnHijackedComponent.HijackState.ACTIVE) {
+                    result = result.without<PlayerTurnHijackedComponent>()
                 }
                 val shroud = result.get<PlayerShroudComponent>()
                 if (shroud?.removeOn == PlayerEffectRemoval.EndOfTurn) {

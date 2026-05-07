@@ -472,6 +472,33 @@ data object WasDealtCombatDamageThisTurnComponent : Component
 data object SkipNextTurnComponent : Component
 
 /**
+ * Tracks a Mindslaver-style "you control target opponent during their next turn" effect.
+ *
+ * Lifecycle:
+ *  - Created with [HijackState.SCHEDULED] when [HijackNextTurnEffect] resolves.
+ *  - At the start of the affected player's next turn (after any [SkipNextTurnComponent]
+ *    skipping resolves) the component transitions to [HijackState.ACTIVE] in
+ *    [TurnManager.startTurn].
+ *  - Removed at end-of-turn cleanup of the controlled turn.
+ *
+ * Per the Scryfall rulings on The Dominion Bracelet: multiple hijacks affecting the same
+ * player overwrite each other (latest wins). The affected player is still the rules
+ * controller of their own permanents/spells; only input authority moves to [controllerId]
+ * for the duration of the [ACTIVE] window.
+ *
+ * @property controllerId The player making decisions during the controlled turn
+ * @property state Whether this hijack is queued for a future turn or actively in effect
+ */
+@Serializable
+data class PlayerTurnHijackedComponent(
+    val controllerId: EntityId,
+    val state: HijackState = HijackState.SCHEDULED
+) : Component {
+    @Serializable
+    enum class HijackState { SCHEDULED, ACTIVE }
+}
+
+/**
  * Component indicating that a player will lose the game at the beginning of
  * a future end step. Applied by effects like Last Chance.
  *
