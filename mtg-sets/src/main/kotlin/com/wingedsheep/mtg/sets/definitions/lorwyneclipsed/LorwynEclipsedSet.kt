@@ -38,6 +38,7 @@ object LorwynEclipsedSet {
         BloodlineBidding,
         BloomTender,
         Blossombind,
+        BlossomingDefense,
         BoggartMischief,
         BoggartPrankster,
         BogslithersEmbrace,
