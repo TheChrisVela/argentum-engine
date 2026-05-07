@@ -128,6 +128,7 @@ object EdgeOfEternitiesSet {
         VoteOut,
         WateryGrave,
         WedgelightRammer,
+        WurmwallSweeper,
         ZookeeperMechan,
 
         // Basic lands
