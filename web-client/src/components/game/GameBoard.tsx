@@ -127,6 +127,22 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
   const opponent = useOpponent()
   const stackCards = useStackCards()
   const ghostCards = useGhostCards(playerId ?? null)
+
+  // Mindslaver-style hijack indicators (Phase 2C). Spectators don't get the UX promotions.
+  const youAreHijacking = !spectatorMode ? (gameState?.youAreHijacking ?? null) : null
+  const youAreHijackedBy = !spectatorMode ? (gameState?.youAreHijackedBy ?? null) : null
+  const isHijacking = !!youAreHijacking
+  const isHijacked = !!youAreHijackedBy
+  // Soft purple wash for the battlefield row currently under hijack control. We avoid
+  // a hard outline (which clipped at the zone-pile column on the right) — instead a
+  // gradient + subtle inset glow give a "tinted surface" feel that respects the
+  // existing layout boundaries.
+  const hijackedSurfaceStyle: React.CSSProperties = {
+    background: 'linear-gradient(180deg, rgba(124, 58, 237, 0.10) 0%, rgba(76, 29, 149, 0.04) 60%, rgba(76, 29, 149, 0.0) 100%)',
+    borderRadius: 10,
+    boxShadow: 'inset 0 0 0 1px rgba(168, 85, 247, 0.28), inset 0 0 24px rgba(168, 85, 247, 0.12)',
+    transition: 'background 0.2s, box-shadow 0.2s',
+  }
   const opponentRevealedTopCard = useRevealedLibraryTopCard(opponent?.playerId ?? null)
   const opponentGhostCards = useMemo(
     () => opponentRevealedTopCard ? [opponentRevealedTopCard] : [],
@@ -326,10 +342,14 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       {/* Spectator-count indicator (top-left, next to fullscreen) - only for players */}
       {!spectatorMode && <SpectatorCountBadge />}
 
-      {/* Concede button (top-right) - hidden in spectator mode */}
+      {/* Concede button (top-right) - hidden in spectator mode. Stays live for the
+          affected player even when the rest of the UI is disabled by hijack. */}
       {!spectatorMode && <ConcedeButton />}
 
-      {/* Opponent hand - fixed at top of screen */}
+
+      {/* Opponent hand - fixed at top of screen. The face-up promotion during a
+          Mindslaver-style hijack is itself the strongest signal that the controller
+          is driving V's hand — no extra wrapper outline is needed. */}
       {effectiveOpponent && (
         <div
           data-zone="opponent-hand"
@@ -343,10 +363,11 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
         >
           <CardRow
             zoneId={hand(effectiveOpponent.playerId)}
-            faceDown
+            faceDown={!isHijacking}
             small
             inverted
-            ghostCards={opponentGhostCards}
+            interactive={isHijacking}
+            ghostCards={isHijacking ? [] : opponentGhostCards}
           />
         </div>
       )}
@@ -369,7 +390,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           no padding is needed here. Equal-height with row 4 → equal cards. */}
       <div style={styles.opponentArea}>
         <div style={{ ...styles.playerRowWithZones, alignItems: 'flex-start' }}>
-          <div style={styles.playerMainArea}>
+          <div style={{
+            ...styles.playerMainArea,
+            ...(isHijacking ? hijackedSurfaceStyle : null),
+          }}>
             {/* Opponent battlefield - lands first (closer to opponent), then creatures */}
             <Battlefield isOpponent spectatorMode={spectatorMode} />
           </div>
@@ -409,7 +433,48 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           )}
         </div>
 
-        {/* Step strip (center) */}
+        {/* Step strip (center) — wrapped so the Mindslaver-style hijack indicator
+            can sit directly above it inside the center HUD. */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 4,
+          minWidth: 0,
+        }}>
+        {(isHijacking || isHijacked) && (() => {
+          const otherId = youAreHijacking ?? youAreHijackedBy
+          const otherName = gameState.players.find((p) => p.playerId === otherId)?.name ?? 'opponent'
+          const text = isHijacking
+            ? `Controlling ${otherName}'s turn`
+            : `${otherName} controls your turn`
+          return (
+            <div
+              role="status"
+              aria-live="polite"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '3px 10px',
+                borderRadius: 999,
+                background: 'rgba(76, 29, 149, 0.55)',
+                color: '#f3e8ff',
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                border: '1px solid rgba(168, 85, 247, 0.6)',
+                boxShadow: '0 0 10px rgba(168, 85, 247, 0.25)',
+                whiteSpace: 'nowrap',
+                userSelect: 'none',
+              }}
+            >
+              <span aria-hidden style={{ fontSize: 11 }}>🔒</span>
+              <span>{text}</span>
+            </div>
+          )
+        })()}
         <StepStrip
           phase={gameState.currentPhase}
           step={gameState.currentStep}
@@ -430,6 +495,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           onToggleStop={toggleStopOverride}
           isSpectator={spectatorMode}
         />
+        </div>
 
         {/* Player life (right side) */}
         <div style={{ ...styles.centerLifeSection, ...styles.centerLifeSectionRight }}>
@@ -459,7 +525,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           so no padding here. Equal-height with row 2 → symmetric cards. */}
       <div style={styles.playerArea}>
         <div style={styles.playerRowWithZones}>
-          <div style={styles.playerMainArea}>
+          <div style={{
+            ...styles.playerMainArea,
+            ...(isHijacked ? hijackedSurfaceStyle : null),
+          }}>
             {/* Player battlefield - creatures first (closer to center), then lands */}
             <Battlefield isOpponent={false} spectatorMode={spectatorMode} />
 
@@ -487,14 +556,50 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       {/* Player hand - fixed at bottom of screen */}
       <div
         data-zone="hand"
+        data-hijack-controlled={isHijacked || undefined}
+        data-hijack-dim={(isHijacking && !isHijacked) || undefined}
         style={{
           position: 'fixed',
           bottom: 0,
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 50,
+          padding: isHijacked ? 6 : 0,
+          borderRadius: isHijacked ? 12 : 0,
+          outline: isHijacked ? '2px solid #a855f7' : 'none',
+          outlineOffset: isHijacked ? -2 : 0,
+          boxShadow: isHijacked ? '0 0 14px rgba(168, 85, 247, 0.35)' : 'none',
+          background: isHijacked ? 'rgba(76, 29, 149, 0.18)' : 'transparent',
+          // Affected player's hand is inert during hijack — let clicks fall through.
+          pointerEvents: isHijacked ? 'none' : undefined,
+          // Controller can still see their own hand but cannot act with it during V's turn.
+          opacity: isHijacking ? 0.6 : 1,
+          filter: isHijacking ? 'saturate(0.6)' : 'none',
+          transition: 'box-shadow 0.2s, outline-color 0.2s, opacity 0.2s',
         }}
       >
+        {isHijacked && (
+          <div
+            style={{
+              position: 'absolute',
+              left: 8,
+              top: -10,
+              background: '#4c1d95',
+              color: 'white',
+              fontSize: 10,
+              fontWeight: 600,
+              padding: '2px 8px',
+              borderRadius: 999,
+              border: '1px solid #a855f7',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.4)',
+              whiteSpace: 'nowrap',
+              pointerEvents: 'none',
+              zIndex: 60,
+            }}
+          >
+            🔒 Opponent controls
+          </div>
+        )}
         {spectatorMode && effectiveViewingPlayer ? (
           <CardRow
             zoneId={hand(effectiveViewingPlayer.playerId)}
@@ -505,15 +610,15 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           <CardRow
             zoneId={hand(playerId)}
             faceDown={false}
-            interactive
-            ghostCards={ghostCards}
+            interactive={!isHijacked}
+            ghostCards={isHijacked ? [] : ghostCards}
           />
         ) : null}
       </div>
 
       {/* Floating pass/resolve button (bottom-right) - always present, disabled when unavailable */}
       {!spectatorMode && viewingPlayer && !isInManaSelectionMode && !isInCounterDistMode && (() => {
-        const passEnabled = canAct && !isInCombatMode && !isInDistributeMode && !isInCounterDistMode && !isInManaSelectionMode && !delveSelectionState && !crewSelectionState && !targetingState
+        const passEnabled = canAct && !isHijacked && !isInCombatMode && !isInDistributeMode && !isInCounterDistMode && !isInManaSelectionMode && !delveSelectionState && !crewSelectionState && !targetingState
         return (
           <div style={{
             position: 'fixed',

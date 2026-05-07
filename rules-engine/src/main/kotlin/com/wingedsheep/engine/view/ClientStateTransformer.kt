@@ -85,7 +85,7 @@ class ClientStateTransformer(
         val zones = mutableListOf<ClientZone>()
 
         for ((zoneKey, entityIds) in state.zones) {
-            val isZoneVisible = isZoneVisibleTo(zoneKey, viewingPlayerId)
+            val isZoneVisible = isZoneVisibleTo(state, zoneKey, viewingPlayerId, isSpectator)
 
             // For libraries we always send the full ordered list of entity IDs so the client can
             // render a correctly sized stack. Individual card *details* are only populated for cards
@@ -330,10 +330,18 @@ class ClientStateTransformer(
         return false
     }
 
-    private fun isZoneVisibleTo(zoneKey: ZoneKey, viewingPlayerId: EntityId): Boolean {
+    private fun isZoneVisibleTo(
+        state: GameState,
+        zoneKey: ZoneKey,
+        viewingPlayerId: EntityId,
+        isSpectator: Boolean
+    ): Boolean {
         return when (zoneKey.zoneType) {
             Zone.LIBRARY -> false
-            Zone.HAND -> debugMode || zoneKey.ownerId == viewingPlayerId
+            // During a Mindslaver-style hijack the controller (actor) sees what the
+            // affected player sees of their own hand. Spectators never gain visibility.
+            Zone.HAND -> debugMode || zoneKey.ownerId == viewingPlayerId ||
+                (!isSpectator && state.actorFor(zoneKey.ownerId) == viewingPlayerId)
             Zone.BATTLEFIELD,
             Zone.GRAVEYARD,
             Zone.STACK,
@@ -1133,6 +1141,7 @@ class ClientStateTransformer(
                 wasBlightPaid = spellOnStack.wasBlightPaid,
                 sacrificedPermanents = spellOnStack.sacrificedPermanents,
                 exiledCardCount = spellOnStack.exiledCardCount,
+                additionalCostBlightAmount = spellOnStack.additionalCostBlightAmount,
                 targets = chosenTargets
             )
             // Resolve ConditionalEffect at stack-time: opponents see only the branch that

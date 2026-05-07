@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -127,6 +128,43 @@ class HijackInputRoutingTest : FunSpec({
         val affectedView = transformer(d).transform(d.state, viewingPlayerId = active)
         affectedView.youAreHijackedBy shouldBe opponent
         affectedView.youAreHijacking.shouldBeNull()
+    }
+
+    test("ClientStateTransformer: controller sees affected player's hand cards face-up during ACTIVE hijack") {
+        val d = driver()
+        val active = d.activePlayer!!
+        val opponent = d.getOpponent(active)
+
+        // Give V (the affected player) a card in hand so the controller has something to see.
+        val shock = d.putCardInHand(active, "Shock")
+
+        // Without hijack: controller sees no cards from V's hand (zone hidden).
+        run {
+            val pre = transformer(d).transform(d.state, viewingPlayerId = opponent)
+            pre.cards.keys shouldNotContain shock
+            val vHandZone = pre.zones.first { it.zoneId.ownerId == active && it.zoneId.zoneType == Zone.HAND }
+            vHandZone.isVisible shouldBe false
+        }
+
+        // ACTIVE hijack: controller sees V's hand contents.
+        d.replaceState(
+            d.state.updateEntity(active) { container ->
+                container.with(
+                    PlayerTurnHijackedComponent(controllerId = opponent, state = HijackState.ACTIVE)
+                )
+            }
+        )
+        val controllerView = transformer(d).transform(d.state, viewingPlayerId = opponent)
+        controllerView.cards.keys shouldContain shock
+        val vHandZone = controllerView.zones.first { it.zoneId.ownerId == active && it.zoneId.zoneType == Zone.HAND }
+        vHandZone.isVisible shouldBe true
+        vHandZone.cardIds shouldContain shock
+
+        // Spectator path must still mask the hand even when hijack is active.
+        val spectatorView = transformer(d).transform(d.state, viewingPlayerId = opponent, isSpectator = true)
+        spectatorView.cards.keys shouldNotContain shock
+        val spectatorZone = spectatorView.zones.first { it.zoneId.ownerId == active && it.zoneId.zoneType == Zone.HAND }
+        spectatorZone.isVisible shouldBe false
     }
 
     test("ClientStateTransformer: both fields null when no hijack and when only SCHEDULED") {
