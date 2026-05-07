@@ -251,13 +251,15 @@ fun TargetSpell(
  * Generalizes zone-specific targeting — the TargetFilter's zone field
  * determines which zone to look in.
  *
- * @param count Maximum number of targets (absolute upper bound)
+ * @param count Maximum number of targets when [dynamicMaxCount] is null. Ignored
+ *   otherwise — the resolved dynamic value is authoritative.
  * @param optional If true, allows 0 targets ("up to X" style targeting)
  * @param filter Determines what can be targeted and in which zone
  * @param dynamicMaxCount When non-null, the engine evaluates this at the moment the
- *   spell/ability goes on the stack and clamps the maximum number of targets to the
- *   resolved value (still bounded by [count]). Used for "up to X target ..." where X
- *   is determined by board state, like Prismabasher's Vivid trigger.
+ *   spell/ability goes on the stack and uses the resolved value as the maximum number
+ *   of targets. Used for "up to X target ..." where X is determined by board state,
+ *   like Prismabasher's Vivid trigger ("up to X target creatures you control",
+ *   X = colors among permanents you control).
  */
 @SerialName("TargetObject")
 @Serializable

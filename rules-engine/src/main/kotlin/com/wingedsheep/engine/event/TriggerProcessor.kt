@@ -618,9 +618,10 @@ class TriggerProcessor(
 
     /**
      * If the requirement carries a [TargetObject.dynamicMaxCount], evaluate it against
-     * the trigger's controller/source and return a copy with `count` (and `minCount`
-     * when not optional) clamped to the resolved value. Static caps are preserved as
-     * the absolute upper bound. Wrapping [TargetOther] is unwrapped, snapshotted, and
+     * the trigger's controller/source and return a copy with `count` rewritten to the
+     * resolved value (and `minCount` clamped to the new cap). When `dynamicMaxCount`
+     * is set, the resolved value is authoritative — the SDK's static `count` is only
+     * the no-dynamic-cap default. [TargetOther] is unwrapped, snapshotted, and
      * re-wrapped so "another target" wording stays intact.
      */
     private fun snapshotDynamicCount(
@@ -645,10 +646,10 @@ class TriggerProcessor(
                 } catch (_: Exception) {
                     requirement.count
                 }
-                val capped = resolved.coerceIn(0, requirement.count)
+                val newMax = resolved.coerceAtLeast(0)
                 requirement.copy(
-                    count = capped,
-                    minCount = requirement.minCount.coerceAtMost(capped)
+                    count = newMax,
+                    minCount = requirement.minCount.coerceAtMost(newMax)
                 )
             }
         }

@@ -23,9 +23,9 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  *
  * X is locked twice (per the Scryfall ruling): once when the trigger goes on the
  * stack — capping the number of selectable targets — and again at resolution to set
- * the +N/+N bonus. We pass the same `colorsAmongPermanents()` value as both the
- * `dynamicMaxCount` (so the engine resolves the cap at trigger placement time and
- * the targeting UI shows "selected / X") and the `ModifyStats` amount.
+ * the +N/+N bonus. The same `colorsAmongPermanents()` value powers both the
+ * `dynamicMaxCount` (engine resolves the cap at trigger placement; UI shows
+ * "selected / X") and the `ModifyStats` amount.
  */
 val Prismabasher = card("Prismabasher") {
     manaCost = "{4}{G}{G}"
@@ -43,7 +43,6 @@ val Prismabasher = card("Prismabasher") {
         target(
             "up to X target creatures you control",
             TargetCreature(
-                count = 5,
                 optional = true,
                 filter = TargetFilter.CreatureYouControl,
                 dynamicMaxCount = DynamicAmounts.colorsAmongPermanents()
