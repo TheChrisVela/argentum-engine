@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 108 / 261
+**Implemented:** 109 / 261
 
 ---
 
@@ -254,7 +254,7 @@
 - [ ] Virulent Silencer
 - [x] Virus Beetle
 - [ ] Voidforged Titan
-- [ ] Vote Out
+- [x] Vote Out
 - [ ] Warmaker Gunship
 - [x] Watery Grave
 - [ ] Weapons Manufacturing

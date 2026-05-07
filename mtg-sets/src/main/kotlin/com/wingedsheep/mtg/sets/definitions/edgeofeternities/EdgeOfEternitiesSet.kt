@@ -125,6 +125,7 @@ object EdgeOfEternitiesSet {
         UmbralCollarZealot,
         UthrosScanship,
         VirusBeetle,
+        VoteOut,
         WateryGrave,
         WedgelightRammer,
         ZookeeperMechan,
