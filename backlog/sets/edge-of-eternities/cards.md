@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 110 / 261
+**Implemented:** 111 / 261
 
 ---
 
@@ -157,7 +157,7 @@
 - [ ] Nova Hellkite
 - [x] Nutrient Block
 - [ ] Orbital Plunge
-- [ ] Oreplate Pangolin
+- [x] Oreplate Pangolin
 - [ ] Ouroboroid
 - [ ] Pain for All
 - [ ] Perigee Beckoner
