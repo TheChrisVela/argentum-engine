@@ -174,7 +174,7 @@
 - [x] Lavaleaper
 - [x] Meek Attack
 - [x] Reckless Ransacking
-- [ ] Scuzzback Scrounger
+- [x] Scuzzback Scrounger
 - [x] Sear
 - [ ] Sizzling Changeling
 - [ ] Soul Immolation

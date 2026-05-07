@@ -201,6 +201,7 @@ object LorwynEclipsedSet {
         RunAwayTogether,
         SaplingNursery,
         ScarbladesMalice,
+        ScuzzbackScrounger,
         Sear,
         SelflessSafewright,
         ShadowUrchin,
