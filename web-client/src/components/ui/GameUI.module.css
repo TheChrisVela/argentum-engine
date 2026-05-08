@@ -1018,6 +1018,30 @@
   font-size: var(--font-sm);
 }
 
+.formatRestrictionNotice {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-sm);
+  color: var(--text-primary);
+  background: rgba(106, 163, 255, 0.14);
+  border: 1px solid rgba(106, 163, 255, 0.45);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+}
+
+.formatRestrictionBadge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: rgba(106, 163, 255, 0.28);
+  color: #d6e6ff;
+  border: 1px solid rgba(106, 163, 255, 0.55);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-weight: 700;
+}
+
 .settingsButtons {
   display: flex;
   gap: var(--space-1);

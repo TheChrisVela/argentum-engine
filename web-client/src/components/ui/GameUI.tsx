@@ -475,8 +475,8 @@ function publicLobbyMeta(entry: PublicLobbyEntry): string {
     const base = `${formatTournamentFormat(entry.format)} · ${entry.boosterCount} ${entry.format === 'DRAFT' ? 'packs' : 'boosters'} · ${entry.playerCount}/${entry.maxPlayers} players`
     return entry.gamesPerMatch > 1 ? `${base} · ${entry.gamesPerMatch} games per matchup` : base
   }
-  const setLabel = entry.setCode ?? 'Random set'
-  const parts = ['Quick Game', setLabel]
+  const parts = ['Quick Game']
+  if (entry.setCode) parts.push(entry.setCode)
   if (entry.format) parts.push(labelForFormat(entry.format))
   parts.push(`${entry.playerCount}/${entry.maxPlayers} players`)
   return parts.join(' · ')
@@ -1149,8 +1149,9 @@ function PremadeDeckPickerPanel({ lobbyState }: { lobbyState: LobbyState }) {
       <div className={styles.settingsRow} style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 12 }}>
         <span className={styles.settingsLabel}>Your Deck</span>
         {deckFormat && (
-          <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>
-            Format restriction: <strong>{deckFormat[0]! + deckFormat.slice(1).toLowerCase()}</strong> — only cards legal in this format will be accepted.
+          <span className={styles.formatRestrictionNotice}>
+            <span className={styles.formatRestrictionBadge}>{labelForFormat(deckFormat)}</span>
+            <span>Only cards legal in this format will be accepted.</span>
           </span>
         )}
         <DeckPicker
