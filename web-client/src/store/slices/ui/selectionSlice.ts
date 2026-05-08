@@ -18,7 +18,11 @@ import type {
 import type { LegalActionInfo } from '@/types'
 import { createSubmitActionMessage } from '@/types'
 import { getWebSocket } from '../shared'
-import { parseManaCost as parseManaCostUtil, getRemainingCostSymbols } from '@/utils/manaCost'
+import {
+  parseManaCost as parseManaCostUtil,
+  getRemainingCostSymbols,
+  computeAutoTapPreview,
+} from '@/utils/manaCost'
 
 // Note: getWebSocket/createSubmitActionMessage are still used by confirmCrewSelection
 // and confirmDecisionSelection (which are not part of the pipeline).
@@ -407,7 +411,16 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
     const xSymbolCount = Math.max(1, (manaCost.match(/\{X\}/g)?.length ?? 0))
     const xManaNeeded = xValue * xSymbolCount
 
-    const preSelectedIds = [...(actionInfo.autoTapPreview ?? [])]
+    // The server only computes [autoTapPreview] when the spell is affordable
+    // from lands alone — for spells that require convoke/delve to be castable
+    // (e.g. Sun-Dappled Celebrant when lands provide too few colored pips),
+    // [autoTapPreview] is null. Once convoke/delve has trimmed the cost we can
+    // compute a fresh preview from [availableManaSources] so the player isn't
+    // left to hand-pick lands.
+    const reducedSymbols = parseManaCostUtil(manaCost)
+    const preSelectedIds: EntityId[] = (actionInfo.autoTapPreview && actionInfo.autoTapPreview.length > 0)
+      ? [...actionInfo.autoTapPreview]
+      : (reducedSymbols.length > 0 ? computeAutoTapPreview(sources, reducedSymbols) : [])
     if (xManaNeeded > 0) {
       const alreadySelected = new Set(preSelectedIds)
       const manaProvided = (id: string) => sourceManaAmounts[id] ?? 1

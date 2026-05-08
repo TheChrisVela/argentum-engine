@@ -177,3 +177,24 @@ export function trimAutoTapPreview<Id>(
 
   return kept
 }
+
+/**
+ * Build an auto-tap pre-selection from scratch when the server didn't provide
+ * one. The server computes its preview by solving the **printed** cost; if a
+ * spell can only be afforded once an alternative payment (convoke/delve) has
+ * trimmed the cost, the server's preview is null and post-convoke pre-selection
+ * would be empty. After convoke applies, this picks lands greedily to cover the
+ * remaining cost so the player isn't left to hand-pick lands.
+ *
+ * Uses the same priority-ordered source list the server provided (basics before
+ * duals, etc.) and the same colored-first-then-generic logic as
+ * [trimAutoTapPreview]. The engine re-solves on submit, so over-selection is
+ * safe — the preview is purely a UI hint.
+ */
+export function computeAutoTapPreview<Id>(
+  availableSources: readonly TrimmableManaSource<Id>[],
+  remainingCostSymbols: string[],
+): Id[] {
+  const fullPreview = availableSources.map((s) => s.entityId)
+  return trimAutoTapPreview(fullPreview, availableSources, remainingCostSymbols)
+}

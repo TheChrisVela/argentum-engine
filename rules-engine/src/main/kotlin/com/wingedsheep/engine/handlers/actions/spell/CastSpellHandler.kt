@@ -528,16 +528,37 @@ class CastSpellHandler(
                         return "Mana source is already tapped: $sourceId"
                     }
                 }
-                // Verify the chosen sources can actually pay the colored cost.
-                // Ask the solver to pay using ONLY the chosen sources by excluding all others.
-                val chosen = action.paymentStrategy.manaAbilitiesToActivate.toSet()
-                val excluded = manaSolver.findAvailableManaSources(state, action.playerId)
-                    .map { it.entityId }
-                    .filter { it !in chosen }
-                    .toSet()
-                if (manaSolver.solve(state, action.playerId, effectiveCost, xValue, excludeSources = excluded, spellContext = spellCtx) == null) {
-                    "Selected mana sources cannot pay this spell's cost"
-                } else null
+                // Mirror what [CastPaymentProcessor.autoPay] actually does: pay from the
+                // floating pool first, then verify the chosen sources can cover the rest.
+                // Otherwise a player who has already floated mana before clicking cast
+                // gets a false "Selected mana sources cannot pay this spell's cost"
+                // because the validator demands the chosen sources alone cover the full
+                // (post-convoke/delve) cost.
+                val poolComponent = state.getEntity(action.playerId)?.get<ManaPoolComponent>()
+                    ?: ManaPoolComponent()
+                val pool = ManaPool(
+                    white = poolComponent.white,
+                    blue = poolComponent.blue,
+                    black = poolComponent.black,
+                    red = poolComponent.red,
+                    green = poolComponent.green,
+                    colorless = poolComponent.colorless,
+                    restrictedMana = poolComponent.restrictedMana
+                )
+                val partial = pool.payPartial(effectiveCost, spellCtx)
+                val remainingCost = partial.remainingCost
+                if (remainingCost.isEmpty() && xValue == 0) {
+                    null
+                } else {
+                    val chosen = action.paymentStrategy.manaAbilitiesToActivate.toSet()
+                    val excluded = manaSolver.findAvailableManaSources(state, action.playerId)
+                        .map { it.entityId }
+                        .filter { it !in chosen }
+                        .toSet()
+                    if (manaSolver.solve(state, action.playerId, remainingCost, xValue, excludeSources = excluded, spellContext = spellCtx) == null) {
+                        "Selected mana sources cannot pay this spell's cost"
+                    } else null
+                }
             }
         }
     }

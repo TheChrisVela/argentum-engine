@@ -417,7 +417,8 @@ class DevScenarioController(
                         tapped = card.tapped ?: false,
                         summoningSickness = card.summoningSickness ?: false,
                         counters = card.counters ?: emptyMap(),
-                        chosenCreatureType = card.chosenCreatureType
+                        chosenCreatureType = card.chosenCreatureType,
+                        chosenColor = card.chosenColor
                     )
                 }
                 config.battlefield?.forEach { card ->
@@ -437,7 +438,8 @@ class DevScenarioController(
                         tapped = card.tapped ?: false,
                         summoningSickness = card.summoningSickness ?: false,
                         counters = card.counters ?: emptyMap(),
-                        chosenCreatureType = card.chosenCreatureType
+                        chosenCreatureType = card.chosenCreatureType,
+                        chosenColor = card.chosenColor
                     )
                 }
                 config.battlefield?.forEach { card ->
@@ -624,7 +626,8 @@ class DevScenarioController(
             tapped: Boolean = false,
             summoningSickness: Boolean = false,
             counters: Map<String, Int> = emptyMap(),
-            chosenCreatureType: String? = null
+            chosenCreatureType: String? = null,
+            chosenColor: String? = null
         ): ScenarioBuilder {
             val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
             val cardId = createCard(cardName, playerId)
@@ -649,6 +652,12 @@ class DevScenarioController(
 
             if (chosenCreatureType != null) {
                 container = container.with(ChosenCreatureTypeComponent(chosenCreatureType))
+            }
+
+            if (chosenColor != null) {
+                container = container.with(
+                    ChosenColorComponent(com.wingedsheep.sdk.core.Color.valueOf(chosenColor))
+                )
             }
 
             // Add continuous effects from static abilities and replacement effects
@@ -877,7 +886,12 @@ data class BattlefieldCardConfig(
     val counters: Map<String, Int>? = null,
     val attachedTo: String? = null,
     /** For permanents with "As this enters, choose a creature type" — skips the ETB choice by pre-setting it. */
-    val chosenCreatureType: String? = null
+    val chosenCreatureType: String? = null,
+    /**
+     * For permanents with "As this enters, choose a color" — skips the ETB choice by pre-setting it.
+     * Value must be a [com.wingedsheep.sdk.core.Color] name, e.g. "WHITE", "GREEN".
+     */
+    val chosenColor: String? = null
 )
 
 data class ScenarioResponse(

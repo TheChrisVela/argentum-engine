@@ -229,6 +229,40 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
     const colorSatisfied: Record<string, number> = {}
     let satisfied = 0
 
+    // Floating mana already in the pool counts toward the cost — the engine pays
+    // from the pool before tapping sources (CastPaymentProcessor.autoPay), so the
+    // confirmation panel needs to credit it too. Without this, a player who taps
+    // a Plains pre-cast sees "0/1" white owed even though their pool already has it.
+    const floatingPool = viewingPlayer?.manaPool
+    if (floatingPool) {
+      const poolByPip: Record<string, number> = {
+        W: floatingPool.white,
+        U: floatingPool.blue,
+        B: floatingPool.black,
+        R: floatingPool.red,
+        G: floatingPool.green,
+        C: floatingPool.colorless,
+      }
+      // Spend exact-color pool first against colored pips
+      for (const pip of Object.keys(poolByPip)) {
+        while ((poolByPip[pip] ?? 0) > 0 && (remainingColorReqs[pip] ?? 0) > 0) {
+          remainingColorReqs[pip]!--
+          colorSatisfied[pip] = (colorSatisfied[pip] ?? 0) + 1
+          poolByPip[pip]!--
+          satisfied++
+        }
+      }
+      // Anything left in the pool covers generic
+      for (const pip of Object.keys(poolByPip)) {
+        while ((poolByPip[pip] ?? 0) > 0 && remainingGeneric > 0) {
+          remainingGeneric--
+          colorSatisfied['1'] = (colorSatisfied['1'] ?? 0) + 1
+          poolByPip[pip]!--
+          satisfied++
+        }
+      }
+    }
+
     for (const source of sortedSources) {
       // Try to assign to a colored requirement this source can pay
       let assigned = false
@@ -264,7 +298,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
     })
 
     return { satisfied, total, entries, colorSatisfied }
-  }, [manaSelectionState])
+  }, [manaSelectionState, viewingPlayer?.manaPool])
 
   const counterTotalAllocated = counterDistributionState
     ? Object.values(counterDistributionState.distribution).reduce<number>(
