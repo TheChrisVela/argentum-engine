@@ -446,6 +446,51 @@ object LibraryPatterns {
         )
     )
 
+    /**
+     * "Divvy" pattern (Fact or Fiction shape, CR 700.3): reveal cards from the top
+     * of the controller's library, an opponent splits them into two named piles
+     * (the [otherLabel] pile they pick and the [keepLabel] remainder), and each
+     * pile is routed to its destination zone.
+     *
+     * Built on the binary partition primitive: the opponent's selection IS the
+     * partition. Empty piles (CR 700.3d) are legal — the opponent may select 0
+     * or all of the revealed cards.
+     */
+    fun factOrFiction(
+        count: Int = 5,
+        keepZone: Zone = Zone.HAND,
+        otherZone: Zone = Zone.GRAVEYARD,
+        keepLabel: String = "Hand",
+        otherLabel: String = "Graveyard"
+    ): CompositeEffect = CompositeEffect(
+        listOf(
+            GatherCardsEffect(
+                source = CardSource.TopOfLibrary(DynamicAmount.Fixed(count)),
+                storeAs = "revealed",
+                revealed = true
+            ),
+            SelectFromCollectionEffect(
+                from = "revealed",
+                selection = SelectionMode.ChooseAnyNumber,
+                chooser = Chooser.Opponent,
+                storeSelected = "otherPile",
+                storeRemainder = "keepPile",
+                selectedLabel = otherLabel,
+                remainderLabel = keepLabel,
+                prompt = "Separate the revealed cards into two piles. The cards you select go to $otherLabel; the rest go to $keepLabel.",
+                alwaysPrompt = true
+            ),
+            MoveCollectionEffect(
+                from = "otherPile",
+                destination = CardDestination.ToZone(otherZone)
+            ),
+            MoveCollectionEffect(
+                from = "keepPile",
+                destination = CardDestination.ToZone(keepZone)
+            )
+        )
+    )
+
     fun revealAndOpponentChooses(
         count: Int,
         filter: GameObjectFilter

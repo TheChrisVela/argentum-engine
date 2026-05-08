@@ -247,6 +247,15 @@ object EffectPatterns {
     fun revealAndOpponentChooses(count: Int, filter: GameObjectFilter): CompositeEffect =
         LibraryPatterns.revealAndOpponentChooses(count, filter)
 
+    fun factOrFiction(
+        count: Int = 5,
+        keepZone: com.wingedsheep.sdk.core.Zone = com.wingedsheep.sdk.core.Zone.HAND,
+        otherZone: com.wingedsheep.sdk.core.Zone = com.wingedsheep.sdk.core.Zone.GRAVEYARD,
+        keepLabel: String = "Hand",
+        otherLabel: String = "Graveyard"
+    ): CompositeEffect =
+        LibraryPatterns.factOrFiction(count, keepZone, otherZone, keepLabel, otherLabel)
+
     fun mill(count: Int, target: EffectTarget = EffectTarget.Controller): CompositeEffect =
         LibraryPatterns.mill(count, target)
 
