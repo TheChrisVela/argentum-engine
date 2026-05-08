@@ -66,7 +66,7 @@ https://api.scryfall.com/cards/named?exact=Beyond%20the%20Quiet&set=eoe
 - [ ] Survey Mechan
 
 ## Legendary token:
-- [ ] Adagia, Windswept Bastion
+- [x] Adagia, Windswept Bastion
 
 ## NthSpell static ability
 - [ ] Brightspear Zealot

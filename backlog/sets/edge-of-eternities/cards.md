@@ -2,11 +2,11 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 117 / 261
+**Implemented:** 118 / 261
 
 ---
 
-- [ ] Adagia, Windswept Bastion
+- [x] Adagia, Windswept Bastion
 - [ ] All-Fates Scroll
 - [ ] All-Fates Stalker
 - [x] Alpharael, Dreaming Acolyte

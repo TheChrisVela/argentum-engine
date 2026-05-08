@@ -1004,16 +1004,18 @@ object Effects {
         tapped: Boolean = false,
         attacking: Boolean = false,
         triggeredAbilities: List<TriggeredAbility> = emptyList(),
-        addedKeywords: Set<com.wingedsheep.sdk.core.Keyword> = emptySet()
+        addedKeywords: Set<com.wingedsheep.sdk.core.Keyword> = emptySet(),
+        addedSupertypes: Set<com.wingedsheep.sdk.core.Supertype> = emptySet()
     ): Effect = CreateTokenCopyOfTargetEffect(
-        target,
-        DynamicAmount.Fixed(count),
-        overridePower,
-        overrideToughness,
-        tapped,
-        attacking,
-        triggeredAbilities,
-        addedKeywords
+        target = target,
+        count = DynamicAmount.Fixed(count),
+        overridePower = overridePower,
+        overrideToughness = overrideToughness,
+        tapped = tapped,
+        attacking = attacking,
+        triggeredAbilities = triggeredAbilities,
+        addedKeywords = addedKeywords,
+        addedSupertypes = addedSupertypes
     )
 
     /**

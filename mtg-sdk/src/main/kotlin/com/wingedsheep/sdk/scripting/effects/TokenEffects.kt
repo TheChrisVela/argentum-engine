@@ -3,6 +3,7 @@ package com.wingedsheep.sdk.scripting.effects
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Supertype
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.StaticAbility
 import com.wingedsheep.sdk.scripting.TriggeredAbility
@@ -330,7 +331,9 @@ data class CreateTokenCopyOfTargetEffect(
     val attacking: Boolean = false,
     val triggeredAbilities: List<TriggeredAbility> = emptyList(),
     /** Keywords granted to the token copy in addition to those copied from the source. */
-    val addedKeywords: Set<Keyword> = emptySet()
+    val addedKeywords: Set<Keyword> = emptySet(),
+    /** Supertypes added to the token copy's type line (e.g., LEGENDARY for Adagia, Windswept Bastion). */
+    val addedSupertypes: Set<Supertype> = emptySet()
 ) : Effect {
     override val description: String = buildString {
         append("Create ${count.description} token copies of target permanent")
@@ -339,6 +342,11 @@ data class CreateTokenCopyOfTargetEffect(
         }
         if (tapped) append(" tapped")
         if (attacking) append(" and attacking")
+        if (addedSupertypes.isNotEmpty()) {
+            append(", except ${if (count == DynamicAmount.Fixed(1)) "it's" else "they're"} ${
+                addedSupertypes.joinToString(" ") { it.displayName.lowercase() }
+            }")
+        }
         if (addedKeywords.isNotEmpty()) {
             append(" with ${addedKeywords.joinToString(", ") { it.displayName.lowercase() }}")
         }
