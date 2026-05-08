@@ -389,6 +389,11 @@ class DynamicAmountEvaluator(
                         ?: emptySet()
                 }.size
             }
+            Aggregation.DISTINCT_NAMES -> {
+                matchingEntities.mapNotNullTo(mutableSetOf()) { entityId ->
+                    state.getEntity(entityId)?.get<CardComponent>()?.name
+                }.size
+            }
         }
     }
 
@@ -436,6 +441,11 @@ class DynamicAmountEvaluator(
                 matchingEntities.flatMapTo(mutableSetOf()) { entityId ->
                     state.getEntity(entityId)?.get<CardComponent>()?.colors?.map { it.name }?.toSet()
                         ?: emptySet()
+                }.size
+            }
+            Aggregation.DISTINCT_NAMES -> {
+                matchingEntities.mapNotNullTo(mutableSetOf()) { entityId ->
+                    state.getEntity(entityId)?.get<CardComponent>()?.name
                 }.size
             }
         }

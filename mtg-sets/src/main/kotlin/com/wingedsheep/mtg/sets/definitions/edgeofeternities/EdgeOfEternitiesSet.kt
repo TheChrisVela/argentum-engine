@@ -20,6 +20,7 @@ object EdgeOfEternitiesSet {
      * All cards implemented from this set.
      */
     val allCards = listOf(
+        AllFatesScroll,
         AlpharaelDreamingAcolyte,
         Annul,
         ArchenemysCharm,

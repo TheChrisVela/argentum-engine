@@ -23,5 +23,7 @@ enum class Aggregation {
     /** Count distinct card types across all matched entities */
     DISTINCT_TYPES,
     /** Count distinct colors across all matched entities */
-    DISTINCT_COLORS
+    DISTINCT_COLORS,
+    /** Count distinct English card names across all matched entities */
+    DISTINCT_NAMES
 }

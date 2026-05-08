@@ -522,6 +522,11 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
                     if (excludeSelf) append("other ")
                     append(pluralize(filter.description))
                 }
+                Aggregation.DISTINCT_NAMES -> {
+                    append("the number of differently named ")
+                    if (excludeSelf) append("other ")
+                    append(pluralize(filter.description))
+                }
             }
             append(" ")
             when (player) {
@@ -594,6 +599,10 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
                 }
                 Aggregation.DISTINCT_COLORS -> {
                     append("the number of colors among ")
+                    append(pluralize(filter.description))
+                }
+                Aggregation.DISTINCT_NAMES -> {
+                    append("the number of differently named ")
                     append(pluralize(filter.description))
                 }
             }

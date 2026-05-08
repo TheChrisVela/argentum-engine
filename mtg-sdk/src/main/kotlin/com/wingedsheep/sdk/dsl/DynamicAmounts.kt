@@ -123,6 +123,14 @@ object DynamicAmounts {
     fun landsYouControl(): DynamicAmount =
         battlefield(Player.You, GameObjectFilter.Land).count()
 
+    /**
+     * Number of differently named lands [player] controls.
+     * Used for cards like All-Fates Scroll: counts each land you control once,
+     * but only if its English name isn't shared with another already-counted land.
+     */
+    fun differentlyNamedLandsYouControl(player: Player = Player.You): DynamicAmount =
+        DynamicAmount.AggregateBattlefield(player, GameObjectFilter.Land, Aggregation.DISTINCT_NAMES)
+
     fun attackingCreaturesYouControl(): DynamicAmount =
         battlefield(Player.You, GameObjectFilter.Creature.attacking()).count()
 
