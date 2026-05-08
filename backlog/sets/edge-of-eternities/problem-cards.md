@@ -6,6 +6,7 @@ https://api.scryfall.com/cards/named?exact=Beyond%20the%20Quiet&set=eoe
 ## Warp, and related
 
 - [x] Bygone Colossus
+- [ ] Weftstalker Ardent
 - [ ] Starfield Shepherd
 - [ ] Anticausal Vestige
 - [ ] All-Fates Stalker
@@ -22,12 +23,9 @@ https://api.scryfall.com/cards/named?exact=Beyond%20the%20Quiet&set=eoe
 - [ ] Full Bore
 - [ ] Possibility Technician
 - [ ] Tannuk, Steadfast Second
-- [ ] Weftstalker Ardent
 - [ ] Broodguard Elite
 - [ ] Close Encounter
 - [ ] Drix Fatemaker
-- [ ] Eusocial Engineering
-- [ ] Germinating Wurm
 - [ ] Loading Zone
 - [ ] Mightform Harmonizer
 - [ ] Interceptor Mechan

@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 128 / 261
+**Implemented:** 130 / 261
 
 ---
 
@@ -71,7 +71,7 @@
 - [x] Emissary Escort
 - [ ] Entropic Battlecruiser
 - [x] Eumidian Terrabotanist
-- [ ] Eusocial Engineering
+- [x] Eusocial Engineering
 - [x] Evendo, Waking Haven
 - [ ] Exalted Sunborn
 - [x] Exosuit Savior
@@ -89,7 +89,7 @@
 - [x] Galvanizing Sawship
 - [ ] Genemorph Imago
 - [ ] Gene Pollinator
-- [ ] Germinating Wurm
+- [x] Germinating Wurm
 - [ ] Gigastorm Titan
 - [x] Glacier Godmaw
 - [x] Godless Shrine
