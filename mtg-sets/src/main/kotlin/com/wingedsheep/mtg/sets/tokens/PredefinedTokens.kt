@@ -230,7 +230,8 @@ object PredefinedTokens {
         }
 
         metadata {
-            imageUri = "https://product-images.s3.cardmarket.com/1/TOK26/749289/749289.png"
+            imageUri = "https://cards.scryfall.io/normal/front/6/b/6b8a810b-8538-41c3-a792-dbd1a1845faa.jpg?1694737457"
+            artist = "Rovina Cai"
         }
     }
 
@@ -242,6 +243,11 @@ object PredefinedTokens {
         typeLine = "Artifact Creature — Phyrexian"
         power = 0
         toughness = 0
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/back/c/c/cca1decc-90fd-4df8-997e-52f8789032f8.jpg?1682207112"
+            artist = "Johann Bodin"
+        }
     }
 
     /**
@@ -259,6 +265,11 @@ object PredefinedTokens {
             activatedAbility {
                 cost = Costs.Mana("{2}")
                 effect = TransformEffect(EffectTarget.Self)
+            }
+
+            metadata {
+                imageUri = "https://cards.scryfall.io/normal/front/c/c/cca1decc-90fd-4df8-997e-52f8789032f8.jpg?1682207112"
+                artist = "Johann Bodin"
             }
         },
         backFace = Phyrexian
