@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.lorwyneclipsed
 
 import com.wingedsheep.mtg.sets.definitions.lorwyneclipsed.cards.*
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 import com.wingedsheep.mtg.sets.definitions.onslaught.OnslaughtSet
 
 /**
@@ -13,12 +15,14 @@ import com.wingedsheep.mtg.sets.definitions.onslaught.OnslaughtSet
  * Release Date: January 23, 2026
  * Card Count: 273
  */
-object LorwynEclipsedSet {
+object LorwynEclipsedSet : MtgSet {
 
-    const val SET_CODE = "ECL"
-    const val SET_NAME = "Lorwyn Eclipsed"
+    override val code = "ECL"
+    override val displayName = "Lorwyn Eclipsed"
+    override val totalSetSize = 273
+    override val sealedSupported = true
 
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         AbigaleEloquentFirstYear,
         AdeptWatershaper,
         AjaniOutlandChaperone,
@@ -291,5 +295,5 @@ object LorwynEclipsedSet {
         // Basic lands
     ) + LorwynEclipsedBasicLands
 
-    val basicLands = LorwynEclipsedBasicLands.map { it.copy(setCode = OnslaughtSet.SET_CODE) }
+    override val basicLands: List<CardDefinition> = LorwynEclipsedBasicLands.map { it.copy(setCode = OnslaughtSet.code) }
 }

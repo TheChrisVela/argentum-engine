@@ -22,8 +22,8 @@ class GymBeansConfig {
 
     @Bean
     fun cardRegistry(): CardRegistry = CardRegistry().apply {
-        register(PortalSet.allCards)
-        register(BloomburrowSet.allCards)
+        register(PortalSet.cards)
+        register(BloomburrowSet.cards)
         // Basic-land variants are needed for the RandomSealed path so that
         // variant names like "Swamp#BLB-270" resolve during GameInitializer.
         register(BloomburrowSet.basicLands)
@@ -32,10 +32,10 @@ class GymBeansConfig {
     @Bean
     fun boosterGenerator(): BoosterGenerator = BoosterGenerator(
         mapOf(
-            BloomburrowSet.SET_CODE to BoosterGenerator.SetConfig(
-                setCode = BloomburrowSet.SET_CODE,
-                setName = BloomburrowSet.SET_NAME,
-                cards = BloomburrowSet.allCards,
+            BloomburrowSet.code to BoosterGenerator.SetConfig(
+                setCode = BloomburrowSet.code,
+                setName = BloomburrowSet.displayName,
+                cards = BloomburrowSet.cards,
                 basicLands = BloomburrowSet.basicLands
             )
         )

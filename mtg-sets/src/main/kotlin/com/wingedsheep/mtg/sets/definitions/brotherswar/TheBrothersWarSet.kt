@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.brotherswar
 
 import com.wingedsheep.mtg.sets.definitions.brotherswar.cards.*
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * The Brothers' War (2022)
@@ -8,12 +10,12 @@ import com.wingedsheep.mtg.sets.definitions.brotherswar.cards.*
  * Set Code: BRO
  * Release Date: November 18, 2022
  */
-object TheBrothersWarSet {
+object TheBrothersWarSet : MtgSet {
 
-    const val SET_CODE = "BRO"
-    const val SET_NAME = "The Brothers' War"
+    override val code = "BRO"
+    override val displayName = "The Brothers' War"
 
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         FlowOfKnowledge,
         BattlefieldForge,
         Brushland,

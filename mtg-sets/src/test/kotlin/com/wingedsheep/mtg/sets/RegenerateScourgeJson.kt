@@ -18,7 +18,7 @@ import java.nio.file.Path
 class RegenerateScourgeJson : FunSpec({
     test("regenerate scourge json files") {
         val outputDir = Path.of("src/test/resources/cards/scourge/")
-        CardExporter.exportSet(ScourgeSet.allCards, outputDir)
-        println("Regenerated ${ScourgeSet.allCards.size} Scourge card JSON files to $outputDir")
+        CardExporter.exportSet(ScourgeSet.cards, outputDir)
+        println("Regenerated ${ScourgeSet.cards.size} Scourge card JSON files to $outputDir")
     }
 })

@@ -697,17 +697,17 @@ object TestCards {
     )
 
     val all: List<CardDefinition> =
-        PortalSet.allCards +
-            OnslaughtSet.allCards +
-            ScourgeSet.allCards +
-            LegionsSet.allCards +
-            KhansOfTarkirSet.allCards +
-            DominariaSet.allCards +
-            BloomburrowSet.allCards +
-            LorwynEclipsedSet.allCards +
-            EdgeOfEternitiesSet.allCards +
-            LostCavernsOfIxalanSet.allCards +
-            FoundationsSet.allCards +
-            DuskmournSet.allCards +
+        PortalSet.cards +
+            OnslaughtSet.cards +
+            ScourgeSet.cards +
+            LegionsSet.cards +
+            KhansOfTarkirSet.cards +
+            DominariaSet.cards +
+            BloomburrowSet.cards +
+            LorwynEclipsedSet.cards +
+            EdgeOfEternitiesSet.cards +
+            LostCavernsOfIxalanSet.cards +
+            FoundationsSet.cards +
+            DuskmournSet.cards +
             testOnlyCards
 }

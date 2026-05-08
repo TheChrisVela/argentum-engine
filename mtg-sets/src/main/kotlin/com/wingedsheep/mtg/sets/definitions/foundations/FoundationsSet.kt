@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.foundations
 
 import com.wingedsheep.mtg.sets.definitions.foundations.cards.*
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * Foundations (2024)
@@ -12,17 +14,17 @@ import com.wingedsheep.mtg.sets.definitions.foundations.cards.*
  * for Modern-legal staples referenced by MageZero training decks (see
  * backlog/magezero-coverage.md).
  */
-object FoundationsSet {
+object FoundationsSet : MtgSet {
 
-    const val SET_CODE = "FDN"
-    const val SET_NAME = "Foundations"
+    override val code = "FDN"
+    override val displayName = "Foundations"
 
-    val basicLands = emptyList<com.wingedsheep.sdk.model.CardDefinition>()
+
 
     /**
      * All cards implemented from this set.
      */
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         Bushwhack,
         MossbornHydra,
         Negate,

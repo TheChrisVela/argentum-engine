@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.innistradmidnighthunt
 
 import com.wingedsheep.mtg.sets.definitions.innistradmidnighthunt.cards.Consider
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 import com.wingedsheep.mtg.sets.definitions.innistradmidnighthunt.cards.Dissipate
 import com.wingedsheep.mtg.sets.definitions.innistradmidnighthunt.cards.FadingHope
 
@@ -10,12 +12,12 @@ import com.wingedsheep.mtg.sets.definitions.innistradmidnighthunt.cards.FadingHo
  * Set Code: MID
  * Release Date: September 24, 2021
  */
-object InnistradMidnightHuntSet {
+object InnistradMidnightHuntSet : MtgSet {
 
-    const val SET_CODE = "MID"
-    const val SET_NAME = "Innistrad: Midnight Hunt"
+    override val code = "MID"
+    override val displayName = "Innistrad: Midnight Hunt"
 
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         Consider,
         Dissipate,
         FadingHope,

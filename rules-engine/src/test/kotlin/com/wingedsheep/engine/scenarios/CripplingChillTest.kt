@@ -22,7 +22,7 @@ class CripplingChillTest : FunSpec({
 
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
-        driver.registerCards(TestCards.all + KhansOfTarkirSet.allCards)
+        driver.registerCards(TestCards.all + KhansOfTarkirSet.cards)
         return driver
     }
 

@@ -9,7 +9,7 @@ import io.kotest.matchers.shouldBe
 
 class DeckValidatorTest : FunSpec({
 
-    val registry = CardRegistry().apply { register(PortalSet.allCards) }
+    val registry = CardRegistry().apply { register(PortalSet.cards) }
     val validator = DeckValidator(registry)
 
     test("empty deck reports too-few-cards error") {

@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.onslaught
 
 import com.wingedsheep.mtg.sets.definitions.onslaught.cards.*
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * Onslaught Set (2002)
@@ -12,15 +14,14 @@ import com.wingedsheep.mtg.sets.definitions.onslaught.cards.*
  * Release Date: October 7, 2002
  * Card Count: 350
  */
-object OnslaughtSet {
+object OnslaughtSet : MtgSet {
 
-    const val SET_CODE = "ONS"
-    const val SET_NAME = "Onslaught"
+    override val code = "ONS"
+    override val displayName = "Onslaught"
+    override val block = "Onslaught"
+    override val sealedSupported = true
 
-    /**
-     * All cards implemented from this set.
-     */
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         // White creatures and spells
         BattlefieldMedic,
         AvenBrigadier,
@@ -369,5 +370,5 @@ object OnslaughtSet {
         // Basic lands
     ) + OnslaughtBasicLands
 
-    val basicLands = OnslaughtBasicLands.map { it.copy(setCode = SET_CODE) }
+    override val basicLands: List<CardDefinition> = OnslaughtBasicLands.map { it.copy(setCode = code) }
 }

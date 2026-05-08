@@ -23,7 +23,7 @@ import io.kotest.matchers.shouldBe
 class AlphaZeroSearchTest : FunSpec({
 
     fun setupRoot(): GameEnvironment {
-        val reg = CardRegistry().apply { register(PortalSet.allCards) }
+        val reg = CardRegistry().apply { register(PortalSet.cards) }
         val env = GameEnvironment.create(reg)
         env.reset(
             GameConfig(

@@ -45,7 +45,7 @@ class KheruBloodsuckerTest : FunSpec({
 
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
-        driver.registerCards(TestCards.all + KhansOfTarkirSet.allCards)
+        driver.registerCards(TestCards.all + KhansOfTarkirSet.cards)
         driver.registerCard(greenBrute)
         driver.registerCard(smallCreature)
         return driver

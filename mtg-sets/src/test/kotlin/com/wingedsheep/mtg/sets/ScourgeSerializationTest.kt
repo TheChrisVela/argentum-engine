@@ -57,7 +57,7 @@ class ScourgeSerializationTest : FunSpec({
     )
 
     test("Kotlin cards round-trip through JSON export and import") {
-        for (card in ScourgeSet.allCards) {
+        for (card in ScourgeSet.cards) {
             val exported = CardExporter.exportToJson(card)
             val reimported = CardLoader.fromJson(exported)
             val reExported = CardExporter.exportToJson(reimported)
@@ -83,7 +83,7 @@ class ScourgeSerializationTest : FunSpec({
             index = jsonIndex,
         ).associateBy { it.name }
 
-        for (kotlinCard in ScourgeSet.allCards) {
+        for (kotlinCard in ScourgeSet.cards) {
             val jsonCard = jsonCards[kotlinCard.name] ?: continue
             stripAbilityIds(CardExporter.exportToJson(jsonCard)) shouldBe
                 stripAbilityIds(CardExporter.exportToJson(kotlinCard))

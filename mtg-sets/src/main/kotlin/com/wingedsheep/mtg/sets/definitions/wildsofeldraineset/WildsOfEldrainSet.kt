@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.wildsofeldraineset
 
 import com.wingedsheep.mtg.sets.definitions.wildsofeldraineset.cards.*
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * Wilds of Eldraine (2023)
@@ -8,12 +10,12 @@ import com.wingedsheep.mtg.sets.definitions.wildsofeldraineset.cards.*
  * Set Code: WOE
  * Release Date: September 8, 2023
  */
-object WildsOfEldrainSet {
+object WildsOfEldrainSet : MtgSet {
 
-    const val SET_CODE = "WOE"
-    const val SET_NAME = "Wilds of Eldraine"
+    override val code = "WOE"
+    override val displayName = "Wilds of Eldraine"
 
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         SpellbookVendor,
         SleepCursedFaerie,
     )

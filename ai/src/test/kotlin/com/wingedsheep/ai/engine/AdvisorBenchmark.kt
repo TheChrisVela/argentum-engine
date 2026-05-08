@@ -40,7 +40,7 @@ class AdvisorBenchmark : FunSpec({
     val benchmarkEnabled = System.getProperty("benchmark") == "true"
 
     test("advisor benchmark: advised vs generic AI ($numGames game pairs)").config(enabled = benchmarkEnabled) {
-        val allCards = BloomburrowSet.allCards + BloomburrowSet.basicLands
+        val allCards = BloomburrowSet.cards + BloomburrowSet.basicLands
         val registry = CardRegistry().apply { register(allCards) }
         val cores = Runtime.getRuntime().availableProcessors()
         val pool = Executors.newFixedThreadPool(cores)

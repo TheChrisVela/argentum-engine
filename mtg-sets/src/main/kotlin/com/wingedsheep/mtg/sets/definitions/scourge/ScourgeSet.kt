@@ -1,6 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.scourge
 
 import com.wingedsheep.mtg.sets.definitions.scourge.cards.*
+import com.wingedsheep.mtg.sets.definitions.onslaught.OnslaughtSet
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * Scourge Set (2003)
@@ -12,15 +15,15 @@ import com.wingedsheep.mtg.sets.definitions.scourge.cards.*
  * Release Date: May 26, 2003
  * Card Count: 143
  */
-object ScourgeSet {
+object ScourgeSet : MtgSet {
 
-    const val SET_CODE = "SCG"
-    const val SET_NAME = "Scourge"
+    override val code = "SCG"
+    override val displayName = "Scourge"
+    override val block = "Onslaught"
+    override val basicLandsFallback = OnslaughtSet
+    override val sealedSupported = true
 
-    /**
-     * All cards implemented from this set.
-     */
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         // Artifacts
         ArkOfBlight,
         ProteusMachine,

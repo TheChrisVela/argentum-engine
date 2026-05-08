@@ -26,8 +26,8 @@ import io.kotest.matchers.shouldNotBe
 class ClementTheWorrywortTest : FunSpec({
 
     val cardRegistry = CardRegistry().apply {
-        register(BloomburrowSet.allCards)
-        register(PortalSet.allCards)
+        register(BloomburrowSet.cards)
+        register(PortalSet.cards)
     }
     val manaSolver = ManaSolver(cardRegistry)
 

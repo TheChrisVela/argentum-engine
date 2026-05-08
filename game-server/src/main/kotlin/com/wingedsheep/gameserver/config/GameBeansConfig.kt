@@ -43,17 +43,17 @@ class GameBeansConfig(
     @Bean
     fun cardRegistry(): CardRegistry = CardRegistry().apply {
         register(PredefinedTokens.allTokens)
-        register(PortalSet.allCards.stamp(PortalSet.SET_CODE))
+        register(PortalSet.cards.stamp(PortalSet.code))
         register(PortalSet.basicLands)
         if (gameProperties.sets.onslaughtEnabled) {
-            register(OnslaughtSet.allCards.stamp(OnslaughtSet.SET_CODE))
+            register(OnslaughtSet.cards.stamp(OnslaughtSet.code))
             register(OnslaughtSet.basicLands)
         }
         if (gameProperties.sets.scourgeEnabled) {
-            register(ScourgeSet.allCards.stamp(ScourgeSet.SET_CODE))
+            register(ScourgeSet.cards.stamp(ScourgeSet.code))
         }
         if (gameProperties.sets.legionsEnabled) {
-            register(LegionsSet.allCards.stamp(LegionsSet.SET_CODE))
+            register(LegionsSet.cards.stamp(LegionsSet.code))
         }
         // Scourge/Legions use Onslaught basic lands — register them even if Onslaught itself isn't enabled
         if (!gameProperties.sets.onslaughtEnabled &&
@@ -61,57 +61,57 @@ class GameBeansConfig(
             register(OnslaughtSet.basicLands)
         }
         if (gameProperties.sets.khansEnabled) {
-            register(KhansOfTarkirSet.allCards.stamp(KhansOfTarkirSet.SET_CODE))
+            register(KhansOfTarkirSet.cards.stamp(KhansOfTarkirSet.code))
             register(KhansOfTarkirSet.basicLands)
         }
         if (gameProperties.sets.phyrexiaAllWillBeOneEnabled) {
-            register(PhyrexiaAllWillBeOneSet.allCards.stamp(PhyrexiaAllWillBeOneSet.SET_CODE))
+            register(PhyrexiaAllWillBeOneSet.cards.stamp(PhyrexiaAllWillBeOneSet.code))
         }
         if (gameProperties.sets.dominariaEnabled) {
-            register(DominariaSet.allCards.stamp(DominariaSet.SET_CODE))
+            register(DominariaSet.cards.stamp(DominariaSet.code))
             register(DominariaSet.basicLands)
         }
         if (gameProperties.sets.dominariaUnitedEnabled) {
-            register(DominariaUnitedSet.allCards.stamp(DominariaUnitedSet.SET_CODE))
+            register(DominariaUnitedSet.cards.stamp(DominariaUnitedSet.code))
         }
         if (gameProperties.sets.bloomburrowEnabled) {
-            register(BloomburrowSet.allCards.stamp(BloomburrowSet.SET_CODE))
+            register(BloomburrowSet.cards.stamp(BloomburrowSet.code))
             register(BloomburrowSet.basicLands)
         }
         if (gameProperties.sets.brothersWarEnabled) {
-            register(TheBrothersWarSet.allCards.stamp(TheBrothersWarSet.SET_CODE))
+            register(TheBrothersWarSet.cards.stamp(TheBrothersWarSet.code))
         }
         if (gameProperties.sets.aetherdriftEnabled) {
-            register(AetherdriftSet.allCards.stamp(AetherdriftSet.SET_CODE))
+            register(AetherdriftSet.cards.stamp(AetherdriftSet.code))
         }
         if (gameProperties.sets.edgeOfEternitiesEnabled) {
-            register(EdgeOfEternitiesSet.allCards.stamp(EdgeOfEternitiesSet.SET_CODE))
+            register(EdgeOfEternitiesSet.cards.stamp(EdgeOfEternitiesSet.code))
             register(EdgeOfEternitiesSet.basicLands)
         }
         if (gameProperties.sets.lorwynEclipsedEnabled) {
-            register(LorwynEclipsedSet.allCards.stamp(LorwynEclipsedSet.SET_CODE))
+            register(LorwynEclipsedSet.cards.stamp(LorwynEclipsedSet.code))
             register(LorwynEclipsedSet.basicLands)
         }
         if (gameProperties.sets.lostCavernsOfIxalanEnabled) {
-            register(LostCavernsOfIxalanSet.allCards.stamp(LostCavernsOfIxalanSet.SET_CODE))
+            register(LostCavernsOfIxalanSet.cards.stamp(LostCavernsOfIxalanSet.code))
         }
         if (gameProperties.sets.murdersAtKarlovManorEnabled) {
-            register(MurdersAtKarlovManorSet.allCards.stamp(MurdersAtKarlovManorSet.SET_CODE))
+            register(MurdersAtKarlovManorSet.cards.stamp(MurdersAtKarlovManorSet.code))
         }
         if (gameProperties.sets.foundationsEnabled) {
-            register(FoundationsSet.allCards.stamp(FoundationsSet.SET_CODE))
+            register(FoundationsSet.cards.stamp(FoundationsSet.code))
         }
         if (gameProperties.sets.duskmournEnabled) {
-            register(DuskmournSet.allCards.stamp(DuskmournSet.SET_CODE))
+            register(DuskmournSet.cards.stamp(DuskmournSet.code))
         }
         if (gameProperties.sets.innistradMidnightHuntEnabled) {
-            register(InnistradMidnightHuntSet.allCards.stamp(InnistradMidnightHuntSet.SET_CODE))
+            register(InnistradMidnightHuntSet.cards.stamp(InnistradMidnightHuntSet.code))
         }
         if (gameProperties.sets.spiderManEnabled) {
-            register(SpiderManSet.allCards.stamp(SpiderManSet.SET_CODE))
+            register(SpiderManSet.cards.stamp(SpiderManSet.code))
         }
         if (gameProperties.sets.wildsOfEldrainEnabled) {
-            register(WildsOfEldrainSet.allCards.stamp(WildsOfEldrainSet.SET_CODE))
+            register(WildsOfEldrainSet.cards.stamp(WildsOfEldrainSet.code))
         }
         // Easter egg card — injected into Rick's deck at game start
         register(SekshaasEarlySleeper)
@@ -121,30 +121,30 @@ class GameBeansConfig(
     @Bean
     fun boosterGenerator(): BoosterGenerator {
         val sets = buildMap {
-            put(PortalSet.SET_CODE, SetConfigs.portalSetConfig)
+            put(PortalSet.code, SetConfigs.portalSetConfig)
             if (gameProperties.sets.onslaughtEnabled) {
-                put(OnslaughtSet.SET_CODE, SetConfigs.onslaughtSetConfig)
+                put(OnslaughtSet.code, SetConfigs.onslaughtSetConfig)
             }
             if (gameProperties.sets.scourgeEnabled) {
-                put(ScourgeSet.SET_CODE, SetConfigs.scourgeSetConfig)
+                put(ScourgeSet.code, SetConfigs.scourgeSetConfig)
             }
             if (gameProperties.sets.legionsEnabled) {
-                put(LegionsSet.SET_CODE, SetConfigs.legionsSetConfig)
+                put(LegionsSet.code, SetConfigs.legionsSetConfig)
             }
             if (gameProperties.sets.khansEnabled) {
-                put(KhansOfTarkirSet.SET_CODE, SetConfigs.khansSetConfig)
+                put(KhansOfTarkirSet.code, SetConfigs.khansSetConfig)
             }
             if (gameProperties.sets.dominariaEnabled) {
-                put(DominariaSet.SET_CODE, SetConfigs.dominariaSetConfig)
+                put(DominariaSet.code, SetConfigs.dominariaSetConfig)
             }
             if (gameProperties.sets.bloomburrowEnabled) {
-                put(BloomburrowSet.SET_CODE, SetConfigs.bloomburrowSetConfig)
+                put(BloomburrowSet.code, SetConfigs.bloomburrowSetConfig)
             }
             if (gameProperties.sets.lorwynEclipsedEnabled) {
-                put(LorwynEclipsedSet.SET_CODE, SetConfigs.lorwynEclipsedSetConfig)
+                put(LorwynEclipsedSet.code, SetConfigs.lorwynEclipsedSetConfig)
             }
             if (gameProperties.sets.edgeOfEternitiesEnabled) {
-                put(EdgeOfEternitiesSet.SET_CODE, SetConfigs.edgeOfEternitiesSetConfig)
+                put(EdgeOfEternitiesSet.code, SetConfigs.edgeOfEternitiesSetConfig)
             }
         }
         return BoosterGenerator(sets)
@@ -157,18 +157,18 @@ class GameBeansConfig(
     @Bean
     fun randomDeckGenerator(): RandomDeckGenerator = RandomDeckGenerator(
         cardPool = buildList {
-            if (gameProperties.sets.onslaughtEnabled) addAll(OnslaughtSet.allCards)
-            if (gameProperties.sets.scourgeEnabled) addAll(ScourgeSet.allCards)
-            if (gameProperties.sets.legionsEnabled) addAll(LegionsSet.allCards)
-            if (gameProperties.sets.khansEnabled) addAll(KhansOfTarkirSet.allCards)
-            if (gameProperties.sets.phyrexiaAllWillBeOneEnabled) addAll(PhyrexiaAllWillBeOneSet.allCards)
-            if (gameProperties.sets.dominariaEnabled) addAll(DominariaSet.allCards)
-            if (gameProperties.sets.dominariaUnitedEnabled) addAll(DominariaUnitedSet.allCards)
-            if (gameProperties.sets.bloomburrowEnabled) addAll(BloomburrowSet.allCards)
-            if (gameProperties.sets.brothersWarEnabled) addAll(TheBrothersWarSet.allCards)
-            if (gameProperties.sets.edgeOfEternitiesEnabled) addAll(EdgeOfEternitiesSet.allCards)
-            if (gameProperties.sets.lorwynEclipsedEnabled) addAll(LorwynEclipsedSet.allCards)
-            if (gameProperties.sets.murdersAtKarlovManorEnabled) addAll(MurdersAtKarlovManorSet.allCards)
+            if (gameProperties.sets.onslaughtEnabled) addAll(OnslaughtSet.cards)
+            if (gameProperties.sets.scourgeEnabled) addAll(ScourgeSet.cards)
+            if (gameProperties.sets.legionsEnabled) addAll(LegionsSet.cards)
+            if (gameProperties.sets.khansEnabled) addAll(KhansOfTarkirSet.cards)
+            if (gameProperties.sets.phyrexiaAllWillBeOneEnabled) addAll(PhyrexiaAllWillBeOneSet.cards)
+            if (gameProperties.sets.dominariaEnabled) addAll(DominariaSet.cards)
+            if (gameProperties.sets.dominariaUnitedEnabled) addAll(DominariaUnitedSet.cards)
+            if (gameProperties.sets.bloomburrowEnabled) addAll(BloomburrowSet.cards)
+            if (gameProperties.sets.brothersWarEnabled) addAll(TheBrothersWarSet.cards)
+            if (gameProperties.sets.edgeOfEternitiesEnabled) addAll(EdgeOfEternitiesSet.cards)
+            if (gameProperties.sets.lorwynEclipsedEnabled) addAll(LorwynEclipsedSet.cards)
+            if (gameProperties.sets.murdersAtKarlovManorEnabled) addAll(MurdersAtKarlovManorSet.cards)
         },
         basicLandVariants = PortalSet.basicLands,
         setCodes = buildList {

@@ -25,8 +25,8 @@ class VerifyImageUrisCondition : io.kotest.core.annotation.Condition {
 class CardImageUriTest : FunSpec({
 
     val allCards: List<Pair<String, CardDefinition>> =
-        PortalSet.allCards.map { "Portal" to it } +
-        OnslaughtSet.allCards.map { "Onslaught" to it }
+        PortalSet.cards.map { "Portal" to it } +
+        OnslaughtSet.cards.map { "Onslaught" to it }
 
     val client = HttpClient.newBuilder()
         .followRedirects(HttpClient.Redirect.NORMAL)

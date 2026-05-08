@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.portal
 
 import com.wingedsheep.mtg.sets.definitions.portal.cards.*
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * Portal Set (1997)
@@ -12,15 +14,16 @@ import com.wingedsheep.mtg.sets.definitions.portal.cards.*
  * Release Date: June 1997
  * Card Count: 222
  */
-object PortalSet {
+object PortalSet : MtgSet {
 
-    const val SET_CODE = "POR"
-    const val SET_NAME = "Portal"
+    override val code = "POR"
+    override val displayName = "Portal"
+    override val sealedSupported = true
 
     /**
      * All cards in this set (complete: 195 spells/creatures + 20 basic lands = 215 cards).
      */
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         // Cards 1-10
         AlabasterDragon,
         AngelicBlessing,
@@ -247,23 +250,23 @@ object PortalSet {
     /**
      * Get a card by name (returns first match for basic lands with multiple art variants).
      */
-    fun getCard(name: String) = allCards.find { it.name == name }
+    fun getCard(name: String) = cards.find { it.name == name }
 
     /**
      * Get all cards with a given name (useful for basic lands with multiple art variants).
      */
-    fun getCardsByName(name: String) = allCards.filter { it.name == name }
+    fun getCardsByName(name: String) = cards.filter { it.name == name }
 
     /**
      * Get a card by collector number.
      */
     fun getCardByNumber(collectorNumber: String) =
-        allCards.find { it.metadata.collectorNumber == collectorNumber }
+        cards.find { it.metadata.collectorNumber == collectorNumber }
 
     /**
      * All basic land variants in this set.
      */
-    val basicLands = PortalBasicLands.map { it.copy(setCode = SET_CODE) }
+    override val basicLands: List<CardDefinition> = PortalBasicLands.map { it.copy(setCode = code) }
 
     /**
      * Get all basic lands of a specific type.

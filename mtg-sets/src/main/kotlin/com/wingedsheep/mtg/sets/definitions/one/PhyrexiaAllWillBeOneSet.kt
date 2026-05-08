@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.one
 
 import com.wingedsheep.mtg.sets.definitions.one.cards.*
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * Phyrexia: All Will Be One (2023)
@@ -8,12 +10,12 @@ import com.wingedsheep.mtg.sets.definitions.one.cards.*
  * Set Code: ONE
  * Release Date: February 10, 2023
  */
-object PhyrexiaAllWillBeOneSet {
+object PhyrexiaAllWillBeOneSet : MtgSet {
 
-    const val SET_CODE = "ONE"
-    const val SET_NAME = "Phyrexia: All Will Be One"
+    override val code = "ONE"
+    override val displayName = "Phyrexia: All Will Be One"
 
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         BlackcleaveCliffs,
         CopperlineGorge,
         DarkslickShores,

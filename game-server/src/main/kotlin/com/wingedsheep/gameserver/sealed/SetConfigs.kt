@@ -22,32 +22,32 @@ import com.wingedsheep.mtg.sets.definitions.scourge.ScourgeSet
  */
 object SetConfigs {
     val portalSetConfig = BoosterGenerator.SetConfig(
-        setCode = PortalSet.SET_CODE,
-        setName = PortalSet.SET_NAME,
-        cards = PortalSet.allCards,
+        setCode = PortalSet.code,
+        setName = PortalSet.displayName,
+        cards = PortalSet.cards,
         basicLands = PortalSet.basicLands
     )
 
     val onslaughtSetConfig = BoosterGenerator.SetConfig(
-        setCode = OnslaughtSet.SET_CODE,
-        setName = OnslaughtSet.SET_NAME,
-        cards = OnslaughtSet.allCards,
+        setCode = OnslaughtSet.code,
+        setName = OnslaughtSet.displayName,
+        cards = OnslaughtSet.cards,
         basicLands = OnslaughtSet.basicLands,
         block = "Onslaught"
     )
 
     val scourgeSetConfig = BoosterGenerator.SetConfig(
-        setCode = ScourgeSet.SET_CODE,
-        setName = ScourgeSet.SET_NAME,
-        cards = ScourgeSet.allCards,
+        setCode = ScourgeSet.code,
+        setName = ScourgeSet.displayName,
+        cards = ScourgeSet.cards,
         basicLands = OnslaughtSet.basicLands, // Scourge has no basic lands; use Onslaught block lands
         block = "Onslaught"
     )
 
     val legionsSetConfig = BoosterGenerator.SetConfig(
-        setCode = LegionsSet.SET_CODE,
-        setName = LegionsSet.SET_NAME,
-        cards = LegionsSet.allCards,
+        setCode = LegionsSet.code,
+        setName = LegionsSet.displayName,
+        cards = LegionsSet.cards,
         basicLands = OnslaughtSet.basicLands, // Legions has no basic lands; use Onslaught block lands
         incomplete = false,
         block = "Onslaught",
@@ -55,45 +55,45 @@ object SetConfigs {
     )
 
     val khansSetConfig = BoosterGenerator.SetConfig(
-        setCode = KhansOfTarkirSet.SET_CODE,
-        setName = KhansOfTarkirSet.SET_NAME,
-        cards = KhansOfTarkirSet.allCards,
+        setCode = KhansOfTarkirSet.code,
+        setName = KhansOfTarkirSet.displayName,
+        cards = KhansOfTarkirSet.cards,
         basicLands = KhansOfTarkirSet.basicLands,
         incomplete = false,
         totalSetSize = 249
     )
 
     val dominariaSetConfig = BoosterGenerator.SetConfig(
-        setCode = DominariaSet.SET_CODE,
-        setName = DominariaSet.SET_NAME,
-        cards = DominariaSet.allCards,
+        setCode = DominariaSet.code,
+        setName = DominariaSet.displayName,
+        cards = DominariaSet.cards,
         basicLands = DominariaSet.basicLands,
         incomplete = true,
         guaranteedLegendary = true
     )
 
     val bloomburrowSetConfig = BoosterGenerator.SetConfig(
-        setCode = BloomburrowSet.SET_CODE,
-        setName = BloomburrowSet.SET_NAME,
-        cards = BloomburrowSet.allCards,
+        setCode = BloomburrowSet.code,
+        setName = BloomburrowSet.displayName,
+        cards = BloomburrowSet.cards,
         basicLands = BloomburrowSet.basicLands,
         incomplete = false,
         totalSetSize = 272
     )
 
     val lorwynEclipsedSetConfig = BoosterGenerator.SetConfig(
-        setCode = LorwynEclipsedSet.SET_CODE,
-        setName = LorwynEclipsedSet.SET_NAME,
-        cards = LorwynEclipsedSet.allCards,
+        setCode = LorwynEclipsedSet.code,
+        setName = LorwynEclipsedSet.displayName,
+        cards = LorwynEclipsedSet.cards,
         basicLands = LorwynEclipsedSet.basicLands,
         incomplete = false,
         totalSetSize = 273
     )
 
     val edgeOfEternitiesSetConfig = BoosterGenerator.SetConfig(
-        setCode = EdgeOfEternitiesSet.SET_CODE,
-        setName = EdgeOfEternitiesSet.SET_NAME,
-        cards = EdgeOfEternitiesSet.allCards,
+        setCode = EdgeOfEternitiesSet.code,
+        setName = EdgeOfEternitiesSet.displayName,
+        cards = EdgeOfEternitiesSet.cards,
         basicLands = EdgeOfEternitiesSet.basicLands,
         incomplete = true
     )

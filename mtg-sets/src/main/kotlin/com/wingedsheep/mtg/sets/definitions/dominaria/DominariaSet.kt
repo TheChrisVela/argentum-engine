@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.dominaria
 
 import com.wingedsheep.mtg.sets.definitions.dominaria.cards.*
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * Dominaria Set (2018)
@@ -12,17 +14,20 @@ import com.wingedsheep.mtg.sets.definitions.dominaria.cards.*
  * Release Date: April 27, 2018
  * Card Count: 280
  */
-object DominariaSet {
+object DominariaSet : MtgSet {
 
-    const val SET_CODE = "DOM"
-    const val SET_NAME = "Dominaria"
+    override val code = "DOM"
+    override val displayName = "Dominaria"
+    override val incomplete = true
+    override val guaranteedLegendary = true
+    override val sealedSupported = true
 
-    val basicLands = DominariaBasicLands.map { it.copy(setCode = SET_CODE) }
+    override val basicLands: List<CardDefinition> = DominariaBasicLands.map { it.copy(setCode = code) }
 
     /**
      * All cards implemented from this set.
      */
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         AcademyDrake,
         AcademyJourneymage,
         AdventurousImpulse,

@@ -1,6 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.legions
 
 import com.wingedsheep.mtg.sets.definitions.legions.cards.*
+import com.wingedsheep.mtg.sets.definitions.onslaught.OnslaughtSet
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * Legions Set (2003)
@@ -13,15 +16,16 @@ import com.wingedsheep.mtg.sets.definitions.legions.cards.*
  * Release Date: February 3, 2003
  * Card Count: 145
  */
-object LegionsSet {
+object LegionsSet : MtgSet {
 
-    const val SET_CODE = "LGN"
-    const val SET_NAME = "Legions"
+    override val code = "LGN"
+    override val displayName = "Legions"
+    override val block = "Onslaught"
+    override val basicLandsFallback = OnslaughtSet
+    override val totalSetSize = 145
+    override val sealedSupported = true
 
-    /**
-     * All cards implemented from this set.
-     */
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         // White creatures
         AkromaAngelOfWrath,
         AkromasDevoted,

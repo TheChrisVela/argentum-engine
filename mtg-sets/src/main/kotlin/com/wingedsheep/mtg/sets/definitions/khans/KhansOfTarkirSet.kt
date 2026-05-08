@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.khans
 
 import com.wingedsheep.mtg.sets.definitions.khans.cards.*
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * Khans of Tarkir Set (2014)
@@ -12,15 +14,14 @@ import com.wingedsheep.mtg.sets.definitions.khans.cards.*
  * Release Date: September 26, 2014
  * Card Count: 269
  */
-object KhansOfTarkirSet {
+object KhansOfTarkirSet : MtgSet {
 
-    const val SET_CODE = "KTK"
-    const val SET_NAME = "Khans of Tarkir"
+    override val code = "KTK"
+    override val displayName = "Khans of Tarkir"
+    override val totalSetSize = 249
+    override val sealedSupported = true
 
-    /**
-     * All cards implemented from this set.
-     */
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         // White creatures
         AbzanBattlePriest,
         AbzanFalconer,
@@ -314,5 +315,5 @@ object KhansOfTarkirSet {
         // Basic lands
     ) + KhansBasicLands
 
-    val basicLands = KhansBasicLands.map { it.copy(setCode = SET_CODE) }
+    override val basicLands: List<CardDefinition> = KhansBasicLands.map { it.copy(setCode = code) }
 }

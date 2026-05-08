@@ -31,8 +31,8 @@ class RandomActionBenchmark : FunSpec({
     val benchmarkEnabled = System.getProperty("benchmark") == "true"
 
     test("benchmark: $numGames random-action games in parallel").config(enabled = benchmarkEnabled) {
-        val registry = CardRegistry().apply { register(PortalSet.allCards) }
-        val allCards = PortalSet.allCards
+        val registry = CardRegistry().apply { register(PortalSet.cards) }
+        val allCards = PortalSet.cards
         val cores = Runtime.getRuntime().availableProcessors()
         val pool = Executors.newFixedThreadPool(cores)
         val completionService = ExecutorCompletionService<RandomGameResult>(pool)

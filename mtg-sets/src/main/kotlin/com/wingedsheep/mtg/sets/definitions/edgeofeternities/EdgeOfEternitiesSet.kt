@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.edgeofeternities
 
 import com.wingedsheep.mtg.sets.definitions.edgeofeternities.cards.*
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * Edge of Eternities Set (2025)
@@ -9,17 +11,17 @@ import com.wingedsheep.mtg.sets.definitions.edgeofeternities.cards.*
  * Release Date: August 1, 2025
  * Card Count: 261
  */
-object EdgeOfEternitiesSet {
+object EdgeOfEternitiesSet : MtgSet {
 
-    const val SET_CODE = "EOE"
-    const val SET_NAME = "Edge of Eternities"
+    override val code = "EOE"
+    override val displayName = "Edge of Eternities"
+    override val incomplete = true
+    override val sealedSupported = true
 
-    val basicLands = EdgeOfEternitiesBasicLands.map { it.copy(setCode = SET_CODE) }
+    override val basicLands: List<CardDefinition> =
+        EdgeOfEternitiesBasicLands.map { it.copy(setCode = code) }
 
-    /**
-     * All cards implemented from this set.
-     */
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         AdagiaWindsweptBastion,
         AllFatesScroll,
         AlpharaelDreamingAcolyte,

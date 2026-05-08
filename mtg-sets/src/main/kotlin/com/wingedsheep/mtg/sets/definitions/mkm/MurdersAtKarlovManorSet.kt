@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.mkm
 
 import com.wingedsheep.mtg.sets.definitions.mkm.cards.*
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * Murders at Karlov Manor (2024)
@@ -8,12 +10,12 @@ import com.wingedsheep.mtg.sets.definitions.mkm.cards.*
  * Set Code: MKM
  * Release Date: February 9, 2024
  */
-object MurdersAtKarlovManorSet {
+object MurdersAtKarlovManorSet : MtgSet {
 
-    const val SET_CODE = "MKM"
-    const val SET_NAME = "Murders at Karlov Manor"
+    override val code = "MKM"
+    override val displayName = "Murders at Karlov Manor"
 
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         CommercialDistrict,
         ElegantParlor,
         EscapeTunnel,

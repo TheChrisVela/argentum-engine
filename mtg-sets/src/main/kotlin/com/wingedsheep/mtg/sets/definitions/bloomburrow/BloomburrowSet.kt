@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.bloomburrow
 
 import com.wingedsheep.mtg.sets.definitions.bloomburrow.cards.*
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * Bloomburrow Set (2024)
@@ -13,17 +15,19 @@ import com.wingedsheep.mtg.sets.definitions.bloomburrow.cards.*
  * Release Date: August 2, 2024
  * Card Count: 266
  */
-object BloomburrowSet {
+object BloomburrowSet : MtgSet {
 
-    const val SET_CODE = "BLB"
-    const val SET_NAME = "Bloomburrow"
+    override val code = "BLB"
+    override val displayName = "Bloomburrow"
+    override val totalSetSize = 272
+    override val sealedSupported = true
 
     /**
      * All cards implemented from this set.
      */
-    val basicLands = BloomburrowBasicLands.map { it.copy(setCode = SET_CODE) }
+    override val basicLands: List<CardDefinition> = BloomburrowBasicLands.map { it.copy(setCode = code) }
 
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         AlaniaDivergentStorm,
         AlaniasPathmaker,
         AgateAssault,

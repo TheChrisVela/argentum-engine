@@ -46,8 +46,8 @@ class SpellCastingAdvisorTest : FunSpec({
         power = 4, toughness = 4
     )
 
-    val allCards = BloomburrowSet.allCards + BloomburrowSet.basicLands +
-        PortalSet.allCards + listOf(bear, ogre)
+    val allCards = BloomburrowSet.cards + BloomburrowSet.basicLands +
+        PortalSet.cards + listOf(bear, ogre)
 
     fun createRegistryAndDriver(): Pair<CardRegistry, GameTestDriver> {
         val registry = CardRegistry().apply { register(allCards) }

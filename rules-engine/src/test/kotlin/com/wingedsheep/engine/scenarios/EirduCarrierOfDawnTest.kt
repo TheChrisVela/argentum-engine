@@ -21,7 +21,7 @@ class EirduCarrierOfDawnTest : FunSpec({
 
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
-        driver.registerCards(TestCards.all + LorwynEclipsedSet.allCards)
+        driver.registerCards(TestCards.all + LorwynEclipsedSet.cards)
         driver.initMirrorMatch(
             deck = Deck.of("Plains" to 20, "Swamp" to 20),
             skipMulligans = true

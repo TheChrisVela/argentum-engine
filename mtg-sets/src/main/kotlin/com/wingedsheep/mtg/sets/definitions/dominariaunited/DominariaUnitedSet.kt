@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.dominariaunited
 
 import com.wingedsheep.mtg.sets.definitions.dominariaunited.cards.*
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * Dominaria United (2022)
@@ -8,12 +10,12 @@ import com.wingedsheep.mtg.sets.definitions.dominariaunited.cards.*
  * Set Code: DMU
  * Release Date: September 9, 2022
  */
-object DominariaUnitedSet {
+object DominariaUnitedSet : MtgSet {
 
-    const val SET_CODE = "DMU"
-    const val SET_NAME = "Dominaria United"
+    override val code = "DMU"
+    override val displayName = "Dominaria United"
 
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         AdarkarWastes,
         CavesOfKoilos,
         CombatResearch,

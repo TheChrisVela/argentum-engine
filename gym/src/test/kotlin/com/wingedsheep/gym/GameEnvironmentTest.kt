@@ -19,8 +19,8 @@ class GameEnvironmentTest : FunSpec({
 
     fun createRegistry(): CardRegistry {
         val registry = CardRegistry()
-        registry.register(PortalSet.allCards)
-        registry.register(BloomburrowSet.allCards)
+        registry.register(PortalSet.cards)
+        registry.register(BloomburrowSet.cards)
         return registry
     }
 
@@ -28,7 +28,7 @@ class GameEnvironmentTest : FunSpec({
 
     /** Build a sealed deck from a random Bloomburrow pool (6 "boosters" of 15 cards). */
     fun sealedDeck(): Deck {
-        val pool = BloomburrowSet.allCards.shuffled().take(90)
+        val pool = BloomburrowSet.cards.shuffled().take(90)
         val deckMap = buildHeuristicSealedDeck(pool)
         val cards = deckMap.flatMap { (name, count) -> List(count) { name } }
         return Deck(cards)

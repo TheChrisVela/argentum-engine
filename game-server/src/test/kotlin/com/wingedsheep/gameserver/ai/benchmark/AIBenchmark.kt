@@ -100,7 +100,7 @@ class AIBenchmark : FunSpec({
         val p1Config = playerConfig("p1")
         val p2Config = playerConfig("p2")
 
-        val allCards = BloomburrowSet.allCards + BloomburrowSet.basicLands
+        val allCards = BloomburrowSet.cards + BloomburrowSet.basicLands
         val registry = CardRegistry().apply { register(allCards) }
 
         val timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"))

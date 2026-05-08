@@ -1,6 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.lostcavernsofixalan
 
 import com.wingedsheep.mtg.sets.definitions.lostcavernsofixalan.cards.*
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.MtgSet
 
 /**
  * The Lost Caverns of Ixalan Set (2023)
@@ -8,17 +10,17 @@ import com.wingedsheep.mtg.sets.definitions.lostcavernsofixalan.cards.*
  * Set Code: LCI
  * Release Date: November 17, 2023
  */
-object LostCavernsOfIxalanSet {
+object LostCavernsOfIxalanSet : MtgSet {
 
-    const val SET_CODE = "LCI"
-    const val SET_NAME = "The Lost Caverns of Ixalan"
+    override val code = "LCI"
+    override val displayName = "The Lost Caverns of Ixalan"
 
-    val basicLands = emptyList<com.wingedsheep.sdk.model.CardDefinition>()
+
 
     /**
      * All cards implemented from this set.
      */
-    val allCards = listOf(
+    override val cards: List<CardDefinition> = listOf(
         MalcolmAlluringScoundrel,
     )
 }

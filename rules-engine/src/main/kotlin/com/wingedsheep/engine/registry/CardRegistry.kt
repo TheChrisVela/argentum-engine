@@ -11,7 +11,7 @@ import com.wingedsheep.sdk.model.CardDefinition
  * ## Usage
  * ```kotlin
  * val registry = CardRegistry()
- * registry.register(PortalSet.allCards)
+ * registry.register(PortalSet.cards)
  * val lightningBolt = registry.getCard("Lightning Bolt")
  * ```
  */

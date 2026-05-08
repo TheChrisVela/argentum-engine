@@ -19,7 +19,7 @@ class AIPlayerTest : FunSpec({
 
     fun createCardRegistry(): CardRegistry {
         val registry = CardRegistry()
-        registry.register(PortalSet.allCards)
+        registry.register(PortalSet.cards)
         return registry
     }
 

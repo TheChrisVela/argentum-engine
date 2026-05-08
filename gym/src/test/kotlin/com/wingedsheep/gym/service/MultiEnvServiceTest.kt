@@ -28,16 +28,16 @@ import io.kotest.matchers.shouldNotBe
 class MultiEnvServiceTest : FunSpec({
 
     fun registry(): CardRegistry = CardRegistry().apply {
-        register(PortalSet.allCards)
-        register(BloomburrowSet.allCards)
+        register(PortalSet.cards)
+        register(BloomburrowSet.cards)
     }
 
     fun boosterGen(): BoosterGenerator = BoosterGenerator(
         mapOf(
-            BloomburrowSet.SET_CODE to BoosterGenerator.SetConfig(
-                setCode = BloomburrowSet.SET_CODE,
-                setName = BloomburrowSet.SET_NAME,
-                cards = BloomburrowSet.allCards,
+            BloomburrowSet.code to BoosterGenerator.SetConfig(
+                setCode = BloomburrowSet.code,
+                setName = BloomburrowSet.displayName,
+                cards = BloomburrowSet.cards,
                 basicLands = BloomburrowSet.basicLands
             )
         )
@@ -249,10 +249,10 @@ class MultiEnvServiceTest : FunSpec({
         // and returns a playable-sized list. We don't also spin up a game here
         // because the generator emits variant names (e.g. "Swamp#BLB-270") that
         // require the full app-level basic-land registration in addition to
-        // `BloomburrowSet.allCards` — that wiring lives in game-server, not in
+        // `BloomburrowSet.cards` — that wiring lives in game-server, not in
         // the gym service.
         val resolver = DeckResolver(registry(), boosterGenerator = boosterGen())
-        val deck = resolver.resolve(DeckSpec.RandomSealed(setCode = BloomburrowSet.SET_CODE))
+        val deck = resolver.resolve(DeckSpec.RandomSealed(setCode = BloomburrowSet.code))
         deck.cards.size shouldBeGreaterThan 39
     }
 
