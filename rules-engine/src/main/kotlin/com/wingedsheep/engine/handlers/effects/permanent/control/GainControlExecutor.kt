@@ -8,6 +8,7 @@ import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.createFloatingEffect
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.sdk.scripting.effects.GainControlEffect
@@ -38,8 +39,9 @@ class GainControlExecutor : EffectExecutor<GainControlEffect> {
 
         val newControllerId = context.controllerId
 
-        // If that player already controls the target, no-op
-        val currentControllerId = targetContainer.get<ControllerComponent>()?.playerId
+        // Use projected controller so floating-effect-based control changes are respected
+        val currentControllerId = state.projectedState.getController(targetId)
+            ?: targetContainer.get<ControllerComponent>()?.playerId
         if (currentControllerId == newControllerId) return EffectResult.success(state)
 
         // Remove any previous Layer.CONTROL floating effects from the same source on the same target
@@ -58,9 +60,9 @@ class GainControlExecutor : EffectExecutor<GainControlEffect> {
             context = context
         )
 
-        val newState = state.copy(
-            floatingEffects = filteredEffects + floatingEffect
-        )
+        // Rule 302.6: new controller hasn't had this permanent since their most recent turn began.
+        val newState = state.copy(floatingEffects = filteredEffects + floatingEffect)
+            .updateEntity(targetId) { it.with(SummoningSicknessComponent) }
 
         val events = listOf(
             ControlChangedEvent(
