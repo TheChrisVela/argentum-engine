@@ -251,8 +251,15 @@ class PredicateEvaluator {
                 cmc <= predicate.max
             }
             is CardPredicate.ManaValueAtMostX -> {
-                val cmc = if (projectedValues?.isFaceDown == true) 0 else card.manaValue
-                cmc <= (context?.xValue ?: 0)
+                // Null xValue means X is unbound (legal-action enumeration runs before the
+                // player chooses X). Match permissively so the cast action is offered; the
+                // chosen X is enforced at cast-time validation and resolution-time re-check.
+                val xValue = context?.xValue
+                if (xValue == null) true
+                else {
+                    val cmc = if (projectedValues?.isFaceDown == true) 0 else card.manaValue
+                    cmc <= xValue
+                }
             }
             is CardPredicate.ManaValueAtLeast -> {
                 val cmc = if (projectedValues?.isFaceDown == true) 0 else card.manaValue
@@ -541,7 +548,10 @@ class PredicateEvaluator {
             // Mana value predicates
             is CardPredicate.ManaValueEquals -> card.manaValue == predicate.value
             is CardPredicate.ManaValueAtMost -> card.manaValue <= predicate.max
-            is CardPredicate.ManaValueAtMostX -> card.manaValue <= (context?.xValue ?: 0)
+            is CardPredicate.ManaValueAtMostX -> {
+                val xValue = context?.xValue
+                xValue == null || card.manaValue <= xValue
+            }
             is CardPredicate.ManaValueAtLeast -> card.manaValue >= predicate.min
 
             // Power/toughness predicates

@@ -5,12 +5,18 @@ import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.gameserver.ScenarioTestBase
+import com.wingedsheep.gameserver.session.GameSession
+import com.wingedsheep.gameserver.session.PlayerSession
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.mockk.every
+import io.mockk.mockk
+import org.springframework.web.socket.WebSocketSession
 
 /**
  * Scenario test for Blue Sun's Twilight.
@@ -124,6 +130,39 @@ class BlueSunsTwilightScenarioTest : ScenarioTestBase() {
                 val hillGiantControllers = hillGiants.map { projected.getController(it) }.toSet()
                 withClue("Both Hill Giants should be controlled by Player 1") {
                     hillGiantControllers shouldBe setOf(game.player1Id)
+                }
+            }
+        }
+
+        context("Blue Sun's Twilight legal-action enumeration") {
+            test("appears in legal actions when an X-affordable creature exists, even before X is chosen") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardInHand(1, "Blue Sun's Twilight")
+                    .withLandsOnBattlefield(1, "Island", 7)
+                    .withCardOnBattlefield(2, "Hill Giant") // MV 4 — not targetable at X=0 but is at X>=4
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val session = GameSession(cardRegistry = cardRegistry)
+                val mockWs1 = mockk<WebSocketSession>(relaxed = true) { every { id } returns "ws1" }
+                val mockWs2 = mockk<WebSocketSession>(relaxed = true) { every { id } returns "ws2" }
+                val player1Session = PlayerSession(mockWs1, game.player1Id, "Player")
+                val player2Session = PlayerSession(mockWs2, game.player2Id, "Opponent")
+                session.injectStateForTesting(
+                    game.state,
+                    mapOf(game.player1Id to player1Session, game.player2Id to player2Session)
+                )
+
+                val legalActions = session.getLegalActions(game.player1Id)
+                val cast = legalActions.find { it.description == "Cast Blue Sun's Twilight" }
+
+                withClue("Blue Sun's Twilight must be enumerated as a legal cast action even though X is unbound") {
+                    cast.shouldNotBeNull()
+                }
+                withClue("Hill Giant should appear among the candidate targets surfaced to the UI") {
+                    cast!!.validTargets shouldNotBe emptyList<Any>()
                 }
             }
         }
