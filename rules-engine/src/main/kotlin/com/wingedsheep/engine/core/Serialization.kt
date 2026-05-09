@@ -44,6 +44,7 @@ val engineSerializersModule = SerializersModule {
         subclass(CycleCard::class)
         subclass(TurnFaceUp::class)
         subclass(TypecycleCard::class)
+        subclass(UnlockRoomDoor::class)
     }
 
     // GameEvent hierarchy
@@ -99,6 +100,7 @@ val engineSerializersModule = SerializersModule {
         subclass(CommitCrimeEvent::class)
         subclass(HandLookedAtEvent::class)
         subclass(RoomFullyUnlockedEvent::class)
+        subclass(DoorUnlockedEvent::class)
         subclass(TurnHijackedEvent::class)
         subclass(HandRevealedEvent::class)
         subclass(KeywordGrantedEvent::class)

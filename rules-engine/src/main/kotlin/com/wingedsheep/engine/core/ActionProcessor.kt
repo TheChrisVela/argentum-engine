@@ -8,6 +8,7 @@ import com.wingedsheep.engine.handlers.actions.land.LandModule
 import com.wingedsheep.engine.handlers.actions.morph.MorphModule
 import com.wingedsheep.engine.handlers.actions.mulligan.MulliganModule
 import com.wingedsheep.engine.handlers.actions.priority.PriorityModule
+import com.wingedsheep.engine.handlers.actions.room.RoomModule
 import com.wingedsheep.engine.handlers.actions.special.SpecialActionsModule
 import com.wingedsheep.engine.handlers.actions.spell.SpellModule
 import com.wingedsheep.engine.registry.CardRegistry
@@ -58,6 +59,7 @@ class ActionProcessor(
         registerModule(CombatModule(services))
         registerModule(AbilityModule(services))
         registerModule(MorphModule(services))
+        registerModule(RoomModule(services))
         registerModule(SpellModule(services))
         registerModule(DecisionModule(services))
     }

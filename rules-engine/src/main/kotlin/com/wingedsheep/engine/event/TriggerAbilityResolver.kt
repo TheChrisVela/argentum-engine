@@ -7,6 +7,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
+import com.wingedsheep.engine.state.components.identity.RoomComponent
 import com.wingedsheep.engine.state.components.identity.TextReplacementComponent
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityId
@@ -49,7 +50,8 @@ class TriggerAbilityResolver(
             // Fall back to looking up from CardRegistry, including class-level-gated abilities
             val cardDef = cardRegistry.getCard(cardDefinitionId)
             val classLevel = state.getEntity(entityId)?.get<ClassLevelComponent>()?.currentLevel
-            cardDef?.script?.effectiveTriggeredAbilities(classLevel) ?: emptyList()
+            val topLevel = cardDef?.script?.effectiveTriggeredAbilities(classLevel) ?: emptyList()
+            topLevel + getRoomFaceTriggeredAbilities(entityId, cardDef, state)
         }
 
         // Merge in any temporarily granted triggered abilities (e.g., from Commando Raid)
@@ -159,7 +161,8 @@ class TriggerAbilityResolver(
             } else {
                 val cardDef = cardRegistry.getCard(cardDefinitionId)
                 val classLevel = state.getEntity(entityId)?.get<ClassLevelComponent>()?.currentLevel
-                cardDef?.script?.effectiveTriggeredAbilities(classLevel) ?: emptyList()
+                val topLevel = cardDef?.script?.effectiveTriggeredAbilities(classLevel) ?: emptyList()
+                topLevel + getRoomFaceTriggeredAbilities(entityId, cardDef, state)
             }
         }
 
@@ -382,6 +385,38 @@ class TriggerAbilityResolver(
             }
         }
 
+        return result
+    }
+
+    /**
+     * Triggered abilities contributed by *unlocked* faces of a Room permanent (CR 709.5).
+     *
+     * Locked halves are suppressed: their script's triggered abilities don't appear in the
+     * permanent's effective ability set. As soon as a face is unlocked (via cast-time ETB
+     * or the unlock special action), that face's abilities become active.
+     *
+     * Excludes "When you unlock this door" abilities ([GameEvent.DoorUnlockedEvent] triggers):
+     * those are detected separately by [com.wingedsheep.engine.event.TriggerDetector.detectDoorUnlockedTriggers]
+     * because the matcher is face-aware (only the unlocked face's "when you unlock this door"
+     * fires, not other already-unlocked faces').
+     */
+    private fun getRoomFaceTriggeredAbilities(
+        entityId: EntityId,
+        cardDef: com.wingedsheep.sdk.model.CardDefinition?,
+        state: GameState
+    ): List<TriggeredAbility> {
+        if (cardDef == null) return emptyList()
+        val room = state.getEntity(entityId)?.get<RoomComponent>() ?: return emptyList()
+        if (room.unlocked.isEmpty()) return emptyList()
+        val result = mutableListOf<TriggeredAbility>()
+        for (face in cardDef.cardFaces) {
+            val faceId = com.wingedsheep.engine.state.components.identity.RoomFaceId(face.name)
+            if (faceId !in room.unlocked) continue
+            for (ability in face.script.effectiveTriggeredAbilities(null)) {
+                if (ability.trigger is GameEvent.DoorUnlockedEvent) continue
+                result.add(ability)
+            }
+        }
         return result
     }
 

@@ -6,6 +6,7 @@ import com.wingedsheep.engine.core.AttackersDeclaredEvent
 import com.wingedsheep.engine.core.CardCycledEvent
 import com.wingedsheep.engine.core.CardsDrawnEvent
 import com.wingedsheep.engine.core.ControlChangedEvent
+import com.wingedsheep.engine.core.DoorUnlockedEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.SpellCastEvent
@@ -24,6 +25,8 @@ import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFired
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
+import com.wingedsheep.engine.state.components.identity.RoomComponent
+import com.wingedsheep.engine.state.components.identity.RoomFaceId
 import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
@@ -223,6 +226,10 @@ class TriggerDetector(
         // batching triggers (e.g., Builder's Talent). Groups zone changes to battlefield
         // and fires the trigger at most once per observer.
         detectPermanentsEnteredBatchTriggers(state, events, triggers, index)
+
+        // Detect "When you unlock this door" triggers (CR 709.5h, DSK Rooms).
+        // Face-aware: only the unlocked face's "When you unlock this door" abilities fire.
+        detectDoorUnlockedTriggers(state, events, triggers)
 
         // Detect "When this Class becomes level N" triggers.
         // Class level-up events fire ETB triggers from the newly gained class level.
@@ -1679,6 +1686,52 @@ class TriggerDetector(
         }
 
         triggers.addAll(duplicates)
+    }
+
+    /**
+     * Detect "When you unlock this door" triggers (CR 709.5h, DSK Rooms).
+     *
+     * Face-aware: for each [DoorUnlockedEvent], we look up the Room's `cardFaces[i]` whose
+     * id matches the unlocked face id and add SELF-bound `OnDoorUnlocked` triggers from
+     * *that* face's script only. This ensures that already-unlocked faces' "when you
+     * unlock this door" abilities don't re-fire when a *different* door is unlocked.
+     *
+     * Both ETB-time unlocks (from the cast face) and unlock-action transitions emit
+     * [DoorUnlockedEvent], so both paths feed through here.
+     */
+    private fun detectDoorUnlockedTriggers(
+        state: GameState,
+        events: List<EngineGameEvent>,
+        triggers: MutableList<PendingTrigger>
+    ) {
+        for (event in events) {
+            if (event !is DoorUnlockedEvent) continue
+            val container = state.getEntity(event.roomId) ?: continue
+            val cardComponent = container.get<CardComponent>() ?: continue
+            val roomComp = container.get<RoomComponent>() ?: continue
+            val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
+            val face = cardDef.cardFaces.firstOrNull {
+                RoomFaceId(it.name) == event.faceId
+            } ?: continue
+
+            // Sanity-check: only fire if the face is currently unlocked (the engine emits
+            // the event right after applying the unlock, so this should always be true).
+            if (event.faceId !in roomComp.unlocked) continue
+
+            for (ability in face.script.effectiveTriggeredAbilities(null)) {
+                if (ability.trigger !is GameEvent.DoorUnlockedEvent) continue
+                if (ability.binding != TriggerBinding.SELF) continue
+                triggers.add(
+                    PendingTrigger(
+                        ability = ability,
+                        sourceId = event.roomId,
+                        sourceName = cardComponent.name,
+                        controllerId = event.controllerId,
+                        triggerContext = TriggerContext(triggeringEntityId = event.roomId)
+                    )
+                )
+            }
+        }
     }
 
     /**

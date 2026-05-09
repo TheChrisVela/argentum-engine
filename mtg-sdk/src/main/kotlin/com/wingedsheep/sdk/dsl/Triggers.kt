@@ -128,6 +128,19 @@ object Triggers {
     )
 
     /**
+     * "When you unlock this door, …" (CR 709.5h, DSK Rooms).
+     *
+     * Authored on a Room's face script. SELF binding combined with the engine's face-aware
+     * detection means this trigger only fires when the face that owns the ability becomes
+     * unlocked (whether via ETB on the cast face or via the unlock special action). Triggers
+     * authored on already-unlocked faces never re-fire when *another* face is unlocked.
+     */
+    val OnDoorUnlocked: TriggerSpec = TriggerSpec(
+        event = DoorUnlockedEvent(Player.You),
+        binding = TriggerBinding.SELF
+    )
+
+    /**
      * When this permanent leaves the battlefield.
      */
     val LeavesBattlefield: TriggerSpec = TriggerSpec(

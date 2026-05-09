@@ -726,6 +726,24 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
+    /**
+     * A door of a Room becomes unlocked (CR 709.5h). Fires whenever a face is given the
+     * "unlocked" designation, either at ETB (the cast face) or via the unlock special action.
+     *
+     * Used by face-scoped triggered abilities authored as "When you unlock this door, …".
+     * The matcher is face-aware: a SELF-bound trigger matches only when the unlocked face
+     * is the face the ability was authored on.
+     */
+    @SerialName("DoorUnlockedEvent")
+    @Serializable
+    data class DoorUnlockedEvent(
+        val player: Player = Player.You
+    ) : GameEvent {
+        override val description: String = "${player.description} unlock a door"
+
+        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
+    }
+
     // ---- Targeting Triggers ----
 
     /**

@@ -926,3 +926,24 @@ data class RoomFullyUnlockedEvent(
     val roomName: String,
     val controllerId: EntityId
 ) : GameEvent
+
+/**
+ * A door of a Room was given the "unlocked" designation (CR 709.5h). Fires both for the
+ * cast face's ETB unlock and for the unlock special action; either way, the Room's
+ * face-scoped "When you unlock this door" abilities see this event.
+ */
+@Serializable
+@SerialName("DoorUnlockedEvent")
+data class DoorUnlockedEvent(
+    val roomId: EntityId,
+    val roomName: String,
+    val faceId: com.wingedsheep.engine.state.components.identity.RoomFaceId,
+    val faceName: String,
+    val controllerId: EntityId,
+    /**
+     * True when this unlock transition completes the Room (the second door becoming
+     * unlocked while the other is already unlocked). The handler also emits a separate
+     * [RoomFullyUnlockedEvent] in this case for Eerie matching.
+     */
+    val becameFullyUnlocked: Boolean
+) : GameEvent

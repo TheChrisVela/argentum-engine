@@ -36,6 +36,7 @@ class LegalActionEnumerator(
         CastFromZoneEnumerator(),
         ManaAbilityEnumerator(),
         TurnFaceUpEnumerator(),
+        UnlockRoomDoorEnumerator(),
         ActivatedAbilityEnumerator(),
         CrewEnumerator(),
         GraveyardAbilityEnumerator()

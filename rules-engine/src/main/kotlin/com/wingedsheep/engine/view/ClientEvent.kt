@@ -1053,6 +1053,7 @@ is PermanentsSacrificedEvent -> {
             is SpellCopiedEvent,
             is ClassLevelChangedEvent,
             is RoomFullyUnlockedEvent,
+            is DoorUnlockedEvent,
             is TurnHijackedEvent,
             is CommitCrimeEvent -> null
         }

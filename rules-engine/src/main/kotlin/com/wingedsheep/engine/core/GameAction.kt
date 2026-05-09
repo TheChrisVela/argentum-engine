@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.core
 
+import com.wingedsheep.engine.state.components.identity.RoomFaceId
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.model.EntityId
@@ -368,4 +369,29 @@ data class TurnFaceUp(
     val paymentStrategy: PaymentStrategy = PaymentStrategy.AutoPay,
     val costTargetIds: List<EntityId> = emptyList(),
     val xValue: Int? = null
+) : GameAction
+
+// =============================================================================
+// Room Actions (DSK)
+// =============================================================================
+
+/**
+ * Unlock a locked door of a Room permanent the player controls (CR 709.5e).
+ *
+ * The unlock cost is the locked face's printed mana cost. Per rule 116, this is a
+ * **special action** — it does not use the stack, can't be responded to between
+ * declaration and effect, and can't be countered. Timing: any time the controller has
+ * priority, the stack is empty, and it is a main phase of their turn.
+ *
+ * @property roomId The Room permanent whose door is being unlocked
+ * @property faceId The locked face whose door is being unlocked
+ * @property paymentStrategy How to pay the face's mana cost
+ */
+@Serializable
+@SerialName("UnlockRoomDoor")
+data class UnlockRoomDoor(
+    override val playerId: EntityId,
+    val roomId: EntityId,
+    val faceId: RoomFaceId,
+    val paymentStrategy: PaymentStrategy = PaymentStrategy.AutoPay
 ) : GameAction

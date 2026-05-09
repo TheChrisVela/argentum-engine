@@ -1004,6 +1004,34 @@ class StackResolver(
         val battlefieldZone = ZoneKey(controllerId, Zone.BATTLEFIELD)
         newState = newState.addToZone(battlefieldZone, spellId)
 
+        // For Rooms cast a half (CR 709.5d/h): the cast face's door becomes unlocked
+        // on ETB. Emit a DoorUnlockedEvent so face-scoped "When you unlock this door"
+        // triggers fire from the cast-time unlock too.
+        val castFaceRoomComp = newState.getEntity(spellId)
+            ?.get<com.wingedsheep.engine.state.components.identity.RoomComponent>()
+        if (castFaceRoomComp != null && castFaceRoomComp.unlocked.size == 1) {
+            val unlockedFace = castFaceRoomComp.faces.first { it.id in castFaceRoomComp.unlocked }
+            counterEvents.add(
+                com.wingedsheep.engine.core.DoorUnlockedEvent(
+                    roomId = spellId,
+                    roomName = cardComponent?.name ?: unlockedFace.name,
+                    faceId = unlockedFace.id,
+                    faceName = unlockedFace.name,
+                    controllerId = controllerId,
+                    becameFullyUnlocked = castFaceRoomComp.isFullyUnlocked
+                )
+            )
+            if (castFaceRoomComp.isFullyUnlocked) {
+                counterEvents.add(
+                    com.wingedsheep.engine.core.RoomFullyUnlockedEvent(
+                        roomId = spellId,
+                        roomName = cardComponent?.name ?: unlockedFace.name,
+                        controllerId = controllerId
+                    )
+                )
+            }
+        }
+
         // Warp: create delayed trigger to exile at beginning of next end step
         if (spellComponent.wasWarped) {
             val delayedTrigger = DelayedTriggeredAbility(

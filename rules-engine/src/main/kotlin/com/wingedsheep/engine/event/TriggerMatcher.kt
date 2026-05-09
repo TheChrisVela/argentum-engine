@@ -198,6 +198,13 @@ class TriggerMatcher(
                 event is RoomFullyUnlockedEvent &&
                     matchesPlayer(trigger.player, event.controllerId, controllerId)
             }
+            is GameEvent.DoorUnlockedEvent -> {
+                // Face-scoped "When you unlock this door" triggers (CR 709.5h) are handled
+                // by TriggerDetector.detectDoorUnlockedTriggers, which knows the source face
+                // of each face-script ability. Returning false here keeps the regular index
+                // loop from firing them on the wrong face.
+                false
+            }
             is GameEvent.TapEvent -> {
                 event is TappedEvent && (binding != TriggerBinding.SELF || event.entityId == sourceId)
             }
@@ -531,6 +538,22 @@ class TriggerMatcher(
         return trigger is GameEvent.ZoneChangeEvent &&
             trigger.from == Zone.BATTLEFIELD &&
             trigger.to == null
+    }
+
+    /**
+     * Check if a trigger fires for a specific battlefield-exit destination
+     * (e.g., "When this is exiled from the battlefield" → trigger.to = EXILE).
+     *
+     * Excludes [Zone.GRAVEYARD] — death triggers are handled by [isDeathTrigger]
+     * and [DeathAndLeaveTriggerDetector.detectDeathTriggers], so matching here
+     * would double-fire. Generic "leaves the battlefield" triggers (to = null)
+     * are matched by [isLeavesBattlefieldTrigger] instead.
+     */
+    fun isLeavesBattlefieldToZoneTrigger(trigger: GameEvent, eventToZone: Zone): Boolean {
+        if (eventToZone == Zone.GRAVEYARD) return false
+        return trigger is GameEvent.ZoneChangeEvent &&
+            trigger.from == Zone.BATTLEFIELD &&
+            trigger.to == eventToZone
     }
 
     /**
