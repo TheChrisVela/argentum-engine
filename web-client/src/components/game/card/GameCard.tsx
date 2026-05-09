@@ -1399,7 +1399,7 @@ export function GameCard({
           fontSize: responsive.badges.counterTextFontSize,
           padding: responsive.badges.badgePadding,
         }}>
-          <SvgGlyph url={counterSvgIcon.QUEST!} size={responsive.badges.counterIconFontSize} />
+          <SvgGlyph url={counterSvgIcon.QUEST!} size={responsive.badges.counterIconFontSize} color="#d8e8a0" />
           <span style={{ fontWeight: 700 }}>
             {getQuestCounters(card)}
           </span>
