@@ -40,7 +40,8 @@ class LoseLifeExecutor(
 
         for (playerId in playerIds) {
             val currentLife = newState.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: continue
-            val newLife = currentLife - amount
+            val modifiedAmount = DamageUtils.applyStaticLifeLossModification(newState, playerId, amount)
+            val newLife = currentLife - modifiedAmount
             newState = newState.updateEntity(playerId) { container ->
                 container.with(LifeTotalComponent(newLife))
             }

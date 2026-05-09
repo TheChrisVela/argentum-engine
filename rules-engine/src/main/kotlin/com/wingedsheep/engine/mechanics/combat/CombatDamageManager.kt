@@ -540,9 +540,12 @@ internal class CombatDamageManager(
             return newState
         }
 
-        // Reduce life
+        // Reduce life. Per CR 119.3, damage causes life loss, so life-loss
+        // replacements (Bloodletter of Aclazotz) modify the life total reduction here.
+        // Lifelink and tracking still see the unmodified `effectiveAmount`.
         val currentLife = newState.getEntity(targetId)?.get<LifeTotalComponent>()?.life ?: return newState
-        val newLife = currentLife - effectiveAmount
+        val lifeLossAmount = DamageUtils.applyStaticLifeLossModification(newState, targetId, effectiveAmount)
+        val newLife = currentLife - lifeLossAmount
         newState = newState.updateEntity(targetId) { container ->
             container.with(LifeTotalComponent(newLife))
         }

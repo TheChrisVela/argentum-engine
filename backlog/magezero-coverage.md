@@ -89,7 +89,7 @@ one enchantment (Unholy Annex) are double-faced / modal DFCs and depend on DFC s
 ## Standard-MonoB (60 cards)
 
 ### Creatures (30)
-- [ ] Bloodletter of Aclazotz ×4
+- [x] Bloodletter of Aclazotz ×4 *(Lost Caverns of Ixalan)*
 - [x] Cecil, Dark Knight // Cecil, Redeemed Paladin ×3 *(DFC — requires DFC support)*
 - [x] Deep-Cavern Bat ×4 *(Lost Caverns of Ixalan)*
 - [ ] Forsaken Miner ×4

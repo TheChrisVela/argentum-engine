@@ -557,6 +557,80 @@ data class ModifyLifeGain(
     }
 }
 
+/**
+ * Modify life loss amount. Combines multiplicative and additive modifications:
+ * `newAmount = (originalAmount * multiplier) + modifier`, clamped to ≥ 0.
+ *
+ * Per the printed reminder text "(Damage causes loss of life.)" on Bloodletter of
+ * Aclazotz, this replacement applies to life loss caused by damage as well as direct
+ * life-loss effects. Lifelink and other damage-based triggers still see the original
+ * damage amount — only the life total reduction is modified.
+ *
+ * The [restrictions] list lets cards layer arbitrary additional gates (e.g., "during
+ * your turn", "while you control a Vampire") onto the replacement; the engine
+ * evaluates each entry with the source permanent's controller as the [Condition]
+ * context and only applies the modification when *all* restrictions hold.
+ *
+ * Examples:
+ * - Bloodletter of Aclazotz (loses twice as much during your turn):
+ *     `ModifyLifeLoss(multiplier = 2, restrictions = listOf(IsYourTurn),
+ *                    appliesTo = LifeLossEvent(player = Player.Opponent))`
+ * - "Each opponent loses an additional 1 life":
+ *     `ModifyLifeLoss(modifier = 1, appliesTo = LifeLossEvent(player = Player.Opponent))`
+ * - "If you would lose life, you lose 1 less life instead" (with floor at 0):
+ *     `ModifyLifeLoss(modifier = -1, appliesTo = LifeLossEvent(player = Player.You))`
+ *
+ * @param multiplier Multiplicative factor applied first (default 1 = unchanged).
+ * @param modifier Flat amount added after multiplication (default 0 = unchanged).
+ * @param restrictions Additional [Condition]s gating when this replacement applies.
+ *        Evaluated against the source permanent's controller; ALL must hold.
+ */
+@SerialName("ModifyLifeLoss")
+@Serializable
+data class ModifyLifeLoss(
+    val multiplier: Int = 1,
+    val modifier: Int = 0,
+    val restrictions: List<com.wingedsheep.sdk.scripting.conditions.Condition> = emptyList(),
+    override val appliesTo: GameEvent = GameEvent.LifeLossEvent()
+) : ReplacementEffect {
+    override val description: String = buildString {
+        val restrictionDesc = restrictions.joinToString(" and ") { it.description.removePrefix("if ") }
+        if (restrictionDesc.isNotEmpty()) {
+            append(restrictionDesc.replaceFirstChar { it.uppercase() })
+            append(", if ")
+        } else {
+            append("If ")
+        }
+        append(appliesTo.description)
+        append(", they lose ")
+        when {
+            multiplier == 0 && modifier == 0 -> append("no life")
+            multiplier == 1 && modifier > 0 -> append("that much life plus $modifier")
+            multiplier == 1 && modifier < 0 -> append("${-modifier} less life")
+            multiplier != 1 && modifier == 0 -> when (multiplier) {
+                2 -> append("twice that much life")
+                else -> append("$multiplier times that much life")
+            }
+            else -> {
+                when (multiplier) {
+                    2 -> append("twice that much life")
+                    else -> append("$multiplier times that much life")
+                }
+                if (modifier > 0) append(" plus $modifier") else append(" minus ${-modifier}")
+            }
+        }
+        append(" instead")
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
+        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
+        val newRestrictions = restrictions.map { it.applyTextReplacement(replacer) }
+        val anyChanged = newAppliesTo !== appliesTo ||
+            newRestrictions.zip(restrictions).any { (n, o) -> n !== o }
+        return if (anyChanged) copy(appliesTo = newAppliesTo, restrictions = newRestrictions) else this
+    }
+}
+
 // =============================================================================
 // Copy Replacement Effects
 // =============================================================================

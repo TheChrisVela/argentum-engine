@@ -1197,6 +1197,7 @@ Used in card definitions for effects that intercept events before they happen:
 - `PreventExtraTurns(appliesTo)` — Ugin's Nexus. Prevents any player from taking extra turns. Checked by TakeExtraTurnExecutor and applyReplacementAdditionalEffect.
 - `ReplaceLifeGain(replacementEffect, appliesTo)` — Tainted Remedy
 - `ModifyLifeGain(multiplier, appliesTo)` — Alhammarret's Archive
+- `ModifyLifeLoss(multiplier, modifier, restrictions, appliesTo)` — Bloodletter of Aclazotz. Combines `(amount * multiplier) + modifier`, clamped ≥ 0. `restrictions: List<Condition>` lets cards layer additional gates (e.g., `IsYourTurn`); evaluated against the source permanent's controller and ALL must hold. Applied at the life-total reduction step in both `LoseLifeExecutor` and `dealDamageToTarget` / `CombatDamageManager` (CR 119.3 — damage causes life loss); lifelink and damage triggers still see the original amount.
 
 ### Generic
 

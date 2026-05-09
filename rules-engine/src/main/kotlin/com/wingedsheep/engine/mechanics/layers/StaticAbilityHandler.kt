@@ -605,6 +605,7 @@ class StaticAbilityHandler(
 
     private fun isRuntimeReplacementEffect(it: com.wingedsheep.sdk.scripting.ReplacementEffect): Boolean =
         it is PreventDamage || it is DoubleDamage || it is ModifyDamageAmount || it is PreventLifeGain ||
+        it is com.wingedsheep.sdk.scripting.ModifyLifeLoss ||
         it is com.wingedsheep.sdk.scripting.PreventDraw ||
         it is com.wingedsheep.sdk.scripting.DamageCantBePrevented || it is ReplaceDamageWithCounters ||
         it is com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect || it is com.wingedsheep.sdk.scripting.ModifyCounterPlacement ||

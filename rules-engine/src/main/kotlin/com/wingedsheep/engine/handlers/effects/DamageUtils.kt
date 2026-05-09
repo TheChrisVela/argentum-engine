@@ -9,6 +9,8 @@ import com.wingedsheep.engine.core.LoyaltyChangedEvent
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
+import com.wingedsheep.engine.handlers.ConditionEvaluator
+import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.state.GameState
@@ -37,6 +39,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.DamageCantBePrevented
 import com.wingedsheep.sdk.scripting.DoubleDamage
 import com.wingedsheep.sdk.scripting.ModifyDamageAmount
+import com.wingedsheep.sdk.scripting.ModifyLifeLoss
 import com.wingedsheep.sdk.scripting.PreventDamage
 import com.wingedsheep.sdk.scripting.PreventLifeGain
 import com.wingedsheep.sdk.scripting.ReplaceDamageWithCounters
@@ -52,6 +55,7 @@ import com.wingedsheep.sdk.scripting.references.Player
 object DamageUtils {
 
     private val predicateEvaluator = PredicateEvaluator()
+    private val conditionEvaluator = ConditionEvaluator()
     lateinit var cardRegistry: CardRegistry
 
     /**
@@ -156,8 +160,12 @@ object DamageUtils {
         val lifeComponent = newState.getEntity(targetId)?.get<LifeTotalComponent>()
         val projected = newState.projectedState
         if (lifeComponent != null) {
-            // It's a player - reduce life
-            val newLife = lifeComponent.life - effectiveAmount
+            // CR 119.3: damage to a player causes that player to lose life, so life-loss
+            // replacements (Bloodletter of Aclazotz) modify the life total reduction here.
+            // Lifelink and other damage-based effects below still see the unmodified
+            // `effectiveAmount`, matching the official ruling.
+            val lifeLossAmount = applyStaticLifeLossModification(newState, targetId, effectiveAmount)
+            val newLife = lifeComponent.life - lifeLossAmount
             newState = newState.updateEntity(targetId) { container ->
                 container.with(LifeTotalComponent(newLife))
             }
@@ -825,6 +833,65 @@ object DamageUtils {
         }
 
         return amplifiedAmount
+    }
+
+    /**
+     * Apply life-loss replacement effects (ModifyLifeLoss) to a life-loss amount.
+     *
+     * Scans the battlefield for permanents with a [ModifyLifeLoss] replacement effect
+     * whose [GameEvent.LifeLossEvent] filter matches [losingPlayerId] and whose
+     * [ModifyLifeLoss.restrictions] (evaluated against the source permanent's
+     * controller) all hold, then applies `(amount * multiplier) + modifier`, clamped
+     * to ≥ 0.
+     *
+     * Multiple matching effects are applied in iteration order. Used both by direct
+     * life-loss effects (LoseLifeExecutor) and by damage that reduces a player's life
+     * total (CR 119.3).
+     */
+    fun applyStaticLifeLossModification(
+        state: GameState,
+        losingPlayerId: EntityId,
+        amount: Int
+    ): Int {
+        if (amount <= 0) return 0
+
+        var modifiedAmount = amount
+
+        for (entityId in state.getBattlefield()) {
+            val container = state.getEntity(entityId) ?: continue
+            val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
+            val sourceControllerId = container.get<ControllerComponent>()?.playerId ?: continue
+
+            for (effect in replacementComponent.replacementEffects) {
+                if (effect !is ModifyLifeLoss) continue
+
+                val lifeLossEvent = effect.appliesTo
+                if (lifeLossEvent !is com.wingedsheep.sdk.scripting.GameEvent.LifeLossEvent) continue
+
+                val playerMatches = when (lifeLossEvent.player) {
+                    Player.Each, Player.Any -> true
+                    Player.You -> losingPlayerId == sourceControllerId
+                    Player.Opponent, Player.EachOpponent -> losingPlayerId != sourceControllerId
+                    else -> false
+                }
+                if (!playerMatches) continue
+
+                if (effect.restrictions.isNotEmpty()) {
+                    val opponentId = state.turnOrder.firstOrNull { it != sourceControllerId }
+                    val context = EffectContext(
+                        sourceId = entityId,
+                        controllerId = sourceControllerId,
+                        opponentId = opponentId,
+                    )
+                    if (effect.restrictions.any { !conditionEvaluator.evaluate(state, it, context) }) continue
+                }
+
+                modifiedAmount = (modifiedAmount * effect.multiplier) + effect.modifier
+                if (modifiedAmount < 0) modifiedAmount = 0
+            }
+        }
+
+        return modifiedAmount
     }
 
     /**
