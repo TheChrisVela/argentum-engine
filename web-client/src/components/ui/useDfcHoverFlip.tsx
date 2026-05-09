@@ -1,5 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import type { SealedCardInfo } from '@/types'
+
+export interface DfcHoverable {
+  readonly name: string
+  readonly imageUri: string | null
+  readonly isDoubleFaced?: boolean
+  readonly backFaceName?: string | null
+  readonly backFaceImageUri?: string | null
+}
 
 export interface DfcHoverFlip {
   readonly isHoveredDfc: boolean
@@ -14,7 +21,7 @@ export interface DfcHoverFlip {
  * Press-F flipping for the hover preview of a double-faced card.
  * Listens for the `F` key while a DFC is hovered and toggles which face is shown.
  */
-export function useDfcHoverFlip(hoveredCard: SealedCardInfo | null): DfcHoverFlip {
+export function useDfcHoverFlip(hoveredCard: DfcHoverable | null): DfcHoverFlip {
   const [dfcFlipped, setDfcFlipped] = useState(false)
   const isHoveredDfc = hoveredCard?.isDoubleFaced === true && !!hoveredCard.backFaceImageUri
 

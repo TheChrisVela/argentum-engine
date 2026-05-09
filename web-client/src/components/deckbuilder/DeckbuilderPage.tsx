@@ -19,6 +19,7 @@ import {
 } from '@/store/deckLibrary'
 import { ManaCost, ManaSymbol } from '@/components/ui/ManaSymbols'
 import { HoverCardPreview } from '@/components/ui/HoverCardPreview'
+import { useDfcHoverFlip } from '@/components/ui/useDfcHoverFlip'
 import { getCardImageUrl } from '@/utils/cardImages'
 import {
   parseQuery,
@@ -1635,6 +1636,9 @@ function SearchBar({
         <option value="rarity">Rarity</option>
       </select>
       <span className={styles.resultCount}>{resultLabel}</span>
+      <span className={styles.cardActionHint}>
+        <kbd>Click</kbd> add · <kbd>Right-click</kbd> remove
+      </span>
       {helpOpen && <SearchHelp onClose={() => setHelpOpen(false)} onInsert={(t) => onQueryChange(t)} />}
     </div>
   )
@@ -2200,6 +2204,18 @@ function CardGrid({
 }) {
   const [hoverCard, setHoverCard] = useState<CardSummary | null>(null)
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null)
+  const dfc = useDfcHoverFlip(
+    hoverCard
+      ? {
+          name: hoverCard.name,
+          imageUri: hoverCard.imageUri ?? null,
+          isDoubleFaced: hoverCard.isDoubleFaced ?? false,
+          backFaceName: hoverCard.backFaceName ?? null,
+          backFaceImageUri: hoverCard.backFaceImageUri ?? null,
+        }
+      : null,
+  )
+  const resetDfcFlip = dfc.resetFlip
 
   if (cards.length === 0) {
     return (
@@ -2223,7 +2239,10 @@ function CardGrid({
               onAdd={onAdd}
               onRemove={onRemove}
               onHover={(c, e) => {
-                setHoverCard(c)
+                setHoverCard((prev) => {
+                  if (prev?.name !== c.name) resetDfcFlip()
+                  return c
+                })
                 if (e) setHoverPos({ x: e.clientX, y: e.clientY })
               }}
               onLeave={() => {
@@ -2243,9 +2262,10 @@ function CardGrid({
       </div>
       {hoverCard && (
         <HoverCardPreview
-          name={hoverCard.name}
-          imageUri={hoverCard.imageUri ?? null}
+          name={dfc.displayName ?? hoverCard.name}
+          imageUri={dfc.displayImageUri ?? hoverCard.imageUri ?? null}
           pos={hoverPos}
+          overlay={dfc.hint}
         />
       )}
     </>
@@ -2310,7 +2330,6 @@ function CardTile({
       onMouseEnter={(e) => onHover(card, e)}
       onMouseMove={(e) => onHover(card, e)}
       onMouseLeave={onLeave}
-      title={`${card.name}\nClick to add · Shift/right-click to remove`}
     >
       {visible ? (
         <img
@@ -2384,8 +2403,21 @@ function DeckListPanel({
   const [hoverCard, setHoverCard] = useState<CardSummary | null>(null)
   const [hoverName, setHoverName] = useState<string | null>(null)
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null)
+  const dfc = useDfcHoverFlip(
+    hoverCard
+      ? {
+          name: hoverCard.name,
+          imageUri: hoverCard.imageUri ?? null,
+          isDoubleFaced: hoverCard.isDoubleFaced ?? false,
+          backFaceName: hoverCard.backFaceName ?? null,
+          backFaceImageUri: hoverCard.backFaceImageUri ?? null,
+        }
+      : null,
+  )
+  const resetDfcFlip = dfc.resetFlip
 
   const handleEnter = (entry: { name: string; card: CardSummary | undefined }, e: React.MouseEvent) => {
+    if (hoverName !== entry.name) resetDfcFlip()
     setHoverName(entry.name)
     setHoverCard(entry.card ?? null)
     setHoverPos({ x: e.clientX, y: e.clientY })
@@ -2569,9 +2601,10 @@ function DeckListPanel({
       )}
       {hoverName && (
         <HoverCardPreview
-          name={hoverName}
-          imageUri={hoverCard?.imageUri ?? null}
+          name={dfc.displayName ?? hoverName}
+          imageUri={dfc.displayImageUri ?? hoverCard?.imageUri ?? null}
           pos={hoverPos}
+          overlay={dfc.hint}
         />
       )}
     </div>
@@ -2658,11 +2691,11 @@ function BasicLandsPanel({
             }}
           >
             <span className={styles.basicLandCount}>{count}</span>
-            <span
-              className={styles.colorDot}
-              style={{ background: color ? COLOR_DOT[colorKey(color)] : '#888' }}
-              aria-hidden
-            />
+            {color ? (
+              <ManaSymbol symbol={color} size={16} />
+            ) : (
+              <span className={styles.colorDot} style={{ background: '#888' }} aria-hidden />
+            )}
             <span className={styles.basicLandName}>{card.name}</span>
             <div className={styles.basicLandButtons}>
               <button
@@ -2695,17 +2728,6 @@ function BasicLandsPanel({
       )}
     </div>
   )
-}
-
-function colorKey(letter: string): string {
-  switch (letter) {
-    case 'W': return 'WHITE'
-    case 'U': return 'BLUE'
-    case 'B': return 'BLACK'
-    case 'R': return 'RED'
-    case 'G': return 'GREEN'
-    default: return ''
-  }
 }
 
 /**

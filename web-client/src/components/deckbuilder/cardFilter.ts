@@ -71,6 +71,9 @@ export interface CardSummary {
   keywords?: string[]
   /** Server-stamped legal formats (uppercase: STANDARD, MODERN, COMMANDER, …). */
   legalFormats?: string[]
+  isDoubleFaced?: boolean
+  backFaceName?: string | null
+  backFaceImageUri?: string | null
 }
 
 export type CardPredicate = (card: CardSummary) => boolean

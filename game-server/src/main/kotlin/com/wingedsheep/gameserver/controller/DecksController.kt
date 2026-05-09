@@ -56,7 +56,10 @@ class DecksController(
         val toughness: String? = null,
         val imageUri: String? = null,
         val keywords: List<String> = emptyList(),
-        val legalFormats: List<String> = emptyList()
+        val legalFormats: List<String> = emptyList(),
+        val isDoubleFaced: Boolean = false,
+        val backFaceName: String? = null,
+        val backFaceImageUri: String? = null,
     )
 
     data class ExampleDeckDTO(
@@ -163,7 +166,10 @@ class DecksController(
         toughness = creatureStats?.toughness?.toString(),
         imageUri = metadata.imageUri,
         keywords = keywords.map { it.name }.sorted(),
-        legalFormats = legalFormats.map { it.name }.sorted()
+        legalFormats = legalFormats.map { it.name }.sorted(),
+        isDoubleFaced = isDoubleFaced,
+        backFaceName = backFace?.name,
+        backFaceImageUri = backFace?.metadata?.imageUri,
     )
 
     companion object {
