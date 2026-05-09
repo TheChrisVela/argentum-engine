@@ -1,5 +1,6 @@
 package com.wingedsheep.gameserver.scenarios
 
+import com.wingedsheep.engine.core.PassPriority
 import com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.gameserver.ScenarioTestBase
@@ -87,10 +88,13 @@ class DeepCavernBatScenarioTest : ScenarioTestBase() {
                 game.isInHand(2, "Hill Giant") shouldBe false
                 val batId = game.findPermanent("Deep-Cavern Bat")!!
 
+                // P1 passes priority so P2 can respond at instant speed
+                game.execute(PassPriority(game.player1Id))
+
                 // Opponent kills the Bat with Shock
-                game.castSpell(2, "Shock", batId)
-                game.resolveStack() // resolve Shock → Bat dies → LTB triggers
-                game.resolveStack() // resolve LTB → return linked exile to hand
+                val shockResult = game.castSpell(2, "Shock", batId)
+                shockResult.error shouldBe null
+                game.resolveStack() // resolve Shock → Bat dies → LTB triggers → return linked exile
 
                 game.isOnBattlefield("Deep-Cavern Bat") shouldBe false
                 game.isInHand(2, "Hill Giant") shouldBe true
