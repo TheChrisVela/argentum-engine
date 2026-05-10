@@ -13,7 +13,7 @@
 | Green      | 62    | 2    |
 | Multicolor | 40    | 1    |
 | Colorless  | 33    | 1    |
-| Land       | 69    | 2    |
+| Land       | 69    | 3    |
 
 ---
 
@@ -285,7 +285,7 @@
 - [ ] Tamiyo, Field Researcher
 - [ ] Tear Asunder
 - [ ] Teferi, Time Raveler
-- [ ] Temple of Abandon
+- [x] Temple of Abandon
 - [x] Temple of Enlightenment
 - [ ] Temple of Epiphany
 - [ ] Temple of Malady
