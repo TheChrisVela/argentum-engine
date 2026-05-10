@@ -473,7 +473,7 @@ class ClientStateTransformer(
                 attachments = emptyList(),
                 isFaceDown = false,
                 targets = targets,
-                imageUri = cardDef?.metadata?.imageUri ?: sourceCard?.imageUri,
+                imageUri = sourceCard?.imageUri ?: cardDef?.metadata?.imageUri,
                 chosenX = activatedAbility.xValue
             )
         }
@@ -558,7 +558,7 @@ class ClientStateTransformer(
                 isFaceDown = false,
                 targets = targets,
                 triggeringEntityId = triggeringId,
-                imageUri = cardDef?.metadata?.imageUri ?: sourceCard?.imageUri,
+                imageUri = sourceCard?.imageUri ?: cardDef?.metadata?.imageUri,
                 sourceZone = sourceZone,
                 chosenX = triggeredAbility.xValue,
                 copyIndex = triggeredAbility.copyIndex,
@@ -716,7 +716,7 @@ class ClientStateTransformer(
                     imageUri = "https://cards.scryfall.io/normal/front/e/9/e9375cbe-93c0-41a5-a6e3-fb4416f54a69.jpg",
                     activeEffects = emptyList(),
                     revealedName = if (isRevealedToViewer) cardComponent.name else null,
-                    revealedImageUri = if (isRevealedToViewer) cardDef?.metadata?.imageUri else null
+                    revealedImageUri = if (isRevealedToViewer) (cardComponent.imageUri ?: cardDef?.metadata?.imageUri) else null
                 )
             }
 
@@ -780,7 +780,7 @@ class ClientStateTransformer(
                 imageUri = "https://cards.scryfall.io/normal/front/e/9/e9375cbe-93c0-41a5-a6e3-fb4416f54a69.jpg", // Morph token from Commander 2019
                 activeEffects = buildCardActiveEffects(state, entityId),
                 revealedName = if (isRevealedToViewer) cardComponent.name else null,
-                revealedImageUri = if (isRevealedToViewer) cardDef?.metadata?.imageUri else null
+                revealedImageUri = if (isRevealedToViewer) (cardComponent.imageUri ?: cardDef?.metadata?.imageUri) else null
             )
         }
 
@@ -991,7 +991,7 @@ class ClientStateTransformer(
             isFaceDown = isFaceDown,
             morphCost = if (isFaceDown && morphData != null) morphData.morphCost.description else null,
             targets = targets,
-            imageUri = cardDef?.metadata?.imageUri ?: cardComponent.imageUri,
+            imageUri = cardComponent.imageUri ?: cardDef?.metadata?.imageUri,
             activeEffects = activeEffects,
             rulings = cardDef?.metadata?.rulings?.map {
                 ClientRuling(date = it.date, text = it.text)
@@ -1033,7 +1033,7 @@ class ClientStateTransformer(
             backFaceName = dfcBackFace(container, cardDef)?.name,
             backFaceTypeLine = dfcBackFace(container, cardDef)?.typeLine?.toString(),
             backFaceOracleText = dfcBackFace(container, cardDef)?.oracleText,
-            backFaceImageUri = dfcBackFace(container, cardDef)?.metadata?.imageUri,
+            backFaceImageUri = cardComponent.backFaceImageUri ?: dfcBackFace(container, cardDef)?.metadata?.imageUri,
             planeswalkerAbilities = buildPlaneswalkerAbilities(cardDef, zoneKey),
             isRoom = cardDef?.isRoom == true,
             cardFaces = buildClientCardFaces(container, cardDef),

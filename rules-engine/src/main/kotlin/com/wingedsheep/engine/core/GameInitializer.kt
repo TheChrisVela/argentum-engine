@@ -284,6 +284,7 @@ class GameInitializer(
                 ownerId = ownerId,
                 spellEffect = cardDef.spellEffect,
                 imageUri = cardDef.metadata.imageUri,
+                backFaceImageUri = cardDef.backFace?.metadata?.imageUri,
             ),
             OwnerComponent(ownerId),
             ControllerComponent(ownerId)

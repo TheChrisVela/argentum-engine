@@ -29,6 +29,7 @@ data class CardComponent(
     val ownerId: EntityId? = null,
     val spellEffect: Effect? = null,
     val imageUri: String? = null,
+    val backFaceImageUri: String? = null,
 ) : Component {
     // Convenience accessors
     val isCreature: Boolean get() = typeLine.isCreature
