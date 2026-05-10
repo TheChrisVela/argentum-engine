@@ -891,6 +891,12 @@ abstract class ScenarioTestBase : FunSpec() {
          * Advance the game to a specific phase and step by passing priority.
          * Both players pass priority repeatedly until the target phase/step is reached.
          * This goes through the actual game flow including combat damage processing.
+         *
+         * Note: this stops *at* the target step's priority window. If the target step has
+         * begin-of-step triggers (e.g., "At the beginning of your end step, ..."), they
+         * are queued on the stack but not yet resolved when this returns. Call
+         * [resolveStack] afterward to drain them. Triggers that pause for player input
+         * (target selection, may decisions) will surface as `pendingDecision` instead.
          */
         fun passUntilPhase(phase: Phase, step: Step): GameState {
             var iterations = 0
