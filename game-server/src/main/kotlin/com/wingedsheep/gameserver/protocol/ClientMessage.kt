@@ -2,6 +2,7 @@ package com.wingedsheep.gameserver.protocol
 
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.model.PrintingRef
 import com.wingedsheep.engine.core.GameAction
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -24,7 +25,17 @@ sealed interface ClientMessage {
      */
     @Serializable
     @SerialName("createGame")
-    data class CreateGame(val deckList: Map<String, Int>, val vsAi: Boolean = false, val setCode: String? = null) : ClientMessage
+    data class CreateGame(
+        val deckList: Map<String, Int>,
+        val vsAi: Boolean = false,
+        val setCode: String? = null,
+        /**
+         * Optional ordered, per-card entries with pinned printings. When non-empty, this is
+         * authoritative and [deckList] is ignored. When null/empty the legacy [deckList] path
+         * is used (no per-card printing pinning).
+         */
+        val cardEntries: List<DeckEntryDTO>? = null,
+    ) : ClientMessage
 
     /**
      * Join an existing game with a session ID and deck list.
@@ -33,7 +44,9 @@ sealed interface ClientMessage {
     @SerialName("joinGame")
     data class JoinGame(
         val sessionId: String,
-        val deckList: Map<String, Int>
+        val deckList: Map<String, Int>,
+        /** Rich, optionally-pinned entries. See [CreateGame.cardEntries]. */
+        val cardEntries: List<DeckEntryDTO>? = null,
     ) : ClientMessage
 
     /**
@@ -109,6 +122,10 @@ sealed interface ClientMessage {
     data class SubmitSealedDeck(
         val deckList: Map<String, Int>,
         val commander: String? = null,
+        /** Rich, optionally-pinned entries. See [CreateGame.cardEntries]. */
+        val cardEntries: List<DeckEntryDTO>? = null,
+        /** Optional pinned printing for [commander]. Ignored when [commander] is null. */
+        val commanderPrinting: PrintingRef? = null,
     ) : ClientMessage
 
     // =========================================================================
@@ -391,6 +408,10 @@ sealed interface ClientMessage {
          * [deckList] — the validator and engine both rely on this invariant.
          */
         val commander: String? = null,
+        /** Rich, optionally-pinned entries. See [CreateGame.cardEntries]. */
+        val cardEntries: List<DeckEntryDTO>? = null,
+        /** Optional pinned printing for [commander]. Ignored when [commander] is null. */
+        val commanderPrinting: PrintingRef? = null,
     ) : ClientMessage
 
     /** Toggle this player's ready flag. The server starts the game when both players are ready. */

@@ -21,6 +21,7 @@ import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.mechanics.targeting.TargetValidator
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.registry.PrintingRegistry
 
 /**
  * Composition root for the rules engine.
@@ -30,7 +31,13 @@ import com.wingedsheep.engine.registry.CardRegistry
  * and ensures all consumers share the same service instances.
  */
 class EngineServices(
-    val cardRegistry: CardRegistry
+    val cardRegistry: CardRegistry,
+    /**
+     * Optional per-printing registry. Threaded into [GameInitializer] so deck entries with
+     * pinned printings can override per-entity art at game-init. Null is fine — every
+     * lookup is null-safe.
+     */
+    val printingRegistry: PrintingRegistry? = null,
 ) {
     init {
         DamageUtils.cardRegistry = cardRegistry

@@ -3,6 +3,20 @@ package com.wingedsheep.sdk.model
 import kotlinx.serialization.Serializable
 
 /**
+ * One card in a deck, optionally pinned to a specific [Printing].
+ *
+ * When [printing] is null, the engine uses whatever the registry resolves the name to (the
+ * default printing, or whatever the card author registered). When [printing] is non-null
+ * the engine looks the printing up in `PrintingRegistry` and overrides the per-entity art
+ * URLs at game-init.
+ */
+@Serializable
+data class CardEntry(
+    val name: String,
+    val printing: PrintingRef? = null,
+)
+
+/**
  * Represents a deck of Magic cards for game initialization.
  *
  * A deck is a list of card definition IDs (typically card names) that will be
@@ -17,6 +31,14 @@ import kotlinx.serialization.Serializable
  *
  * The engine uses the [CardDefinition.name] to look up card definitions from
  * registered card sets.
+ *
+ * ## Multi-printing
+ * The legacy [cards] field carries names only; pass [cardEntries] instead (or alongside) to
+ * pin specific printings. When [cardEntries] is non-empty it is authoritative; the engine
+ * derives names from it. When only [cards] is supplied (the historical case) the deck
+ * behaves exactly as before. Helpers like [countOf] and [uniqueCards] always operate on
+ * names so deck-construction rules (4-of, singleton, banlists) collapse identically across
+ * different printings of the same card.
  */
 @Serializable
 data class Deck(
@@ -33,6 +55,16 @@ data class Deck(
      * command zone, not the library.
      */
     val commander: String? = null,
+    /**
+     * Per-card entries with optional printing pinning. When non-empty, this is the
+     * authoritative ordered library and [cards] is derived from it. When empty, the deck
+     * is name-only and behaves exactly like a pre-printing deck.
+     */
+    val cardEntries: List<CardEntry> = emptyList(),
+    /**
+     * Optional commander printing reference. Honoured only when [commander] is non-null.
+     */
+    val commanderPrinting: PrintingRef? = null,
 ) {
     /**
      * Total number of cards in the deck (library + command zone).
@@ -45,8 +77,8 @@ data class Deck(
     val isEmpty: Boolean get() = cards.isEmpty() && commander == null
 
     /**
-     * Count occurrences of a specific card in the main deck (library).
-     * Does not include the commander — use [size] or check [commander] directly.
+     * Count occurrences of a specific card in the main deck (library). Always operates on
+     * names so two different printings of Lightning Bolt count as 2 toward the 4-of rule.
      */
     fun countOf(cardName: String): Int = cards.count { it == cardName }
 
@@ -54,6 +86,23 @@ data class Deck(
      * Get unique card names in the deck (main deck + commander, if any).
      */
     fun uniqueCards(): Set<String> = cards.toSet() + listOfNotNull(commander)
+
+    /**
+     * Every entry in the library matching the given card name. Empty if [cardEntries] is
+     * empty (the legacy name-only case) — callers that need per-card printing data should
+     * gate on [cardEntries].isNotEmpty() first.
+     */
+    fun entriesOf(cardName: String): List<CardEntry> =
+        cardEntries.filter { it.name == cardName }
+
+    /**
+     * Every distinct printing pinned by any entry in the deck (library + commander).
+     * Useful for warming a printings cache before game-init.
+     */
+    fun printingsUsed(): Set<PrintingRef> = buildSet {
+        cardEntries.forEach { entry -> entry.printing?.let(::add) }
+        commanderPrinting?.let(::add)
+    }
 
     companion object {
         /**
@@ -70,6 +119,22 @@ data class Deck(
             }
             return Deck(cards)
         }
+
+        /**
+         * Create a deck from rich [CardEntry] entries. The legacy [cards] field is filled
+         * automatically from the entry names so consumers that read the flat list keep
+         * working unchanged.
+         */
+        fun fromEntries(
+            entries: List<CardEntry>,
+            commander: String? = null,
+            commanderPrinting: PrintingRef? = null,
+        ): Deck = Deck(
+            cards = entries.map { it.name },
+            commander = commander,
+            cardEntries = entries,
+            commanderPrinting = commanderPrinting,
+        )
 
         /**
          * Create a simple test deck with basic lands and vanilla creatures.

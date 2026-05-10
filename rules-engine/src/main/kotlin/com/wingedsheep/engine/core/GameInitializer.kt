@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.core
 
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.registry.PrintingRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -12,8 +13,10 @@ import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.CardEntry
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.model.PrintingRef
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.ProtectionScope
@@ -97,7 +100,15 @@ data class InitializationResult(
  * ```
  */
 class GameInitializer(
-    private val cardRegistry: CardRegistry
+    private val cardRegistry: CardRegistry,
+    /**
+     * Optional registry of per-printing metadata. When supplied, deck entries that pin a
+     * specific [PrintingRef] cause the engine to stamp that printing's image URLs onto the
+     * per-entity [com.wingedsheep.engine.state.components.identity.CardComponent].
+     * Null is fine for tests and any path that never pins printings — the engine falls
+     * back to the canonical [CardDefinition.metadata] image.
+     */
+    private val printingRegistry: PrintingRegistry? = null,
 ) {
     /**
      * Initialize a new game.
@@ -187,7 +198,7 @@ class GameInitializer(
             if (commanderName != null) {
                 val cardDef = cardRegistry.requireCard(commanderName)
                 val cardId = EntityId.generate()
-                val cardContainer = createCardEntity(cardDef, playerId).with(
+                val cardContainer = createCardEntity(cardDef, playerId, playerConfig.deck.commanderPrinting).with(
                     com.wingedsheep.engine.state.components.identity.CommanderComponent(ownerId = playerId)
                 )
                 state = state.withEntity(cardId, cardContainer)
@@ -195,10 +206,16 @@ class GameInitializer(
                 commanderEntityIds.add(cardId)
             }
 
-            for (cardName in playerConfig.deck.cards) {
-                val cardDef = cardRegistry.requireCard(cardName)
+            // Prefer rich [CardEntry] iteration when the deck has it; fall back to the legacy
+            // name-only [Deck.cards] list. Both paths produce identical libraries when no
+            // printings are pinned — the rich path additionally honours per-entry printings.
+            val libraryEntries: List<CardEntry> = playerConfig.deck.cardEntries.ifEmpty {
+                playerConfig.deck.cards.map { CardEntry(it) }
+            }
+            for (entry in libraryEntries) {
+                val cardDef = cardRegistry.requireCard(entry.name)
                 val cardId = EntityId.generate()
-                val cardContainer = createCardEntity(cardDef, playerId)
+                val cardContainer = createCardEntity(cardDef, playerId, entry.printing)
                 state = state.withEntity(cardId, cardContainer)
                 state = state.addToZone(ZoneKey(playerId, Zone.LIBRARY), cardId)
             }
@@ -246,8 +263,17 @@ class GameInitializer(
 
     /**
      * Create a card entity from a card definition.
+     *
+     * When [printingRef] is non-null and resolves in [printingRegistry], the per-entity
+     * [CardComponent] image URLs are taken from the chosen printing rather than from
+     * [CardDefinition.metadata]. Falls back gracefully when the registry is absent or
+     * the ref doesn't resolve — that's the legacy single-printing path.
      */
-    private fun createCardEntity(cardDef: CardDefinition, ownerId: EntityId): ComponentContainer {
+    private fun createCardEntity(
+        cardDef: CardDefinition,
+        ownerId: EntityId,
+        printingRef: PrintingRef? = null,
+    ): ComponentContainer {
         val protections = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Protection>()
         val protectionColors = protections.flatMap { p ->
             when (val s = p.scope) {
@@ -260,13 +286,22 @@ class GameInitializer(
             (it.scope as? ProtectionScope.Subtype)?.subtype
         }.toSet()
 
+        // Resolve the chosen printing (if pinned by the deck entry) so we can stamp the
+        // printing's art onto the per-entity CardComponent. When no override resolves, we
+        // fall back to the canonical CardDefinition metadata — the legacy behaviour.
+        val printing = printingRef?.let { printingRegistry?.getPrinting(it) }
+
         // Use Name#SetCode-CollectorNumber as the definition ID when available, so that
         // cards with the same name but different art variants (basic lands across sets)
         // resolve back to the correct CardDefinition via CardRegistry.
         // SetCode is included to avoid collisions between sets that share collector numbers
-        // (e.g., Khans and Dominaria both use 250-269 for basic lands).
-        val definitionId = cardDef.metadata.collectorNumber?.let { cn ->
-            if (cardDef.setCode != null) "${cardDef.name}#${cardDef.setCode}-$cn"
+        // (e.g., Khans and Dominaria both use 250-269 for basic lands). Honour the chosen
+        // printing's set/CN when one was pinned — this keeps cardDefinitionId stable for
+        // copy/clone effects that round-trip through CardRegistry.
+        val effectiveSetCode = printing?.setCode ?: cardDef.setCode
+        val effectiveCollectorNumber = printing?.collectorNumber ?: cardDef.metadata.collectorNumber
+        val definitionId = effectiveCollectorNumber?.let { cn ->
+            if (effectiveSetCode != null) "${cardDef.name}#$effectiveSetCode-$cn"
             else "${cardDef.name}#$cn"
         } ?: cardDef.name
 
@@ -283,8 +318,8 @@ class GameInitializer(
                 colors = cardDef.colors,
                 ownerId = ownerId,
                 spellEffect = cardDef.spellEffect,
-                imageUri = cardDef.metadata.imageUri,
-                backFaceImageUri = cardDef.backFace?.metadata?.imageUri,
+                imageUri = printing?.imageUri ?: cardDef.metadata.imageUri,
+                backFaceImageUri = printing?.backFaceImageUri ?: cardDef.backFace?.metadata?.imageUri,
             ),
             OwnerComponent(ownerId),
             ControllerComponent(ownerId)
