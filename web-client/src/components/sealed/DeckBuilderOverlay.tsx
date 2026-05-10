@@ -136,6 +136,7 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null)
   const [sortBy, setSortBy] = useState<'color' | 'cmc' | 'rarity'>('rarity')
   const [colorFilter, setColorFilter] = useState<Set<string>>(new Set())
+  const [colorMode, setColorMode] = useState<ColorOp>('<=')
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const [searchText, setSearchText] = useState('')
   const [creatureTypeFilter, setCreatureTypeFilter] = useState<string | null>(null)
@@ -296,16 +297,7 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
         }
         if (colorFilter.size > 0) {
           const cardColors = getCardColors(card)
-          let matches = false
-          if (colorFilter.has('C')) {
-            matches = matches || cardColors.size === 0
-          }
-          for (const c of ['W', 'U', 'B', 'R', 'G']) {
-            if (colorFilter.has(c) && cardColors.has(c)) {
-              matches = true
-            }
-          }
-          if (!matches) continue
+          if (!matchesColorIdentityFilter(cardColors, colorFilter, colorMode)) continue
         }
         if (typeFilter) {
           if (!matchesTypeFilter(card, typeFilter)) continue
@@ -329,7 +321,7 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
         return getRarityOrder(a.card) - getRarityOrder(b.card) || getCmc(a.card) - getCmc(b.card)
       }
     })
-  }, [state.cardPool, state.deck, sortBy, colorFilter, typeFilter, creatureTypeFilter, searchText, archetypeFilter])
+  }, [state.cardPool, state.deck, sortBy, colorFilter, colorMode, typeFilter, creatureTypeFilter, searchText, archetypeFilter])
 
   const totalPoolCards = poolCardGroups.reduce((sum, g) => sum + g.availableCount, 0)
 
@@ -607,6 +599,7 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
             <div style={{ width: 1, height: 18, backgroundColor: '#444', margin: '0 4px' }} />
 
             <span style={{ color: '#888', fontSize: 12 }}>Filter:</span>
+            <ColorModeSegmented mode={colorMode} onChange={setColorMode} />
             {COLOR_FILTER_OPTIONS.map(({ key, label }) => {
               const active = colorFilter.has(key)
               return (
@@ -1524,6 +1517,96 @@ const MANA_COLORS: Record<string, string> = {
 }
 
 // Helper functions
+
+type ColorOp = ':' | '=' | '<='
+
+/**
+ * Filter a card by its color identity against a chip-based selection (W/U/B/R/G/C)
+ * using one of three modes that mirror the main deckbuilder's `ColorModeSegmented`:
+ *
+ * - `:`  Includes — card identity contains all chosen WUBRG colors (AND).
+ * - `=`  Exactly — card identity equals exactly the chosen WUBRG set.
+ * - `<=` At most — card identity is a subset of the chosen WUBRG set; colorless always passes.
+ *
+ * The `C` chip is treated as a separate "include colorless" toggle that ORs with the colored
+ * predicate in `:` and `=` modes (in `<=` mode colorless cards always match anyway).
+ */
+function matchesColorIdentityFilter(
+  cardColors: Set<string>,
+  filter: Set<string>,
+  mode: ColorOp,
+): boolean {
+  const wanted = new Set<string>()
+  let includeColorless = false
+  for (const c of filter) {
+    if (c === 'C') includeColorless = true
+    else wanted.add(c)
+  }
+  const isColorless = cardColors.size === 0
+
+  if (mode === '<=') {
+    if (isColorless) return true
+    for (const c of cardColors) if (!wanted.has(c)) return false
+    return true
+  }
+
+  if (mode === '=') {
+    if (includeColorless && isColorless) return true
+    if (wanted.size === 0) return false
+    if (cardColors.size !== wanted.size) return false
+    for (const w of wanted) if (!cardColors.has(w)) return false
+    return true
+  }
+
+  // mode === ':' (Includes — AND of chosen colors)
+  if (includeColorless && isColorless) return true
+  if (wanted.size === 0) return false
+  for (const w of wanted) if (!cardColors.has(w)) return false
+  return true
+}
+
+function ColorModeSegmented({
+  mode,
+  onChange,
+}: {
+  mode: ColorOp
+  onChange: (op: ColorOp) => void
+}) {
+  const options: Array<{ op: ColorOp; label: string; title: string }> = [
+    { op: ':', label: 'Includes', title: 'Cards that include the chosen colour(s)' },
+    { op: '=', label: 'Exactly', title: 'Cards whose colour identity is exactly the chosen set' },
+    { op: '<=', label: 'At most', title: 'Cards whose colour identity is a subset of the chosen set' },
+  ]
+  return (
+    <div
+      role="group"
+      aria-label="Colour comparison mode"
+      style={{ display: 'inline-flex', gap: 0, border: '1px solid #444', borderRadius: 4, overflow: 'hidden' }}
+    >
+      {options.map((opt) => {
+        const active = mode === opt.op
+        return (
+          <button
+            key={opt.op}
+            type="button"
+            onClick={() => onChange(opt.op)}
+            title={opt.title}
+            style={{
+              padding: '4px 8px',
+              fontSize: 11,
+              backgroundColor: active ? '#4fc3f7' : 'transparent',
+              color: active ? '#000' : '#ccc',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            {opt.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 /**
  * Color identity (CR 903.4) of [card] as single-letter codes. The server-side identity already
