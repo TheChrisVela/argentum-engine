@@ -5,7 +5,8 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.AdditionalManaFromCreatureTap
+import com.wingedsheep.sdk.scripting.AdditionalManaOnSourceTap
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 
@@ -32,7 +33,11 @@ val BadgermoleCub = card("Badgermole Cub") {
     }
 
     staticAbility {
-        ability = AdditionalManaFromCreatureTap(color = Color.GREEN)
+        ability = AdditionalManaOnSourceTap(
+            sourceFilter = GameObjectFilter.Creature,
+            color = Color.GREEN,
+            controllerOnlySource = true
+        )
     }
 
     metadata {

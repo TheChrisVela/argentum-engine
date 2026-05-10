@@ -36,7 +36,7 @@ import com.wingedsheep.sdk.scripting.effects.LandControllerScope
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import com.wingedsheep.sdk.scripting.ActivatedAbility
-import com.wingedsheep.sdk.scripting.AdditionalManaOnLandTap
+import com.wingedsheep.sdk.scripting.AdditionalManaOnSourceTap
 import com.wingedsheep.sdk.scripting.AdditionalManaOnTap
 import com.wingedsheep.sdk.scripting.DampLandManaProduction
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
@@ -843,7 +843,7 @@ class ManaSolver(
                 canAttack = false
             )
         }.map { source -> augmentWithAuraBonusMana(state, source, playerId) }
-            .map { source -> augmentWithGlobalLandTapBonusMana(state, source) }
+            .map { source -> augmentWithSourceTapBonusMana(state, source, playerId) }
             .let { sources ->
                 if (hasDampLandManaProduction(state)) applyLandManaDampening(sources) else sources
             }
@@ -1007,54 +1007,67 @@ class ManaSolver(
     }
 
     /**
-     * Augments a mana source with bonus mana from global [AdditionalManaOnLandTap]
-     * abilities (e.g., Lavaleaper, Heartbeat of Spring). When any permanent on the
-     * battlefield has this ability and its filter matches this source, the source
-     * produces one additional mana of the same color per triggering ability.
+     * Augments a mana source with bonus mana from [AdditionalManaOnSourceTap]
+     * statics anywhere on the battlefield. Covers both flavors:
+     *  - Lavaleaper: filter = BasicLand, color = null (mirror produced color)
+     *  - Badgermole Cub: filter = Creature, color = GREEN, controllerOnlySource = true
      *
-     * Only applies to lands — the oracle wording is specifically about taps for mana.
-     * The bonus color is the source's first produced color (basic lands produce a
-     * single color, so this is unambiguous for the canonical use case).
+     * Filter matching uses projected state so animated creature-lands and typeshifted
+     * lands are recognised under their projected types. The static-ability source's
+     * controller is also read from projected state, so the "you tap" form transfers
+     * correctly across control-changing effects.
+     *
+     * The bonus color, when mirroring, is the source's first produced color — basic
+     * lands produce a single color so this is unambiguous for the canonical case;
+     * multi-color producers fall back to the first listed color (the auto-tap solver
+     * already preferentially picks single-color sources for colored slots).
      */
-    private fun augmentWithGlobalLandTapBonusMana(
+    private fun augmentWithSourceTapBonusMana(
         state: GameState,
-        source: ManaSource
+        source: ManaSource,
+        tappingPlayerId: EntityId
     ): ManaSource {
-        if (!source.isLand) return source
-        val landColor = source.producesColors.firstOrNull() ?: return source
-
-        val landController = state.getEntity(source.entityId)
-            ?.get<ControllerComponent>()?.playerId ?: return source
-
         var totalBonus = 0
+        var bonusColor: Color? = null
+
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue
             val card = container.get<CardComponent>() ?: continue
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
 
             for (staticAbility in cardDef.script.staticAbilities) {
-                val onLandTap = staticAbility as? AdditionalManaOnLandTap ?: continue
+                val onSourceTap = staticAbility as? AdditionalManaOnSourceTap ?: continue
 
-                val filterContext = PredicateContext(controllerId = landController, sourceId = entityId)
-                if (!predicateEvaluator.matches(state, source.entityId, onLandTap.filter, filterContext)) continue
+                val staticController = state.projectedState.getController(entityId) ?: continue
+                if (onSourceTap.controllerOnlySource && staticController != tappingPlayerId) continue
 
-                val opponentId = state.turnOrder.firstOrNull { it != landController }
+                val filterContext = PredicateContext(controllerId = tappingPlayerId, sourceId = entityId)
+                if (!predicateEvaluator.matchesWithProjection(
+                        state, state.projectedState, source.entityId, onSourceTap.sourceFilter, filterContext
+                    )) continue
+
+                val opponentId = state.turnOrder.firstOrNull { it != tappingPlayerId }
                 val effectContext = EffectContext(
                     sourceId = entityId,
-                    controllerId = landController,
+                    controllerId = tappingPlayerId,
                     opponentId = opponentId,
                     targets = emptyList(),
                     xValue = null
                 )
-                val amount = dynamicAmountEvaluator.evaluate(state, onLandTap.amount, effectContext)
-                if (amount > 0) totalBonus += amount
+                val amount = dynamicAmountEvaluator.evaluate(state, onSourceTap.amount, effectContext)
+                if (amount <= 0) continue
+
+                // Resolve the bonus color: explicit color wins; null means mirror the source's produced color.
+                val resolvedColor = onSourceTap.color ?: source.producesColors.firstOrNull() ?: continue
+                totalBonus += amount
+                bonusColor = bonusColor ?: resolvedColor
             }
         }
 
         return if (totalBonus > 0) {
             source.copy(
                 bonusManaPerTap = source.bonusManaPerTap + totalBonus,
-                bonusManaColor = source.bonusManaColor ?: landColor
+                bonusManaColor = source.bonusManaColor ?: bonusColor
             )
         } else {
             source

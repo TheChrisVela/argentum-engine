@@ -98,54 +98,58 @@ data class OverrideEnchantedLandManaColor(
 }
 
 /**
- * Whenever a player taps a land matching [filter] for mana, that player adds
- * [amount] additional mana of any type that land produced.
+ * Whenever a permanent matching [sourceFilter] is tapped for mana, the tapping
+ * player adds [amount] additional mana to their pool.
  *
- * Used for Mana Flare–style global land-mana amplifiers. Lavaleaper uses this
- * with `GameObjectFilter.BasicLand` and `DynamicAmount.Fixed(1)`.
+ * Unifies the "Mana Flare on a filter" and "Badgermole Cub on creature taps" shapes:
  *
- * This is a triggered mana ability — it resolves immediately without using the
- * stack (per Rule 605). The controller of the land (the player tapping) receives
- * the bonus mana of the same color(s) that were produced by the tap.
+ * - **Lavaleaper** ("Whenever a player taps a basic land for mana, that player adds
+ *   one mana of any type that land produced") →
+ *   `AdditionalManaOnSourceTap(sourceFilter = GameObjectFilter.BasicLand, color = null)`.
+ *   `color = null` means **mirror the produced color** — the bonus matches whatever
+ *   color the source produced.
  *
- * @property filter Which lands qualify (e.g., basic, snow, Forest)
- * @property amount How many additional mana to produce per tap
+ * - **Badgermole Cub** ("Whenever you tap a creature for mana, add an additional {G}") →
+ *   `AdditionalManaOnSourceTap(sourceFilter = GameObjectFilter.Creature, color = Color.GREEN,
+ *   controllerOnlySource = true)`. `controllerOnlySource = true` enforces the "you tap"
+ *   wording — only sources controlled by the same player as this static ability trigger it.
+ *
+ * Triggered mana ability — resolves immediately without using the stack (Rule 605.1).
+ * Filter matching uses projected state, so animated creature-lands count as creatures
+ * and typeshifted lands count under their projected types.
+ *
+ * @property sourceFilter Which permanents, when tapped for mana, trigger this bonus.
+ * @property color The bonus mana color. `null` means mirror the color the source produced
+ *   (used by Lavaleaper). When set, the bonus is always that color regardless of the source.
+ * @property amount How many additional mana per tap (default 1).
+ * @property controllerOnlySource When `true`, only triggers when the tapping player also
+ *   controls the static-ability source ("you tap"). When `false`, any player tapping a
+ *   matching source triggers it ("a player taps").
  */
-@SerialName("AdditionalManaOnLandTap")
+@SerialName("AdditionalManaOnSourceTap")
 @Serializable
-data class AdditionalManaOnLandTap(
-    val filter: GameObjectFilter,
-    val amount: DynamicAmount = DynamicAmount.Fixed(1)
+data class AdditionalManaOnSourceTap(
+    val sourceFilter: GameObjectFilter,
+    val color: Color? = null,
+    val amount: DynamicAmount = DynamicAmount.Fixed(1),
+    val controllerOnlySource: Boolean = false
 ) : StaticAbility {
-    override val description: String =
-        "Whenever a player taps a ${filter.description} for mana, that player adds one mana of any type that land produced."
-    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
-        val newFilter = filter.applyTextReplacement(replacer)
-        val newAmount = amount.applyTextReplacement(replacer)
-        return if (newFilter !== filter || newAmount !== amount) copy(filter = newFilter, amount = newAmount) else this
+    override val description: String = buildString {
+        append(if (controllerOnlySource) "Whenever you tap a " else "Whenever a player taps a ")
+        append(sourceFilter.description)
+        append(" for mana, ")
+        if (color == null) {
+            append("that player adds one mana of any type that source produced.")
+        } else {
+            append("add an additional {${color.symbol}}.")
+        }
     }
-}
-
-/**
- * Whenever the controller taps a creature for mana, add [amount] mana of [color].
- * Used for Badgermole Cub: "Whenever you tap a creature for mana, add an additional {G}."
- *
- * Triggered mana ability — resolves immediately without using the stack.
- *
- * @property color The color of bonus mana to add
- * @property amount How many additional mana to add per creature tap
- */
-@SerialName("AdditionalManaFromCreatureTap")
-@Serializable
-data class AdditionalManaFromCreatureTap(
-    val color: Color,
-    val amount: DynamicAmount = DynamicAmount.Fixed(1)
-) : StaticAbility {
-    override val description: String =
-        "Whenever you tap a creature for mana, add an additional ${color.symbol} mana"
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = sourceFilter.applyTextReplacement(replacer)
         val newAmount = amount.applyTextReplacement(replacer)
-        return if (newAmount !== amount) copy(amount = newAmount) else this
+        return if (newFilter !== sourceFilter || newAmount !== amount) {
+            copy(sourceFilter = newFilter, amount = newAmount)
+        } else this
     }
 }
 
