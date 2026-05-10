@@ -4,13 +4,11 @@
   "player1": {
     "lifeTotal": 20,
     "hand": [
-      "Sentinel of the Nameless City",
       "Sentinel of the Nameless City"
     ],
     "battlefield": [
-      {"name": "Forest"},
-      {"name": "Forest"},
-      {"name": "Forest"},
+      {"name": "Sentinel of the Nameless City"},
+      {"name": "Map"},
       {"name": "Forest"},
       {"name": "Forest"},
       {"name": "Forest"},
@@ -19,12 +17,11 @@
     ],
     "graveyard": [],
     "library": [
+      "Hill Giant",
       "Forest",
-      "Sentinel of the Nameless City",
-      "Swamp",
-      "Swamp",
-      "Swamp",
-      "Swamp"
+      "Forest",
+      "Forest",
+      "Forest"
     ]
   },
   "player2": {
@@ -33,7 +30,6 @@
     "battlefield": [],
     "graveyard": [],
     "library": [
-      "Swamp",
       "Swamp",
       "Swamp",
       "Swamp",
