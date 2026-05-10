@@ -1417,9 +1417,11 @@ class ActivateAbilityHandler(
                 val onSourceTap = staticAbility as? AdditionalManaOnSourceTap ?: continue
 
                 val staticController = currentState.projectedState.getController(entityId) ?: continue
-                if (onSourceTap.controllerOnlySource && staticController != tappingPlayerId) continue
 
-                val filterContext = PredicateContext(controllerId = tappingPlayerId, sourceId = entityId)
+                // Filter is evaluated from the static-ability controller's perspective so
+                // `youControl` on the source filter means "controlled by you, the static
+                // controller" — see AdditionalManaOnSourceTap kdoc.
+                val filterContext = PredicateContext(controllerId = staticController, sourceId = entityId)
                 if (!predicateEvaluator.matchesWithProjection(
                         currentState, currentState.projectedState, sourceId, onSourceTap.sourceFilter, filterContext
                     )) continue

@@ -110,34 +110,35 @@ data class OverrideEnchantedLandManaColor(
  *   color the source produced.
  *
  * - **Badgermole Cub** ("Whenever you tap a creature for mana, add an additional {G}") →
- *   `AdditionalManaOnSourceTap(sourceFilter = GameObjectFilter.Creature, color = Color.GREEN,
- *   controllerOnlySource = true)`. `controllerOnlySource = true` enforces the "you tap"
- *   wording — only sources controlled by the same player as this static ability trigger it.
+ *   `AdditionalManaOnSourceTap(sourceFilter = GameObjectFilter.Creature.youControl(),
+ *   color = Color.GREEN)`. The "you tap" wording is captured by the filter's controller
+ *   predicate: the source must be controlled by the static-ability controller, and since
+ *   only that controller can activate the source's mana ability (mana-ability rules), the
+ *   trigger only fires when "you" tap a matching creature.
  *
  * Triggered mana ability — resolves immediately without using the stack (Rule 605.1).
  * Filter matching uses projected state, so animated creature-lands count as creatures
- * and typeshifted lands count under their projected types.
+ * and typeshifted lands count under their projected types. The filter's controller
+ * predicate is evaluated against the static-ability source's projected controller (i.e.
+ * `youControl` means "controlled by you, the controller of this static").
  *
  * @property sourceFilter Which permanents, when tapped for mana, trigger this bonus.
+ *   Use `.youControl()` for the "Whenever you tap..." wording.
  * @property color The bonus mana color. `null` means mirror the color the source produced
  *   (used by Lavaleaper). When set, the bonus is always that color regardless of the source.
  * @property amount How many additional mana per tap (default 1).
- * @property controllerOnlySource When `true`, only triggers when the tapping player also
- *   controls the static-ability source ("you tap"). When `false`, any player tapping a
- *   matching source triggers it ("a player taps").
  */
 @SerialName("AdditionalManaOnSourceTap")
 @Serializable
 data class AdditionalManaOnSourceTap(
     val sourceFilter: GameObjectFilter,
     val color: Color? = null,
-    val amount: DynamicAmount = DynamicAmount.Fixed(1),
-    val controllerOnlySource: Boolean = false
+    val amount: DynamicAmount = DynamicAmount.Fixed(1)
 ) : StaticAbility {
     override val description: String = buildString {
-        append(if (controllerOnlySource) "Whenever you tap a " else "Whenever a player taps a ")
+        append("Whenever a ")
         append(sourceFilter.description)
-        append(" for mana, ")
+        append(" is tapped for mana, ")
         if (color == null) {
             append("that player adds one mana of any type that source produced.")
         } else {

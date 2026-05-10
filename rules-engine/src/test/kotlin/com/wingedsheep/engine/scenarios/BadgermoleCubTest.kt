@@ -25,9 +25,9 @@ import io.kotest.matchers.shouldBe
  *   Whenever you tap a creature for mana, add an additional {G}.
  *
  * Exercises [com.wingedsheep.sdk.scripting.AdditionalManaOnSourceTap] in its
- * `controllerOnlySource = true` form, including the ManaSolver-side awareness
- * of the bonus and the "you tap" gating against the static-ability source's
- * projected controller.
+ * `youControl()` form (the source-filter-based "you tap" gating), including the
+ * ManaSolver-side awareness of the bonus and the projected-controller path that
+ * makes the "you" perspective track control-changing effects.
  */
 class BadgermoleCubTest : FunSpec({
 

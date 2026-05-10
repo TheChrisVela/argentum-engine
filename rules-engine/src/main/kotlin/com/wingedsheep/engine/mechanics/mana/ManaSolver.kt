@@ -1010,12 +1010,13 @@ class ManaSolver(
      * Augments a mana source with bonus mana from [AdditionalManaOnSourceTap]
      * statics anywhere on the battlefield. Covers both flavors:
      *  - Lavaleaper: filter = BasicLand, color = null (mirror produced color)
-     *  - Badgermole Cub: filter = Creature, color = GREEN, controllerOnlySource = true
+     *  - Badgermole Cub: filter = Creature.youControl(), color = GREEN
      *
      * Filter matching uses projected state so animated creature-lands and typeshifted
      * lands are recognised under their projected types. The static-ability source's
-     * controller is also read from projected state, so the "you tap" form transfers
-     * correctly across control-changing effects.
+     * controller is also read from projected state and used as the "you" perspective
+     * for the filter's controller predicate, so the "you tap" form transfers correctly
+     * across control-changing effects.
      *
      * The bonus color, when mirroring, is the source's first produced color — basic
      * lands produce a single color so this is unambiguous for the canonical case;
@@ -1039,9 +1040,10 @@ class ManaSolver(
                 val onSourceTap = staticAbility as? AdditionalManaOnSourceTap ?: continue
 
                 val staticController = state.projectedState.getController(entityId) ?: continue
-                if (onSourceTap.controllerOnlySource && staticController != tappingPlayerId) continue
 
-                val filterContext = PredicateContext(controllerId = tappingPlayerId, sourceId = entityId)
+                // Filter from the static-ability controller's perspective — see
+                // AdditionalManaOnSourceTap kdoc.
+                val filterContext = PredicateContext(controllerId = staticController, sourceId = entityId)
                 if (!predicateEvaluator.matchesWithProjection(
                         state, state.projectedState, source.entityId, onSourceTap.sourceFilter, filterContext
                     )) continue

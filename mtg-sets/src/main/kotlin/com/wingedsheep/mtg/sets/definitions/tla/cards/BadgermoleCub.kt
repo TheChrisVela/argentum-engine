@@ -34,9 +34,8 @@ val BadgermoleCub = card("Badgermole Cub") {
 
     staticAbility {
         ability = AdditionalManaOnSourceTap(
-            sourceFilter = GameObjectFilter.Creature,
-            color = Color.GREEN,
-            controllerOnlySource = true
+            sourceFilter = GameObjectFilter.Creature.youControl(),
+            color = Color.GREEN
         )
     }
 
