@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 137 / 261
+**Implemented:** 138 / 261
 
 ---
 
@@ -104,7 +104,7 @@
 - [x] Honor
 - [x] Honored Knight-Captain
 - [x] Hullcarver
-- [ ] Hylderblade
+- [x] Hylderblade
 - [ ] Hymn of the Faller
 - [x] Icecave Crasher
 - [ ] Icetill Explorer
