@@ -20,5 +20,6 @@ object OutlawsOfThunderJunctionSet : MtgSet {
         ConcealedCourtyard,
         ForsakenMiner,
         ShootTheSheriff,
+        SpirebluffCanal,
     )
 }
