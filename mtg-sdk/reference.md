@@ -382,7 +382,7 @@ constructors.
 | Effect                       | Parameters                                            | Purpose                        |
 |------------------------------|-------------------------------------------------------|--------------------------------|
 | `CompositeEffect`            | `effects: List<Effect>`                               | Chain multiple effects         |
-| `MayEffect`                  | `effect, descriptionOverride?`                        | "You may..."                   |
+| `MayEffect`                  | `effect, descriptionOverride?, decisionMaker?: EffectTarget` | "You may..." (set `decisionMaker` for "that creature's controller may ..." — Requiem Monolith) |
 | `ModalEffect`                | `modes: List<Mode>, chooseCount`                      | "Choose one/two..."            |
 | `BudgetModalEffect`          | `budget: Int, modes: List<BudgetMode>`                | "Choose up to N worth of modes" (Season cycle) |
 | `OptionalCostEffect`         | `cost, ifPaid, ifNotPaid?`                            | "You may [cost]. If you do..." |

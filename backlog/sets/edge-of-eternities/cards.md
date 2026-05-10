@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 137 / 261
+**Implemented:** 138 / 261
 
 ---
 
@@ -174,7 +174,7 @@
 - [ ] Rayblade Trooper
 - [x] Red Tiger Mechan
 - [x] Remnant Elemental
-- [ ] Requiem Monolith
+- [x] Requiem Monolith
 - [x] Reroute Systems
 - [ ] Rescue Skiff
 - [x] Rig for War

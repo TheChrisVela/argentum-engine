@@ -68,6 +68,11 @@ data class CompositeEffect(
  *
  * Use this to compose optional parts of abilities rather than creating
  * specific optional variants of each effect.
+ *
+ * @property decisionMaker Optional override for who answers the yes/no question.
+ *   Defaults to the ability's controller. Set to e.g. [EffectTarget.TargetController]
+ *   for "that creature's controller may ..." (Requiem Monolith) — only the prompt
+ *   is delegated; the inner effect still resolves under the original controller.
  */
 @SerialName("May")
 @Serializable
@@ -77,7 +82,8 @@ data class MayEffect(
     val sourceRequiredZone: Zone? = null,
     val inlineOnTrigger: Boolean = false,
     /** Optional hint text shown below the prompt (e.g., keyword reminder text) */
-    val hint: String? = null
+    val hint: String? = null,
+    val decisionMaker: EffectTarget? = null
 ) : Effect {
     override val description: String = descriptionOverride ?: "You may ${effect.description.lowercase()}"
 

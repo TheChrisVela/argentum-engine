@@ -3,6 +3,7 @@ package com.wingedsheep.engine.handlers.effects.composite
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.effects.ChooseActionEffect
@@ -47,7 +48,9 @@ class MayEffectExecutor(
             if (!anyFeasible) return EffectResult.success(state)
         }
 
-        val playerId = context.controllerId
+        val playerId = effect.decisionMaker
+            ?.let { TargetResolutionUtils.resolvePlayerTarget(it, context, state) }
+            ?: context.controllerId
 
         // Get source name for the prompt
         val sourceName = context.sourceId?.let { sourceId ->
