@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 138 / 261
+**Implemented:** 139 / 261
 
 ---
 
@@ -113,7 +113,7 @@
 - [x] Illvoi Light Jammer
 - [x] Illvoi Operative
 - [ ] Infinite Guideline Station
-- [ ] Insatiable Skittermaw
+- [x] Insatiable Skittermaw
 - [ ] Interceptor Mechan
 - [x] Intrepid Tenderfoot
 - [x] Invasive Maneuvers
