@@ -25,7 +25,7 @@ class HylderbladeScenarioTest : ScenarioTestBase() {
     init {
         context("Hylderblade equip + void-triggered re-attach") {
 
-            test("equipping attaches Hylderblade and grants +3/+1") {
+            test("equipping attaches Hylderblade to a creature you control") {
                 val game = scenario()
                     .withPlayers("Player1", "Player2")
                     .withCardOnBattlefield(1, "Hylderblade")
@@ -56,6 +56,43 @@ class HylderbladeScenarioTest : ScenarioTestBase() {
                 withClue("Hylderblade attached to Glory Seeker") {
                     attachedTo shouldNotBe null
                     attachedTo!!.targetId shouldBe seekerId
+                }
+            }
+
+            test("equipped creature gets +3/+1") {
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardOnBattlefield(1, "Hylderblade")
+                    .withCardOnBattlefield(1, "Glory Seeker") // 2/2 base
+                    .withLandsOnBattlefield(1, "Swamp", 4)
+                    .withCardInLibrary(1, "Swamp")
+                    .withCardInLibrary(2, "Mountain")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val bladeId = game.findPermanent("Hylderblade")!!
+                val seekerId = game.findPermanent("Glory Seeker")!!
+                val equipAbility = cardRegistry.getCard("Hylderblade")!!.script.activatedAbilities.first()
+
+                withClue("Glory Seeker base power") { game.state.projectedState.getPower(seekerId) shouldBe 2 }
+                withClue("Glory Seeker base toughness") { game.state.projectedState.getToughness(seekerId) shouldBe 2 }
+
+                game.execute(
+                    ActivateAbility(
+                        playerId = game.player1Id,
+                        sourceId = bladeId,
+                        abilityId = equipAbility.id,
+                        targets = listOf(ChosenTarget.Permanent(seekerId))
+                    )
+                )
+                game.resolveStack()
+
+                withClue("Equipped creature power 2 + 3 = 5") {
+                    game.state.projectedState.getPower(seekerId) shouldBe 5
+                }
+                withClue("Equipped creature toughness 2 + 1 = 3") {
+                    game.state.projectedState.getToughness(seekerId) shouldBe 3
                 }
             }
 
