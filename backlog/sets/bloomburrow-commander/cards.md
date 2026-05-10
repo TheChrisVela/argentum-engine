@@ -13,7 +13,7 @@
 | Green      | 62    | 2    |
 | Multicolor | 40    | 1    |
 | Colorless  | 33    | 1    |
-| Land       | 69    | 1    |
+| Land       | 69    | 2    |
 
 ---
 
@@ -286,7 +286,7 @@
 - [ ] Tear Asunder
 - [ ] Teferi, Time Raveler
 - [ ] Temple of Abandon
-- [ ] Temple of Enlightenment
+- [x] Temple of Enlightenment
 - [ ] Temple of Epiphany
 - [ ] Temple of Malady
 - [ ] Temple of Mystery
