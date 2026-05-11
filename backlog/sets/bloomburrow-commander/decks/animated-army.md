@@ -6,12 +6,12 @@
 
 ## Commander
 
-- [ ] 1 Bello, Bard of the Brambles
+- [x] 1 Bello, Bard of the Brambles
 
 ## Creatures (21)
 
-- [ ] 1 Brightcap Badger // Fungus Frolic
-- [ ] 1 Burnished Hart
+- [x] 1 Brightcap Badger // Fungus Frolic
+- [x] 1 Burnished Hart
 - [ ] 1 Etali, Primal Storm
 - [ ] 1 Evercoat Ursine
 - [ ] 1 Garruk's Packleader

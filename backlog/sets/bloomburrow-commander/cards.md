@@ -2,7 +2,7 @@
 
 **Set Size:** 312 cards
 **Release Date:** August 2, 2024
-**Implemented:** 13 / 312
+**Implemented:** 14 / 312
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 37    | 0    |
@@ -55,7 +55,7 @@
 - [x] Brightcap Badger // Fungus Frolic
 - [ ] Broken Wings
 - [ ] Brushland
-- [ ] Burnished Hart
+- [x] Burnished Hart
 - [ ] Calamity of Cinders
 - [ ] Canopy Vista
 - [ ] Cascade Bluffs
