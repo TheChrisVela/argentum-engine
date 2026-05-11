@@ -42,7 +42,7 @@
 - [ ] 1 Beast Within
 - [ ] 1 Big Score
 - [ ] 1 Chaos Warp
-- [ ] 1 Starstorm
+- [x] 1 Starstorm
 
 ## Sorceries (7)
 
@@ -59,8 +59,8 @@
 - [ ] 1 Arcane Signet
 - [ ] 1 Bootleggers' Stash
 - [ ] 1 Esika's Chariot
-- [ ] 1 Fellwar Stone
-- [ ] 1 Gilded Lotus
+- [x] 1 Fellwar Stone
+- [x] 1 Gilded Lotus
 - [ ] 1 Gruul Signet
 - [ ] 1 Hedron Archive
 - [ ] 1 Mind Stone
@@ -76,7 +76,7 @@
 - [ ] 1 Alchemist's Talent
 - [ ] 1 Berserkers' Onslaught
 - [ ] 1 Garruk's Uprising
-- [ ] 1 Gratuitous Violence
+- [x] 1 Gratuitous Violence
 - [ ] 1 Greater Good
 - [ ] 1 Outpost Siege
 - [ ] 1 Path of Discovery
@@ -91,15 +91,15 @@
 
 - [ ] 1 Cinder Glade
 - [ ] 1 Command Tower
-- [ ] 1 Copperline Gorge
-- [ ] 1 Evolving Wilds
+- [x] 1 Copperline Gorge
+- [x] 1 Evolving Wilds
 - [ ] 1 Exotic Orchard
 - [ ] 5 Forest
 - [ ] 5 Forest
-- [ ] 1 Forgotten Cave
+- [x] 1 Forgotten Cave
 - [ ] 1 Game Trail
 - [ ] 1 Gruul Turf
-- [ ] 1 Karplusan Forest
+- [x] 1 Karplusan Forest
 - [ ] 1 Mossfire Valley
 - [ ] 1 Mosswort Bridge
 - [ ] 4 Mountain
@@ -109,7 +109,7 @@
 - [ ] 1 Reliquary Tower
 - [ ] 1 Rootbound Crag
 - [ ] 1 Sheltered Thicket
-- [ ] 1 Temple of Abandon
+- [x] 1 Temple of Abandon
 - [ ] 1 Terramorphic Expanse
-- [ ] 1 Tranquil Thicket
+- [x] 1 Tranquil Thicket
 - [ ] 1 Wooded Ridgeline

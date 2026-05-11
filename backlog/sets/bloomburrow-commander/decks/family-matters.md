@@ -38,12 +38,12 @@
 - [ ] 1 Rose Room Treasurer
 - [ ] 1 Selfless Spirit
 - [ ] 1 Shield Broker
-- [ ] 1 Siege-Gang Commander
+- [x] 1 Siege-Gang Commander
 - [ ] 1 Skyclave Apparition
 - [ ] 1 Solemn Simulacrum
 - [ ] 1 Spirited Companion
 - [ ] 1 Sun Titan
-- [ ] 1 Tetsuko Umezawa, Fugitive
+- [x] 1 Tetsuko Umezawa, Fugitive
 - [ ] 1 Thopter Engineer
 
 ## Planeswalkers (1)
@@ -75,8 +75,8 @@
 - [ ] 1 Azorius Signet
 - [ ] 1 Bident of Thassa
 - [ ] 1 Boros Signet
-- [ ] 1 Fellwar Stone
-- [ ] 1 Helm of the Host
+- [x] 1 Fellwar Stone
+- [x] 1 Helm of the Host
 - [ ] 1 Izzet Signet
 - [ ] 1 Mind Stone
 - [ ] 1 Sol Ring
@@ -89,13 +89,13 @@
 
 ## Lands (38)
 
-- [ ] 1 Adarkar Wastes
-- [ ] 1 Battlefield Forge
+- [x] 1 Adarkar Wastes
+- [x] 1 Battlefield Forge
 - [ ] 1 Cascade Bluffs
 - [ ] 1 Castle Ardenvale
-- [ ] 1 Clifftop Retreat
+- [x] 1 Clifftop Retreat
 - [ ] 1 Command Tower
-- [ ] 1 Evolving Wilds
+- [x] 1 Evolving Wilds
 - [ ] 1 Exotic Orchard
 - [ ] 1 Ferrous Lake
 - [ ] 1 Glacial Fortress
@@ -103,19 +103,19 @@
 - [ ] 2 Island
 - [ ] 2 Mountain
 - [ ] 2 Mountain
-- [ ] 1 Mystic Monastery
+- [x] 1 Mystic Monastery
 - [ ] 1 Path of Ancestry
 - [ ] 3 Plains
 - [ ] 2 Plains
 - [ ] 1 Rugged Prairie
-- [ ] 1 Seachrome Coast
-- [ ] 1 Shivan Reef
+- [x] 1 Seachrome Coast
+- [x] 1 Shivan Reef
 - [ ] 1 Skycloud Expanse
-- [ ] 1 Sulfur Falls
+- [x] 1 Sulfur Falls
 - [ ] 1 Sunscorched Divide
-- [ ] 1 Temple of Enlightenment
-- [ ] 1 Temple of Epiphany
-- [ ] 1 Temple of Triumph
+- [x] 1 Temple of Enlightenment
+- [x] 1 Temple of Epiphany
+- [x] 1 Temple of Triumph
 - [ ] 1 Terramorphic Expanse
 - [ ] 1 Thriving Bluff
 - [ ] 1 Thriving Heath

@@ -10,13 +10,13 @@
 
 ## Creatures (26)
 
-- [ ] 1 Baird, Steward of Argive
+- [x] 1 Baird, Steward of Argive
 - [ ] 1 Bloodroot Apothecary
 - [ ] 1 Body of Knowledge
 - [ ] 1 Chasm Skulker
 - [ ] 1 Coiling Oracle
 - [ ] 1 Faeburrow Elder
-- [ ] 1 Forgotten Ancient
+- [x] 1 Forgotten Ancient
 - [ ] 1 Jolly Gerbils
 - [ ] 1 Jolrael, Mwonvuli Recluse
 - [ ] 1 Kalonian Hydra
@@ -69,7 +69,7 @@
 
 - [ ] 1 Arcane Signet
 - [ ] 1 Coveted Jewel
-- [ ] 1 Fellwar Stone
+- [x] 1 Fellwar Stone
 - [ ] 1 Ghirapur Orrery
 - [ ] 1 Mind Stone
 - [ ] 1 Sol Ring
@@ -83,41 +83,41 @@
 - [ ] 1 Hoofprints of the Stag
 - [ ] 1 Martial Impetus
 - [ ] 1 Rites of Flourishing
-- [ ] 1 Simic Ascendancy
+- [x] 1 Simic Ascendancy
 - [ ] 1 Tenuous Truce
 - [ ] 1 Wizard Class
 
 ## Lands (38)
 
-- [ ] 1 Adarkar Wastes
-- [ ] 1 Brushland
+- [x] 1 Adarkar Wastes
+- [x] 1 Brushland
 - [ ] 1 Canopy Vista
 - [ ] 1 Command Tower
-- [ ] 1 Evolving Wilds
+- [x] 1 Evolving Wilds
 - [ ] 1 Exotic Orchard
 - [ ] 1 Flooded Grove
 - [ ] 2 Forest
 - [ ] 2 Forest
 - [ ] 1 Glacial Fortress
-- [ ] 1 Hinterland Harbor
+- [x] 1 Hinterland Harbor
 - [ ] 2 Island
 - [ ] 2 Island
 - [ ] 1 Overflowing Basin
 - [ ] 2 Plains
 - [ ] 2 Plains
 - [ ] 1 Prairie Stream
-- [ ] 1 Razorverge Thicket
+- [x] 1 Razorverge Thicket
 - [ ] 1 Reliquary Tower
-- [ ] 1 Seachrome Coast
+- [x] 1 Seachrome Coast
 - [ ] 1 Seaside Citadel
 - [ ] 1 Skycloud Expanse
 - [ ] 1 Sungrass Prairie
 - [ ] 1 Sunpetal Grove
-- [ ] 1 Temple of Enlightenment
-- [ ] 1 Temple of Mystery
-- [ ] 1 Temple of Plenty
+- [x] 1 Temple of Enlightenment
+- [x] 1 Temple of Mystery
+- [x] 1 Temple of Plenty
 - [ ] 1 Terramorphic Expanse
 - [ ] 1 Thriving Grove
 - [ ] 1 Thriving Heath
 - [ ] 1 Thriving Isle
-- [ ] 1 Yavimaya Coast
+- [x] 1 Yavimaya Coast
