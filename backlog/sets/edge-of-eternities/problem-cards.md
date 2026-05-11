@@ -243,9 +243,6 @@ https://api.scryfall.com/cards/named?exact=Beyond%20the%20Quiet&set=eoe
 ## Planet, Draw cards equal to the sacrificed creature’s power
 - [ ] Susur Secundi, Void Altar
 
-## Whenever another creature you control dies or is put into exile, put a +1/+1 counter on Syr Vondam and you gain 1 life.
-- [ ] Syr Vondam, Sunstar Exemplar
-
 ## That permanent gains haste, "When this permanent leaves the battlefield, it deals damage equal to its mana value to each creature," and "At the beginning of your end step, sacrifice this permanent."
 - [ ] Terminal Velocity
 
