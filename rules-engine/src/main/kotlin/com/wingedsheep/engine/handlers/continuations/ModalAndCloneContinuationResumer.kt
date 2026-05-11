@@ -424,12 +424,15 @@ class ModalAndCloneContinuationResumer(
                     )
                 }
 
-                // Update entity with copied card component and copy tracking
+                // Update entity with copied card component and copy tracking.
+                // Snapshot the pre-copy CardComponent so the permanent reverts to its
+                // printed identity when it leaves the battlefield (CR 400.7 / 707.2).
                 newState = newState.updateEntity(spellId) { c ->
                     c.with(copiedCardComponent)
                         .with(com.wingedsheep.engine.state.components.identity.CopyOfComponent(
                             originalCardDefinitionId = originalCardComponent.cardDefinitionId,
-                            copiedCardDefinitionId = targetCardComponent.cardDefinitionId
+                            copiedCardDefinitionId = targetCardComponent.cardDefinitionId,
+                            originalCardComponent = originalCardComponent
                         ))
                 }
 

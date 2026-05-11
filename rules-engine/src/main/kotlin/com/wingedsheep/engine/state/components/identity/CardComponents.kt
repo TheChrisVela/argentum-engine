@@ -50,11 +50,17 @@ data object TokenComponent : Component
  * Tracks that an entity is a copy of another card.
  * The originalCardDefinitionId preserves what the card originally was (e.g., Clone),
  * while copiedCardDefinitionId tracks what it's currently copying.
+ *
+ * [originalCardComponent] is the pre-copy [CardComponent] snapshot. Permanent-level
+ * copy effects (Clone, Mockingbird, "X becomes a copy of Y") populate it so the
+ * card can revert to its printed identity when it leaves the battlefield
+ * (CR 707.2, CR 400.7). Stack-only copies (Storm and friends) leave it null.
  */
 @Serializable
 data class CopyOfComponent(
     val originalCardDefinitionId: String,
-    val copiedCardDefinitionId: String
+    val copiedCardDefinitionId: String,
+    val originalCardComponent: CardComponent? = null
 ) : Component
 
 /**

@@ -61,17 +61,25 @@ class EachPermanentBecomesCopyOfTargetExecutor : EffectExecutor<EachPermanentBec
         var newState = state
         for (entityId in affected) {
             val container = newState.getEntity(entityId) ?: continue
-            val originalCard = container.get<CardComponent>() ?: continue
+            val currentCard = container.get<CardComponent>() ?: continue
 
             // Preserve the original ownership; only copiable card characteristics change.
-            val copiedCard = targetCard.copy(ownerId = originalCard.ownerId)
+            val copiedCard = targetCard.copy(ownerId = currentCard.ownerId)
+
+            // If this permanent is already a copy, keep the existing pre-copy snapshot
+            // so a chain of copy effects still reverts to the printed identity on exit.
+            val existingCopyOf = container.get<CopyOfComponent>()
+            val originalCardSnapshot = existingCopyOf?.originalCardComponent ?: currentCard
+            val originalDefinitionId =
+                existingCopyOf?.originalCardDefinitionId ?: currentCard.cardDefinitionId
 
             newState = newState.updateEntity(entityId) { c ->
                 c.with(copiedCard)
                     .with(
                         CopyOfComponent(
-                            originalCardDefinitionId = originalCard.cardDefinitionId,
-                            copiedCardDefinitionId = targetCard.cardDefinitionId
+                            originalCardDefinitionId = originalDefinitionId,
+                            copiedCardDefinitionId = targetCard.cardDefinitionId,
+                            originalCardComponent = originalCardSnapshot
                         )
                     )
             }

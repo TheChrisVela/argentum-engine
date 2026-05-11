@@ -108,6 +108,57 @@ class MockingbirdScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("reverts to Mockingbird when bounced to hand (CR 400.7 / 707.2)") {
+                // Mockingbird enters as a copy of Glory Seeker, then gets bounced to hand.
+                // Per CR 400.7 the bounced card is a new object — its copy effect ends
+                // and the card in hand should be Mockingbird, not Glory Seeker.
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardInHand(1, "Mockingbird")
+                    .withCardInHand(1, "Symbol of Unsummoning")
+                    .withLandsOnBattlefield(1, "Island", 6)
+                    .withCardOnBattlefield(2, "Glory Seeker")
+                    .withCardInLibrary(1, "Island")
+                    .withCardInLibrary(2, "Island")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.castXSpell(1, "Mockingbird", xValue = 2)
+                game.resolveStack()
+                val glorySeeker = game.findPermanent("Glory Seeker")!!
+                game.selectCards(listOf(glorySeeker))
+
+                // Find Mockingbird-the-copy on the battlefield (currently named "Glory Seeker").
+                val mockingbirdEntity = game.state.getBattlefield(game.player1Id).first { id ->
+                    game.state.getEntity(id)
+                        ?.get<com.wingedsheep.engine.state.components.identity.CopyOfComponent>()
+                        ?.originalCardDefinitionId == "Mockingbird"
+                }
+
+                // Bounce the copy back to hand.
+                val bounceResult = game.castSpell(1, "Symbol of Unsummoning", targetId = mockingbirdEntity)
+                withClue("Should cast Symbol of Unsummoning: ${bounceResult.error}") {
+                    bounceResult.error shouldBe null
+                }
+                game.resolveStack()
+
+                // The card now in hand should be Mockingbird, not Glory Seeker.
+                val inHand = game.state.getHand(game.player1Id).firstOrNull { it == mockingbirdEntity }
+                withClue("Bounced entity should be in player 1's hand") {
+                    inHand shouldNotBe null
+                }
+                val handCard = game.state.getEntity(mockingbirdEntity)?.get<CardComponent>()!!
+                withClue("Card should have reverted to Mockingbird") {
+                    handCard.name shouldBe "Mockingbird"
+                    handCard.cardDefinitionId shouldBe "Mockingbird"
+                }
+                withClue("CopyOfComponent should have been stripped on zone exit") {
+                    game.state.getEntity(mockingbirdEntity)
+                        ?.get<com.wingedsheep.engine.state.components.identity.CopyOfComponent>() shouldBe null
+                }
+            }
+
             test("optional — player can decline to copy") {
                 // Cast Mockingbird with X=2, total mana spent = 3
                 // Glory Seeker has MV 2, which is <= 3, but player declines
