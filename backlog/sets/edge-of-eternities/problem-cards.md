@@ -31,7 +31,6 @@ https://api.scryfall.com/cards/named?exact=Beyond%20the%20Quiet&set=eoe
 
 - [x] Plasma Bolt
 - [ ] Roving Actuator
-- [ ] Interceptor Mechan
 
 ## Differently named lands:
 - [x] All-Fates Scroll
