@@ -18,7 +18,7 @@
 - [x] 1 Ghalta, Primal Hunger
 - [x] 1 Goreclaw, Terror of Qal Sisma
 - [x] 1 Grothama, All-Devouring
-- [ ] 1 Grumgully, the Generous
+- [x] 1 Grumgully, the Generous
 - [ ] 1 Kodama of the East Tree
 - [ ] 1 Llanowar Loamspeaker
 - [ ] 1 Lotus Cobra
