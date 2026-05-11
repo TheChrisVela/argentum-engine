@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 165 / 261
+**Implemented:** 166 / 261
 ---
 
 - [x] Adagia, Windswept Bastion
@@ -44,7 +44,7 @@
 - [x] Cosmogrand Zenith
 - [x] Cryogen Relic
 - [x] Cryoshatter
-- [ ] Cut Propulsion
+- [x] Cut Propulsion
 - [x] Dark Endurance
 - [x] Dauntless Scrapbot
 - [x] Dawnsire, Sunstar Dreadnought
