@@ -188,15 +188,16 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
             emptyList()
         }
 
-        // Persist reveals for cards that came from a hidden zone (library/hand).
+        // Persist reveals for cards that came from a library source.
         // - Public reveal (`revealed = true`) → revealed to every player.
         // - Private look (Scry / Surveil / look-at-top-N) → revealed to the looking player only.
-        // Cards that move out of the library (e.g., to graveyard via Surveil) keep the component
-        // but it's harmless in public zones; if they re-enter the library the existing flag is
-        // still meaningful, and shuffles strip it.
+        // HAND is intentionally excluded: the owner already sees their own hand, and the caster
+        // should never automatically see another player's hand from a gather. Cards that genuinely
+        // reveal/look at an opponent's hand use [RevealHandEffect] or [LookAtTargetHandEffect]
+        // as an explicit prior step.
         val revealAudience: Set<EntityId> = when {
             effect.revealed -> state.turnOrder.toSet()
-            isHiddenZoneSource(effect.source) -> setOf(context.controllerId)
+            isLibrarySource(effect.source) -> setOf(context.controllerId)
             else -> emptySet()
         }
         val newState = if (revealAudience.isNotEmpty()) {
@@ -210,10 +211,10 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
         )
     }
 
-    private fun isHiddenZoneSource(source: CardSource): Boolean = when (source) {
+    private fun isLibrarySource(source: CardSource): Boolean = when (source) {
         is CardSource.TopOfLibrary -> true
-        is CardSource.FromZone -> source.zone == Zone.LIBRARY || source.zone == Zone.HAND
-        is CardSource.FromMultipleZones -> source.zones.any { it == Zone.LIBRARY || it == Zone.HAND }
+        is CardSource.FromZone -> source.zone == Zone.LIBRARY
+        is CardSource.FromMultipleZones -> source.zones.any { it == Zone.LIBRARY }
         else -> false
     }
 

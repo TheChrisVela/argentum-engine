@@ -64,7 +64,13 @@ data class ZoneChangeEvent(
      */
     val lastKnownCounters: Map<String, Int> = emptyMap(),
     /** X value from the spell that put this permanent onto the battlefield (for ETB triggers using DynamicAmount.XValue) */
-    val xValue: Int? = null
+    val xValue: Int? = null,
+    /**
+     * Per-player damage dealt to this entity this turn (keyed by source-controller player id),
+     * captured at the moment of leaving the battlefield. Read by LTB triggers like Grothama:
+     * "each player draws cards equal to the damage dealt to ~ this turn by sources they controlled."
+     */
+    val lastKnownDamageDealtByPlayers: Map<EntityId, Int> = emptyMap()
 ) : GameEvent
 
 // =============================================================================

@@ -211,6 +211,21 @@ data class DrawUpToEffect(
 }
 
 /**
+ * Each player draws cards equal to the damage they dealt this turn (via sources they
+ * controlled) to the trigger's source. Reads the per-player damage map captured on the
+ * trigger context at leave-battlefield time. Used for Grothama, All-Devouring's
+ * LTB ability.
+ */
+@SerialName("EachPlayerDrawsForDamageDealtToSource")
+@Serializable
+data object EachPlayerDrawsForDamageDealtToSourceEffect : Effect {
+    override val description: String =
+        "Each player draws cards equal to the amount of damage dealt to this creature this turn by sources they controlled"
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}
+
+/**
  * Reveal a player's hand (publicly visible to all players).
  * This is an atomic effect that just reveals - use with CompositeEffect for
  * "reveal and do something based on what's revealed" patterns.

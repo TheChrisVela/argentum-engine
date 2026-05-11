@@ -306,6 +306,24 @@ data class DamageDealtToCreaturesThisTurnComponent(
 }
 
 /**
+ * Tracks damage dealt to this entity this turn, summed per source-controller player.
+ * Used by Grothama-style LTB triggers: "each player draws cards equal to the damage
+ * dealt to ~ this turn by sources they controlled." Captured as last-known info on
+ * the [com.wingedsheep.engine.core.ZoneChangeEvent] when the bearer leaves the
+ * battlefield. Cleared at end of turn by [com.wingedsheep.engine.core.CleanupPhaseManager].
+ */
+@Serializable
+data class DamageDealtByPlayersThisTurnComponent(
+    val perPlayer: Map<EntityId, Int> = emptyMap()
+) : Component {
+    fun adding(playerId: EntityId, amount: Int): DamageDealtByPlayersThisTurnComponent {
+        if (amount <= 0) return this
+        val current = perPlayer[playerId] ?: 0
+        return copy(perPlayer = perPlayer + (playerId to (current + amount)))
+    }
+}
+
+/**
  * Tracks which permanent types have been used for graveyard casting/playing this turn
  * from a permanent with MayPlayPermanentsFromGraveyard static ability (e.g., Muldrotha).
  * Stored on the Muldrotha entity itself so a new Muldrotha has a fresh set of permissions.

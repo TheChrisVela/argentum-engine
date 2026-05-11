@@ -47,7 +47,13 @@ data class TriggerContext(
      * (e.g., Essence Channeler's "put its counters on target creature you control").
      * Null when the trigger's source never left the battlefield (or had no counters).
      */
-    val lastKnownCounters: Map<String, Int>? = null
+    val lastKnownCounters: Map<String, Int>? = null,
+    /**
+     * Per-player damage dealt to the triggering source this turn, captured at LTB time.
+     * Read by LTB effects like Grothama's "each player draws X cards where X is the damage
+     * dealt to ~ this turn by sources they controlled."
+     */
+    val lastKnownDamageDealtByPlayers: Map<EntityId, Int>? = null
 ) {
     companion object {
         fun fromEvent(event: com.wingedsheep.engine.core.GameEvent): TriggerContext {
@@ -61,7 +67,9 @@ data class TriggerContext(
                     xValue = event.xValue,
                     lastKnownPower = event.lastKnownPower,
                     lastKnownToughness = event.lastKnownToughness,
-                    lastKnownCounters = event.lastKnownCounters.takeIf { it.isNotEmpty() }
+                    lastKnownCounters = event.lastKnownCounters.takeIf { it.isNotEmpty() },
+                    lastKnownDamageDealtByPlayers =
+                        event.lastKnownDamageDealtByPlayers.takeIf { it.isNotEmpty() }
                 )
                 is DamageDealtEvent -> TriggerContext(
                     triggeringEntityId = event.targetId,

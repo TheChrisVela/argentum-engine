@@ -306,6 +306,7 @@ val engineSerializersModule = SerializersModule {
         subclass(CantBeTargetedByOpponentAbilitiesComponent::class)
         subclass(ClassLevelComponent::class)
         subclass(DamageDealtToCreaturesThisTurnComponent::class)
+        subclass(DamageDealtByPlayersThisTurnComponent::class)
         subclass(ExileOnLeaveBattlefieldComponent::class)
         subclass(GrantCantBeBlockedToSmallCreaturesComponent::class)
         subclass(GrantsCantLoseGameComponent::class)

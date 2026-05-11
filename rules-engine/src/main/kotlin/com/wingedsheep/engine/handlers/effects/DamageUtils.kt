@@ -18,6 +18,7 @@ import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
+import com.wingedsheep.engine.state.components.battlefield.DamageDealtByPlayersThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageDealtToCreaturesThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.HasDealtDamageComponent
 import com.wingedsheep.engine.state.components.battlefield.WasDealtDamageThisTurnComponent
@@ -213,6 +214,10 @@ object DamageUtils {
             if (sourceId != null) {
                 newState = trackDamageDealtToCreature(newState, sourceId, targetId)
             }
+            // Track per-player damage dealt to this entity this turn (Grothama LTB).
+            if (sourceId != null) {
+                newState = trackDamageDealtByPlayer(newState, sourceId, targetId, effectiveAmount)
+            }
         }
 
         // Mark source as having dealt damage (lifetime tracking)
@@ -323,6 +328,30 @@ object DamageUtils {
             val existing = container.get<DamageDealtToCreaturesThisTurnComponent>()
                 ?: DamageDealtToCreaturesThisTurnComponent()
             container.with(existing.withCreature(targetCreatureId))
+        }
+    }
+
+    /**
+     * Track that [amount] damage was dealt to [targetId] this turn by a source controlled
+     * by the controller of [sourceId]. Read at LTB time for "each player draws cards equal
+     * to the damage dealt to ~ this turn by sources they controlled" (Grothama).
+     */
+    fun trackDamageDealtByPlayer(
+        state: GameState,
+        sourceId: EntityId,
+        targetId: EntityId,
+        amount: Int,
+    ): GameState {
+        if (amount <= 0) return state
+        if (targetId !in state.getBattlefield()) return state
+        val controllerId = state.projectedState.getController(sourceId)
+            ?: state.getEntity(sourceId)?.get<ControllerComponent>()?.playerId
+            ?: state.getEntity(sourceId)?.get<CardComponent>()?.ownerId
+            ?: return state
+        return state.updateEntity(targetId) { container ->
+            val existing = container.get<DamageDealtByPlayersThisTurnComponent>()
+                ?: DamageDealtByPlayersThisTurnComponent()
+            container.with(existing.adding(controllerId, amount))
         }
     }
 

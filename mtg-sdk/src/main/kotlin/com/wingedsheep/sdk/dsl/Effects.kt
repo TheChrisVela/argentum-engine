@@ -324,6 +324,14 @@ object Effects {
     fun EachPlayerReturnPermanentToHand(): Effect = EachPlayerReturnsPermanentToHandEffect
 
     /**
+     * Each player draws cards equal to the damage dealt to the source this turn by sources
+     * they controlled. Reads the per-player damage map captured on LTB. Used for
+     * Grothama, All-Devouring.
+     */
+    fun EachPlayerDrawsForDamageDealtToSource(): Effect =
+        com.wingedsheep.sdk.scripting.effects.EachPlayerDrawsForDamageDealtToSourceEffect
+
+    /**
      * Replace the next draw this turn with the given effect instead.
      * Used by the "Words of" enchantment cycle.
      */

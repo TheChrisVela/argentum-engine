@@ -424,12 +424,15 @@ class ModalAndCloneContinuationResumer(
                     )
                 }
 
-                // Update entity with copied card component and copy tracking
+                // Update entity with copied card component and copy tracking.
+                // Snapshot the pre-copy CardComponent so the permanent reverts to its
+                // printed identity when it leaves the battlefield (CR 400.7 / 707.2).
                 newState = newState.updateEntity(spellId) { c ->
                     c.with(copiedCardComponent)
                         .with(com.wingedsheep.engine.state.components.identity.CopyOfComponent(
                             originalCardDefinitionId = originalCardComponent.cardDefinitionId,
-                            copiedCardDefinitionId = targetCardComponent.cardDefinitionId
+                            copiedCardDefinitionId = targetCardComponent.cardDefinitionId,
+                            originalCardComponent = originalCardComponent
                         ))
                 }
 
@@ -639,7 +642,8 @@ class ModalAndCloneContinuationResumer(
                         landId = continuation.landId,
                         controllerId = continuation.controllerId,
                         choiceType = com.wingedsheep.sdk.scripting.ChoiceType.CREATURE_TYPE,
-                        creatureTypes = allCreatureTypes
+                        creatureTypes = allCreatureTypes,
+                        fromZone = continuation.fromZone
                     )
                     val pausedState = newState
                         .pushContinuation(nextContinuation)
@@ -648,6 +652,31 @@ class ModalAndCloneContinuationResumer(
                 }
                 else -> { /* No other chaining needed for lands */ }
             }
+        }
+
+        // Final choice resolved — fire any triggers from the land entering
+        // (e.g., landfall). The land already moved to the battlefield when it was
+        // played; we synthesize the matching ZoneChangeEvent here so triggers
+        // can react now that the chosen value is recorded.
+        val zoneChangeEvent = ZoneChangeEvent(
+            continuation.landId,
+            cardComponent?.name ?: "Unknown",
+            continuation.fromZone,
+            Zone.BATTLEFIELD,
+            continuation.controllerId
+        )
+        val triggerEvents = listOf(zoneChangeEvent)
+        val triggers = services.triggerDetector.detectTriggers(newState, triggerEvents)
+        if (triggers.isNotEmpty()) {
+            val triggerResult = services.triggerProcessor.processTriggers(newState, triggers)
+            if (triggerResult.isPaused) {
+                return ExecutionResult.paused(
+                    triggerResult.state,
+                    triggerResult.pendingDecision!!,
+                    triggerResult.events
+                )
+            }
+            return checkForMore(triggerResult.newState, triggerResult.events)
         }
 
         return checkForMore(newState, emptyList())

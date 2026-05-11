@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useGameStore } from '@/store/gameStore.ts'
 import { useHasLegalActions } from '@/store/selectors.ts'
 import type { ClientCard, EntityId } from '@/types'
@@ -6,6 +7,7 @@ import { Color, ColorSymbols } from '@/types/enums'
 import { getCardImageUrl, getScryfallFallbackUrl, MORPH_FACE_DOWN_IMAGE_URL } from '@/utils/cardImages.ts'
 import { useInteraction } from '@/hooks/useInteraction.ts'
 import { ManaCost } from '@/components/ui/ManaSymbols.tsx'
+import { HoverCardPreview } from '@/components/ui/HoverCardPreview.tsx'
 import {
   useResponsiveContext,
   hasMultipleCastingOptions,
@@ -161,6 +163,10 @@ export function GameCard({
   // Long-press handler for mobile card preview
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [longPressActive, setLongPressActive] = useState(false)
+
+  // Hover state for the copy-of badge — shows the *original* card preview
+  // (e.g. Mockingbird) instead of the copied card's preview (e.g. Glory Seeker).
+  const [copyBadgeHoverPos, setCopyBadgeHoverPos] = useState<{ x: number; y: number } | null>(null)
 
   const handleTouchStartPreview = useCallback((_e: React.TouchEvent) => {
     longPressTimer.current = setTimeout(() => {
@@ -1679,24 +1685,54 @@ export function GameCard({
         </div>
       )}
 
-      {/* Copy indicator badge (e.g., Clever Impersonator copying Wind Drake) */}
+      {/* Copy indicator badge (e.g., Clever Impersonator copying Wind Drake).
+          Hovering the badge previews the *original* card (the printed identity),
+          not the copy's current characteristics. */}
       {!faceDown && card.copyOf && (
-        <div style={{
-          position: 'absolute',
-          top: 4,
-          left: 4,
-          backgroundColor: 'rgba(40, 40, 80, 0.9)',
-          color: '#a0b0e0',
-          fontSize: responsive.badges.smallLabelFontSize,
-          padding: '1px 4px',
-          borderRadius: 3,
-          border: '1px solid rgba(100, 120, 200, 0.6)',
-          whiteSpace: 'nowrap',
-          pointerEvents: 'none',
-          zIndex: 5,
-        }}>
+        <div
+          onMouseEnter={(e) => {
+            e.stopPropagation()
+            hoverCard(null)
+            setCopyBadgeHoverPos({ x: e.clientX, y: e.clientY })
+          }}
+          onMouseMove={(e) => {
+            e.stopPropagation()
+            setCopyBadgeHoverPos({ x: e.clientX, y: e.clientY })
+          }}
+          onMouseLeave={(e) => {
+            e.stopPropagation()
+            setCopyBadgeHoverPos(null)
+            // Restore the regular card preview as the cursor moves back onto the card body.
+            hoverCard(card.id, { x: e.clientX, y: e.clientY })
+          }}
+          style={{
+            position: 'absolute',
+            top: 4,
+            left: 4,
+            backgroundColor: 'rgba(40, 40, 80, 0.9)',
+            color: '#a0b0e0',
+            fontSize: responsive.badges.smallLabelFontSize,
+            padding: '1px 4px',
+            borderRadius: 3,
+            border: '1px solid rgba(100, 120, 200, 0.6)',
+            whiteSpace: 'nowrap',
+            cursor: 'help',
+            zIndex: 5,
+          }}
+        >
           {card.copyOf}
         </div>
+      )}
+
+      {/* Original-card preview portalled to <body> so it escapes the card's
+          overflow:hidden / transform containing block (tapped cards rotate). */}
+      {!faceDown && card.copyOf && copyBadgeHoverPos && createPortal(
+        <HoverCardPreview
+          name={card.copyOf}
+          imageUri={null}
+          pos={copyBadgeHoverPos}
+        />,
+        document.body,
       )}
 
       {/* Active effect badges (evasion, etc.) */}

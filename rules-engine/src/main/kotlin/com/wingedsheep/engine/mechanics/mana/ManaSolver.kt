@@ -1249,21 +1249,27 @@ class ManaSolver(
         // Check if we can tap sources for the remaining cost (including remaining X)
         if (solve(state, playerId, remainingCost, xRemainingToPay, excludeSources, spellContext, precomputedSources) != null) return true
 
-        // Fallback: check if TapPermanents mana abilities (e.g., Birchlore Rangers) provide enough extra mana.
-        // These abilities tap other permanents (not the source itself) to produce mana.
-        val tapPermanentsBonus = calculateTapPermanentsBonusMana(state, playerId)
-        if (tapPermanentsBonus.totalMana == 0) return false
+        // Fallback: check if "extras" — mana abilities the auto-tap solver doesn't pick — can
+        // cover the remaining cost. Two flavors:
+        //  1. TapPermanents (e.g. Birchlore Rangers): tap *other* permanents to produce mana.
+        //  2. SacrificeSelf (e.g. Treasure tokens): a tap+sacrifice mana ability. The solver
+        //     refuses to auto-tap these because paying SacrificeSelf in the auto-pay flow would
+        //     mean silently losing the permanent; the player must opt-in by activating the
+        //     ability directly. But the spell is still *affordable* — we just need to know it.
+        val bonus = calculateTapPermanentsBonusMana(state, playerId)
+            .plus(calculateSacrificeSelfBonusMana(state, playerId))
+        if (bonus.totalMana == 0) return false
 
         // Allocate any-color bonus mana to the pool based on what the cost needs,
         // then re-check. This correctly handles color requirements.
-        val augmentedPool = allocateAnyColorManaToPool(pool, tapPermanentsBonus.anyColorMana, cost)
+        val augmentedPool = allocateAnyColorManaToPool(pool, bonus.anyColorMana, cost)
             .let { p ->
                 // Also add specific-color bonus mana
-                tapPermanentsBonus.specificMana.entries.fold(p) { acc, (color, amount) -> acc.add(color, amount) }
+                bonus.specificMana.entries.fold(p) { acc, (color, amount) -> acc.add(color, amount) }
             }
             .let { p ->
                 // Also add colorless bonus mana
-                if (tapPermanentsBonus.colorlessMana > 0) p.addColorless(tapPermanentsBonus.colorlessMana) else p
+                if (bonus.colorlessMana > 0) p.addColorless(bonus.colorlessMana) else p
             }
         val augmentedResult = augmentedPool.payPartial(cost)
         val augmentedRemaining = augmentedResult.remainingCost
@@ -1292,10 +1298,13 @@ class ManaSolver(
         // Add untapped mana sources (including bonus mana from auras and multi-mana sources)
         val sourceMana = (precomputedSources ?: findAvailableManaSources(state, playerId)).sumOf { it.manaAmount + it.bonusManaPerTap }
 
-        // Add extra mana from TapPermanents abilities (e.g., Birchlore Rangers)
-        val tapPermanentsMana = calculateTapPermanentsBonusMana(state, playerId).totalMana
+        // Add extra mana from "extras" abilities the solver doesn't pick:
+        //  - TapPermanents (e.g., Birchlore Rangers)
+        //  - Tap+SacrificeSelf mana abilities (e.g., Treasure tokens)
+        val extrasMana = calculateTapPermanentsBonusMana(state, playerId).totalMana +
+            calculateSacrificeSelfBonusMana(state, playerId).totalMana
 
-        return floatingMana + sourceMana + tapPermanentsMana
+        return floatingMana + sourceMana + extrasMana
     }
 
     /**
@@ -1307,6 +1316,20 @@ class ManaSolver(
         val colorlessMana: Int = 0
     ) {
         val totalMana: Int get() = anyColorMana + specificMana.values.sum() + colorlessMana
+
+        operator fun plus(other: TapPermanentsBonusMana): TapPermanentsBonusMana {
+            val mergedSpecific = buildMap {
+                putAll(specificMana)
+                for ((color, amount) in other.specificMana) {
+                    merge(color, amount, Int::plus)
+                }
+            }
+            return TapPermanentsBonusMana(
+                anyColorMana = anyColorMana + other.anyColorMana,
+                specificMana = mergedSpecific,
+                colorlessMana = colorlessMana + other.colorlessMana
+            )
+        }
     }
 
     /**
@@ -1379,6 +1402,84 @@ class ManaSolver(
                     is AddColorlessManaEffect -> {
                         val amount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
                         colorlessTotal += activationCount * amount
+                    }
+                    else -> {}
+                }
+            }
+        }
+
+        return TapPermanentsBonusMana(anyColorTotal, specificColorTotal, colorlessTotal)
+    }
+
+    /**
+     * Calculates extra mana available from tap+SacrificeSelf mana abilities (e.g. Treasure tokens,
+     * "{T}, Sacrifice this artifact: Add one mana of any color").
+     *
+     * The auto-tap solver refuses to pick these sources because the SacrificeSelf sub-cost can't
+     * be silently paid by the auto-pay flow — the player has to activate the ability directly so
+     * the sacrifice is explicit. But the spell is still *affordable* when the player has these
+     * permanents available, so `canPay` and `getAvailableManaCount` must count their production.
+     */
+    internal fun calculateSacrificeSelfBonusMana(
+        state: GameState,
+        playerId: EntityId
+    ): TapPermanentsBonusMana {
+        val projected = state.projectedState
+        val battlefieldCards = projected.getBattlefieldControlledBy(playerId)
+
+        var anyColorTotal = 0
+        val specificColorTotal = mutableMapOf<Color, Int>()
+        var colorlessTotal = 0
+
+        for (entityId in battlefieldCards) {
+            val container = state.getEntity(entityId) ?: continue
+
+            // Already tapped → can't pay the {T} sub-cost.
+            if (container.has<TappedComponent>()) continue
+
+            val card = container.get<CardComponent>() ?: continue
+            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+
+            // Own abilities stripped by Humility / similar — skip the printed mana ability.
+            if (projected.hasLostAllAbilities(entityId)) continue
+
+            // Summoning sickness applies to non-land creatures (Rule 302.1) — they can't tap unless they have haste.
+            val isCreature = card.typeLine.isCreature
+            if (!card.typeLine.isLand && isCreature) {
+                val hasSummoningSickness = container.has<SummoningSicknessComponent>()
+                val hasHaste = projected.hasKeyword(entityId, Keyword.HASTE)
+                if (hasSummoningSickness && !hasHaste) continue
+            }
+
+            for (ability in cardDef.script.activatedAbilities) {
+                if (!ability.isManaAbility) continue
+                val composite = ability.cost as? AbilityCost.Composite ?: continue
+                val hasTap = composite.costs.any { it is AbilityCost.Tap }
+                val hasSacSelf = composite.costs.any { it is AbilityCost.SacrificeSelf }
+                if (!hasTap || !hasSacSelf) continue
+
+                // Skip abilities that bundle a mana sub-cost — the player can still afford them
+                // when the pool has mana, but counting their net production here would
+                // double-count and complicate color resolution. Treasure / Food (mana) / etc.
+                // have a flat tap+sac shape; we cover the canonical case.
+                if (composite.costs.any { it is AbilityCost.Mana }) continue
+
+                // Honor activation restrictions (e.g. "only during your turn").
+                if (!activationRestrictionsSatisfied(state, playerId, entityId, ability)) continue
+
+                when (val effect = ability.effect) {
+                    is AddAnyColorManaEffect -> {
+                        val amount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
+                        anyColorTotal += amount
+                    }
+                    is AddManaEffect -> {
+                        val amount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
+                        specificColorTotal[effect.color] =
+                            (specificColorTotal[effect.color] ?: 0) + amount
+                    }
+                    is AddColorlessManaEffect -> {
+                        val amount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
+                        colorlessTotal += amount
                     }
                     else -> {}
                 }

@@ -133,6 +133,7 @@ object ZoneTransitionService {
         var lastKnownKeywords: Set<String> = emptySet()
         var lastKnownAttachedTo = options.lastKnownAttachedTo
         var lastKnownWasToken = false
+        var lastKnownDamageDealtByPlayers: Map<EntityId, Int> = emptyMap()
 
         if (leavingBattlefield) {
             val countersComponent = container.get<CountersComponent>()
@@ -160,6 +161,8 @@ object ZoneTransitionService {
                 lastKnownAttachedTo = container.get<AttachedToComponent>()?.targetId
             }
             lastKnownWasToken = container.has<TokenComponent>()
+            lastKnownDamageDealtByPlayers =
+                container.get<DamageDealtByPlayersThisTurnComponent>()?.perPlayer ?: emptyMap()
         }
 
         // 3. Check zone change redirect (unless skipped)
@@ -225,6 +228,16 @@ object ZoneTransitionService {
             // until then, graveyard/exile instances need the component for last-known-info triggers.
             val preStripLinkedExile = newState.getEntity(entityId)
                 ?.get<com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent>()
+
+            // Revert permanent-level copy effects (Clone / Mockingbird / "becomes a copy of").
+            // Per CR 400.7, a card that changes zones becomes a new object — its copy effect
+            // ends and the card returns to its printed characteristics.
+            val copyOf = newState.getEntity(entityId)
+                ?.get<com.wingedsheep.engine.state.components.identity.CopyOfComponent>()
+            val originalCardComponent = copyOf?.originalCardComponent
+            if (originalCardComponent != null) {
+                newState = newState.updateEntity(entityId) { c -> c.with(originalCardComponent) }
+            }
 
             newState = newState.updateEntity(entityId) { c -> stripBattlefieldComponents(c) }
             newState = removeFloatingEffectsTargeting(newState, entityId)
@@ -323,7 +336,8 @@ object ZoneTransitionService {
                 lastKnownTypeLine = lastKnownTypeLine,
                 lastKnownKeywords = lastKnownKeywords,
                 lastKnownAttachedTo = if (leavingBattlefield) lastKnownAttachedTo else null,
-                lastKnownCardDefinitionId = if (leavingBattlefield) cardComponent.cardDefinitionId else null
+                lastKnownCardDefinitionId = if (leavingBattlefield) cardComponent.cardDefinitionId else null,
+                lastKnownDamageDealtByPlayers = lastKnownDamageDealtByPlayers
             )
         )
 

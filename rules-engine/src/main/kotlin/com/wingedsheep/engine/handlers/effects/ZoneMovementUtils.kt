@@ -268,6 +268,10 @@ object ZoneMovementUtils {
             .without<FaceDownComponent>()
             .without<MorphDataComponent>()
             .without<RevealedToComponent>()
+            // Copy effects on permanents end when the object leaves the battlefield
+            // (CR 400.7 / 707.2). ZoneTransitionService restores the printed
+            // CardComponent before this strip runs.
+            .without<com.wingedsheep.engine.state.components.identity.CopyOfComponent>()
             // Battlefield
             .without<TappedComponent>()
             .without<SummoningSicknessComponent>()

@@ -70,6 +70,8 @@ data class TriggeredAbilityOnStackComponent(
     val triggerTotalCounterCount: Int? = null,
     /** Last-known counter map (counter-type-string → count) of the trigger's source on leave-battlefield. */
     val triggerLastKnownCounters: Map<String, Int>? = null,
+    /** Per-player damage dealt to the trigger's source this turn, captured at LTB time (Grothama). */
+    val triggerLastKnownDamageDealtByPlayers: Map<EntityId, Int>? = null,
     val targetingSourceEntityId: EntityId? = null,  // The spell/ability that targeted this permanent (for ward)
     val damageDistribution: Map<EntityId, Int>? = null,  // For DividedDamageEffect - pre-chosen damage allocation
     val copyIndex: Int? = null,    // Which copy number this is (1, 2, 3...) for storm/copy effects

@@ -412,6 +412,8 @@ class TriggerProcessor(
                 triggerCounterCount = trigger.triggerContext.counterCount,
                 triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
                 triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
+                triggerLastKnownDamageDealtByPlayers =
+                    trigger.triggerContext.lastKnownDamageDealtByPlayers,
                 triggerLastKnownPower = trigger.triggerContext.lastKnownPower,
                 triggerLastKnownToughness = trigger.triggerContext.lastKnownToughness
             )
@@ -450,6 +452,8 @@ class TriggerProcessor(
             triggerCounterCount = trigger.triggerContext.counterCount,
             triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
             triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
+            triggerLastKnownDamageDealtByPlayers =
+                trigger.triggerContext.lastKnownDamageDealtByPlayers,
             lastKnownPower = trigger.triggerContext.lastKnownPower,
             lastKnownToughness = trigger.triggerContext.lastKnownToughness
         )
@@ -493,6 +497,8 @@ class TriggerProcessor(
             triggerCounterCount = trigger.triggerContext.counterCount,
             triggerTotalCounterCount = trigger.triggerContext.totalCounterCount,
             triggerLastKnownCounters = trigger.triggerContext.lastKnownCounters,
+            triggerLastKnownDamageDealtByPlayers =
+                trigger.triggerContext.lastKnownDamageDealtByPlayers,
             targetingSourceEntityId = trigger.triggerContext.targetingSourceEntityId,
             lastKnownPower = trigger.triggerContext.lastKnownPower,
             lastKnownToughness = trigger.triggerContext.lastKnownToughness

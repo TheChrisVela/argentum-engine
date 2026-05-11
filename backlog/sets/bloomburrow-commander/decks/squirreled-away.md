@@ -59,7 +59,7 @@
 
 - [ ] 1 Casualties of War
 - [ ] 1 Chatterstorm
-- [ ] 1 Decree of Pain
+- [x] 1 Decree of Pain
 - [ ] 1 Maelstrom Pulse
 - [ ] 1 Rootcast Apprenticeship
 - [ ] 1 Shamanic Revelation
@@ -80,7 +80,7 @@
 ## Enchantments (7)
 
 - [ ] 1 Bastion of Remembrance
-- [ ] 1 Beastmaster Ascension
+- [x] 1 Beastmaster Ascension
 - [ ] 1 Binding the Old Gods
 - [ ] 1 Gourmand's Talent
 - [ ] 1 Moldervine Reclamation
@@ -89,18 +89,18 @@
 
 ## Lands (38)
 
-- [ ] 1 Barren Moor
+- [x] 1 Barren Moor
 - [ ] 1 Bojuka Bog
 - [ ] 1 Command Tower
-- [ ] 1 Evolving Wilds
+- [x] 1 Evolving Wilds
 - [ ] 1 Exotic Orchard
 - [ ] 5 Forest
 - [ ] 4 Forest
 - [ ] 1 Golgari Rot Farm
 - [ ] 1 Grim Backwoods
 - [ ] 1 Haunted Mire
-- [ ] 1 Jungle Hollow
-- [ ] 1 Llanowar Wastes
+- [x] 1 Jungle Hollow
+- [x] 1 Llanowar Wastes
 - [ ] 1 Necroblossom Snarl
 - [ ] 1 Oran-Rief, the Vastwood
 - [ ] 1 Path of Ancestry
@@ -108,9 +108,9 @@
 - [ ] 4 Swamp
 - [ ] 1 Swarmyard
 - [ ] 1 Tainted Wood
-- [ ] 1 Temple of Malady
+- [x] 1 Temple of Malady
 - [ ] 1 Terramorphic Expanse
-- [ ] 1 Tranquil Thicket
+- [x] 1 Tranquil Thicket
 - [ ] 1 Twilight Mire
 - [ ] 1 Viridescent Bog
-- [ ] 1 Woodland Cemetery
+- [x] 1 Woodland Cemetery

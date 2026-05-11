@@ -27,10 +27,12 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BACKLOG_GLOB = "backlog/sets/*/cards.md"
+DECKS_GLOB = "backlog/sets/*/decks/*.md"
 DEFINITIONS_ROOT = REPO_ROOT / "mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions"
 
 SET_CODE_RE = re.compile(r"^#\s+.*\(([A-Z]+)\)\s+-\s+Card Checklist", re.MULTILINE)
 UNCHECKED_LINE_RE = re.compile(r"^- \[ \] (.+)$")
+UNCHECKED_DECK_LINE_RE = re.compile(r"^- \[ \] (?:\d+\s+)?(.+)$")
 CARD_DSL_RE = re.compile(r'\bcard\(\s*"([^"]+)"')
 PRINTING_NAME_RE = re.compile(r'\bname\s*=\s*"([^"]+)"')
 
@@ -62,6 +64,25 @@ def scan_backlog(path: Path) -> tuple[str | None, list[tuple[int, str]]]:
     return set_code, unchecked
 
 
+def scan_deck(path: Path) -> tuple[str | None, list[tuple[int, str]]]:
+    """Deck files (backlog/sets/<set>/decks/<deck>.md) use `- [ ] N CardName`
+    and have no embedded set-code header — derive the set code from the
+    sibling `../cards.md` instead.
+    """
+    set_code: str | None = None
+    sibling_cards = path.parent.parent / "cards.md"
+    if sibling_cards.is_file():
+        m = SET_CODE_RE.search(sibling_cards.read_text(encoding="utf-8"))
+        if m:
+            set_code = m.group(1)
+    unchecked: list[tuple[int, str]] = []
+    for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        m = UNCHECKED_DECK_LINE_RE.match(line)
+        if m:
+            unchecked.append((line_no, m.group(1).strip()))
+    return set_code, unchecked
+
+
 def scan_implementations(cards_dir: Path) -> set[str]:
     names: set[str] = set()
     if not cards_dir.is_dir():
@@ -77,8 +98,11 @@ def scan_implementations(cards_dir: Path) -> set[str]:
     return names
 
 
-def build_report(backlog_path: Path) -> SetReport:
-    set_code, unchecked = scan_backlog(backlog_path)
+def build_report(backlog_path: Path, *, kind: str = "checklist") -> SetReport:
+    if kind == "deck":
+        set_code, unchecked = scan_deck(backlog_path)
+    else:
+        set_code, unchecked = scan_backlog(backlog_path)
     cards_dir = DEFINITIONS_ROOT / set_code.lower() / "cards" if set_code else None
     implemented = scan_implementations(cards_dir) if cards_dir else set()
     drifters = [
@@ -120,11 +144,14 @@ def main() -> int:
     args = parser.parse_args()
 
     files = sorted(REPO_ROOT.glob(BACKLOG_GLOB))
-    if not files:
-        print(f"No files matched {BACKLOG_GLOB}", file=sys.stderr)
+    deck_files = sorted(REPO_ROOT.glob(DECKS_GLOB))
+    if not files and not deck_files:
+        print(f"No files matched {BACKLOG_GLOB} or {DECKS_GLOB}", file=sys.stderr)
         return 1
 
-    reports = [build_report(p) for p in files]
+    reports = [build_report(p) for p in files] + [
+        build_report(p, kind="deck") for p in deck_files
+    ]
 
     missing_set_code = [r for r in reports if r.set_code is None]
     drifting = [r for r in reports if r.drifters]

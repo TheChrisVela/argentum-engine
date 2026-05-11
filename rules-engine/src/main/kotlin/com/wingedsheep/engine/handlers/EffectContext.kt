@@ -92,6 +92,12 @@ data class EffectContext(
      * permanent (e.g., Essence Channeler).
      */
     val triggerLastKnownCounters: Map<String, Int>? = null,
+    /**
+     * Per-player damage dealt to the trigger's source the moment it left the battlefield.
+     * Read by Grothama's LTB effect: "each player draws cards equal to the damage dealt
+     * to ~ this turn by sources they controlled."
+     */
+    val triggerLastKnownDamageDealtByPlayers: Map<EntityId, Int>? = null,
     // --- Choice state ---
     /** Color chosen for "add one mana of any color" abilities */
     val manaColorChoice: Color? = null,

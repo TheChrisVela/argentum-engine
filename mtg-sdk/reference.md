@@ -47,6 +47,7 @@ constructors.
 - `Effects.EachOpponentDiscards(count)` — each opponent discards
 - `Effects.EachPlayerDrawsX(includeController, includeOpponents)` — each player draws X
 - `Effects.EachPlayerReturnPermanentToHand()` — each player returns a permanent
+- `Effects.EachPlayerDrawsForDamageDealtToSource()` — LTB effect: each player draws cards equal to the damage they dealt to the source this turn (Grothama, All-Devouring). Reads `triggerLastKnownDamageDealtByPlayers` populated from the `ZoneChangeEvent` last-known-info map.
 - `Effects.ReadTheRunes()` — Read the Runes effect
 - `Effects.ReplaceNextDraw(effect)` — replace next draw with effect
 - `Effects.Loot(draw = 1, discard = 1)` — draw then discard
