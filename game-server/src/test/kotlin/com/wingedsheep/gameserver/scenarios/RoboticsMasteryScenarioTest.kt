@@ -15,7 +15,7 @@ import io.kotest.matchers.shouldBe
  *   "Flash"
  *   "Enchant creature"
  *   "Enchanted creature gets +2/+2."
- *   "When Robotics Mastery enters the battlefield, create a 1/1 colorless Thopter artifact creature token with flying."
+ *   "When Robotics Mastery enters the battlefield, create two 1/1 colorless Robot artifact creature tokens with flying."
  */
 class RoboticsMasteryScenarioTest : ScenarioTestBase() {
 
@@ -53,6 +53,33 @@ class RoboticsMasteryScenarioTest : ScenarioTestBase() {
                 }
                 withClue("Enchanted Glory Seeker toughness should be 4 (2 base + 2 from Robotics Mastery)") {
                     projected.getToughness(glorySeeker) shouldBe 4
+                }
+            }
+        }
+
+        context("Robotics Mastery ETB token creation") {
+
+            test("creates two 1/1 colorless Robot artifact creature tokens with flying on ETB") {
+                val game = scenario()
+                    .withPlayers("PlayerA", "PlayerB")
+                    .withCardInHand(1, "Robotics Mastery")
+                    .withCardOnBattlefield(1, "Glory Seeker")
+                    .withLandsOnBattlefield(1, "Island", 5)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val glorySeeker = game.findPermanent("Glory Seeker")!!
+
+                val castResult = game.castSpell(1, "Robotics Mastery", glorySeeker)
+                withClue("Casting Robotics Mastery should succeed: ${castResult.error}") {
+                    castResult.error shouldBe null
+                }
+                game.resolveStack()
+
+                val robotTokens = game.findAllPermanents("Robot Token")
+                withClue("ETB should create exactly two Robot tokens") {
+                    robotTokens.size shouldBe 2
                 }
             }
         }

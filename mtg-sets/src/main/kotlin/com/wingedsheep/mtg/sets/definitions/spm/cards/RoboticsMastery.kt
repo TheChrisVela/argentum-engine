@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.ModifyStats
 import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Robotics Mastery
@@ -15,13 +16,13 @@ import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
  * Flash
  * Enchant creature
  * Enchanted creature gets +2/+2.
- * When Robotics Mastery enters the battlefield, create a 1/1 colorless Thopter artifact creature token with flying.
+ * When Robotics Mastery enters the battlefield, create two 1/1 colorless Robot artifact creature tokens with flying.
  */
 val RoboticsMastery = card("Robotics Mastery") {
     manaCost = "{4}{U}"
     colorIdentity = "U"
     typeLine = "Enchantment — Aura"
-    oracleText = "Flash\nEnchant creature\nEnchanted creature gets +2/+2.\nWhen Robotics Mastery enters the battlefield, create a 1/1 colorless Thopter artifact creature token with flying."
+    oracleText = "Flash\nEnchant creature\nEnchanted creature gets +2/+2.\nWhen Robotics Mastery enters the battlefield, create two 1/1 colorless Robot artifact creature tokens with flying."
 
     keywords(Keyword.FLASH)
 
@@ -34,10 +35,11 @@ val RoboticsMastery = card("Robotics Mastery") {
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
         effect = CreateTokenEffect(
+            count = DynamicAmount.Fixed(2),
             power = 1,
             toughness = 1,
             colors = emptySet(),
-            creatureTypes = setOf("Thopter"),
+            creatureTypes = setOf("Robot"),
             keywords = setOf(Keyword.FLYING),
             artifactToken = true
         )
