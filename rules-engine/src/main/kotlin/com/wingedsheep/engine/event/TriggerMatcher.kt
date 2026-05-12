@@ -390,13 +390,24 @@ class TriggerMatcher(
                             chosenType in Subtype.ALL_CREATURE_TYPES
                         if (!hasSubtype && !isChangelingCreatureType) return false
                     }
+                    is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsNontoken -> {
+                        // Token-ness is intrinsic; LKI is required because 704.5s sweeps the
+                        // token entity before the matcher runs on death triggers, and the
+                        // entity may also be unreachable after a bounce/exile by the time
+                        // we check.
+                        if (event.lastKnownWasToken) return false
+                    }
+                    is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsToken -> {
+                        if (!event.lastKnownWasToken) return false
+                    }
                     else -> {
                         // For other predicates, check the entity's type
                         if (cardComponent == null) return false
                         if (!matchesCardPredicate(
                                 predicate, cardComponent, projected, event.entityId, isFaceDown,
                                 lastKnownPower = event.lastKnownPower,
-                                lastKnownToughness = event.lastKnownToughness
+                                lastKnownToughness = event.lastKnownToughness,
+                                lastKnownWasToken = event.lastKnownWasToken
                             )) return false
                     }
                 }
@@ -429,8 +440,20 @@ class TriggerMatcher(
         entityId: EntityId,
         isFaceDown: Boolean = false,
         lastKnownPower: Int? = null,
-        lastKnownToughness: Int? = null
+        lastKnownToughness: Int? = null,
+        /**
+         * Token-ness for zone-change triggers where the entity may already be gone
+         * (CR 704.5s sweeps tokens out of non-battlefield zones). Pass [ZoneChangeEvent.lastKnownWasToken]
+         * so `IsNontoken` / `IsToken` can still resolve. When `null`, the token bit is read
+         * from the base state via the projected snapshot (entity must still exist).
+         */
+        lastKnownWasToken: Boolean? = null
     ): Boolean {
+        fun isToken(): Boolean {
+            if (lastKnownWasToken != null) return lastKnownWasToken
+            val entity = projected.getBaseState().getEntity(entityId) ?: return false
+            return entity.has<com.wingedsheep.engine.state.components.identity.TokenComponent>()
+        }
         return when (predicate) {
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsCreature -> cardComponent.typeLine.isCreature
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsLand -> cardComponent.typeLine.isLand
@@ -512,13 +535,18 @@ class TriggerMatcher(
                 projected.hasKeyword(entityId, predicate.keyword)
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.NotKeyword ->
                 !projected.hasKeyword(entityId, predicate.keyword)
+            is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsToken -> isToken()
+            is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsNontoken -> !isToken()
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.Or ->
-                predicate.predicates.any { matchesCardPredicate(it, cardComponent, projected, entityId, isFaceDown, lastKnownPower, lastKnownToughness) }
+                predicate.predicates.any { matchesCardPredicate(it, cardComponent, projected, entityId, isFaceDown, lastKnownPower, lastKnownToughness, lastKnownWasToken) }
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.And ->
-                predicate.predicates.all { matchesCardPredicate(it, cardComponent, projected, entityId, isFaceDown, lastKnownPower, lastKnownToughness) }
+                predicate.predicates.all { matchesCardPredicate(it, cardComponent, projected, entityId, isFaceDown, lastKnownPower, lastKnownToughness, lastKnownWasToken) }
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.Not ->
-                !matchesCardPredicate(predicate.predicate, cardComponent, projected, entityId, isFaceDown, lastKnownPower, lastKnownToughness)
-            else -> true // Unknown predicates pass through
+                !matchesCardPredicate(predicate.predicate, cardComponent, projected, entityId, isFaceDown, lastKnownPower, lastKnownToughness, lastKnownWasToken)
+            else -> error(
+                "TriggerMatcher.matchesCardPredicate has no branch for ${predicate::class.simpleName}. " +
+                "Add an explicit branch — silent pass-through hid the IsNontoken bug for months."
+            )
         }
     }
 

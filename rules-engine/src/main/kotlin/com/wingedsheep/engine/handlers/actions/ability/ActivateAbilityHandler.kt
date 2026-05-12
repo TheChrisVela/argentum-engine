@@ -1107,9 +1107,17 @@ class ActivateAbilityHandler(
             }
         }
 
-        // Add only the bonus mana that wasn't consumed by the solver to the floating pool
-        for ((color, amount) in solution.remainingBonusMana) {
-            currentPool = currentPool.add(color, amount)
+        // Add per-source bonus mana from AdditionalManaOnSourceTap auras/statics (e.g.,
+        // Lavaleaper: tapping a basic land adds an extra mana of its produced color).
+        // Unlike the cast flow — which uses solve's internal accounting as the payment —
+        // the activate flow funnels all produced mana through the pool and then deducts
+        // the cost via payAbilityCost, so the *total* bonus from tapping must land in the
+        // pool. solution.remainingBonusMana would drop any bonus consumed during solve.
+        // (Multi-mana excess is already included via manaProduced.amount above.)
+        for (source in solution.sources) {
+            if (source.bonusManaPerTap > 0 && source.bonusManaColor != null) {
+                currentPool = currentPool.add(source.bonusManaColor, source.bonusManaPerTap)
+            }
         }
 
         // Update state with enriched pool

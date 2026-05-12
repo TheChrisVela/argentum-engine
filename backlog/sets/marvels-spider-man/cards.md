@@ -2,13 +2,13 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 0 / 188
+**Implemented:** 1 / 188
 ---
 
-- [ ] Agent Venom
+- [x] Agent Venom
 - [ ] Alien Symbiosis
-- [ ] Amazing Acrobatics
 - [x] Angry Rabble
+- [x] Amazing Acrobatics
 - [ ] Anti-Venom, Horrifying Healer
 - [ ] Arachne, Psionic Weaver
 - [ ] Araña, Heart of the Spider
@@ -104,7 +104,7 @@
 - [ ] Risky Research
 - [ ] Robotics Mastery
 - [ ] Rocket-Powered Goblin Glider
-- [ ] Romantic Rendezvous
+- [x] Romantic Rendezvous
 - [ ] SP//dr, Piloted by Peni
 - [ ] Sandman's Quicksand
 - [ ] Sandman, Shifting Scoundrel
