@@ -415,9 +415,14 @@ data class CopyTargetSpellEffect(
      * Each granted keyword is treated as if the spell itself had it for damage and
      * source-keyword checks (e.g., wither, lifelink). Empty by default.
      */
-    val keywordsForCopy: List<String> = emptyList()
+    val keywordsForCopy: List<String> = emptyList(),
+    /**
+     * When true, all supertypes (including Legendary) are stripped from the copy's type line
+     * so the resulting token/copy is not legendary. Used by Jackal, Genius Geneticist.
+     */
+    val stripSupertypes: Boolean = false
 ) : Effect {
-    override val description: String = "Copy target instant or sorcery spell"
+    override val description: String = "Copy target spell"
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }

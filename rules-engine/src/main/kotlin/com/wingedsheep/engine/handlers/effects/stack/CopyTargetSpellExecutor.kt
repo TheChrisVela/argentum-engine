@@ -92,8 +92,31 @@ class CopyTargetSpellExecutor(
             ))
         }
 
-        // If the original spell has no targets, create the copy immediately
+        // If the original spell has no targets, create the copy immediately.
+        // When stripSupertypes is requested use putSpellCopy so we get a real spell entity
+        // whose CardComponent we can patch; otherwise fall back to the lightweight
+        // TriggeredAbilityOnStackComponent path.
         if (targetRequirements.isEmpty()) {
+            if (effect.stripSupertypes) {
+                val copyResult = stackResolver.putSpellCopy(
+                    state = state,
+                    sourceSpellId = spellEntityId,
+                    copyIndex = 1,
+                    copyTotal = 1,
+                    controllerId = context.controllerId
+                )
+                if (!copyResult.isSuccess) return EffectResult.from(copyResult)
+                val copyId = copyResult.events.filterIsInstance<SpellCopiedEvent>().firstOrNull()?.copyEntityId
+                val stripped = if (copyId != null) {
+                    copyResult.newState.updateEntity(copyId) { container ->
+                        val card = container.get<CardComponent>() ?: return@updateEntity container
+                        container.with(card.copy(typeLine = card.typeLine.copy(supertypes = emptySet())))
+                    }
+                } else copyResult.newState
+                return EffectResult.from(applyKeywordsToCopy(
+                    ExecutionResult.success(stripped, copyResult.events), effect.keywordsForCopy
+                ))
+            }
             val copyAbility = TriggeredAbilityOnStackComponent(
                 sourceId = context.sourceId ?: EntityId.generate(),
                 sourceName = spellName,

@@ -1,0 +1,54 @@
+package com.wingedsheep.mtg.sets.definitions.spm.cards
+
+import com.wingedsheep.sdk.core.Counters
+import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Triggers
+import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.conditions.Compare
+import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
+import com.wingedsheep.sdk.scripting.values.EntityReference
+
+/**
+ * Jackal, Genius Geneticist
+ * {G}{U}
+ * Legendary Creature — Human Scientist Villain
+ * 1/1
+ * Trample
+ * Whenever you cast a creature spell with mana value equal to Jackal's power, copy that spell.
+ * The token enters as a non-legendary creature. Put a +1/+1 counter on Jackal.
+ */
+val JackalGeniusGeneticist = card("Jackal, Genius Geneticist") {
+    manaCost = "{G}{U}"
+    colorIdentity = "GU"
+    typeLine = "Legendary Creature — Human Scientist Villain"
+    power = 1
+    toughness = 1
+    oracleText = "Trample\nWhenever you cast a creature spell with mana value equal to Jackal's power, copy that spell. The token enters as a non-legendary creature. Put a +1/+1 counter on Jackal, Genius Geneticist."
+
+    keywords(Keyword.TRAMPLE)
+
+    triggeredAbility {
+        trigger = Triggers.YouCastCreature
+        triggerCondition = Compare(
+            DynamicAmount.EntityProperty(EntityReference.Triggering, EntityNumericProperty.ManaValue),
+            ComparisonOperator.EQ,
+            DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.Power)
+        )
+        effect = Effects.Composite(
+            Effects.CopyTargetSpell(target = EffectTarget.TriggeringEntity, stripSupertypes = true),
+            Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.Self)
+        )
+    }
+
+    metadata {
+        rarity = Rarity.RARE
+        collectorNumber = "167"
+        artist = "Josu Hernaiz"
+        imageUri = "https://cards.scryfall.io/normal/front/8/4/84fca400-3a9e-4dda-9e70-a9a30e3e0f7e.jpg?1757377391"
+    }
+}
