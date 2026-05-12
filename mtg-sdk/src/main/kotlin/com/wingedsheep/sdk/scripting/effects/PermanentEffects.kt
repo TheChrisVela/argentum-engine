@@ -210,3 +210,32 @@ data class ExploreEffect(
     override val description: String = "${target.description} explores"
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }
+
+// =============================================================================
+// Type-Swap Temporal Effects
+// =============================================================================
+
+/**
+ * Target creature becomes a land (and is not a creature) until your next turn.
+ *
+ * Implements the Hydro-Man / "fluid felon" style effect: the permanent loses the
+ * Creature type and gains the Land type, both effects lasting until the beginning
+ * of the caster's next turn (Duration.UntilYourNextTurn). The original creature
+ * type line is fully restored when the effect expires.
+ *
+ * Executor creates two Layer-4 floating effects atomically:
+ *   1. AddType("LAND")
+ *   2. RemoveType("CREATURE")
+ *
+ * @property target The creature permanent to transform.
+ */
+@SerialName("BecomesALandAndNotACreatureUntilYourNextTurn")
+@Serializable
+data class BecomesALandAndNotACreatureUntilYourNextTurnEffect(
+    val target: EffectTarget = EffectTarget.ContextTarget(0)
+) : Effect {
+    override val description: String =
+        "${target.description} becomes a land (and isn't a creature) until your next turn"
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}
