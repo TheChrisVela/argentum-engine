@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.ClassLevelChangedEvent
 import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.AttackersDeclaredEvent
 import com.wingedsheep.engine.core.CardCycledEvent
+import com.wingedsheep.engine.core.CardsDiscardedEvent
 import com.wingedsheep.engine.core.CardsDrawnEvent
 import com.wingedsheep.engine.core.ControlChangedEvent
 import com.wingedsheep.engine.core.DoorUnlockedEvent
@@ -15,6 +16,7 @@ import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
+import com.wingedsheep.engine.handlers.triggers.WheneverYouDiscardACardTriggerHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
@@ -62,6 +64,7 @@ class TriggerDetector(
     private val deathAndLeaveDetector = DeathAndLeaveTriggerDetector(abilityResolver, matcher)
     private val damageDetector = DamageTriggerDetector(abilityResolver, matcher)
     private val attachmentDetector = AttachmentTriggerDetector(matcher)
+    private val discardTriggerHandler = WheneverYouDiscardACardTriggerHandler(abilityResolver)
 
     /**
      * Build a trigger index for the current game state.
@@ -868,6 +871,12 @@ class TriggerDetector(
         // battlefield, so the main index scan above skips it.
         if (event is SpellCastEvent) {
             detectSelfCastNthSpellTriggers(state, event, triggers)
+        }
+
+        // Handle 'whenever you discard a card' triggers (e.g., Hobgoblin Mantled Marauder).
+        // The source permanent is on the battlefield; the discarding player is in the event.
+        if (event is CardsDiscardedEvent) {
+            discardTriggerHandler.detectDiscardTriggers(state, event, triggers)
         }
 
         return triggers
