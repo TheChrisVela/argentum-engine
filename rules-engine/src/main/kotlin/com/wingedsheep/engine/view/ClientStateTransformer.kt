@@ -1008,6 +1008,10 @@ class ClientStateTransformer(
             copyOf = container.get<com.wingedsheep.engine.state.components.identity.CopyOfComponent>()?.let { copyComp ->
                 cardRegistry.getCard(copyComp.originalCardDefinitionId)?.name
             },
+            nonLegendaryCopy = zoneKey.zoneType == Zone.BATTLEFIELD
+                && cardDef != null
+                && com.wingedsheep.sdk.core.Supertype.LEGENDARY in cardDef.typeLine.supertypes
+                && com.wingedsheep.sdk.core.Supertype.LEGENDARY !in cardComponent.typeLine.supertypes,
             damageDistribution = (spellOnStack?.damageDistribution ?: container.get<TriggeredAbilityOnStackComponent>()?.damageDistribution)?.takeIf { it.isNotEmpty() },
             sagaTotalChapters = cardDef?.finalChapter,
             classLevel = container.get<com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent>()?.currentLevel,

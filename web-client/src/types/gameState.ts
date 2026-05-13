@@ -258,6 +258,14 @@ export interface ClientCard {
   /** Original card name when this permanent is a copy (e.g., "Clever Impersonator") */
   readonly copyOf?: string | null
 
+  /**
+   * True when the printed card is legendary but this permanent's projected type line is not —
+   * a copy effect explicitly stripped legendariness ("except it isn't legendary" /
+   * Impostor Syndrome). The UI badges this so a non-legendary token copy of a legendary
+   * creature is visually distinguishable from the original.
+   */
+  readonly nonLegendaryCopy?: boolean
+
   /** Damage distribution for DividedDamageEffect spells on the stack (target entity ID -> damage amount) */
   readonly damageDistribution?: Record<EntityId, number> | null
 
