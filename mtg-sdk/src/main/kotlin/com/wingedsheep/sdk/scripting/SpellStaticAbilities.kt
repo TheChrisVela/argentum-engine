@@ -211,23 +211,3 @@ data class MayCastFromGraveyardWithLifeCost(
     }
 }
 
-/**
- * Grants the alternative casting cost "pay life equal to this spell's mana value
- * rather than pay its mana cost" for spells cast by this permanent's controller.
- *
- * When a player controls a permanent with this ability, they may pay life equal to
- * the spell's mana value instead of its mana cost. The player must have at least as
- * much life as the spell's mana value. Per Rule 118.9a, additional costs still apply.
- *
- * The handler that implements this cost is
- * AlternativeCostPayLifeEqualToManaValueInsteadOfManaCostHandler.
- */
-@SerialName("GrantPayLifeEqualToManaValueCost")
-@Serializable
-data class GrantPayLifeEqualToManaValueCost(
-    val placeholder: Boolean = true
-) : StaticAbility {
-    override val description: String =
-        "You may pay life equal to a spell's mana value rather than pay its mana cost"
-    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
-}
