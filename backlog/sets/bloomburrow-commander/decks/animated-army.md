@@ -22,7 +22,7 @@
 - [x] 1 Kodama of the East Tree
 - [x] 1 Llanowar Loamspeaker
 - [x] 1 Lotus Cobra
-- [ ] 1 Prosperous Bandit
+- [x] 1 Prosperous Bandit
 - [ ] 1 Pyreswipe Hawk
 - [ ] 1 Rampaging Baloths
 - [ ] 1 Sakura-Tribe Elder
