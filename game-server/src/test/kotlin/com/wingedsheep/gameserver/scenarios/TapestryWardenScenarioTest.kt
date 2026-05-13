@@ -356,6 +356,43 @@ class TapestryWardenScenarioTest : ScenarioTestBase() {
                     counters?.getCount(CounterType.CHARGE) shouldBe 1
                 }
             }
+
+            test("creature with power > toughness stations using power even with Tapestry Warden in play") {
+                // The station-toughness substitution is gated on toughness > power. A 3/2
+                // Aphetto Vulture under Tapestry Warden should still contribute 3 charge
+                // counters from its power, not be downgraded to its (lower) toughness.
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Tapestry Warden", summoningSickness = false)
+                    .withCardOnBattlefield(1, "Aphetto Vulture", summoningSickness = false) // 3/2 (P > T)
+                    .withCardOnBattlefield(1, "Debris Field Crusher")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val stationAbility = cardRegistry.getCard("Debris Field Crusher")!!
+                    .script.activatedAbilities.first { it.cost is AbilityCost.TapPermanents }
+                val crusherId = game.findPermanent("Debris Field Crusher")!!
+                val vultureId = game.findPermanent("Aphetto Vulture")!!
+
+                val result = game.execute(
+                    ActivateAbility(
+                        playerId = game.player1Id,
+                        sourceId = crusherId,
+                        abilityId = stationAbility.id,
+                        costPayment = AdditionalCostPayment(tappedPermanents = listOf(vultureId))
+                    )
+                )
+                withClue("Station activation should succeed: ${result.error}") {
+                    result.error shouldBe null
+                }
+                game.resolveStack()
+
+                val counters = game.state.getEntity(crusherId)?.get<CountersComponent>()
+                withClue("Aphetto Vulture (3/2, P > T) should contribute 3 charge counters from power; substitution must not downgrade to toughness") {
+                    counters?.getCount(CounterType.CHARGE) shouldBe 3
+                }
+            }
         }
     }
 }
