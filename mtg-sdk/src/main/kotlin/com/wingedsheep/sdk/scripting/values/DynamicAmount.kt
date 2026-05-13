@@ -652,23 +652,6 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
         override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
     }
 
-    /**
-     * The "input value" a creature contributes when tapped to pay a Station ability cost.
-     *
-     * Reads projected power of [entity] (typically [EntityReference.TappedAsCost]) — unless
-     * the entity's controller has a permanent with `StationUsingToughness` and the creature's
-     * toughness exceeds its power, in which case toughness is returned. Keeps the Station-
-     * specific override out of the generic [EntityProperty] evaluator.
-     */
-    @SerialName("StationTapPower")
-    @Serializable
-    data class StationTapPower(
-        val entity: EntityReference = EntityReference.TappedAsCost(0)
-    ) : DynamicAmount {
-        override val description: String = "${entity.description}'s power"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
-
     // =========================================================================
     // Division
     // =========================================================================

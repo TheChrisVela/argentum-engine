@@ -56,7 +56,10 @@ val AdagiaWindsweptBastion = card("Adagia, Windswept Bastion") {
         )
         effect = Effects.AddDynamicCounters(
             counterType = Counters.CHARGE,
-            amount = DynamicAmount.StationTapPower(),
+            amount = DynamicAmount.EntityProperty(
+                entity = EntityReference.TappedAsCost(),
+                numericProperty = EntityNumericProperty.Power
+            ),
             target = com.wingedsheep.sdk.scripting.targets.EffectTarget.Self
         )
         timing = TimingRule.SorcerySpeed

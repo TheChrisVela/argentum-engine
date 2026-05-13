@@ -104,9 +104,14 @@ data class AssignDamageEqualToToughness(
  * ability contribute their toughness (rather than their power), as long as toughness
  * is greater than power.
  *
- * The engine enforces this via [GrantsStationUsingToughnessComponent]: all permanents
- * of the same controller are checked — a more restrictive per-creature filter is not
- * currently supported.
+ * Engine wiring: Station abilities use `DynamicAmount.EntityProperty(TappedAsCost, Power)`
+ * for the cost-input formula. While a permanent with this static ability is on the
+ * battlefield, the evaluator substitutes toughness for power when the tapped creature's
+ * controller matches and toughness > power. The substitution is re-evaluated at
+ * resolution time and uses last-known characteristics if the tapped creature has left
+ * the battlefield (Rule 112.7a — Tapestry Warden 2025-07-25 rulings). A per-creature
+ * filter is not currently supported; the override applies to all of the controller's
+ * creatures meeting the toughness > power condition.
  *
  * Used for Tapestry Warden: "Each creature you control with toughness greater than its
  * power stations permanents using its toughness rather than its power."

@@ -436,10 +436,8 @@ class ActivateAbilityHandler(
         val sacrificeTargetIds = action.costPayment?.sacrificedPermanents ?: emptyList()
         val sacrificedSnapshots = capturePermanentSnapshots(sacrificeTargetIds, currentState.projectedState)
 
-        // Snapshot tapped-as-cost permanents too — they don't leave the battlefield as part
-        // of the cost, but they might be killed/bounced in response while the ability is on
-        // the stack. Capturing P/T/controller now lets the resolver read last-known
-        // characteristics (Tapestry Warden + station ability case, 2025-07-25 ruling).
+        // Mirror sacrifice snapshots for tapped-as-cost permanents — they may leave the
+        // battlefield in response while the ability is on the stack.
         val tappedTargetIds = action.costPayment?.tappedPermanents ?: emptyList()
         val tappedSnapshots = capturePermanentSnapshots(tappedTargetIds, currentState.projectedState)
 

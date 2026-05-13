@@ -1087,7 +1087,7 @@ Set via `staticAbility { ability = ... }`:
 ### Damage
 
 - `AssignDamageEqualToToughness(filter, onlyWhenToughnessGreaterThanPower)` — assigns combat damage as toughness; use `Scope.Self` for the creature itself, `Scope.AttachedTo` for equipment/aura, `Scope.Battlefield` for global permanents (Tapestry Warden)
-- `StationUsingToughness` — marker static ability: while a permanent with this is in play, creatures its controller controls contribute toughness instead of power when tapped to pay a Station cost, as long as toughness > power. Engine pairs it with `DynamicAmount.StationTapPower` in the Station ability's tap-as-cost formula (Tapestry Warden)
+- `StationUsingToughness` — while a permanent with this is in play, creatures its controller controls with toughness > power contribute toughness instead of power when tapped to pay a Station cost. Applies automatically to any Station ability whose cost-input formula reads `EntityProperty(TappedAsCost, Power)` (Tapestry Warden)
 - `DivideCombatDamageFreely(target)` — divide damage freely
 - `AssignCombatDamageAsUnblocked(target)` — may assign combat damage as though unblocked (Thorn Elemental)
 

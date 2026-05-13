@@ -62,12 +62,7 @@ data class EffectContext(
     val additionalCostBlightAmount: Int = 0,
     /** Permanents tapped as part of an activated ability's cost (e.g., Cryptic Gateway) */
     val tappedPermanents: List<EntityId> = emptyList(),
-    /**
-     * Projected P/T/controller snapshots for [tappedPermanents], captured before the
-     * ability went on the stack. Lets evaluators read the tapped creature's
-     * last-known characteristics if it leaves the battlefield before resolution
-     * (Rule 112.7a — e.g., Tapestry Warden's station ruling 2025-07-25).
-     */
+    /** LKI snapshots for [tappedPermanents] (Rule 112.7a). See [PermanentSnapshot]. */
     val tappedPermanentSnapshots: List<PermanentSnapshot> = emptyList(),
     // --- Trigger state ---
     /** Amount of damage from a trigger context (e.g., "Whenever ~ is dealt damage") */

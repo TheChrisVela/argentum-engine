@@ -102,13 +102,7 @@ data class ActivatedAbilityOnStackComponent(
     val sacrificedPermanents: List<PermanentSnapshot> = emptyList(),
     val xValue: Int? = null,
     val tappedPermanents: List<EntityId> = emptyList(),
-    /**
-     * Projected P/T/controller snapshots for permanents tapped as part of the cost
-     * (Rule 112.7a — "as it last existed on the battlefield"). Captured before zone
-     * changes so abilities reading the tapped creature's characteristics keep working
-     * if the creature leaves the battlefield before resolution (e.g., Tapestry Warden +
-     * a station ability where the tapper is killed in response).
-     */
+    /** LKI snapshots for [tappedPermanents] — see [sacrificedPermanents]. */
     val tappedPermanentSnapshots: List<PermanentSnapshot> = emptyList(),
     /** Optional human-readable description from `ActivatedAbility.descriptionOverride`,
      *  used when displaying the ability on the stack instead of the auto-generated effect text. */
