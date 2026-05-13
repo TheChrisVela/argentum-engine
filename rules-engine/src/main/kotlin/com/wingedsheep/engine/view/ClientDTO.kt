@@ -267,6 +267,14 @@ data class ClientCard(
     /** Original card name when this permanent is a copy (e.g., "Clever Impersonator" copying a Wind Drake) */
     val copyOf: String? = null,
 
+    /**
+     * True when this permanent's printed card has the Legendary supertype but its current
+     * type line does not — i.e. a copy effect explicitly stripped legendariness
+     * ("except it isn't legendary" / Impostor Syndrome). Lets the UI flag the difference
+     * between an original legendary creature and a non-legendary token copy of it.
+     */
+    val nonLegendaryCopy: Boolean = false,
+
     /** Damage distribution for DividedDamageEffect spells on the stack (target entity ID -> damage amount) */
     val damageDistribution: Map<EntityId, Int>? = null,
 

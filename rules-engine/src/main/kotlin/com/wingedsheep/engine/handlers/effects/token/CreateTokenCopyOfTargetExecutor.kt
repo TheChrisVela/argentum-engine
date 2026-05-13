@@ -78,11 +78,12 @@ class CreateTokenCopyOfTargetExecutor(
             val overrideStats = if (op != null && ot != null) {
                 CreatureStats(op, ot)
             } else null
-            val tokenTypeLine = run {
-                var tl = targetCard.typeLine
-                if (effect.addedSupertypes.isNotEmpty()) tl = tl.copy(supertypes = tl.supertypes + effect.addedSupertypes)
-                if (effect.removeLegendary) tl = tl.withoutLegendary()
-                tl
+            val tokenTypeLine = if (effect.addedSupertypes.isEmpty() && effect.removedSupertypes.isEmpty()) {
+                targetCard.typeLine
+            } else {
+                targetCard.typeLine.copy(
+                    supertypes = targetCard.typeLine.supertypes + effect.addedSupertypes - effect.removedSupertypes
+                )
             }
             val tokenCard = targetCard.copy(
                 ownerId = controllerId,

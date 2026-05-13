@@ -1,5 +1,6 @@
 package com.wingedsheep.mtg.sets.definitions.spm.cards
 
+import com.wingedsheep.sdk.core.Supertype
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
@@ -11,19 +12,19 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * {4}{U}{U}
  * Enchantment
  * Whenever a nontoken creature you control deals combat damage to a player, create a token
- * that's a copy of that creature, except it's not legendary.
+ * that's a copy of it, except it isn't legendary.
  */
 val ImpostorSyndrome = card("Impostor Syndrome") {
     manaCost = "{4}{U}{U}"
     colorIdentity = "U"
     typeLine = "Enchantment"
-    oracleText = "Whenever a nontoken creature you control deals combat damage to a player, create a token that's a copy of that creature, except it's not legendary."
+    oracleText = "Whenever a nontoken creature you control deals combat damage to a player, create a token that's a copy of it, except it isn't legendary."
 
     triggeredAbility {
         trigger = Triggers.NontokenCreatureYouControlDealsCombatDamageToPlayer
         effect = Effects.CreateTokenCopyOfTarget(
             target = EffectTarget.TriggeringEntity,
-            removeLegendary = true
+            removedSupertypes = setOf(Supertype.LEGENDARY)
         )
     }
 

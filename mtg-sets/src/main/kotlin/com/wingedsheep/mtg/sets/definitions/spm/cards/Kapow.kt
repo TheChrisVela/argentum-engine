@@ -12,28 +12,36 @@ import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 /**
  * Kapow!
  * {2}{G}
- * Instant
- * Put a +1/+1 counter on target creature you control. Then it fights target creature
- * an opponent controls.
+ * Sorcery
+ * Put a +1/+1 counter on target creature you control. It fights target creature
+ * an opponent controls. (Each deals damage equal to its power to the other.)
  */
 val Kapow = card("Kapow!") {
     manaCost = "{2}{G}"
     colorIdentity = "G"
-    typeLine = "Instant"
-    oracleText = "Put a +1/+1 counter on target creature you control. Then it fights target creature an opponent controls."
+    typeLine = "Sorcery"
+    oracleText = "Put a +1/+1 counter on target creature you control. It fights target creature an opponent controls. (Each deals damage equal to its power to the other.)"
 
     spell {
         val yourCreature = target("creature you control", Targets.CreatureYouControl)
         val theirCreature = target("creature an opponent controls", Targets.CreatureOpponentControls)
-        // Counter is only placed when the fight target is still legal on resolution;
-        // if theirCreature was stripped (e.g. gained hexproof in response), index 1 is
-        // absent from the validated-target list and the condition returns false.
-        effect = ConditionalEffect(
-            condition = Conditions.TargetMatchesFilter(
-                GameObjectFilter.Creature.opponentControls(), targetIndex = 1
-            ),
-            effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, yourCreature)
-        ).then(Effects.Fight(yourCreature, theirCreature))
+        // Per CR 608.2b and the Savage Stomp ruling: if only the fight target is illegal on
+        // resolution, the +1/+1 counter still goes on the creature you control. AddCounters
+        // handles partial-resolution on target #0; the fight requires both targets legal.
+        effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, yourCreature)
+            .then(
+                ConditionalEffect(
+                    condition = Conditions.All(
+                        Conditions.TargetMatchesFilter(
+                            GameObjectFilter.Creature.youControl(), targetIndex = 0
+                        ),
+                        Conditions.TargetMatchesFilter(
+                            GameObjectFilter.Creature.opponentControls(), targetIndex = 1
+                        )
+                    ),
+                    effect = Effects.Fight(yourCreature, theirCreature)
+                )
+            )
     }
 
     metadata {

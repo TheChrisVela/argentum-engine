@@ -2,7 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 16 / 189
+**Implemented:** 19 / 189
 - [x] Agent Venom
 - [x] Angry Rabble
 - [x] Amazing Acrobatics
@@ -48,13 +48,13 @@
 - [ ] Hobgoblin, Mantled Marauder
 - [ ] Hot Dog Cart
 - [ ] Hydro-Man, Fluid Felon
-- [ ] Impostor Syndrome
+- [x] Impostor Syndrome
 - [ ] Inner Demons Gangsters
 - [x] Interdimensional Web Watch
 - [ ] Iron Spider, Stark Upgrade
 - [ ] J. Jonah Jameson
 - [ ] Jackal, Genius Geneticist
-- [ ] Kapow!
+- [x] Kapow!
 - [ ] Kraven the Hunter
 - [ ] Kraven's Cats
 - [ ] Kraven's Last Hunt
