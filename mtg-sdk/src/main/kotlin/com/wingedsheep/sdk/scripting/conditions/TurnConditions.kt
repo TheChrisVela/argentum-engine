@@ -189,19 +189,6 @@ data object OpponentSpellOnStack : Condition {
     override fun applyTextReplacement(replacer: TextReplacer): Condition = this
 }
 
-/**
- * Condition: "if you cast a spell with mana value [threshold] or greater this turn".
- * Checks the per-player CastSpellRecord tracker for the highest mana value cast.
- */
-@SerialName("YouCastASpellWithManaValueNOrGreaterThisTurn")
-@Serializable
-data class YouCastASpellWithManaValueNOrGreaterThisTurn(
-    val threshold: Int
-) : Condition {
-    override val description: String = "if you cast a spell with mana value $threshold or greater this turn"
-    override fun applyTextReplacement(replacer: TextReplacer): Condition = this
-}
-
 // =============================================================================
 // Death Conditions
 // =============================================================================

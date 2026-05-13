@@ -450,12 +450,6 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.YouCastSpellsThisTurn(filter, atLeast)
 
     /**
-     * If you cast a spell with mana value [threshold] or greater this turn.
-     */
-    fun YouCastASpellWithManaValueNOrGreaterThisTurn(threshold: Int): ConditionInterface =
-        com.wingedsheep.sdk.scripting.conditions.YouCastASpellWithManaValueNOrGreaterThisTurn(threshold)
-
-    /**
      * As long as you've lost life this turn.
      * Used for Essence Channeler.
      */
