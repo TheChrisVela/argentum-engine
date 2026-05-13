@@ -51,7 +51,7 @@ class ConniveDrawDiscard11CounterIfNonlandDiscardedTest : FunSpec({
             ActivatedAbility(
                 id = conniveAbilityId,
                 cost = AbilityCost.Tap,
-                effect = ConniveEffect(source = EffectTarget.Self)
+                effect = ConniveEffect(target = EffectTarget.Self)
             )
         )
     )

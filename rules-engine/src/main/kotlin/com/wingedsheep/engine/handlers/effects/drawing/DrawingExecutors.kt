@@ -5,7 +5,6 @@ import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.TargetFinder
-import com.wingedsheep.engine.handlers.effects.ConniveEffectHandler
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.ExecutorModule
 import com.wingedsheep.engine.state.GameState
@@ -49,7 +48,6 @@ class DrawingExecutors(
         EachPlayerDiscardsOrLoseLifeExecutor(decisionHandler),
         ReplaceNextDrawWithExecutor(),
         ReadTheRunesExecutor(amountEvaluator, decisionHandler, cardRegistry),
-        EachPlayerDrawsForDamageDealtToSourceExecutor(drawCardsExecutor),
-        ConniveEffectHandler(cardRegistry, decisionHandler)
+        EachPlayerDrawsForDamageDealtToSourceExecutor(drawCardsExecutor)
     )
 }
