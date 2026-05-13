@@ -1535,6 +1535,7 @@ class StackResolver(
             sacrificedPermanents = abilityComponent.sacrificedPermanents,
             xValue = abilityComponent.xValue,
             tappedPermanents = abilityComponent.tappedPermanents,
+            tappedPermanentSnapshots = abilityComponent.tappedPermanentSnapshots,
             pipeline = PipelineState(namedTargets = EffectContext.buildNamedTargets(activatedReqs, activatedTargets))
         )
 

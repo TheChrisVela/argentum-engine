@@ -227,7 +227,7 @@
 - [x] Systems Override
 - [x] Tannuk, Memorial Ensign
 - [ ] Tannuk, Steadfast Second
-- [ ] Tapestry Warden
+- [x] Tapestry Warden
 - [x] Temporal Intervention
 - [ ] Terminal Velocity
 - [ ] Terrapact Intimidator

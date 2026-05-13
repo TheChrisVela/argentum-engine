@@ -436,6 +436,11 @@ class ActivateAbilityHandler(
         val sacrificeTargetIds = action.costPayment?.sacrificedPermanents ?: emptyList()
         val sacrificedSnapshots = capturePermanentSnapshots(sacrificeTargetIds, currentState.projectedState)
 
+        // Mirror sacrifice snapshots for tapped-as-cost permanents — they may leave the
+        // battlefield in response while the ability is on the stack.
+        val tappedTargetIds = action.costPayment?.tappedPermanents ?: emptyList()
+        val tappedSnapshots = capturePermanentSnapshots(tappedTargetIds, currentState.projectedState)
+
         // When using Explicit payment, mana sources were already tapped above —
         // strip the Mana portion so payAbilityCost doesn't try to deduct from the pool.
         // When convoke was applied, replace the mana portion with the reduced cost.
@@ -855,6 +860,7 @@ class ActivateAbilityHandler(
             sacrificedPermanents = sacrificedSnapshots,
             xValue = action.xValue,
             tappedPermanents = action.costPayment?.tappedPermanents ?: emptyList(),
+            tappedPermanentSnapshots = tappedSnapshots,
             descriptionOverride = ability.descriptionOverride
         )
 
