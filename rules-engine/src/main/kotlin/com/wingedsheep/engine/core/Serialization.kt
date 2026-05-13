@@ -228,6 +228,7 @@ val engineSerializersModule = SerializersModule {
         subclass(DeflectDamageSourceChoiceContinuation::class)
         subclass(PreventDamageFromChosenSourceContinuation::class)
         subclass(AddDynamicManaContinuation::class)
+        subclass(AddManaPipsContinuation::class)
         subclass(AssignAsUnblockedContinuation::class)
         subclass(BudgetModalContinuation::class)
         subclass(PutOnTopOrBottomContinuation::class)

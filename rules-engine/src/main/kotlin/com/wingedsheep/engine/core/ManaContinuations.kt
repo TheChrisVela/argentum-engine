@@ -228,3 +228,25 @@ data class AddDynamicManaContinuation(
     val secondColor: Color,
     val restriction: ManaRestriction? = null
 ) : ContinuationFrame
+
+/**
+ * Continuation for [com.wingedsheep.sdk.scripting.effects.AddDynamicManaEffect] when the
+ * effect's allowed-color palette has 3 or more entries — "Add N mana in any combination of
+ * colors". The player picks each pip's color independently via a sequence of
+ * [ChooseColorDecision]s; this frame is repushed once per remaining pip.
+ *
+ * @property remainingPips How many pips are still owed at the time the current decision was created
+ *   (decrements by 1 per resume; the loop ends when this reaches 0)
+ * @property allowedColors The palette the player chooses from for each pip
+ * @property restriction Optional restriction stamped onto every pip added to the pool
+ */
+@Serializable
+data class AddManaPipsContinuation(
+    override val decisionId: String,
+    val playerId: EntityId,
+    val sourceId: EntityId?,
+    val sourceName: String?,
+    val remainingPips: Int,
+    val allowedColors: Set<Color>,
+    val restriction: ManaRestriction? = null
+) : ContinuationFrame

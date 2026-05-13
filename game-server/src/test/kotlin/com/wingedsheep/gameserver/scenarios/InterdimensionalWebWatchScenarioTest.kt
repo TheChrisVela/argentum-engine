@@ -2,6 +2,8 @@ package com.wingedsheep.gameserver.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.core.ChooseColorDecision
+import com.wingedsheep.engine.core.ColorChosenResponse
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
@@ -16,6 +18,7 @@ import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
  * Scenario tests for Interdimensional Web Watch.
@@ -50,16 +53,22 @@ class InterdimensionalWebWatchScenarioTest : ScenarioTestBase() {
                     ActivateAbility(
                         playerId = game.player1Id,
                         sourceId = watchId,
-                        abilityId = manaAbility.id,
-                        manaColorChoice = Color.GREEN
+                        abilityId = manaAbility.id
                     )
                 )
-                withClue("Tap ability should activate successfully: ${activateResult.error}") {
+                withClue("Tap ability should pause for the first pip's color choice: ${activateResult.error}") {
                     activateResult.error shouldBe null
                 }
 
                 withClue("Interdimensional Web Watch should be tapped after activation") {
                     game.state.getEntity(watchId)?.has<TappedComponent>() shouldBe true
+                }
+
+                // Two pips: pick the same color twice — sanity-checks the loop without changing colors.
+                repeat(2) {
+                    val decision = game.getPendingDecision()
+                    decision.shouldBeInstanceOf<ChooseColorDecision>()
+                    game.submitDecision(ColorChosenResponse(decision.id, Color.GREEN))
                 }
 
                 val manaPool = game.state.getEntity(game.player1Id)?.get<ManaPoolComponent>()
@@ -219,12 +228,17 @@ class InterdimensionalWebWatchScenarioTest : ScenarioTestBase() {
                     ActivateAbility(
                         playerId = game.player1Id,
                         sourceId = watchId,
-                        abilityId = manaAbility.id,
-                        manaColorChoice = Color.GREEN
+                        abilityId = manaAbility.id
                     )
                 )
                 withClue("Tap ability should activate: ${activate.error}") {
                     activate.error shouldBe null
+                }
+
+                repeat(2) {
+                    val decision = game.getPendingDecision()
+                    decision.shouldBeInstanceOf<ChooseColorDecision>()
+                    game.submitDecision(ColorChosenResponse(decision.id, Color.GREEN))
                 }
 
                 val manaPool = game.state.getEntity(game.player1Id)?.get<ManaPoolComponent>()
@@ -247,6 +261,71 @@ class InterdimensionalWebWatchScenarioTest : ScenarioTestBase() {
                 game.resolveStack()
                 withClue("Grizzly Bears cast from exile should land on the battlefield") {
                     game.isOnBattlefield("Grizzly Bears") shouldBe true
+                }
+            }
+
+            test("two mana picked as separate colors can pay a {U}{R} spell cast from exile") {
+                val game = scenario()
+                    .withPlayers("Caster", "Opponent")
+                    .withCardOnBattlefield(1, "Interdimensional Web Watch")
+                    .withCardInExile(1, "Stormcatch Mentor")
+                    .withCardInLibrary(2, "Island")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val watchId = game.findPermanent("Interdimensional Web Watch")!!
+                val exiledMentor = game.state.getExile(game.player1Id).first()
+
+                game.state = game.state.copy(
+                    mayPlayPermissions = game.state.mayPlayPermissions + MayPlayPermission(
+                        id = EntityId.generate(),
+                        cardIds = setOf(exiledMentor),
+                        controllerId = game.player1Id,
+                        sourceId = watchId,
+                        permanent = true,
+                        timestamp = game.state.timestamp
+                    )
+                )
+
+                val cardDef = cardRegistry.getCard("Interdimensional Web Watch")!!
+                val manaAbility = cardDef.script.activatedAbilities.first()
+                val activate = game.execute(
+                    ActivateAbility(
+                        playerId = game.player1Id,
+                        sourceId = watchId,
+                        abilityId = manaAbility.id
+                    )
+                )
+                withClue("Tap ability should activate: ${activate.error}") {
+                    activate.error shouldBe null
+                }
+
+                // Pip 1 → BLUE, pip 2 → RED.
+                val firstDecision = game.getPendingDecision()
+                firstDecision.shouldBeInstanceOf<ChooseColorDecision>()
+                game.submitDecision(ColorChosenResponse(firstDecision.id, Color.BLUE))
+
+                val secondDecision = game.getPendingDecision()
+                secondDecision.shouldBeInstanceOf<ChooseColorDecision>()
+                game.submitDecision(ColorChosenResponse(secondDecision.id, Color.RED))
+
+                val manaPool = game.state.getEntity(game.player1Id)?.get<ManaPoolComponent>()
+                withClue("Two restricted mana entries should be in the pool — one blue, one red") {
+                    manaPool?.restrictedMana?.size shouldBe 2
+                }
+                withClue("Pool should hold one blue and one red restricted mana") {
+                    manaPool?.restrictedMana?.count { it.color == Color.BLUE } shouldBe 1
+                    manaPool?.restrictedMana?.count { it.color == Color.RED } shouldBe 1
+                }
+
+                val cast = game.execute(CastSpell(game.player1Id, exiledMentor))
+                withClue("Casting {U}{R} Stormcatch Mentor from exile must succeed with mixed restricted mana: ${cast.error}") {
+                    cast.error shouldBe null
+                }
+                game.resolveStack()
+                withClue("Stormcatch Mentor should resolve onto the battlefield") {
+                    game.isOnBattlefield("Stormcatch Mentor") shouldBe true
                 }
             }
         }
