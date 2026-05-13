@@ -368,6 +368,12 @@ class StateProjector(
                     continue
                 }
             }
+            if (floating.duration is Duration.WhileSourceOnBattlefield) {
+                val sourceId = floating.sourceId
+                if (sourceId == null || !state.getBattlefield().contains(sourceId)) {
+                    continue
+                }
+            }
 
             val validAffectedEntities = if (floating.effect.dynamicGroupFilter != null) {
                 // Rule 611.2c: re-evaluate filter dynamically to include entities that entered later
