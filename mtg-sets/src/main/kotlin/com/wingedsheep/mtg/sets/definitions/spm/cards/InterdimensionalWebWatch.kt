@@ -59,6 +59,7 @@ val InterdimensionalWebWatch = card("Interdimensional Web Watch") {
         rarity = Rarity.RARE
         collectorNumber = "165"
         artist = "Toni Infante"
+        flavorText = "The device crackled to life, the portal opened, and Gwen's allies across the Great Web poured forth."
         imageUri = "https://cards.scryfall.io/normal/front/8/7/87a8e112-e72f-413f-88a3-e7ce72c2ec53.jpg?1757378025"
     }
 }
