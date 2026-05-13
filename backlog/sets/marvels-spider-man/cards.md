@@ -2,9 +2,7 @@
 
 **Set Size:** 188 booster cards (excluding basic lands and tokens)
 **Release Date:** September 26, 2025
-**Implemented:** 5 / 188
----
-**Implemented:** 9 / 188
+**Implemented:** 11 / 189
 
 - [x] Agent Venom
 - [x] Angry Rabble
@@ -100,7 +98,7 @@
 - [ ] Raging Goblinoids
 - [x] Rent Is Due
 - [ ] Rhino's Rampage
-- [ ] Rhino, Barreling Brute
+- [x] Rhino, Barreling Brute
 - [ ] Risky Research
 - [x] Robotics Mastery
 - [x] Risky Research
@@ -115,7 +113,7 @@
 - [ ] Scarlet Spider, Kaine
 - [ ] School Daze
 - [x] Scorpion's Sting
-- [ ] Scorpion, Seething Striker
+- [x] Scorpion, Seething Striker
 - [ ] Scout the City
 - [ ] Secret Identity
 - [ ] Selfless Police Captain
