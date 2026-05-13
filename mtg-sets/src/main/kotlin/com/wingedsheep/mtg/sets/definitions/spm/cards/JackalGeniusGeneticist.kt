@@ -13,22 +13,13 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
 import com.wingedsheep.sdk.scripting.values.EntityReference
 
-/**
- * Jackal, Genius Geneticist
- * {G}{U}
- * Legendary Creature — Human Scientist Villain
- * 1/1
- * Trample
- * Whenever you cast a creature spell with mana value equal to Jackal's power, copy that spell.
- * The token enters as a non-legendary creature. Put a +1/+1 counter on Jackal.
- */
 val JackalGeniusGeneticist = card("Jackal, Genius Geneticist") {
     manaCost = "{G}{U}"
     colorIdentity = "GU"
     typeLine = "Legendary Creature — Human Scientist Villain"
     power = 1
     toughness = 1
-    oracleText = "Trample\nWhenever you cast a creature spell with mana value equal to Jackal's power, copy that spell. The token enters as a non-legendary creature. Put a +1/+1 counter on Jackal, Genius Geneticist."
+    oracleText = "Trample\nWhenever you cast a creature spell with mana value equal to Jackal's power, copy that spell, except the copy isn't legendary. Then put a +1/+1 counter on Jackal. (The copy becomes a token.)"
 
     keywords(Keyword.TRAMPLE)
 

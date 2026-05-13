@@ -419,6 +419,9 @@ data class CopyTargetSpellEffect(
     /**
      * When true, all supertypes (including Legendary) are stripped from the copy's type line
      * so the resulting token/copy is not legendary. Used by Jackal, Genius Geneticist.
+     *
+     * Currently only honored when the targeted spell has no targets and no chosen modes
+     * with target requirements; the targeted/modal-with-targets paths drop this flag.
      */
     val stripSupertypes: Boolean = false
 ) : Effect {
