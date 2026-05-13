@@ -1,7 +1,11 @@
 package com.wingedsheep.gameserver.scenarios
 
 import com.wingedsheep.engine.mechanics.layers.StateProjector
+import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.gameserver.ScenarioTestBase
+import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
@@ -12,11 +16,12 @@ import io.kotest.matchers.shouldNotBe
 /**
  * Scenario tests for Jackal, Genius Geneticist.
  *
- * Card reference:
+ * Card reference (Scryfall oracle):
  * - Jackal, Genius Geneticist ({G}{U}): Legendary Creature — Human Scientist Villain, 1/1
  *   Trample
  *   Whenever you cast a creature spell with mana value equal to Jackal's power, copy that
- *   spell as a non-legendary token and put a +1/+1 counter on Jackal.
+ *   spell, except the copy isn't legendary. Then put a +1/+1 counter on Jackal.
+ *   (The copy becomes a token.)
  */
 class JackalGeniusGeneticistScenarioTest : ScenarioTestBase() {
 
@@ -79,6 +84,81 @@ class JackalGeniusGeneticistScenarioTest : ScenarioTestBase() {
                 }
                 withClue("Jackal should have Villain subtype") {
                     projected.getSubtypes(jackal).contains("Villain") shouldBe true
+                }
+            }
+        }
+
+        context("Jackal, Genius Geneticist — triggered ability") {
+
+            test("matching mana value creates a token copy and puts a +1/+1 counter on Jackal") {
+                val game = scenario()
+                    .withPlayers("Caster", "Opponent")
+                    .withCardOnBattlefield(1, "Jackal, Genius Geneticist")
+                    .withCardInHand(1, "Llanowar Elves")
+                    .withLandsOnBattlefield(1, "Forest", 1)
+                    .withCardInLibrary(1, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val castResult = game.castSpell(1, "Llanowar Elves")
+                withClue("Casting Llanowar Elves should succeed: ${castResult.error}") {
+                    castResult.error shouldBe null
+                }
+                game.resolveStack()
+
+                val elves = game.findAllPermanents("Llanowar Elves")
+                withClue("Both the original and the token copy of Llanowar Elves should be on the battlefield") {
+                    elves.size shouldBe 2
+                }
+
+                val tokenCount = elves.count { id ->
+                    game.state.getEntity(id)?.has<TokenComponent>() == true
+                }
+                withClue("Exactly one Llanowar Elves on the battlefield should be a token (the copy)") {
+                    tokenCount shouldBe 1
+                }
+
+                val jackal = game.findPermanent("Jackal, Genius Geneticist")!!
+                val counters = game.state.getEntity(jackal)?.get<CountersComponent>()
+                withClue("Jackal should have one +1/+1 counter from its own trigger") {
+                    counters?.getCount(CounterType.PLUS_ONE_PLUS_ONE) shouldBe 1
+                }
+
+                val projected = stateProjector.project(game.state)
+                withClue("Jackal's power should be 2 after gaining a +1/+1 counter") {
+                    projected.getPower(jackal) shouldBe 2
+                }
+            }
+
+            test("non-matching mana value does not trigger the ability") {
+                val game = scenario()
+                    .withPlayers("Caster", "Opponent")
+                    .withCardOnBattlefield(1, "Jackal, Genius Geneticist")
+                    .withCardInHand(1, "Angry Rabble")
+                    .withLandsOnBattlefield(1, "Mountain", 1)
+                    .withLandsOnBattlefield(1, "Forest", 1)
+                    .withCardInLibrary(1, "Forest")
+                    .withCardInLibrary(2, "Forest")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val castResult = game.castSpell(1, "Angry Rabble")
+                withClue("Casting Angry Rabble should succeed: ${castResult.error}") {
+                    castResult.error shouldBe null
+                }
+                game.resolveStack()
+
+                withClue("Angry Rabble (MV 2) does not match Jackal's power (1), so only the original is on the battlefield") {
+                    game.findAllPermanents("Angry Rabble").size shouldBe 1
+                }
+
+                val jackal = game.findPermanent("Jackal, Genius Geneticist")!!
+                val counters = game.state.getEntity(jackal)?.get<CountersComponent>()
+                withClue("Jackal should not have any +1/+1 counters") {
+                    (counters?.getCount(CounterType.PLUS_ONE_PLUS_ONE) ?: 0) shouldBe 0
                 }
             }
         }
