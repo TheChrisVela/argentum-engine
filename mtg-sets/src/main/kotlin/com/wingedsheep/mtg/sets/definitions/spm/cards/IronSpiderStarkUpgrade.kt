@@ -49,8 +49,9 @@ val IronSpiderStarkUpgrade = card("Iron Spider, Stark Upgrade") {
 
     metadata {
         rarity = Rarity.RARE
-        collectorNumber = "53"
-        artist = "Trung Tin Shinji"
+        collectorNumber = "166"
+        artist = "Kevin Glint"
+        flavorText = "Peter appreciated the powerful new suit sent by Tony Stark, but he soon found it came with some strings attached."
         imageUri = "https://cards.scryfall.io/normal/front/8/d/8da5f34e-7f40-406a-88d2-bb1e3ed25200.jpg?1757378035"
     }
 }
