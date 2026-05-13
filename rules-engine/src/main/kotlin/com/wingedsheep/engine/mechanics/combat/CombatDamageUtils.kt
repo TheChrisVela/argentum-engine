@@ -1,5 +1,7 @@
 package com.wingedsheep.engine.mechanics.combat
 
+import com.wingedsheep.engine.handlers.PredicateContext
+import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
@@ -10,8 +12,6 @@ import com.wingedsheep.sdk.scripting.AssignDamageEqualToToughness
 import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
 import com.wingedsheep.sdk.scripting.StaticAbility
 import com.wingedsheep.sdk.scripting.filters.unified.Scope
-import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
-import com.wingedsheep.engine.state.components.identity.ControllerComponent
 
 /**
  * Helpers for calculating the amount of combat damage a creature assigns.
@@ -21,6 +21,8 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
  * always or only when toughness exceeds power.
  */
 internal object CombatDamageUtils {
+
+    private val predicateEvaluator = PredicateEvaluator()
 
     /**
      * Returns the combat damage amount that [creatureId] assigns this step.
@@ -39,7 +41,7 @@ internal object CombatDamageUtils {
         if (cardRegistry == null) return power
 
         val toughness = projected.getToughness(creatureId) ?: 0
-        return if (assignsDamageAsToughness(state, creatureId, cardRegistry, power, toughness)) {
+        return if (assignsDamageAsToughness(state, projected, creatureId, cardRegistry, power, toughness)) {
             toughness.coerceAtLeast(0)
         } else {
             power
@@ -48,6 +50,7 @@ internal object CombatDamageUtils {
 
     private fun assignsDamageAsToughness(
         state: GameState,
+        projected: ProjectedState,
         creatureId: EntityId,
         cardRegistry: CardRegistry,
         power: Int,
@@ -70,11 +73,10 @@ internal object CombatDamageUtils {
 
         // Global permanents with Scope.Battlefield (e.g., Tapestry Warden: "creatures you control")
         // The source may equal the creature (e.g., Tapestry Warden applying to itself).
-        val creatureController = state.getEntity(creatureId)?.get<ControllerComponent>()?.playerId
         for (permanentId in state.getBattlefield()) {
             val permCardId = state.getEntity(permanentId)?.get<CardComponent>()?.cardDefinitionId ?: continue
             val abilities = cardRegistry.getCard(permCardId)?.staticAbilities.orEmpty()
-            if (matchesBattlefield(state, permanentId, creatureId, creatureController, abilities, power, toughness)) return true
+            if (matchesBattlefield(state, projected, permanentId, creatureId, abilities, power, toughness)) return true
         }
 
         return false
@@ -82,14 +84,15 @@ internal object CombatDamageUtils {
 
     private fun matchesBattlefield(
         state: GameState,
+        projected: ProjectedState,
         sourceId: EntityId,
         creatureId: EntityId,
-        creatureController: EntityId?,
         abilities: List<StaticAbility>,
         power: Int,
         toughness: Int,
     ): Boolean {
-        val sourceController = state.getEntity(sourceId)?.get<ControllerComponent>()?.playerId
+        val sourceController = projected.getController(sourceId) ?: return false
+        val predicateContext = PredicateContext(controllerId = sourceController, sourceId = sourceId)
         for (ability in abilities) {
             val unwrapped = if (ability is ConditionalStaticAbility) ability.ability else ability
             if (unwrapped !is AssignDamageEqualToToughness) continue
@@ -97,16 +100,10 @@ internal object CombatDamageUtils {
             // Honor excludeSelf: skip if this ability excludes the source and creature is the source
             if (unwrapped.filter.excludeSelf && sourceId == creatureId) continue
             if (unwrapped.onlyWhenToughnessGreaterThanPower && toughness <= power) continue
-            // Only the controllerPredicate is evaluated; CardPredicate/StatePredicate
-            // restrictions in baseFilter (e.g. subtype filters) are not checked here.
-            // Tapestry Warden uses AllCreaturesYouControl which has no card predicates,
-            // so this is correct for all current uses.
-            when (unwrapped.filter.baseFilter.controllerPredicate) {
-                ControllerPredicate.ControlledByYou -> if (creatureController != sourceController) continue
-                ControllerPredicate.ControlledByOpponent -> if (creatureController == sourceController) continue
-                null, ControllerPredicate.ControlledByAny -> { /* applies to all */ }
-                else -> continue
-            }
+            // Defer the full filter check (controller, type, subtype, keywords, state) to the
+            // shared PredicateEvaluator so new battlefield-scope uses (e.g. "Each Equipment-
+            // bearing creature you control") are honored without per-call special-casing.
+            if (!predicateEvaluator.matchesWithProjection(state, projected, creatureId, unwrapped.filter.baseFilter, predicateContext)) continue
             return true
         }
         return false

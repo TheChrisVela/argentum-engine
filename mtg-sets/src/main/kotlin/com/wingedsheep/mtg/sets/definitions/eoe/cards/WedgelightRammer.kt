@@ -62,10 +62,7 @@ val WedgelightRammer = card("Wedgelight Rammer") {
         )
         effect = Effects.AddDynamicCounters(
             counterType = Counters.CHARGE,
-            amount = DynamicAmount.EntityProperty(
-                entity = EntityReference.TappedAsCost(),
-                numericProperty = EntityNumericProperty.Power
-            ),
+            amount = DynamicAmount.StationTapPower(),
             target = EffectTarget.Self
         )
         timing = TimingRule.SorcerySpeed

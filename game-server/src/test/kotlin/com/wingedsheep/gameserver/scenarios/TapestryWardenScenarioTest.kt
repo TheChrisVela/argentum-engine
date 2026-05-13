@@ -1,12 +1,15 @@
 package com.wingedsheep.gameserver.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
+import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
+import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.gameserver.ScenarioTestBase
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.scripting.AdditionalCostPayment
+import com.wingedsheep.sdk.scripting.AbilityCost
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 
@@ -21,6 +24,21 @@ import io.kotest.matchers.shouldBe
  * using its toughness rather than its power.
  */
 class TapestryWardenScenarioTest : ScenarioTestBase() {
+
+    /**
+     * Manually wire an Aura that's already on the battlefield onto a target permanent.
+     * `In Bolas's Clutches` grants control via Layer 2; once attached, projected state
+     * reports the Aura's controller as the controller of the enchanted permanent.
+     */
+    private fun ScenarioTestBase.TestGame.attachTo(attachmentName: String, targetName: String) {
+        val attachmentId = findPermanent(attachmentName)!!
+        val targetId = findPermanent(targetName)!!
+        val attachment = state.getEntity(attachmentId)!!.with(AttachedToComponent(targetId))
+        state = state.withEntity(attachmentId, attachment)
+        val target = state.getEntity(targetId)!!
+        val existing = target.get<AttachmentsComponent>()?.attachedIds ?: emptyList()
+        state = state.withEntity(targetId, target.with(AttachmentsComponent(existing + attachmentId)))
+    }
 
     init {
         context("Tapestry Warden — assigns damage as toughness") {
@@ -78,6 +96,32 @@ class TapestryWardenScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("stolen 1/2 creature assigns toughness damage — exercises projected controller") {
+                // Player 2 owns Devoted Hero; In Bolas's Clutches transfers control to player 1.
+                // Tapestry Warden's "creatures you control" filter must read the projected
+                // controller (player 1) of Devoted Hero, not its base ControllerComponent
+                // (still player 2), or the toughness-as-damage substitution silently drops.
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Tapestry Warden", summoningSickness = false)
+                    .withCardOnBattlefield(2, "Devoted Hero", summoningSickness = false) // owned by p2
+                    .withCardOnBattlefield(1, "In Bolas's Clutches")
+                    .withActivePlayer(1)
+                    .withLifeTotal(2, 20)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.attachTo("In Bolas's Clutches", "Devoted Hero")
+                game.passUntilPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+
+                game.declareAttackers(mapOf("Devoted Hero" to 2))
+                game.passUntilPhase(Phase.POSTCOMBAT_MAIN, Step.POSTCOMBAT_MAIN)
+
+                withClue("Stolen Devoted Hero (1/2) should deal 2 (toughness) damage under Tapestry Warden's effect") {
+                    game.getLifeTotal(2) shouldBe 18
+                }
+            }
+
             test("ability only applies to controller's creatures, not opponent's") {
                 val game = scenario()
                     .withPlayers("Player", "Opponent")
@@ -110,7 +154,7 @@ class TapestryWardenScenarioTest : ScenarioTestBase() {
                     .build()
 
                 val stationAbility = cardRegistry.getCard("Debris Field Crusher")!!
-                    .script.activatedAbilities.first()
+                    .script.activatedAbilities.first { it.cost is AbilityCost.TapPermanents }
                 val crusherId = game.findPermanent("Debris Field Crusher")!!
                 val devotedHeroId = game.findPermanent("Devoted Hero")!!
 
@@ -133,6 +177,48 @@ class TapestryWardenScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("stolen 1/2 creature stations using its toughness — exercises projected controller") {
+                // Tapestry Warden, Debris Field Crusher, and In Bolas's Clutches all start under
+                // player 1's control. Player 2's Devoted Hero is "stolen" via the Aura, so its
+                // projected controller is player 1 even though its base ControllerComponent
+                // still points at player 2. Reading base controllers in the station-toughness
+                // lookup would miss this and put only 1 charge counter on the Spacecraft.
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Tapestry Warden", summoningSickness = false)
+                    .withCardOnBattlefield(2, "Devoted Hero", summoningSickness = false) // owned by p2
+                    .withCardOnBattlefield(1, "Debris Field Crusher")
+                    .withCardOnBattlefield(1, "In Bolas's Clutches")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                game.attachTo("In Bolas's Clutches", "Devoted Hero")
+
+                val stationAbility = cardRegistry.getCard("Debris Field Crusher")!!
+                    .script.activatedAbilities.first { it.cost is AbilityCost.TapPermanents }
+                val crusherId = game.findPermanent("Debris Field Crusher")!!
+                val devotedHeroId = game.findPermanent("Devoted Hero")!!
+
+                val result = game.execute(
+                    ActivateAbility(
+                        playerId = game.player1Id,
+                        sourceId = crusherId,
+                        abilityId = stationAbility.id,
+                        costPayment = AdditionalCostPayment(tappedPermanents = listOf(devotedHeroId))
+                    )
+                )
+                withClue("Station activation should succeed: ${result.error}") {
+                    result.error shouldBe null
+                }
+                game.resolveStack()
+
+                val counters = game.state.getEntity(crusherId)?.get<CountersComponent>()
+                withClue("Stolen Devoted Hero should contribute 2 charge counters (toughness) under projected controller") {
+                    counters?.getCount(CounterType.CHARGE) shouldBe 2
+                }
+            }
+
             test("without Tapestry Warden, 1/2 creature contributes only 1 (power) charge counter") {
                 val game = scenario()
                     .withPlayers("Player", "Opponent")
@@ -143,7 +229,7 @@ class TapestryWardenScenarioTest : ScenarioTestBase() {
                     .build()
 
                 val stationAbility = cardRegistry.getCard("Debris Field Crusher")!!
-                    .script.activatedAbilities.first()
+                    .script.activatedAbilities.first { it.cost is AbilityCost.TapPermanents }
                 val crusherId = game.findPermanent("Debris Field Crusher")!!
                 val devotedHeroId = game.findPermanent("Devoted Hero")!!
 

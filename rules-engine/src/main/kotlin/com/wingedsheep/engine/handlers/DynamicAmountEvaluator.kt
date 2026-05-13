@@ -169,18 +169,18 @@ class DynamicAmountEvaluator(
                     }
                     return resolveNumericProperty(state, entityId, amount.numericProperty, context, useProjected = false)
                 }
-                // Station mechanic override: when tapping a creature as cost for a Station
-                // ability and the controller has StationUsingToughness in play, use toughness
-                // instead of power if toughness > power.
-                if (amount.entity is EntityReference.TappedAsCost && amount.numericProperty is EntityNumericProperty.Power) {
-                    val power = resolveNumericProperty(state, entityId, EntityNumericProperty.Power, context, useProjected = true, explicitProjected = projectedState)
-                    val toughness = resolveNumericProperty(state, entityId, EntityNumericProperty.Toughness, context, useProjected = true, explicitProjected = projectedState)
-                    if (toughness > power && controllerHasStationUsingToughness(state, entityId)) {
-                        return toughness
-                    }
-                    return power
-                }
                 resolveNumericProperty(state, entityId, amount.numericProperty, context, useProjected = true, explicitProjected = projectedState)
+            }
+
+            // Station mechanic input value: projected power of the referenced entity,
+            // substituting toughness when the entity's controller has StationUsingToughness
+            // in play and toughness > power. Kept off the generic EntityProperty path so the
+            // override never leaks into unrelated "tapped creature's power" reads.
+            is DynamicAmount.StationTapPower -> {
+                val entityId = resolveEntityId(amount.entity, context) ?: return 0
+                val power = resolveNumericProperty(state, entityId, EntityNumericProperty.Power, context, useProjected = true, explicitProjected = projectedState)
+                val toughness = resolveNumericProperty(state, entityId, EntityNumericProperty.Toughness, context, useProjected = true, explicitProjected = projectedState)
+                if (toughness > power && controllerHasStationUsingToughness(state, entityId)) toughness else power
             }
 
             is DynamicAmount.Divide -> {
@@ -640,14 +640,16 @@ class DynamicAmountEvaluator(
     /**
      * Returns true if any permanent controlled by [entityId]'s controller has the
      * [GrantsStationUsingToughnessComponent], enabling the creature to station using
-     * toughness instead of power.
+     * toughness instead of power. Reads projected controllers (Rule 613) so the
+     * effect survives control-changing continuous effects on either permanent.
      */
     private fun controllerHasStationUsingToughness(state: GameState, entityId: EntityId): Boolean {
-        val controller = state.getEntity(entityId)?.get<ControllerComponent>()?.playerId ?: return false
+        val projected = state.projectedState
+        val controller = projected.getController(entityId) ?: return false
         return state.getBattlefield().any { permanentId ->
             val perm = state.getEntity(permanentId) ?: return@any false
             perm.has<GrantsStationUsingToughnessComponent>() &&
-                perm.get<ControllerComponent>()?.playerId == controller
+                projected.getController(permanentId) == controller
         }
     }
 
