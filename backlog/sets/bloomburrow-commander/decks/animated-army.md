@@ -30,7 +30,7 @@
 - [x] 1 Tendershoot Dryad
 - [x] 1 Trailtracker Scout
 - [x] 1 Wandertale Mentor
-- [ ] 1 Wildsear, Scouring Maw
+- [x] 1 Wildsear, Scouring Maw
 
 ## Planeswalkers (1)
 

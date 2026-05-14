@@ -61,6 +61,16 @@ enum class Keyword(val displayName: String) {
     CONSPIRE("Conspire"),
     HIDEAWAY("Hideaway"),
 
+    /**
+     * Cascade (CR 702.85). "When you cast this spell, exile cards from the top of
+     * your library until you exile a nonland card whose mana value is less than
+     * this spell's mana value. You may cast that spell without paying its mana
+     * cost. Put the exiled cards on the bottom of your library in a random order."
+     * The cascade trigger fires at cast time and is implemented by the engine when
+     * a spell carries the CASCADE keyword (or is granted it by another effect).
+     */
+    CASCADE("Cascade"),
+
     // ── Creature mechanics ────────────────────────────────
     OFFSPRING("Offspring"),
     PERSIST("Persist"),

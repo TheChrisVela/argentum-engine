@@ -669,6 +669,15 @@ object Effects {
         storeAs = storeAs
     )
 
+    /**
+     * Cascade (CR 702.85). Resolves the cascade ability of the triggering spell.
+     * Reads the triggering spell's mana value from the trigger context, then
+     * exiles top of library until a nonland card with lower mana value is
+     * exiled, lets the controller cast it for free, and puts the remaining
+     * exiled cards on the bottom of the library in a random order.
+     */
+    val Cascade: Effect = com.wingedsheep.sdk.scripting.effects.CascadeEffect
+
     // =========================================================================
     // Stat Modification Effects
     // =========================================================================
