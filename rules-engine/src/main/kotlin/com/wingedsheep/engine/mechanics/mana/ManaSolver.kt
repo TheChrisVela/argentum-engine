@@ -128,8 +128,14 @@ data class ManaSource(
 data class ManaSolution(
     val sources: List<ManaSource>,
     val manaProduced: Map<EntityId, ManaProduction>,
-    /** Bonus mana remaining after the solver consumed some to pay the cost */
-    val remainingBonusMana: Map<Color, Int> = emptyMap(),
+    /**
+     * Bonus mana remaining after the solver consumed some to pay the cost. Entries that
+     * came from a restricted mana ability retain the restriction so callers can
+     * preserve it when adding the leftover to the player's pool — losing the
+     * restriction would let an artifact-only or creature-spell-only mana be spent
+     * arbitrarily on the next action.
+     */
+    val remainingBonusMana: List<BonusManaEntry> = emptyList(),
     /**
      * Spell riders consumed by this solution — the union of riders attached to the
      * specific (source, color) slots actually tapped (e.g. Cavern of Souls' colored
@@ -137,6 +143,17 @@ data class ManaSolution(
      * a color, but its colorless `{T}: Add {C}` ability does not).
      */
     val consumedRiders: Set<ManaSpellRider> = emptySet()
+)
+
+/**
+ * A unit of bonus mana that wasn't consumed by the current solve. Carries the source's
+ * mana restriction (when any) so the caller can route it back into the floating pool
+ * via [ManaPool.addRestricted] instead of [ManaPool.add].
+ */
+data class BonusManaEntry(
+    val color: Color,
+    val amount: Int = 1,
+    val restriction: ManaRestriction? = null,
 )
 
 /**
@@ -230,8 +247,10 @@ class ManaSolver(
         val manaProduced = mutableMapOf<EntityId, ManaProduction>()
         var remainingSources = availableSources.toMutableList()
 
-        // Track bonus mana from auras and excess mana from multi-mana sources
-        var bonusManaPool = mutableMapOf<Color, Int>()
+        // Track bonus mana from auras and excess mana from multi-mana sources. The list
+        // preserves the originating restriction (if any) per entry so unconsumed bonus
+        // mana retains its restriction when it lands in the player's pool.
+        val bonusManaPool = mutableListOf<BonusManaEntry>()
 
         // Helper to update available counts when a source is used
         fun useSource(source: ManaSource, colorUsed: Color?) {
@@ -240,31 +259,41 @@ class ManaSolver(
             for (color in source.producesColors) {
                 availableSourcesByColor[color] = (availableSourcesByColor[color] ?: 1) - 1
             }
-            // Track excess mana from multi-mana sources (e.g., Elvish Aberration produces 3 green)
+            // Track excess mana from multi-mana sources (e.g., Elvish Aberration produces 3 green).
+            // Inherit the source's restriction for that color so leftover restricted mana
+            // remains restricted in the pool.
             if (source.manaAmount > 1 && colorUsed != null) {
-                bonusManaPool[colorUsed] = (bonusManaPool[colorUsed] ?: 0) + (source.manaAmount - 1)
+                val restrictionForExcess = source.colorRestrictions[colorUsed] ?: source.restriction
+                bonusManaPool.add(BonusManaEntry(colorUsed, source.manaAmount - 1, restrictionForExcess))
             }
-            // Collect bonus mana from auras attached to this source
+            // Collect bonus mana from auras attached to this source (no restriction —
+            // the aura grants extra mana on top of the source's printed ability).
             if (source.bonusManaPerTap > 0 && source.bonusManaColor != null) {
-                bonusManaPool[source.bonusManaColor] =
-                    (bonusManaPool[source.bonusManaColor] ?: 0) + source.bonusManaPerTap
+                bonusManaPool.add(BonusManaEntry(source.bonusManaColor, source.bonusManaPerTap, null))
             }
         }
 
-        // Helper to spend bonus mana for a colored cost
+        // Helper to spend one bonus mana of a specific color for a colored cost. The
+        // restriction was already checked when the source was admitted into
+        // `availableSources`, so any matching-color entry is eligible for this payment.
+        // Consumption is FIFO over `bonusManaPool` (insertion order = tap order); for the
+        // current solve any order is correct, and the choice affects only which
+        // restrictions land back in [ManaSolution.remainingBonusMana] for the caller.
         fun spendBonusMana(color: Color): Boolean {
-            val available = bonusManaPool[color] ?: 0
-            if (available > 0) {
-                bonusManaPool[color] = available - 1
-                return true
-            }
-            return false
+            val idx = bonusManaPool.indexOfFirst { it.color == color && it.amount > 0 }
+            if (idx < 0) return false
+            val entry = bonusManaPool[idx]
+            bonusManaPool[idx] = entry.copy(amount = entry.amount - 1)
+            return true
         }
 
-        // Helper to spend any bonus mana for generic cost
+        // Helper to spend one bonus mana of any color for a generic cost. Same FIFO
+        // policy as [spendBonusMana].
         fun spendAnyBonusMana(): Boolean {
-            val entry = bonusManaPool.entries.firstOrNull { it.value > 0 } ?: return false
-            bonusManaPool[entry.key] = entry.value - 1
+            val idx = bonusManaPool.indexOfFirst { it.amount > 0 }
+            if (idx < 0) return false
+            val entry = bonusManaPool[idx]
+            bonusManaPool[idx] = entry.copy(amount = entry.amount - 1)
             return true
         }
 
@@ -415,7 +444,7 @@ class ManaSolver(
             val color = manaProduced[source.entityId]?.color ?: return@flatMapTo emptySet()
             source.colorRiders[color] ?: emptySet()
         }
-        return ManaSolution(usedSources, manaProduced, bonusManaPool.filter { it.value > 0 }, consumedRiders)
+        return ManaSolution(usedSources, manaProduced, bonusManaPool.filter { it.amount > 0 }, consumedRiders)
     }
 
     /**

@@ -1,6 +1,8 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
+import com.wingedsheep.engine.mechanics.mana.ManaSolver
+import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
@@ -8,9 +10,13 @@ import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.eoe.cards.ChromeCompanion
 import com.wingedsheep.mtg.sets.definitions.eoe.cards.SteelswarmOperator
+import com.wingedsheep.sdk.core.CardType
+import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
+import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -34,7 +40,15 @@ import io.kotest.matchers.shouldBe
  *    (negative test: restricted mana can't fund off-type spells).
  *  - Steelswarm's {U}{U} ability pays for Chrome Companion's {2},{T} artifact
  *    activated ability end-to-end (graveyard target is moved on resolution).
+ *  - Leftover bonus mana retains the source's restriction in
+ *    [com.wingedsheep.engine.mechanics.mana.ManaSolution.remainingBonusMana].
  *  - Card-definition sanity: both activated abilities are mana abilities.
+ *
+ * Not exercised end-to-end here: the *activate* flow's residual-restricted-mana path
+ * (a cheaper-than-{2} artifact activated ability would let us assert a restricted
+ * leftover in the player's pool after activation). No such ability is implemented in
+ * EOE yet; the solver test above pins the upstream contract, and [ActivateAbilityHandler]
+ * trusts it. Add an end-to-end check if a {0}/{1}/{T} artifact ability lands.
  */
 class SteelswarmOperatorTest : FunSpec({
 
@@ -87,14 +101,14 @@ class SteelswarmOperatorTest : FunSpec({
 
         // Steelswarm is the only source. Both abilities restrict to artifact contexts;
         // a non-artifact creature spell should report unaffordable.
-        val solver = com.wingedsheep.engine.mechanics.mana.ManaSolver(driver.cardRegistry)
-        val cost = com.wingedsheep.sdk.core.ManaCost.parse("{U}")
-        val creatureSpellContext = com.wingedsheep.engine.mechanics.mana.SpellPaymentContext(
+        val solver = ManaSolver(driver.cardRegistry)
+        val cost = ManaCost.parse("{U}")
+        val creatureSpellContext = SpellPaymentContext(
             isCreature = true,
-            cardTypes = setOf(com.wingedsheep.sdk.core.CardType.CREATURE),
+            cardTypes = setOf(CardType.CREATURE),
         )
-        val artifactSpellContext = com.wingedsheep.engine.mechanics.mana.SpellPaymentContext(
-            cardTypes = setOf(com.wingedsheep.sdk.core.CardType.ARTIFACT),
+        val artifactSpellContext = SpellPaymentContext(
+            cardTypes = setOf(CardType.ARTIFACT),
         )
 
         solver.canPay(driver.state, caster, cost, spellContext = creatureSpellContext) shouldBe false
@@ -145,6 +159,38 @@ class SteelswarmOperatorTest : FunSpec({
         }
         driver.state.getZone(caster, Zone.GRAVEYARD).contains(graveyardCard) shouldBe false
         driver.state.getZone(caster, Zone.LIBRARY).contains(graveyardCard) shouldBe true
+    }
+
+    test("leftover bonus mana from Steelswarm's {U}{U} ability keeps its artifact-only restriction") {
+        // Solving a {U} ability-activation cost taps Steelswarm B (produces 2 BLUE);
+        // the unused BLUE is reported in `remainingBonusMana` and must carry the
+        // ArtifactSourceAbilitiesOnly restriction so the caller can route it back into
+        // the pool via ManaPool.addRestricted — otherwise the player would be able to
+        // spend that leftover blue on anything.
+        val driver = createDriver()
+        val caster = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        driver.putPermanentOnBattlefield(caster, "Steelswarm Operator")
+
+        val solver = ManaSolver(driver.cardRegistry)
+        val cost = ManaCost.parse("{U}")
+        val abilityContext = SpellPaymentContext(
+            isAbilityActivation = true,
+            abilitySourceCardTypes = setOf(CardType.ARTIFACT),
+        )
+        val solution = solver.solve(driver.state, caster, cost, spellContext = abilityContext)
+            ?: error("expected a solution")
+
+        solution.remainingBonusMana.size shouldBe 1
+        val leftover = solution.remainingBonusMana.first()
+        leftover.color shouldBe Color.BLUE
+        leftover.amount shouldBe 1
+        leftover.restriction shouldBe ManaRestriction.CardTypeSpellsOrAbilitiesOnly(
+            cardType = CardType.ARTIFACT,
+            allowSpells = false,
+            allowAbilities = true,
+        )
     }
 
     test("card definition exposes two activated mana abilities") {

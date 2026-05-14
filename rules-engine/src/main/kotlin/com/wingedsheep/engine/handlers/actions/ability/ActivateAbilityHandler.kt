@@ -1116,12 +1116,28 @@ class ActivateAbilityHandler(
             events.add(TappedEvent(source.entityId, source.name))
         }
 
-        // Add produced mana to floating pool so costHandler.payAbilityCost can consume it
-        for ((_, production) in solution.manaProduced) {
-            currentPool = if (production.color != null) {
-                currentPool.add(production.color, production.amount)
-            } else {
-                currentPool.addColorless(production.colorless)
+        // Add produced mana to floating pool so costHandler.payAbilityCost can consume it.
+        // When the source's ability is restricted (e.g. Steelswarm Operator's
+        // {T}: Add {U}{U} restricted to artifact-source ability activations), tag the
+        // produced mana with that restriction. payAbilityCost will preferentially spend
+        // the eligible restricted mana for the cost — and any unconsumed remainder stays
+        // restricted in the pool instead of laundering into unrestricted mana.
+        for (source in solution.sources) {
+            // ManaSolver always emits a manaProduced entry per tapped source; a missing
+            // entry would indicate a solver bug, not a runtime gap to swallow silently.
+            val production = solution.manaProduced[source.entityId]
+                ?: error("solution.sources contains ${source.name} without a matching manaProduced entry")
+            val color = production.color
+            val restriction = if (color != null) {
+                source.colorRestrictions[color] ?: source.restriction
+            } else source.restriction
+            currentPool = when {
+                color != null && restriction != null ->
+                    currentPool.addRestricted(color, production.amount, restriction)
+                color != null ->
+                    currentPool.add(color, production.amount)
+                else ->
+                    currentPool.addColorless(production.colorless)
             }
         }
 
@@ -1132,13 +1148,16 @@ class ActivateAbilityHandler(
         // the cost via payAbilityCost, so the *total* bonus from tapping must land in the
         // pool. solution.remainingBonusMana would drop any bonus consumed during solve.
         // (Multi-mana excess is already included via manaProduced.amount above.)
+        // Aura bonus mana is unrestricted — the source's restriction belongs to the
+        // printed ability, not to the aura-granted extras.
         for (source in solution.sources) {
             if (source.bonusManaPerTap > 0 && source.bonusManaColor != null) {
                 currentPool = currentPool.add(source.bonusManaColor, source.bonusManaPerTap)
             }
         }
 
-        // Update state with enriched pool
+        // Update state with enriched pool — carry restrictedMana through so the
+        // ability-payment context can spend (and the leftover can stay) restricted.
         currentState = currentState.updateEntity(playerId) { c ->
             c.with(ManaPoolComponent(
                 white = currentPool.white,
@@ -1146,7 +1165,8 @@ class ActivateAbilityHandler(
                 black = currentPool.black,
                 red = currentPool.red,
                 green = currentPool.green,
-                colorless = currentPool.colorless
+                colorless = currentPool.colorless,
+                restrictedMana = currentPool.restrictedMana,
             ))
         }
 
