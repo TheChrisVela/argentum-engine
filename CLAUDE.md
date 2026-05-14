@@ -33,6 +33,14 @@ just server | client                # Run game server / web client dev
 Direct gradle: `./gradlew :rules-engine:test --tests "CreatureStatsTest"` ·
 Web client: `cd web-client && npm run dev | build | typecheck` (dev at localhost:5173).
 
+## Card status script
+
+```bash
+scripts/card-status --set BLB              # summary table renders, extras column populated
+scripts/card-status --list --set BLB       # missing cards grouped under Extra:
+scripts/card-status --cards BLB            # full listing split into Draft: / Extra: sections
+```
+
 ## Module Layout
 
 | Module | Purpose | Deps |
