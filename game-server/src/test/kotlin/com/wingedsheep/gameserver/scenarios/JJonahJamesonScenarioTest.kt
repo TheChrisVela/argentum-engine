@@ -13,8 +13,8 @@ import io.kotest.matchers.shouldBe
  *
  * Card reference:
  * - J. Jonah Jameson ({2}{R}): Legendary Creature — Human Citizen, 2/2
- *   "When J. Jonah Jameson enters, suspect up to one target creature an opponent controls."
- *   "Whenever a creature with menace attacks, create a Treasure token."
+ *   "When J. Jonah Jameson enters, suspect up to one target creature."
+ *   "Whenever a creature you control with menace attacks, create a Treasure token."
  */
 class JJonahJamesonScenarioTest : ScenarioTestBase() {
 

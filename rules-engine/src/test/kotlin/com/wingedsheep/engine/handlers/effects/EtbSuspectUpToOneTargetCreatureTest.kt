@@ -84,17 +84,25 @@ class EtbSuspectUpToOneTargetCreatureTest : FunSpec({
 
         val projected = StateProjector().project(driver.state)
 
-        // THEN — the targeted creature is suspected: gains menace
+        // THEN — the targeted creature carries the suspected status (CR 701.60a/b)
+        withClue("suspected creature should report isSuspected = true") {
+            projected.isSuspected(targetedCreature) shouldBe true
+        }
+
+        // AND — gains menace (CR 701.60c)
         withClue("suspected creature should have menace") {
             projected.hasKeyword(targetedCreature, Keyword.MENACE) shouldBe true
         }
 
-        // AND — the targeted creature cannot be declared as a blocker
+        // AND — cannot be declared as a blocker (CR 701.60c)
         withClue("suspected creature cannot be declared as a blocker") {
             projected.cantBlock(targetedCreature) shouldBe true
         }
 
         // AND — the non-targeted creature is completely unaffected
+        withClue("non-targeted creature must not be suspected") {
+            projected.isSuspected(otherCreature) shouldBe false
+        }
         withClue("non-targeted creature must not have menace") {
             projected.hasKeyword(otherCreature, Keyword.MENACE) shouldBe false
         }
