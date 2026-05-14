@@ -29,7 +29,7 @@
 - [x] 1 Teapot Slinger
 - [x] 1 Tendershoot Dryad
 - [x] 1 Trailtracker Scout
-- [ ] 1 Wandertale Mentor
+- [x] 1 Wandertale Mentor
 - [ ] 1 Wildsear, Scouring Maw
 
 ## Planeswalkers (1)
