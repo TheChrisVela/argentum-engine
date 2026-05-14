@@ -160,9 +160,9 @@
 - [x] Ouroboroid
 - [ ] Pain for All
 - [ ] Perigee Beckoner
-- [ ] Pinnacle Emissary
+- [x] Pinnacle Emissary
 - [x] Pinnacle Kill-Ship
-- [ ] Pinnacle Starcage
+- [x] Pinnacle Starcage
 - [x] Plasma Bolt
 - [x] Possibility Technician
 - [ ] Pull Through the Weft
