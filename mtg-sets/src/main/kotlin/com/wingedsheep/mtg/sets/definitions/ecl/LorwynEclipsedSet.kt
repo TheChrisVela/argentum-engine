@@ -1,6 +1,5 @@
 package com.wingedsheep.mtg.sets.definitions.ecl
 
-import com.wingedsheep.mtg.sets.definitions.ons.OnslaughtSet
 import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
@@ -27,7 +26,7 @@ object LorwynEclipsedSet : MtgSet {
     }
 
     override val basicLands: List<CardDefinition> by lazy {
-        CardDiscovery.findBasicLandsIn(CARDS_PACKAGE).map { it.copy(setCode = OnslaughtSet.code) }
+        CardDiscovery.findBasicLandsIn(CARDS_PACKAGE).map { it.copy(setCode = code) }
     }
 
     private const val CARDS_PACKAGE = "com.wingedsheep.mtg.sets.definitions.ecl.cards"
