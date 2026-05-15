@@ -48,6 +48,7 @@ class CardDiscoveryTest : FunSpec({
             "Flooded Strand",
             "Incremental Growth",
             "Naturalize",
+            "Polluted Delta",
         )
         ktkPrintings.forEach { it.setCode shouldBe "KTK" }
     }
