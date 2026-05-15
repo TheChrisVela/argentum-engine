@@ -236,6 +236,7 @@ val engineSerializersModule = SerializersModule {
         subclass(AnyPlayerMayPayContinuation::class)
         subclass(ChooseActionContinuation::class)
         subclass(CounterUnlessPaysManaSelectionContinuation::class)
+        subclass(WardTapPermanentsSubCostContinuation::class)
         subclass(CreateTokenCopyOfChosenContinuation::class)
         subclass(DistributeDamageContinuation::class)
         subclass(EachPlayerDiscardsOrLoseLifeContinuation::class)

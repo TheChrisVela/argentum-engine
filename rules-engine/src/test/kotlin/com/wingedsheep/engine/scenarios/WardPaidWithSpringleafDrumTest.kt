@@ -8,7 +8,7 @@ import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.blb.cards.LongRiverLurker
-import com.wingedsheep.mtg.sets.definitions.ecl.cards.SpringleafDrum
+import com.wingedsheep.mtg.sets.definitions.lrw.cards.SpringleafDrum
 import com.wingedsheep.mtg.sets.definitions.scg.cards.Carbonize
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Step
