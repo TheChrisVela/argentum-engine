@@ -24,10 +24,12 @@ import com.wingedsheep.mtg.sets.definitions.one.PhyrexiaAllWillBeOneSet
 import com.wingedsheep.mtg.sets.definitions.ons.OnslaughtSet
 import com.wingedsheep.mtg.sets.definitions.por.PortalSet
 import com.wingedsheep.mtg.sets.definitions.scg.ScourgeSet
+import com.wingedsheep.mtg.sets.definitions.tmp.TempestSet
 import com.wingedsheep.mtg.sets.definitions.otj.OutlawsOfThunderJunctionSet
 import com.wingedsheep.mtg.sets.definitions.spm.SpiderManSet
 import com.wingedsheep.mtg.sets.definitions.tdm.TarkirDragonstormSet
 import com.wingedsheep.mtg.sets.definitions.tla.AvatarTheLastAirbenderSet
+import com.wingedsheep.mtg.sets.definitions.war.WarOfTheSparkSet
 import com.wingedsheep.mtg.sets.definitions.woe.WildsOfEldrainSet
 import com.wingedsheep.sdk.model.MtgSet
 
@@ -42,6 +44,7 @@ object MtgSetCatalog {
 
     val all: List<MtgSet> = listOf(
         PortalSet,
+        TempestSet,
         InvasionSet,
         OnslaughtSet,
         ScourgeSet,
@@ -70,6 +73,7 @@ object MtgSetCatalog {
         SpiderManSet,
         TarkirDragonstormSet,
         AvatarTheLastAirbenderSet,
+        WarOfTheSparkSet,
     )
 
     private val byCode: Map<String, MtgSet> = all.associateBy { it.code }
