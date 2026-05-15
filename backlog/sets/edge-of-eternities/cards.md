@@ -141,7 +141,7 @@
 - [x] Meltstrider's Resolve
 - [x] Memorial Team Leader
 - [ ] Memorial Vault
-- [ ] Mental Modulation
+- [x] Mental Modulation
 - [x] Mightform Harmonizer
 - [ ] Mm'menon, the Right Hand
 - [x] Mm'menon, Uthros Exile

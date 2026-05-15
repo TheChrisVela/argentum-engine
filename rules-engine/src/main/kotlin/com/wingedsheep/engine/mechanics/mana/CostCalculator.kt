@@ -26,6 +26,8 @@ import com.wingedsheep.sdk.scripting.ModifySpellCost
 import com.wingedsheep.sdk.scripting.SpellCostTarget
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.filters.unified.Scope
+import com.wingedsheep.engine.handlers.ConditionEvaluator
+import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.handlers.PredicateContext
@@ -45,7 +47,8 @@ import com.wingedsheep.sdk.scripting.predicates.CardPredicate
  */
 class CostCalculator(
     private val cardRegistry: CardRegistry,
-    private val predicateEvaluator: PredicateEvaluator = PredicateEvaluator()
+    private val predicateEvaluator: PredicateEvaluator = PredicateEvaluator(),
+    private val conditionEvaluator: ConditionEvaluator = ConditionEvaluator()
 ) {
 
     /**
@@ -346,6 +349,10 @@ class CostCalculator(
                 if (state.nonlandPermanentLeftBattlefieldThisTurn || state.spellWarpedThisTurn)
                     source.amount
                 else 0
+            }
+            is CostReductionSource.FixedIfCondition -> {
+                val ctx = EffectContext(sourceId = null, controllerId = playerId, opponentId = null)
+                if (conditionEvaluator.evaluate(state, source.condition, ctx)) source.amount else 0
             }
             is CostReductionSource.DifferentlyNamedPermanentsYouControl ->
                 countDifferentlyNamedPermanents(state, playerId, source.filter)
