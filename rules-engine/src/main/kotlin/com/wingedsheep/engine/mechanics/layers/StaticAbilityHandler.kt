@@ -549,6 +549,8 @@ class StaticAbilityHandler(
                 SourceProjectionCondition.ControllerAttackedWithCreaturesThisTurn(condition.filter, condition.atLeast)
             is com.wingedsheep.sdk.scripting.conditions.YouCastSpellsThisTurn ->
                 SourceProjectionCondition.ControllerCastSpellsThisTurn(condition.filter, condition.atLeast)
+            is com.wingedsheep.sdk.scripting.conditions.YouHaveCitysBlessing ->
+                SourceProjectionCondition.ControllerHasCitysBlessing
             is com.wingedsheep.sdk.scripting.conditions.SourceEnteredThisTurn -> SourceProjectionCondition.SourceEnteredThisTurn
             is com.wingedsheep.sdk.scripting.conditions.SourceIsModified -> SourceProjectionCondition.SourceIsModified
             is Compare -> SourceProjectionCondition.Compare(condition.left, condition.operator, condition.right)
@@ -642,7 +644,8 @@ class StaticAbilityHandler(
         it is com.wingedsheep.sdk.scripting.RedirectZoneChange || it is com.wingedsheep.sdk.scripting.PreventExtraTurns ||
         it is com.wingedsheep.sdk.scripting.RedirectZoneChangeWithEffect || it is com.wingedsheep.sdk.scripting.EntersWithCounters ||
         it is com.wingedsheep.sdk.scripting.EntersWithDynamicCounters || it is com.wingedsheep.sdk.scripting.DoubleCounterPlacement ||
-        it is com.wingedsheep.sdk.scripting.ReplaceTokenCreationWithEquippedCopy
+        it is com.wingedsheep.sdk.scripting.ReplaceTokenCreationWithEquippedCopy ||
+        it is com.wingedsheep.sdk.scripting.DoubleTokenCreation || it is com.wingedsheep.sdk.scripting.ModifyTokenCount
 
     /**
      * Convert a GroupFilter to an AffectsFilter.

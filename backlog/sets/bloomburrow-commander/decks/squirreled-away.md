@@ -67,13 +67,13 @@
 
 ## Artifacts (9)
 
-- [ ] 1 Arcane Signet
+- [x] 1 Arcane Signet
 - [ ] 1 Chitterspitter
 - [ ] 1 Golgari Signet
 - [ ] 1 Idol of Oblivion
 - [ ] 1 Maskwood Nexus
 - [ ] 1 Skullclamp
-- [ ] 1 Sol Ring
+- [x] 1 Sol Ring
 - [ ] 1 Sword of the Squeak
 - [ ] 1 Talisman of Resilience
 
