@@ -26,7 +26,6 @@ import com.wingedsheep.mtg.sets.definitions.mbs.MirrodinBesiegedSet
 import com.wingedsheep.mtg.sets.definitions.mrd.MirrodinSet
 import com.wingedsheep.mtg.sets.definitions.mkm.MurdersAtKarlovManorSet
 import com.wingedsheep.mtg.sets.definitions.mom.MarchOfTheMachineSet
-import com.wingedsheep.mtg.sets.definitions.om1.OmenpathsSet
 import com.wingedsheep.mtg.sets.definitions.one.PhyrexiaAllWillBeOneSet
 import com.wingedsheep.mtg.sets.definitions.ons.OnslaughtSet
 import com.wingedsheep.mtg.sets.definitions.por.PortalSet
@@ -87,7 +86,6 @@ object MtgSetCatalog {
         EdgeOfEternitiesSet,
         LorwynEclipsedSet,
         OutlawsOfThunderJunctionSet,
-        OmenpathsSet,
         SpiderManSet,
         TarkirDragonstormSet,
         AvatarTheLastAirbenderSet,

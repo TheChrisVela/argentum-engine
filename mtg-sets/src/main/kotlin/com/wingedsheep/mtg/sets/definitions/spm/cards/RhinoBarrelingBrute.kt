@@ -1,16 +1,33 @@
 package com.wingedsheep.mtg.sets.definitions.spm.cards
 
-import com.wingedsheep.sdk.model.Printing
+import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.dsl.Conditions
+import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Filters
+import com.wingedsheep.sdk.dsl.Triggers
+import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 
-/** Rhino, Barreling Brute reprint in SPM. */
-val RhinoBarrelingBruteReprint = Printing(
-    oracleId = "9a6bf8a3-7640-4890-ac62-d5028f41978b",
-    name = "Rhino, Barreling Brute",
-    setCode = "SPM",
-    collectorNumber = "140",
-    artist = "Filipe Pagliuso",
-    imageUri = "https://cards.scryfall.io/normal/front/4/b/4b8ac400-1e98-49fc-94be-00386d15f2ae.jpg?1757377784",
-    releaseDate = "2025-09-26",
-    rarity = Rarity.UNCOMMON,
-)
+val RhinoBarrelingBrute = card("Rhino, Barreling Brute") {
+    manaCost = "{3}{R}{R}{G}{G}"
+    colorIdentity = "RG"
+    typeLine = "Legendary Creature — Human Villain"
+    power = 6
+    toughness = 7
+    oracleText = "Vigilance, trample, haste\nWhenever Rhino, Barreling Brute attacks, if you've cast a spell with mana value 4 or greater this turn, draw a card."
+
+    keywords(Keyword.VIGILANCE, Keyword.TRAMPLE, Keyword.HASTE)
+
+    triggeredAbility {
+        trigger = Triggers.Attacks
+        triggerCondition = Conditions.YouCastSpellsThisTurn(atLeast = 1, filter = Filters.Unified.manaValueAtLeast(4))
+        effect = Effects.DrawCards(1)
+    }
+
+    metadata {
+        rarity = Rarity.UNCOMMON
+        collectorNumber = "140"
+        artist = "Filipe Pagliuso"
+        imageUri = "https://cards.scryfall.io/normal/front/4/b/4b8ac400-1e98-49fc-94be-00386d15f2ae.jpg?1757377784"
+    }
+}

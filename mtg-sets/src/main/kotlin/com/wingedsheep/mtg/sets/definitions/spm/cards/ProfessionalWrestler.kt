@@ -1,16 +1,32 @@
 package com.wingedsheep.mtg.sets.definitions.spm.cards
 
-import com.wingedsheep.sdk.model.Printing
+import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Triggers
+import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.CantBeBlockedByMoreThan
 
-/** Professional Wrestler reprint in SPM. */
-val ProfessionalWrestlerReprint = Printing(
-    oracleId = "3dd92eea-02ca-4e55-8f69-8c8059dd7ee6",
-    name = "Professional Wrestler",
-    setCode = "SPM",
-    collectorNumber = "110",
-    artist = "Kevin Sidharta",
-    imageUri = "https://cards.scryfall.io/normal/front/8/a/8a5381e7-ddda-47e7-886d-812250ffb745.jpg?1757377496",
-    releaseDate = "2025-09-26",
-    rarity = Rarity.COMMON,
-)
+val ProfessionalWrestler = card("Professional Wrestler") {
+    manaCost = "{3}{G}"
+    colorIdentity = "G"
+    typeLine = "Creature — Human Warrior Performer"
+    power = 4
+    toughness = 4
+    oracleText = "When this creature enters, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\nThis creature can't be blocked by more than one creature."
+
+    triggeredAbility {
+        trigger = Triggers.EntersBattlefield
+        effect = Effects.CreateTreasure(1)
+    }
+
+    staticAbility {
+        ability = CantBeBlockedByMoreThan(maxBlockers = 1)
+    }
+
+    metadata {
+        rarity = Rarity.COMMON
+        collectorNumber = "110"
+        artist = "Kevin Sidharta"
+        imageUri = "https://cards.scryfall.io/normal/front/8/a/8a5381e7-ddda-47e7-886d-812250ffb745.jpg?1757377496"
+    }
+}

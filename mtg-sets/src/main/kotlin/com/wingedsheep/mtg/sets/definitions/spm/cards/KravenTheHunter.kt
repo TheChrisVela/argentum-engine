@@ -1,4 +1,4 @@
-package com.wingedsheep.mtg.sets.definitions.om1.cards
+package com.wingedsheep.mtg.sets.definitions.spm.cards
 
 import com.wingedsheep.sdk.core.Counters
 import com.wingedsheep.sdk.core.Keyword
@@ -59,9 +59,8 @@ val KravenTheHunter = card("Kraven the Hunter") {
 
     metadata {
         rarity = Rarity.RARE
-        collectorNumber = "127"
-        artist = "Diego Gisbert"
-        flavorText = "\"I have found honor, not in the civilized, but in the primal.\""
-        imageUri = "https://cards.scryfall.io/normal/front/7/f/7f0210ec-36eb-4138-a6a2-4c5c67bf5ce6.jpg?1757542246"
+        collectorNumber = "133"
+        artist = "Greg Staples"
+        imageUri = "https://cards.scryfall.io/normal/front/a/f/afdab464-3674-449b-be01-1cbd21fced23.jpg?1757377713"
     }
 }
