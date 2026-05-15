@@ -392,13 +392,13 @@ data object ExtraLoyaltyActivation : StaticAbility {
 }
 
 /**
- * When a permanent matching [creatureFilter] enters the battlefield, triggered abilities of
+ * When a permanent matching [enteringFilter] enters the battlefield, triggered abilities of
  * permanents you control that trigger from that entering trigger an additional time.
  *
  * This models Naban, Dean of Iteration and similar "Panharmonicon for a subtype" effects, as
  * well as Starfield Vocalist where the entering permanent can be any controller.
  *
- * [creatureFilter] restricts which entering permanents cause the doubling (e.g., Wizards, Birds,
+ * [enteringFilter] restricts which entering permanents cause the doubling (e.g., Wizards, Birds,
  * or [GameObjectFilter.Any] for any permanent).
  *
  * [enteringMustBeYouControl] controls whether the entering permanent must be controlled by the
@@ -412,7 +412,7 @@ data object ExtraLoyaltyActivation : StaticAbility {
 @SerialName("AdditionalETBTriggers")
 @Serializable
 data class AdditionalETBTriggers(
-    val creatureFilter: GameObjectFilter,
+    val enteringFilter: GameObjectFilter,
     val enteringMustBeYouControl: Boolean = true,
     override val description: String = "Triggered abilities trigger an additional time"
 ) : StaticAbility {

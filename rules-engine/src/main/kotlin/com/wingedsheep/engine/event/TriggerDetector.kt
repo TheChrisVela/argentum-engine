@@ -1548,7 +1548,7 @@ class TriggerDetector(
      * Duplicate ETB triggers for "additional time" static abilities (Naban, Panharmonicon).
      *
      * For each ZoneChangeEvent(to=BATTLEFIELD) in the events, checks if any permanent on
-     * the battlefield has AdditionalETBTriggers whose creatureFilter matches the entering entity.
+     * the battlefield has AdditionalETBTriggers whose enteringFilter matches the entering entity.
      * If so, duplicates all triggers that fired from that ETB event for the controller's permanents.
      *
      * Multiple copies are additive: N copies add N extra copies of each trigger.
@@ -1587,7 +1587,7 @@ class TriggerDetector(
                     doublers.add(
                         ETBDoubler(
                             controllerId = controllerId,
-                            filter = ability.creatureFilter,
+                            filter = ability.enteringFilter,
                             sourceId = permanentId,
                             enteringMustBeYouControl = ability.enteringMustBeYouControl,
                         )

@@ -27,7 +27,7 @@ val StarfieldVocalist = card("Starfield Vocalist") {
 
     staticAbility {
         ability = AdditionalETBTriggers(
-            creatureFilter = GameObjectFilter.Any,
+            enteringFilter = GameObjectFilter.Any,
             enteringMustBeYouControl = false,
             description = "If a permanent entering the battlefield causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time"
         )

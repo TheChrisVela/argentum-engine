@@ -79,10 +79,43 @@ class StarfieldVocalistScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("Vocalist sees its own ETB — Anurid trigger from Vocalist's own entrance is doubled") {
+                // Per the EOE ruling: "If a permanent entering the battlefield at the same time as
+                // Starfield Vocalist (including Starfield Vocalist itself) causes a triggered ability
+                // of a permanent you control to trigger, that ability triggers an additional time."
+                //
+                // Setup: Wretched Anurid in play. Cast Starfield Vocalist. Anurid says "whenever
+                // another creature enters, you lose 1 life" — Vocalist is "another" relative to
+                // Anurid, so Anurid triggers off Vocalist's own ETB. Vocalist's static ability is
+                // active by the time triggers are detected (it's on the battlefield), so the trigger
+                // gets doubled → 2 life lost.
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Wretched Anurid")
+                    .withCardInHand(1, "Starfield Vocalist")
+                    .withLandsOnBattlefield(1, "Island", 4)
+                    .withCardInLibrary(1, "Island")
+                    .withCardInLibrary(2, "Island")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val castResult = game.castSpell(1, "Starfield Vocalist")
+                withClue("Cast should succeed: ${castResult.error}") {
+                    castResult.error shouldBe null
+                }
+
+                game.resolveStack()
+
+                withClue("Player 1 should lose 2 life (Vocalist's own ETB doubles Anurid trigger)") {
+                    game.getLifeTotal(1) shouldBe 18
+                }
+            }
+
             test("Naban does NOT double a Wizard entering under opponent's control (enteringMustBeYouControl default preserved)") {
                 // Tightly isolates the `enteringMustBeYouControl = true` default. Opponent casts
                 // Fleeting Aven — a Bird Wizard whose only triggered ability fires on cycling,
-                // so its ETB adds no noise. Naban's `creatureFilter` accepts it (it IS a Wizard),
+                // so its ETB adds no noise. Naban's `enteringFilter` accepts it (it IS a Wizard),
                 // so the ONLY thing keeping Naban from doubling the Anurid trigger is the default
                 // controller restriction. If a future change flipped the default to false, this
                 // test would fail: Anurid would fire twice for 2 life lost.
