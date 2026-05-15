@@ -46,7 +46,7 @@
 
 ## Sorceries (7)
 
-- [ ] 1 Blasphemous Act
+- [x] 1 Blasphemous Act
 - [ ] 1 Cultivate
 - [ ] 1 Decimate
 - [ ] 1 Explore
