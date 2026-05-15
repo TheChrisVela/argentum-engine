@@ -138,6 +138,7 @@ constructors.
 - `Effects.AddManaOfColorAmong(filter)` — add one mana of any color among matching permanents (Mox Amber)
 - `Effects.AddOneManaOfEachColorAmong(filter)` — add one mana of EACH color among matching permanents (Bloom Tender / Vivid mana ability)
 - `Effects.AddManaOfColorLandsCouldProduce(scope)` — add one mana of any color a land in `scope` could produce (Fellwar Stone uses `LandControllerScope.OPPONENTS`; Reflecting Pool uses `YOU`). Inspects the lands' mana abilities, ignores activation costs and tapped state, and excludes colorless production.
+- `Effects.AddManaOfColorInCommanderColorIdentity()` — add one mana of any color in the controller's commander's color identity (Arcane Signet, Command Tower). Unions the color identity of every commander in `CommanderRegistryComponent` (Partner / Background); produces no mana if the controller has no commander.
 
 ### Tokens
 
@@ -368,6 +369,7 @@ constructors.
 | `AddManaOfColorAmongEffect` | `filter: GameObjectFilter`                | Add mana of color among matching permanents (Mox Amber) |
 | `AddOneManaOfEachColorAmongEffect` | `filter: GameObjectFilter`         | Add one mana of EACH color found among matching permanents (Bloom Tender) |
 | `AddManaOfColorLandsCouldProduceEffect` | `scope: LandControllerScope`  | Add one mana of any color a land in scope could produce (Fellwar Stone) |
+| `AddManaOfColorInCommanderColorIdentityEffect` | `restriction: ManaRestriction?` | Add one mana of any color in the controller's commander's color identity (Arcane Signet) |
 
 ### Tokens
 

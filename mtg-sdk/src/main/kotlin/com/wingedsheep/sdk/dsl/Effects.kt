@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddDynamicManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfChosenColorEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfColorAmongEffect
+import com.wingedsheep.sdk.scripting.effects.AddManaOfColorInCommanderColorIdentityEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfColorLandsCouldProduceEffect
 import com.wingedsheep.sdk.scripting.effects.LandControllerScope
 import com.wingedsheep.sdk.scripting.effects.AddOneManaOfEachColorAmongEffect
@@ -1032,6 +1033,14 @@ object Effects {
         scope: LandControllerScope,
         restriction: ManaRestriction? = null
     ): Effect = AddManaOfColorLandsCouldProduceEffect(scope, restriction)
+
+    /**
+     * Add one mana of any color in your commander's color identity. Used by Arcane Signet
+     * and Command Tower. With no commander (non-Commander formats), produces no mana.
+     */
+    fun AddManaOfColorInCommanderColorIdentity(
+        restriction: ManaRestriction? = null
+    ): Effect = AddManaOfColorInCommanderColorIdentityEffect(restriction)
 
     // =========================================================================
     // Token Effects

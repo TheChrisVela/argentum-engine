@@ -56,7 +56,7 @@
 
 ## Artifacts (14)
 
-- [ ] 1 Arcane Signet
+- [x] 1 Arcane Signet
 - [ ] 1 Bootleggers' Stash
 - [ ] 1 Esika's Chariot
 - [x] 1 Fellwar Stone
