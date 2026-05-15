@@ -15,7 +15,8 @@ import io.kotest.matchers.shouldBe
  *   Tap target artifact or creature.
  *   Draw a card.
  *
- * Exercises [com.wingedsheep.sdk.scripting.CostReductionSource.FixedIfYourTurn].
+ * Exercises [com.wingedsheep.sdk.scripting.CostReductionSource.FixedIfCondition]
+ * with [com.wingedsheep.sdk.scripting.conditions.IsYourTurn].
  */
 class MentalModulationScenarioTest : ScenarioTestBase() {
 

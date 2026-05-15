@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.scripting.CostReductionSource
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.ModifySpellCost
 import com.wingedsheep.sdk.scripting.SpellCostTarget
+import com.wingedsheep.sdk.scripting.conditions.IsYourTurn
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetPermanent
 
@@ -31,7 +32,7 @@ val MentalModulation = card("Mental Modulation") {
         ability = ModifySpellCost(
             target = SpellCostTarget.SelfCast,
             modification = CostModification.ReduceGenericBy(
-                CostReductionSource.FixedIfYourTurn(amount = 1),
+                CostReductionSource.FixedIfCondition(amount = 1, condition = IsYourTurn),
             ),
         )
     }

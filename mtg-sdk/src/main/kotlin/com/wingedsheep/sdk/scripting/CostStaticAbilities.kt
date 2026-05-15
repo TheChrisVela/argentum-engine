@@ -1,5 +1,6 @@
 package com.wingedsheep.sdk.scripting
 
+import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.text.TextReplacer
 import kotlinx.serialization.SerialName
@@ -397,13 +398,17 @@ sealed interface CostReductionSource {
     }
 
     /**
-     * Reduces cost by a fixed amount if it's the caster's turn.
-     * Used for cards like Mental Modulation ("This spell costs {1} less to cast during your turn").
+     * Reduces cost by a fixed amount if the given [Condition] evaluates true at cast time.
+     * The condition is evaluated with the caster as `controllerId`, so "your turn",
+     * "you have the city's blessing", etc. all work out of the box.
+     *
+     * Used for cards like Mental Modulation
+     * (`FixedIfCondition(1, IsYourTurn)` — "costs {1} less to cast during your turn").
      */
-    @SerialName("FixedIfYourTurn")
+    @SerialName("FixedIfCondition")
     @Serializable
-    data class FixedIfYourTurn(val amount: Int) : CostReductionSource {
-        override val description: String = "$amount during your turn"
+    data class FixedIfCondition(val amount: Int, val condition: Condition) : CostReductionSource {
+        override val description: String = "$amount ${condition.description}"
     }
 
     /**
