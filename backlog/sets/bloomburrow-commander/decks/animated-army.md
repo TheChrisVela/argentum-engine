@@ -64,7 +64,7 @@
 - [x] 1 Gruul Signet
 - [x] 1 Hedron Archive
 - [x] 1 Mind Stone
-- [ ] 1 Rolling Hamsphere
+- [x] 1 Rolling Hamsphere
 - [ ] 1 Sol Ring
 - [ ] 1 Spine of Ish Sah
 - [ ] 1 Talisman of Impulse
