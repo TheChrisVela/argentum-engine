@@ -833,7 +833,7 @@ constructors.
 - `DynamicAmount.CountersOnSelf(counterType)` / `.CountersOnTarget(counterType, targetIndex)` / `.CreaturesSharingTypeWithTriggeringEntity`
 - `DynamicAmount.TargetCount` — number of targets in the current effect context (for "for each target" token creation)
 - `DynamicAmount.VariableReference(variableName)` / `.StoredCardManaValue(collectionName)` / `.AdditionalCostExiledCount`
-- `DynamicAmount.StoredCardPower(collectionName)` — power of the first card stored in a pipeline collection (typically populated by `AdditionalCost.ChooseCreatureOrWarpedExile`). Reads projected power while the entity is on the battlefield, falls back to the LKI snapshot captured at cost-pay time (`EffectContext.chosenEntitySnapshots`), then to the card's printed base power.
+- `EntityReference.FromCostStorage(collectionName, index = 0)` — the entity recorded under `collectionName` by an additional-cost step (typically `AdditionalCost.ChooseEntity`). Pair with `DynamicAmount.EntityProperty(...)` to read its power, toughness, mana value, etc. Power/toughness reads consult the LKI snapshot captured at cost-pay time (`EffectContext.chosenEntitySnapshots`) when the entity has left the battlefield, mirroring `EntityReference.Sacrificed` / `TappedAsCost`.
 - `DynamicAmount.AttachmentsOnSelf` — count of Auras and Equipment attached to the source entity
 - `DynamicAmount.NumberOfBlockers` / `DynamicAmounts.numberOfBlockers()` — number of creatures blocking the triggering entity
 - `DynamicAmount.DamageDealtToTargetPlayerThisTurn(targetIndex)` — total damage dealt to a target player this turn
@@ -1241,7 +1241,7 @@ Used via `additionalCost(...)` in card DSL for spell additional costs:
 - `AdditionalCost.BlightOrPay(blightAmount, alternativeManaCost)` — Blight N or pay extra mana (Wild Unraveling)
 - `AdditionalCost.BeholdOrPay(filter, alternativeManaCost, storeAs)` — Behold a matching card or pay extra mana; behold reveals but does not exile (Lys Alana Dignitary)
 - `AdditionalCost.RemoveCountersFromYourCreatures(totalCount)` — remove N counters distributed across creatures you control (any counter types qualify); payment supplied via `AdditionalCostPayment.distributedCounterRemovals` (Dawnhand Dissident's linked-exile cost)
-- `AdditionalCost.ChooseCreatureOrWarpedExile(storeAs)` — choose a creature you control or a warped creature card you own in exile (CR 702.185b). The chosen entity id is stored under `storeAs` in pipeline storage; a power/toughness LKI snapshot is captured for battlefield choices. Pair with `DynamicAmount.StoredCardPower(storeAs)` for "damage equal to the power of the chosen creature or card" (Close Encounter, Blade of the Swarm).
+- `AdditionalCost.ChooseEntity(zoneFilters, storeAs, captureSnapshot, descriptionOverride)` — silent sibling of `Behold` (no reveal on hand picks). Each `(Zone, GameObjectFilter)` entry in `zoneFilters` is searched in turn; per-zone iteration already restricts to the caster's slice, so filters don't need to redundantly assert "you control"/"you own". The chosen entity id is stored under `storeAs` in pipeline storage and read at resolution via `EntityReference.FromCostStorage(storeAs)`. When `captureSnapshot = true`, battlefield picks get a `PermanentSnapshot` for LKI (CR 112.7a). Use `descriptionOverride` for naturalized oracle wording. Example: Close Encounter — `mapOf(Zone.BATTLEFIELD to Filter.Creature, Zone.EXILE to Filter.Creature.warpExiled())` (CR 702.185b).
 
 CostZone enum: `HAND`, `GRAVEYARD`, `LIBRARY`, `BATTLEFIELD`
 

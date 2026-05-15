@@ -65,10 +65,12 @@ data class EffectContext(
     /** LKI snapshots for [tappedPermanents] (Rule 112.7a). See [PermanentSnapshot]. */
     val tappedPermanentSnapshots: List<PermanentSnapshot> = emptyList(),
     /**
-     * LKI snapshots (Rule 112.7a) for entities chosen via an additional cost like
-     * [com.wingedsheep.sdk.scripting.AdditionalCost.ChooseCreatureOrWarpedExile].
-     * Indexed by entity id via [com.wingedsheep.engine.state.components.stack.snapshotFor].
-     * Read by [com.wingedsheep.sdk.scripting.values.DynamicAmount.StoredCardPower].
+     * LKI snapshots (Rule 112.7a) for entities chosen via an additional cost
+     * step like [com.wingedsheep.sdk.scripting.AdditionalCost.ChooseEntity]
+     * with `captureSnapshot = true`. Indexed by entity id via
+     * [com.wingedsheep.engine.state.components.stack.snapshotFor]. Read by
+     * [DynamicAmountEvaluator] when the `EntityProperty` path resolves an
+     * [com.wingedsheep.sdk.scripting.values.EntityReference.FromCostStorage].
      */
     val chosenEntitySnapshots: List<PermanentSnapshot> = emptyList(),
     // --- Trigger state ---

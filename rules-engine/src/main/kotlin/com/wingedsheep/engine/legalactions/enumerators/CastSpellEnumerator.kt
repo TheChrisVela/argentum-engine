@@ -243,20 +243,29 @@ class CastSpellEnumerator : ActionEnumerator {
                             .filter { context.predicateEvaluator.matches(state, it, cost.filter, predicateContext) }
                         beholdOrPayTargets = battlefieldMatches + handMatches
                     }
-                    is AdditionalCost.ChooseCreatureOrWarpedExile -> {
-                        // Candidates: creatures the caster controls on the battlefield, plus
-                        // warped creature cards they own in exile (CR 702.185b).
+                    is AdditionalCost.ChooseEntity -> {
+                        // Search each (zone, filter) pair in `cost.zoneFilters`. Battlefield
+                        // uses projected state (continuous effects matter); hidden / card
+                        // zones use base state, mirroring the Behold convention.
                         val projected = state.projectedState
-                        val battlefieldMatches = projected.getBattlefieldControlledBy(playerId).filter { permId ->
-                            projected.isCreature(permId)
+                        val predicateContext = PredicateContext(controllerId = playerId)
+                        val allTargets = cost.zoneFilters.flatMap { (zone, filter) ->
+                            when (zone) {
+                                Zone.BATTLEFIELD -> projected.getBattlefieldControlledBy(playerId)
+                                    .filter {
+                                        context.predicateEvaluator.matchesWithProjection(
+                                            state, projected, it, filter, predicateContext
+                                        )
+                                    }
+                                else -> state.getZone(ZoneKey(playerId, zone))
+                                    .filter { it != cardId } // exclude the spell being cast
+                                    .filter {
+                                        context.predicateEvaluator.matches(
+                                            state, it, filter, predicateContext
+                                        )
+                                    }
+                            }
                         }
-                        val exileZone = ZoneKey(playerId, Zone.EXILE)
-                        val exileMatches = state.getZone(exileZone).filter { cardEntityId ->
-                            val container = state.getEntity(cardEntityId) ?: return@filter false
-                            container.has<com.wingedsheep.engine.state.components.identity.WarpExiledComponent>() &&
-                                container.get<CardComponent>()?.typeLine?.isCreature == true
-                        }
-                        val allTargets = battlefieldMatches + exileMatches
                         if (allTargets.isEmpty()) {
                             canPayAdditionalCosts = false
                         }
@@ -1362,10 +1371,10 @@ class CastSpellEnumerator : ActionEnumerator {
         } else if (beholdTargets.isNotEmpty()) {
             val flatCosts = additionalCosts.flatMap { if (it is AdditionalCost.Composite) it.steps else listOf(it) }
             val beholdCost = flatCosts.filterIsInstance<AdditionalCost.Behold>().firstOrNull()
-            val chooseCost = flatCosts.filterIsInstance<AdditionalCost.ChooseCreatureOrWarpedExile>().firstOrNull()
+            val chooseCost = flatCosts.filterIsInstance<AdditionalCost.ChooseEntity>().firstOrNull()
             AdditionalCostData(
                 description = chooseCost?.description ?: beholdCost?.description ?: "Behold a card",
-                costType = if (chooseCost != null) "ChooseCreatureOrWarpedExile" else "Behold",
+                costType = if (chooseCost != null) "ChooseEntity" else "Behold",
                 validBeholdTargets = beholdTargets,
                 beholdCount = beholdCount
             )

@@ -724,6 +724,7 @@ class PredicateEvaluator {
             is EntityReference.TappedAsCost -> null
             is EntityReference.AffectedEntity -> null // Only available during projection
             is EntityReference.IterationEntity -> null // Only available during ForEachInGroup iteration
+            is EntityReference.FromCostStorage -> null // Cost-pipeline state is not threaded into PredicateContext
         }
     }
 
@@ -817,6 +818,11 @@ class PredicateEvaluator {
             }
 
             StatePredicate.IsModified -> com.wingedsheep.engine.handlers.predicates.isModified(state, entityId)
+
+            // Zone-specific marker — set by WarpExileExecutor when a warped
+            // permanent is exiled at end of turn (CR 702.185b).
+            StatePredicate.IsWarpExiled ->
+                container.has<com.wingedsheep.engine.state.components.identity.WarpExiledComponent>()
 
             // Relative power
             StatePredicate.HasGreatestPower -> {

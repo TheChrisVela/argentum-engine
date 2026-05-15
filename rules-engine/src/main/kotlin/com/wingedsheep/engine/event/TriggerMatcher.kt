@@ -935,6 +935,7 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasGreatestPower,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsEquipped,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsModified,
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsWarpExiled,
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasCounter -> true
     }
 

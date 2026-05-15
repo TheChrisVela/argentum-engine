@@ -184,6 +184,24 @@ sealed interface StatePredicate {
     }
 
     // =============================================================================
+    // Zone-Specific Markers (Entity)
+    // =============================================================================
+
+    /**
+     * Card in exile that was put there by the delayed triggered ability of a warp
+     * keyword (CR 702.185b). Matches the `WarpExiledComponent` marker the engine
+     * writes when a warped permanent leaves the battlefield at end of turn.
+     *
+     * Useful inside filters that span the exile zone (e.g. an additional cost that
+     * lets you choose "a warped creature card you own in exile").
+     */
+    @SerialName("IsWarpExiled")
+    @Serializable
+    data object IsWarpExiled : Entity {
+        override val description: String = "warped"
+    }
+
+    // =============================================================================
     // Composite / Logical Combinators
     // =============================================================================
 

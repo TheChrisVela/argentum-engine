@@ -1146,28 +1146,19 @@ class CastSpellHandler(
                         return "Not enough life to pay ${additionalCost.amount} life"
                     }
                 }
-                is AdditionalCost.ChooseCreatureOrWarpedExile -> {
+                is AdditionalCost.ChooseEntity -> {
                     val chosen = action.additionalCostPayment?.beheldCards ?: emptyList()
                     if (chosen.isEmpty()) {
-                        return "You must choose a creature you control or a warped creature card you own in exile"
+                        return "You must ${additionalCost.description}"
                     }
                     if (chosen.size > 1) {
-                        return "You may only choose one creature or warped exiled card"
+                        return "You may only choose one entity for: ${additionalCost.description}"
                     }
                     val entityId = chosen.first()
-                    val container = state.getEntity(entityId)
-                        ?: return "Chosen entity not found: $entityId"
-                    val card = container.get<CardComponent>()
-                        ?: return "Chosen entity is not a card: $entityId"
-                    val isOwnCreatureOnBattlefield = entityId in state.getBattlefield() &&
-                        projected.getController(entityId) == action.playerId &&
-                        projected.isCreature(entityId)
-                    val exileZone = ZoneKey(action.playerId, Zone.EXILE)
-                    val isWarpedExiledOwnCard = entityId in state.getZone(exileZone) &&
-                        container.has<com.wingedsheep.engine.state.components.identity.WarpExiledComponent>() &&
-                        card.typeLine.isCreature
-                    if (!isOwnCreatureOnBattlefield && !isWarpedExiledOwnCard) {
-                        return "${card.name} must be a creature you control or a warped creature card you own in exile"
+                    val candidates = costHandler.findChooseEntityCandidates(state, additionalCost, action.playerId)
+                    if (entityId !in candidates) {
+                        val name = state.getEntity(entityId)?.get<CardComponent>()?.name ?: entityId.toString()
+                        return "$name is not a valid choice for: ${additionalCost.description}"
                     }
                 }
                 else -> {}
@@ -1330,9 +1321,10 @@ class CastSpellHandler(
         var exiledCardCount = 0
         val beheldCards = mutableListOf<EntityId>()
         /**
-         * LKI snapshots for entities chosen via [AdditionalCost.ChooseCreatureOrWarpedExile].
-         * Captured at cost-pay time so [DynamicAmount.StoredCardPower] can read "power as it
-         * last existed on the battlefield" if the chosen creature leaves before resolution.
+         * LKI snapshots for entities chosen via [AdditionalCost.ChooseEntity] when
+         * `captureSnapshot = true`. Captured at cost-pay time so downstream effects
+         * (e.g. `EntityProperty(FromCostStorage(...), Power)`) can read "power as it
+         * last existed on the battlefield" if the chosen entity leaves before resolution.
          */
         val chosenEntitySnapshots = mutableListOf<PermanentSnapshot>()
         /** Pipeline storage populated by Behold, consumed by ExileFromStorage */
@@ -1699,22 +1691,25 @@ class CastSpellHandler(
                     is AdditionalCost.PayLife -> {
                         // Handled in the auto-pay pre-pass above (PayLife requires no player choice).
                     }
-                    is AdditionalCost.ChooseCreatureOrWarpedExile -> {
+                    is AdditionalCost.ChooseEntity -> {
                         // Choosing does not change zones. Record the chosen entity id under
                         // [beheldCards] (shared "chosen-as-additional-cost" storage) and in
                         // the pipeline under [storeAs] so the spell effect can reference it.
-                        // Capture a power/toughness snapshot for battlefield choices so the
-                        // damage effect can fall back to LKI when the creature leaves before
-                        // resolution (CR 112.7a; ruling on Close Encounter).
+                        // When `captureSnapshot` is set, freeze a power/toughness/subtype
+                        // snapshot for battlefield choices so downstream effects can fall
+                        // back to LKI when the entity leaves between cost-pay and resolution
+                        // (Rule 112.7a).
                         val chosen = action.additionalCostPayment.beheldCards
                         if (chosen.isNotEmpty()) {
                             beheldCards.addAll(chosen)
                             costPipelineCollections[additionalCost.storeAs] = chosen
-                            val battlefieldChosen = chosen.filter { it in currentState.getBattlefield() }
-                            if (battlefieldChosen.isNotEmpty()) {
-                                chosenEntitySnapshots.addAll(
-                                    capturePermanentSnapshots(battlefieldChosen, currentState.projectedState)
-                                )
+                            if (additionalCost.captureSnapshot) {
+                                val battlefieldChosen = chosen.filter { it in currentState.getBattlefield() }
+                                if (battlefieldChosen.isNotEmpty()) {
+                                    chosenEntitySnapshots.addAll(
+                                        capturePermanentSnapshots(battlefieldChosen, currentState.projectedState)
+                                    )
+                                }
                             }
                         }
                     }

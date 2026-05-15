@@ -62,4 +62,30 @@ sealed interface EntityReference {
     data object IterationEntity : EntityReference {
         override val description: String = "it"
     }
+
+    /**
+     * An entity recorded into the spell's pipeline `storedCollections` by an
+     * additional-cost step (typically
+     * [com.wingedsheep.sdk.scripting.AdditionalCost.ChooseEntity]).
+     *
+     * Reads `EffectContext.pipeline.storedCollections[collectionName][index]`.
+     * When paired with `DynamicAmount.EntityProperty(...)`, the evaluator
+     * consults `EffectContext.chosenEntitySnapshots` for last-known-info
+     * fallback if the entity has left the battlefield since cost-pay time
+     * (Rule 112.7a / 608.2h), mirroring the existing
+     * [Sacrificed] / [TappedAsCost] LKI paths.
+     *
+     * @property collectionName The `storeAs` key under which the cost step
+     *   recorded the chosen entity.
+     * @property index Position within the collection (defaults to the first
+     *   chosen entity; useful when a future cost step records multiple).
+     */
+    @SerialName("FromCostStorage")
+    @Serializable
+    data class FromCostStorage(
+        val collectionName: String,
+        val index: Int = 0,
+    ) : EntityReference {
+        override val description: String = "the chosen $collectionName"
+    }
 }

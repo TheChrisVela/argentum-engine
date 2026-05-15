@@ -11,7 +11,6 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.identity.PlayerComponent
-import com.wingedsheep.engine.state.components.stack.snapshotFor
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CharacteristicValue
@@ -99,24 +98,6 @@ class DynamicAmountEvaluator(
                 state.getEntity(cardId)?.get<CardComponent>()?.manaValue ?: 0
             }
 
-            is DynamicAmount.StoredCardPower -> {
-                val cards = context.pipeline.storedCollections[amount.collectionName] ?: return 0
-                val cardId = cards.firstOrNull() ?: return 0
-                // Prefer the live projected value while the entity is still on the
-                // battlefield (CR 608.2 — resolve using current characteristics).
-                if (cardId in state.getBattlefield()) {
-                    val effectiveProjected = projectedState ?: state.projectedState
-                    effectiveProjected.getPower(cardId)?.let { return it }
-                }
-                // Fall back to the snapshot captured when the chosen entity was on
-                // the battlefield at cost-pay time (CR 112.7a — last known info).
-                context.chosenEntitySnapshots.snapshotFor(cardId)?.power?.let { return it }
-                // Final fallback: the card's printed base power. Used when the chosen
-                // entity was in exile at cost-pay time (warped creature card), or when
-                // no snapshot was captured for some reason.
-                state.getEntity(cardId)?.get<CardComponent>()?.baseStats?.basePower ?: 0
-            }
-
             // Math operations
             is DynamicAmount.Add -> {
                 evaluate(state, amount.left, context) + evaluate(state, amount.right, context)
@@ -187,6 +168,31 @@ class DynamicAmountEvaluator(
                         else -> { /* fall through */ }
                     }
                     return resolveNumericProperty(state, entityId, amount.numericProperty, context, useProjected = false)
+                }
+                // Cost-storage reads of Power/Toughness mirror the Sacrificed path — the
+                // chosen entity may have left the battlefield (or never been on it, for an
+                // exile-zone pick) between cost payment and resolution (Rule 112.7a).
+                // Resolution order: live projected value if still on battlefield → snapshot
+                // captured at cost-pay time → base stats.
+                if (amount.entity is EntityReference.FromCostStorage) {
+                    val onBattlefield = entityId in state.getBattlefield()
+                    when (amount.numericProperty) {
+                        is EntityNumericProperty.Power,
+                        is EntityNumericProperty.Toughness -> {
+                            if (!onBattlefield) {
+                                val snapshot = context.chosenEntitySnapshots.firstOrNull { it.entityId == entityId }
+                                val snapVal = when (amount.numericProperty) {
+                                    is EntityNumericProperty.Power -> snapshot?.power
+                                    is EntityNumericProperty.Toughness -> snapshot?.toughness
+                                    else -> null
+                                }
+                                if (snapVal != null) return snapVal
+                                return resolveNumericProperty(state, entityId, amount.numericProperty, context, useProjected = false)
+                            }
+                        }
+                        else -> { /* fall through to projected path */ }
+                    }
+                    return resolveNumericProperty(state, entityId, amount.numericProperty, context, useProjected = true, explicitProjected = projectedState)
                 }
                 // Tap-as-cost reads of Power/Toughness mirror the Sacrificed path — the tapped
                 // permanent may have left the battlefield between cost payment and resolution
@@ -661,6 +667,8 @@ class DynamicAmountEvaluator(
             is EntityReference.Triggering -> context.triggeringEntityId
             is EntityReference.AffectedEntity -> context.affectedEntityId
             is EntityReference.IterationEntity -> context.pipeline.iterationTarget
+            is EntityReference.FromCostStorage ->
+                context.pipeline.storedCollections[ref.collectionName]?.getOrNull(ref.index)
         }
 
     // =========================================================================

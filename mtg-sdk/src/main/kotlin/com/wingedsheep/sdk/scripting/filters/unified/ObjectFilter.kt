@@ -397,6 +397,16 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.IsEquipped
     )
 
+    /**
+     * Must be marked as a "warped card in exile" (CR 702.185b) — i.e., the
+     * engine wrote a `WarpExiledComponent` when the warped permanent left the
+     * battlefield at end of turn. Use this when filtering candidates in the
+     * exile zone for costs like Close Encounter.
+     */
+    fun warpExiled() = copy(
+        statePredicates = statePredicates + StatePredicate.IsWarpExiled
+    )
+
     // =============================================================================
     // Fluent Builder Methods - Controller Predicates
     // =============================================================================

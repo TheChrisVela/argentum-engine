@@ -2253,10 +2253,10 @@ class StackResolver(
  * Build pipeline `storedCollections` for cost-chosen card IDs.
  *
  * The chosen IDs (from [AdditionalCost.Behold], [AdditionalCost.BeholdOrPay], or
- * [AdditionalCost.ChooseCreatureOrWarpedExile]) are stored on the stack object as
+ * [AdditionalCost.ChooseEntity]) are stored on the stack object as
  * [SpellOnStackComponent.beheldCards]. Each of those costs declares its own
- * `storeAs` key that the card's resolution-time effects reference (e.g.,
- * `DynamicAmount.StoredCardPower("chosen")`). To keep the effect's reference
+ * `storeAs` key that the card's resolution-time effects reference (e.g. via
+ * `EntityReference.FromCostStorage`). To keep the effect's reference
  * stable across cost variants, expose the IDs under every relevant `storeAs`
  * key plus a default `"beheld"` key for backward compatibility with
  * pre-existing Behold-using cards.
@@ -2277,7 +2277,7 @@ internal fun buildBeheldStoredCollections(
             when (c) {
                 is AdditionalCost.Behold -> keys += c.storeAs
                 is AdditionalCost.BeholdOrPay -> keys += c.storeAs
-                is AdditionalCost.ChooseCreatureOrWarpedExile -> keys += c.storeAs
+                is AdditionalCost.ChooseEntity -> keys += c.storeAs
                 else -> {}
             }
         }

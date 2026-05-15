@@ -141,5 +141,7 @@ class FilterCollectionExecutor : EffectExecutor<FilterCollectionEffect> {
             is EntityReference.Triggering -> context.triggeringEntityId
             is EntityReference.AffectedEntity -> context.affectedEntityId
             is EntityReference.IterationEntity -> context.pipeline.iterationTarget
+            is EntityReference.FromCostStorage ->
+                context.pipeline.storedCollections[ref.collectionName]?.getOrNull(ref.index)
         }
 }

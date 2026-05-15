@@ -35,11 +35,12 @@ data class SpellOnStackComponent(
     val beheldCards: List<EntityId> = emptyList(),  // Cards chosen via Behold (stored in pipeline as named collection)
     /**
      * Last-known-info snapshots (Rule 112.7a) for entities chosen at cost-pay time
-     * that may later leave the battlefield before the spell resolves. Currently
-     * populated by [com.wingedsheep.sdk.scripting.AdditionalCost.ChooseCreatureOrWarpedExile]
-     * — captures the chosen creature's projected power/toughness/subtypes/controller
-     * so [com.wingedsheep.sdk.scripting.values.DynamicAmount.StoredCardPower] can
-     * read "power as it last existed on the battlefield" at resolution.
+     * that may later leave the battlefield before the spell resolves. Populated
+     * when an [com.wingedsheep.sdk.scripting.AdditionalCost.ChooseEntity] step
+     * has `captureSnapshot = true` — freezes the chosen entity's projected
+     * power / toughness / subtypes / controller so downstream effects (e.g.
+     * `DynamicAmount.EntityProperty(EntityReference.FromCostStorage(…), …)`)
+     * can read "values as they last existed on the battlefield" at resolution.
      */
     val chosenEntitySnapshots: List<PermanentSnapshot> = emptyList(),
     val manaSpentWhite: Int = 0,  // Mana colors spent for mana-spent-gated triggers

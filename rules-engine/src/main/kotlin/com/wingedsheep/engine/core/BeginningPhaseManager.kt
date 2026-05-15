@@ -335,6 +335,7 @@ class BeginningPhaseManager(
         StatePredicate.HasAnyCounter,
         StatePredicate.HasGreatestPower,
         StatePredicate.IsEquipped,
-        StatePredicate.IsModified -> true
+        StatePredicate.IsModified,
+        StatePredicate.IsWarpExiled -> true
     }
 }

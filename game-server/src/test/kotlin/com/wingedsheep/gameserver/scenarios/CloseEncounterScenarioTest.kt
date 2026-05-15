@@ -2,6 +2,7 @@ package com.wingedsheep.gameserver.scenarios
 
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.WarpExiledComponent
@@ -9,6 +10,7 @@ import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.permissions.MayPlayPermission
 import com.wingedsheep.engine.state.permissions.addMayPlayPermission
 import com.wingedsheep.gameserver.ScenarioTestBase
+import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
@@ -27,11 +29,12 @@ import io.kotest.matchers.shouldNotBe
  *   Close Encounter deals damage equal to the power of the chosen creature or
  *   card to target creature.
  *
- * Exercises the new
- * [com.wingedsheep.sdk.scripting.AdditionalCost.ChooseCreatureOrWarpedExile]
- * cost and the [com.wingedsheep.sdk.scripting.values.DynamicAmount.StoredCardPower]
- * dynamic amount, including the LKI snapshot path documented in the printed
- * ruling.
+ * Exercises the
+ * [com.wingedsheep.sdk.scripting.AdditionalCost.ChooseEntity] cost
+ * (configured for "creature on battlefield OR warped creature card in exile")
+ * and the [com.wingedsheep.sdk.scripting.values.EntityReference.FromCostStorage]
+ * reference reading power via `DynamicAmount.EntityProperty`, including the
+ * LKI snapshot path documented in the printed ruling.
  */
 class CloseEncounterScenarioTest : ScenarioTestBase() {
 
@@ -88,10 +91,14 @@ class CloseEncounterScenarioTest : ScenarioTestBase() {
                 // Encounter resolves, use that creature's power as it last existed on the
                 // battlefield to determine how much damage is dealt." (Capture a snapshot
                 // at cost-pay time and read from it when the live entity is gone.)
+                //
+                // Buff Python from 3/2 to 4/3 with a +1/+1 counter so the assertion
+                // distinguishes the LKI snapshot path (returns 4) from the printed-base-power
+                // fallback (would return 3).
                 val game = scenario()
                     .withPlayers("Player1", "Player2")
                     .withCardInHand(1, "Close Encounter")
-                    .withCardOnBattlefield(1, "Python")           // 3/2 — chosen, then exiled
+                    .withCardOnBattlefield(1, "Python")           // base 3/2, buffed to 4/3
                     .withCardOnBattlefield(2, "Whiptail Wurm")        // 8/5 — damaged target
                     .withLandsOnBattlefield(1, "Forest", 2)
                     .withCardInLibrary(1, "Forest")
@@ -103,6 +110,12 @@ class CloseEncounterScenarioTest : ScenarioTestBase() {
                 val pythonId = game.findPermanent("Python")!!
                 val wurmId = game.findPermanent("Whiptail Wurm")!!
                 val closeEncounterId = game.findCardsInHand(1, "Close Encounter").first()
+
+                // Buff Python: +1/+1 counter — projected power becomes 4.
+                game.state = game.state.updateEntity(pythonId) { c ->
+                    val existing = c.get<CountersComponent>() ?: CountersComponent()
+                    c.with(existing.withAdded(CounterType.PLUS_ONE_PLUS_ONE, 1))
+                }
 
                 val castResult = game.execute(
                     CastSpell(
@@ -129,8 +142,8 @@ class CloseEncounterScenarioTest : ScenarioTestBase() {
 
                 game.resolveStack()
 
-                withClue("Damage should reflect Python's LKI power (3), not 0") {
-                    game.state.getEntity(wurmId)?.get<DamageComponent>()?.amount shouldBe 3
+                withClue("Damage should reflect Python's LKI power (4, with the +1/+1 counter), not the printed base power (3)") {
+                    game.state.getEntity(wurmId)?.get<DamageComponent>()?.amount shouldBe 4
                 }
             }
         }

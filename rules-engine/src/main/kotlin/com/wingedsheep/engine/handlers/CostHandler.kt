@@ -738,22 +738,36 @@ class CostHandler(
                 // All steps must be payable
                 cost.steps.all { canPayAdditionalCost(state, it, controllerId) }
             }
-            is AdditionalCost.ChooseCreatureOrWarpedExile -> {
-                // Payable iff the player has at least one valid choice:
-                //   - a creature they control on the battlefield, OR
-                //   - a creature card they own in exile with WarpExiledComponent
-                //     (CR 702.185b — a "warped" exiled card).
-                val projected = state.projectedState
-                val hasOwnCreature = projected.getBattlefieldControlledBy(controllerId).any { id ->
-                    projected.isCreature(id)
-                }
-                if (hasOwnCreature) return true
-                val exileZone = ZoneKey(controllerId, Zone.EXILE)
-                state.getZone(exileZone).any { cardId ->
-                    val container = state.getEntity(cardId) ?: return@any false
-                    if (!container.has<com.wingedsheep.engine.state.components.identity.WarpExiledComponent>()) return@any false
-                    container.get<CardComponent>()?.typeLine?.isCreature == true
-                }
+            is AdditionalCost.ChooseEntity -> {
+                // Payable iff at least one entity in the searched zones matches the filter.
+                findChooseEntityCandidates(state, cost, controllerId).isNotEmpty()
+            }
+        }
+    }
+
+    /**
+     * Enumerate every entity the caster could legally pick for an
+     * [AdditionalCost.ChooseEntity] step. For each (zone, filter) entry in
+     * [AdditionalCost.ChooseEntity.zoneFilters], iterate the caster's slice of
+     * that zone and apply the filter — projected state for the battlefield,
+     * base state for hidden / card zones (matching the Behold convention).
+     *
+     * Shared so the enumerator, validation, and payment paths all see the same
+     * candidate set.
+     */
+    fun findChooseEntityCandidates(
+        state: GameState,
+        cost: AdditionalCost.ChooseEntity,
+        controllerId: EntityId,
+    ): List<EntityId> {
+        val projected = state.projectedState
+        val ctx = PredicateContext(controllerId = controllerId)
+        return cost.zoneFilters.flatMap { (zone, filter) ->
+            when (zone) {
+                Zone.BATTLEFIELD -> projected.getBattlefieldControlledBy(controllerId)
+                    .filter { predicateEvaluator.matchesWithProjection(state, projected, it, filter, ctx) }
+                else -> state.getZone(ZoneKey(controllerId, zone))
+                    .filter { predicateEvaluator.matches(state, it, filter, ctx) }
             }
         }
     }

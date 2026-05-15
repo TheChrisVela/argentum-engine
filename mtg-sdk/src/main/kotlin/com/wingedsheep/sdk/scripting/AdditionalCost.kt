@@ -415,28 +415,72 @@ sealed interface AdditionalCost : TextReplaceable<AdditionalCost> {
     }
 
     /**
-     * Choose one entity that is either a creature you control on the battlefield
-     * or a warped creature card you own in exile (CR 702.185b — a "warped" card
-     * is one that was exiled by the warp end-step trigger). The chosen entity ID
+     * Choose one entity from any of the zones declared in [zoneFilters], applying
+     * the matching filter for that zone, without moving it. The chosen entity ID
      * is recorded in [AdditionalCostPayment.beheldCards] and surfaced to the
-     * resolution context under [storeAs] via the spell's pipeline storage, so
-     * downstream effects (typically [com.wingedsheep.sdk.scripting.values.DynamicAmount.StoredCardPower])
-     * can read the chosen entity's power.
+     * resolution context under [storeAs] via the spell's pipeline storage.
+     * Downstream effects can reference the chosen entity via
+     * [com.wingedsheep.sdk.scripting.values.EntityReference.FromCostStorage].
      *
-     * Used by Edge of Eternities cards like Close Encounter and Blade of the Swarm.
+     * This is the silent sibling of [Behold]: same general shape (filter the
+     * candidates, record one pick under a `storeAs` key) but **no reveal
+     * semantics** for hand-zone choices, and the caller decides which zones to
+     * search and which filter applies in each zone. Use it for cost shapes like
+     * "choose a creature you control or a warped creature card you own in
+     * exile" (Close Encounter, CR 702.185b), where Behold's hand-reveal
+     * baggage doesn't apply and the per-zone filters differ.
      *
-     * Choosing does not change zones — it merely records the chosen entity for the
-     * spell's effect to reference at resolution.
+     * Per-zone iteration already restricts to the caster's slice of each zone
+     * (`getBattlefieldControlledBy(playerId)` for the battlefield, `ZoneKey(playerId, zone)`
+     * for hidden / card zones), so the filters don't need to redundantly assert
+     * "you control" / "you own".
+     *
+     * @property zoneFilters Map from each zone to search to the filter that
+     *   gates candidates from that zone. An empty map means there are no
+     *   valid choices (the cost is unpayable).
+     * @property storeAs Pipeline-storage key under which the chosen entity ID
+     *   is exposed at resolution time.
+     * @property captureSnapshot When true and the chosen entity is on the
+     *   battlefield at cost-pay time, capture a [PermanentSnapshot] so power /
+     *   toughness / subtypes / controller can still be read after the entity
+     *   leaves between cost-pay and resolution (Rule 112.7a; ruling on Close
+     *   Encounter).
      */
-    @SerialName("ChooseCreatureOrWarpedExile")
+    @SerialName("ChooseEntity")
     @Serializable
-    data class ChooseCreatureOrWarpedExile(
-        val storeAs: String = "chosen"
+    data class ChooseEntity(
+        val zoneFilters: Map<com.wingedsheep.sdk.core.Zone, GameObjectFilter> =
+            mapOf(com.wingedsheep.sdk.core.Zone.BATTLEFIELD to GameObjectFilter.Any),
+        val storeAs: String = "chosen",
+        val captureSnapshot: Boolean = false,
+        /**
+         * Override the auto-generated player-facing description. Cross-zone
+         * unions often have naturalized oracle text ("a creature you control
+         * or a warped creature card you own in exile") that the
+         * filter-description machinery can't reconstruct from
+         * [zoneFilters] alone — pass the oracle wording verbatim here.
+         */
+        val descriptionOverride: String? = null,
     ) : AdditionalCost {
-        override val description: String =
-            "choose a creature you control or a warped creature card you own in exile"
+        override val description: String = descriptionOverride ?: buildString {
+            append("choose ")
+            val parts = zoneFilters.entries.map { (_, filter) ->
+                val filterDesc = filter.description
+                val article = if (filterDesc.firstOrNull()?.lowercase() in listOf("a", "e", "i", "o", "u")) "an" else "a"
+                "$article $filterDesc"
+            }
+            append(parts.joinToString(" or "))
+        }
 
-        override fun applyTextReplacement(replacer: TextReplacer): AdditionalCost = this
+        override fun applyTextReplacement(replacer: TextReplacer): AdditionalCost {
+            var changed = false
+            val replaced = zoneFilters.mapValues { (_, filter) ->
+                val new = filter.applyTextReplacement(replacer)
+                if (new !== filter) changed = true
+                new
+            }
+            return if (changed) copy(zoneFilters = replaced) else this
+        }
     }
 }
 
