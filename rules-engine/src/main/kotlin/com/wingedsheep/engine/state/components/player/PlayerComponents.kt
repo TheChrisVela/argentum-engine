@@ -21,7 +21,18 @@ data class ManaPoolComponent(
     val red: Int = 0,
     val green: Int = 0,
     val colorless: Int = 0,
-    val restrictedMana: List<RestrictedManaEntry> = emptyList()
+    val restrictedMana: List<RestrictedManaEntry> = emptyList(),
+    /**
+     * Count of mana units currently in the pool that were added by a permanent
+     * with the Treasure subtype (Treasure tokens, etc.). Treasure mana is
+     * fungible — `treasureMana` does not track color or position in the pool,
+     * only the count. When mana is spent for a spell, [CastPaymentProcessor]
+     * consumes from this counter proportional to the total mana taken from the
+     * pool and flags the spell as "paid with Treasure mana" if any was
+     * consumed. Powers Alchemist's Talent level 3. The counter is cleared
+     * whenever the pool empties.
+     */
+    val treasureMana: Int = 0
 ) : Component {
     /**
      * Add mana of a specific color.
@@ -79,9 +90,10 @@ data class ManaPoolComponent(
     val total: Int get() = white + blue + black + red + green + colorless + restrictedMana.size
 
     /**
-     * Check if pool is empty.
+     * Check if pool is empty. Includes the `treasureMana` counter so a stale
+     * tag without backing mana still triggers the end-of-step pool reset.
      */
-    val isEmpty: Boolean get() = total == 0
+    val isEmpty: Boolean get() = total == 0 && treasureMana == 0
 
     /**
      * Add restricted mana to the pool.
@@ -285,6 +297,19 @@ data class PlayerHexproofComponent(
 ) : Component
 
 /**
+ * Marks a player as having the city's blessing (CR 702.131 / 700.5).
+ *
+ * Granted by Ascend triggers when their controller controls 10+ permanents on
+ * resolution. Per CR 702.131c, the city's blessing is **permanent for the rest of
+ * the game** — it is never removed once granted, even if the granting permanent
+ * leaves play or the controller loses all their permanents.
+ *
+ * That's why this component has no `removeOn` field: cleanup never touches it.
+ */
+@Serializable
+data object PlayerCitysBlessingComponent : Component
+
+/**
  * Describes when a player-level effect component should be removed.
  */
 @Serializable
@@ -294,6 +319,27 @@ enum class PlayerEffectRemoval {
     /** Never removed automatically — must be explicitly cleared */
     Permanent
 }
+
+/**
+ * Spells matching any of [filters] that the player owning this component casts
+ * can't be countered, for the duration described by [removeOn].
+ *
+ * Player-scoped counterpart to the permanent-static
+ * [com.wingedsheep.sdk.scripting.GrantCantBeCountered]: same protection, but the source
+ * is a player rather than a battlefield permanent, so the protection survives the granter
+ * leaving the battlefield (Domri, Anarch of Bolas's +1).
+ *
+ * Multiple grants stack additively — each call appends to [filters]; a spell is uncounterable
+ * if it matches any entry. The whole component is removed in one shot when the duration elapses.
+ *
+ * @property filters Filters matched against the spell on the stack.
+ * @property removeOn When this component is removed.
+ */
+@Serializable
+data class SpellsCantBeCounteredComponent(
+    val filters: List<GameObjectFilter> = emptyList(),
+    val removeOn: PlayerEffectRemoval = PlayerEffectRemoval.EndOfTurn
+) : Component
 
 /**
  * Component indicating that a player cannot cast spells for the rest of this turn.

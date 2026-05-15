@@ -30,6 +30,14 @@ data class ZoneChangeEvent(
     val fromZone: Zone?,
     val toZone: Zone,
     val ownerId: EntityId,
+    /**
+     * Last-known controller when leaving the battlefield. Differs from [ownerId] for stolen
+     * creatures (Threaten / Mind Control) and for tokens whose controller ≠ creator's owner.
+     * Trigger filters that scope "creatures that player controls" (e.g., "the creature with
+     * the greatest power among creatures that player controls" — Kraven the Hunter) read
+     * this in preference to [ownerId]. Null for non-battlefield transitions.
+     */
+    val lastKnownController: EntityId? = null,
     /** Last known +1/+1 counter count when leaving battlefield (for death triggers needing last known info) */
     val lastKnownCounterCount: Int = 0,
     /** Last known -1/-1 counter count when leaving battlefield (used by the persist keyword's "had no -1/-1 counters" check) */
@@ -143,6 +151,21 @@ data class KeywordGrantedEvent(
 ) : GameEvent
 
 /**
+ * A player gained the city's blessing (CR 702.131 / 700.5).
+ *
+ * Fired by Ascend triggers when their controller controls 10+ permanents on
+ * resolution. The blessing is permanent for the rest of the game — this event
+ * fires at most once per player per game.
+ */
+@Serializable
+@SerialName("CitysBlessingGainedEvent")
+data class CitysBlessingGainedEvent(
+    val playerId: EntityId,
+    val playerName: String,
+    val sourceName: String
+) : GameEvent
+
+/**
  * A player chose a creature type (e.g., "Choose a creature type" for Walking Desecration).
  * This is a public announcement visible to all players.
  */
@@ -183,7 +206,14 @@ data class SpellCastEvent(
     val xValue: Int? = null,
     val wasKicked: Boolean = false,
     /** Total mana spent to cast this spell (for Expend trigger detection) */
-    val totalManaSpent: Int = 0
+    val totalManaSpent: Int = 0,
+    /**
+     * True when any of the mana spent on this cast was tagged as Treasure
+     * mana (see [com.wingedsheep.engine.state.components.player.ManaPoolComponent.treasureMana]).
+     * Drives the SDK trigger
+     * [com.wingedsheep.sdk.dsl.Triggers.YouCastSpellPaidWithTreasureMana].
+     */
+    val paidWithTreasureMana: Boolean = false
 ) : GameEvent
 
 /**

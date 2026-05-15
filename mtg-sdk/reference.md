@@ -80,6 +80,7 @@ constructors.
 - `Effects.ModifyStats(power, toughness, target = ContextTarget(0))` — until end of turn
 - `Effects.ModifyStats(power: DynamicAmount, toughness: DynamicAmount, target)` — dynamic P/T
 - `Effects.GrantHexproof(target = Controller, duration = EndOfTurn)` — grant hexproof to player or permanent
+- `Effects.GainCitysBlessing(target = Controller)` — grant the city's blessing (CR 702.131); permanent, idempotent
 - `Effects.GrantKeyword(keyword, target = ContextTarget(0), duration = EndOfTurn)` — grant a keyword for a duration
 - `Effects.GrantKeywordToAttackersBlockedBy(keyword, target, duration)` — grant keyword to attackers blocked by target
 - `Effects.GrantExileOnLeave(target)` — exile instead of leaving battlefield (Kheru Lich Lord, Whip of Erebos)
@@ -137,6 +138,7 @@ constructors.
 - `Effects.AddManaOfColorAmong(filter)` — add one mana of any color among matching permanents (Mox Amber)
 - `Effects.AddOneManaOfEachColorAmong(filter)` — add one mana of EACH color among matching permanents (Bloom Tender / Vivid mana ability)
 - `Effects.AddManaOfColorLandsCouldProduce(scope)` — add one mana of any color a land in `scope` could produce (Fellwar Stone uses `LandControllerScope.OPPONENTS`; Reflecting Pool uses `YOU`). Inspects the lands' mana abilities, ignores activation costs and tapped state, and excludes colorless production.
+- `Effects.AddManaOfColorInCommanderColorIdentity()` — add one mana of any color in the controller's commander's color identity (Arcane Signet, Command Tower). Unions the color identity of every commander in `CommanderRegistryComponent` (Partner / Background); produces no mana if the controller has no commander.
 
 ### Tokens
 
@@ -367,6 +369,7 @@ constructors.
 | `AddManaOfColorAmongEffect` | `filter: GameObjectFilter`                | Add mana of color among matching permanents (Mox Amber) |
 | `AddOneManaOfEachColorAmongEffect` | `filter: GameObjectFilter`         | Add one mana of EACH color found among matching permanents (Bloom Tender) |
 | `AddManaOfColorLandsCouldProduceEffect` | `scope: LandControllerScope`  | Add one mana of any color a land in scope could produce (Fellwar Stone) |
+| `AddManaOfColorInCommanderColorIdentityEffect` | `restriction: ManaRestriction?` | Add one mana of any color in the controller's commander's color identity (Arcane Signet) |
 
 ### Tokens
 
@@ -636,6 +639,7 @@ constructors.
 ### Spell Keyword Grants
 
 - `Effects.GrantSpellKeyword(keyword: Keyword, spellFilter: SpellTypeFilter)` — permanently grant a keyword to spells of a type the controller casts. Used for Ral's storm emblem. Adds `GrantedSpellKeywordsComponent` to the player.
+- `Effects.GrantSpellsCantBeCountered(target = Controller, spellFilter = Creature, duration = EndOfTurn)` — player-scoped, time-bounded counterpart to the `GrantCantBeCountered` static ability: spells the target casts matching `spellFilter` can't be countered for `duration`. Stacks additively (multiple grants on the same player append filters). Used for Domri, Anarch of Bolas's +1.
 
 ### Life
 
@@ -777,6 +781,8 @@ constructors.
 - `Conditions.IsYourTurn` / `.IsNotYourTurn`
 - `Conditions.IsInPhase(vararg phases, yoursOnly = true)` — true if the current phase is one of the listed phases; with `yoursOnly` also requires the controller's turn (Dose of Dawnglow)
 - `Conditions.IsYourMainPhase` — convenience for `IsInPhase(PRECOMBAT_MAIN, POSTCOMBAT_MAIN, yoursOnly = true)`
+- `Conditions.YouHaveCitysBlessing` — true if you have the city's blessing (CR 702.131 / 700.5). Static-ability path goes through `SourceProjectionCondition.ControllerHasCitysBlessing`
+- `Conditions.ControlPermanentsAtLeast(count)` — true if you control N+ permanents of any type. Primary use is the Ascend ETB intervening-if (10+)
 - `Conditions.YouGainedLifeThisTurn` — true if you gained life this turn
 - `Conditions.YouGainedOrLostLifeThisTurn` — true if you gained or lost life this turn
 - `Conditions.YouLostLifeThisTurn` — true if you lost life this turn (for conditional static abilities)
@@ -914,6 +920,7 @@ Sources: `CardSource.TopOfLibrary(count, player)`, `CardSource.FromZone(zone, pl
 Destinations: `CardDestination.ToZone(zone, player, placement)`
 Placements: `ZonePlacement.Top`, `.Bottom`, `.Shuffled`, `.Default`, `.Tapped`
 Selection: `SelectionMode.ChooseExactly(count)`, `.ChooseUpTo(count)`, `.All`, `.Random(count)`, `.ChooseAnyNumber`
+Restrictions (pass via `SelectFromCollectionEffect.restrictions`): `SelectionRestriction.OnePerCardType`, `.OnePerColor(matchControllerPermanentColors)`, `.OnePerCardName`, `.TotalManaValueAtMost(max)` — sum of selected cards' mana value must be ≤ max (Scout for Survivors). {X} contributes 0 outside the stack.
 Chooser: `Chooser.Controller`, `.Opponent`, `.TargetPlayer`, `.TriggeringPlayer`, `.SourceController` (resolves through `sourceId` -> projected controller, ignoring per-iteration controller swaps inside `ForEachPlayerEffect`)
 Ordering: `CardOrder.ControllerChooses`, `.Random`, `.Preserve`
 MoveType: `MoveType.Default`, `.Discard`, `.Sacrifice`
@@ -997,6 +1004,11 @@ reveal creatures, create tokens
 ### Spell Mechanics
 
 `STORM`
+
+### City's Blessing
+
+`ASCEND` — Ixalan keyword (CR 702.131). On a permanent spell, conventionally wired
+per card as `triggeredAbility { trigger = Triggers.EntersBattlefield; effect = ConditionalEffect(Conditions.ControlPermanentsAtLeast(10), Effects.GainCitysBlessing()) }`. The blessing is a permanent player designation; once granted it persists for the rest of the game. Test via `Conditions.YouHaveCitysBlessing`.
 
 ### Damage Modification
 
@@ -1086,7 +1098,8 @@ Set via `staticAbility { ability = ... }`:
 
 ### Damage
 
-- `AssignDamageEqualToToughness(target, onlyWhenToughnessGreaterThanPower)` — Doran
+- `AssignDamageEqualToToughness(filter, onlyWhenToughnessGreaterThanPower)` — assigns combat damage as toughness; use `Scope.Self` for the creature itself, `Scope.AttachedTo` for equipment/aura, `Scope.Battlefield` for global permanents (Tapestry Warden)
+- `StationUsingToughness` — while a permanent with this is in play, creatures its controller controls with toughness > power contribute toughness instead of power when tapped to pay a Station cost. Applies automatically to any Station ability whose cost-input formula reads `EntityProperty(TappedAsCost, Power)` (Tapestry Warden)
 - `DivideCombatDamageFreely(target)` — divide damage freely
 - `AssignCombatDamageAsUnblocked(target)` — may assign combat damage as though unblocked (Thorn Elemental)
 
@@ -1109,7 +1122,7 @@ Set via `staticAbility { ability = ... }`:
 - `SuppressHexproofForGroup(filter: GroupFilter)` — creatures matching the filter can be targeted as though they didn't have hexproof; filter evaluated with this permanent's controller as context; does NOT suppress shroud (Nowhere to Run). Engine stores a `SuppressesHexproofForGroupComponent` tag on the permanent; `TargetEnumerationUtils` and `TargetValidator` consult it.
 - `SuppressWardForGroup(filter: GroupFilter)` — ward abilities of creatures matching the filter don't trigger (Nowhere to Run). Engine stores a `SuppressesWardForGroupComponent` tag; `TriggerAbilityResolver.getWardTriggeredAbilities()` returns empty when suppressed.
 - `ExtraLoyaltyActivation` — activate loyalty abilities of planeswalkers you control twice each turn (Oath of Teferi)
-- `AdditionalETBTriggers(creatureFilter)` — when a creature matching the filter ETBs under your control, triggered abilities of your permanents that fired from that event trigger an additional time (Naban, Dean of Iteration)
+- `AdditionalETBTriggers(enteringFilter, enteringMustBeYouControl = true)` — when a permanent matching the filter enters the battlefield, triggered abilities of your permanents that fired from that event trigger an additional time. Defaults to requiring the entering permanent to be under your control (Naban, Dean of Iteration; Traveling Chocobo). Set `enteringMustBeYouControl = false` for Starfield Vocalist–style cards where any controller's entering permanent counts.
 - `AdditionalSourceTriggers(sourceFilter, excludeSelf = true)` — if a triggered ability of a permanent matching the filter you control triggers, it triggers an additional time (Twinflame Travelers — "another Elemental"). Works for *all* triggers (not just ETB). `excludeSelf` skips the doubler's own source to honour "another" wording.
 - `NoncombatDamageBonus(bonusAmount)` — if a source you control would deal noncombat damage to an opponent or a permanent an opponent controls, it deals that much damage plus bonusAmount instead (Artist's Talent Level 3)
 - `CantCastSpells(target, duration)` — prevent target player from casting spells
@@ -1123,10 +1136,12 @@ Set via `staticAbility { ability = ... }`:
 - `MayCastSelfFromZones(zones: List<Zone>)` — intrinsic permission to cast this card from specified zones (e.g., graveyard, exile)
 - `MayCastFromGraveyardWithLifeCost(filter, lifeCost, duringYourTurnOnly)` — controller may cast matching spells from graveyard by paying life (e.g., Festival of Embers)
 - `MayPlayPermanentsFromGraveyard` — during each of your turns, play a land and cast a permanent spell of each type from your graveyard (Muldrotha). Tracks per-type usage via `GraveyardPlayPermissionUsedComponent` on the source permanent, cleared at end of turn.
+- `MayPlayLandsFromGraveyard` — you may play lands from your graveyard (Crucible of Worlds / Icetill Explorer style). No per-turn usage tracking; the land-drop counter already limits plays. Handled by `PlayLandEnumerator` and `PlayLandHandler` via `hasLandGraveyardPlayPermission()` — no interaction with `GraveyardPlayPermissionUsedComponent`.
 - `GrantMayCastFromLinkedExile(filter, duringYourTurnOnly = false, additionalCost = null)` — you may cast cards exiled with this permanent that match the filter (Rona, Disciple of Gix). `duringYourTurnOnly` restricts the permission to the controller's turn; `additionalCost` (any `AdditionalCost`) must be paid alongside the spell's normal costs (e.g., Dawnhand Dissident's `RemoveCountersFromYourCreatures(3)`). Works with `LinkedExileComponent`.
 - `LookAtFaceDownCreatures` — look at face-down creatures you don't control any time
 - `PreventCycling` — players can't cycle cards
 - `PreventManaPoolEmptying` — players don't lose unspent mana as steps and phases end
+- `NoMaximumHandSize` — controller has no maximum hand size; cleanup step skips the discard check (Thought Vessel, Reliquary Tower)
 - `IncreaseMorphCost(amount: Int)` — all morph (turn face-up) costs cost more
 - `IncreaseSpellCostByFilter(filter: GameObjectFilter, amount: Int)` — spells matching filter cost more (global tax effect)
 - `IncreaseSpellCostByPlayerSpellsCast(amountPerSpell: Int = 1)` — each spell costs {N} more per other spell that player has cast this turn (Damping Sphere)
@@ -1154,7 +1169,7 @@ Set via `staticAbility { ability = ... }`:
 
 ### CostReductionSource values
 
-`ColorsAmongPermanentsYouControl`, `Fixed(amount)`, `CreaturesYouControl`, `TotalPowerYouControl`, `ArtifactsYouControl`, `FixedIfControlFilter(amount, filter)` — fixed reduction if you control a permanent matching the GameObjectFilter (e.g., "costs {1} less if you control a Wizard"), `CardsInGraveyardMatchingFilter(filter, amountPerCard = 1)` — reduces by amountPerCard for each card in your graveyard matching the filter (e.g., "costs {1} less for each instant and sorcery card in your graveyard"), `CardsInGraveyardAndExileMatchingFilter(filter, amountPerCard = 1)` — reduces by amountPerCard for each card you own in exile and in your graveyard matching the filter (e.g., "costs {1} less for each creature card you own in exile and in your graveyard"), `PermanentsWithCounterYouControl(filter, counterType)` — reduces by number of permanents you control matching filter that have the specified counter (e.g., "for each land you control with a flood counter"), `FixedIfAnyTargetMatches(amount, filter)` — fixed reduction if any of the spell's chosen targets match the filter (e.g., Dire Downdraft: "costs {1} less if it targets an attacking or tapped creature"), `FixedIfCreatureAttackingYou(amount)` — fixed reduction if any creature on the battlefield is currently attacking the caster (or a planeswalker they control), e.g., Swat Away: "costs {2} less if a creature is attacking you", `DifferentlyNamedPermanentsYouControl(filter)` — reduces cost by the number of differently named permanents the caster controls matching the filter (e.g., Fungal Colossus uses `Filters.Land`)
+`ColorsAmongPermanentsYouControl`, `Fixed(amount)`, `CreaturesYouControl`, `TotalPowerYouControl`, `ArtifactsYouControl`, `FixedIfControlFilter(amount, filter)` — fixed reduction if you control a permanent matching the GameObjectFilter (e.g., "costs {1} less if you control a Wizard"), `CardsInGraveyardMatchingFilter(filter, amountPerCard = 1)` — reduces by amountPerCard for each card in your graveyard matching the filter (e.g., "costs {1} less for each instant and sorcery card in your graveyard"), `CardsInGraveyardAndExileMatchingFilter(filter, amountPerCard = 1)` — reduces by amountPerCard for each card you own in exile and in your graveyard matching the filter (e.g., "costs {1} less for each creature card you own in exile and in your graveyard"), `PermanentsWithCounterYouControl(filter, counterType)` — reduces by number of permanents you control matching filter that have the specified counter (e.g., "for each land you control with a flood counter"), `FixedIfAnyTargetMatches(amount, filter)` — fixed reduction if any of the spell's chosen targets match the filter (e.g., Dire Downdraft: "costs {1} less if it targets an attacking or tapped creature"), `FixedIfCreatureAttackingYou(amount)` — fixed reduction if any creature on the battlefield is currently attacking the caster (or a planeswalker they control), e.g., Swat Away: "costs {2} less if a creature is attacking you", `DifferentlyNamedPermanentsYouControl(filter)` — reduces cost by the number of differently named permanents the caster controls matching the filter (e.g., Fungal Colossus uses `Filters.Land`), `PermanentsOnBattlefieldMatching(filter)` — reduces cost by the number of permanents on the battlefield (any controller) matching the filter (e.g., Blasphemous Act uses `Filters.Creature` for "costs {1} less for each creature on the battlefield")
 
 ---
 

@@ -74,8 +74,12 @@ import com.wingedsheep.sdk.scripting.conditions.BlightWasPaid
 import com.wingedsheep.sdk.scripting.conditions.YouControlSource
 import com.wingedsheep.sdk.scripting.conditions.YouAttackedWithCreaturesThisTurn
 import com.wingedsheep.sdk.scripting.conditions.YouCastSpellsThisTurn
+import com.wingedsheep.sdk.scripting.conditions.CreatureDiedThisTurnCondition
+import com.wingedsheep.engine.handlers.triggers.CreatureDiedThisTurnConditionEvaluator
 import com.wingedsheep.sdk.scripting.conditions.YouWereAttackedThisStep
+import com.wingedsheep.sdk.scripting.conditions.YouHaveCitysBlessing
 import com.wingedsheep.sdk.scripting.conditions.VoidCondition
+import com.wingedsheep.engine.state.components.player.PlayerCitysBlessingComponent
 
 /**
  * Evaluates conditions from the SDK against the game state.
@@ -147,11 +151,17 @@ class ConditionEvaluator {
             is VoidCondition ->
                 state.nonlandPermanentLeftBattlefieldThisTurn || state.spellWarpedThisTurn
 
+            // City's blessing (Ixalan, CR 702.131 / 700.5)
+            is YouHaveCitysBlessing -> evaluateYouHaveCitysBlessing(state, context)
+
             // Stack conditions
             is OpponentSpellOnStack -> evaluateOpponentSpellOnStack(state, context)
 
             // Collection conditions
             is CollectionContainsMatch -> evaluateCollectionContainsMatch(state, condition, context)
+
+            // Death conditions
+            is CreatureDiedThisTurnCondition -> CreatureDiedThisTurnConditionEvaluator().evaluate(state, condition, context)
 
             // Composite conditions
             is AllConditions -> condition.conditions.all { evaluate(state, it, context) }
@@ -600,6 +610,10 @@ class ConditionEvaluator {
             ?.get<com.wingedsheep.engine.state.components.battlefield.AbilityResolutionCountThisTurnComponent>()
             ?: return false
         return component.count == condition.count
+    }
+
+    private fun evaluateYouHaveCitysBlessing(state: GameState, context: EffectContext): Boolean {
+        return state.getEntity(context.controllerId)?.has<PlayerCitysBlessingComponent>() == true
     }
 
     private fun evaluateCollectionContainsMatch(

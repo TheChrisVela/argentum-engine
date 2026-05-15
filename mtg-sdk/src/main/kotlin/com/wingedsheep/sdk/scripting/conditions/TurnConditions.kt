@@ -189,3 +189,42 @@ data object OpponentSpellOnStack : Condition {
     override fun applyTextReplacement(replacer: TextReplacer): Condition = this
 }
 
+// =============================================================================
+// Death Conditions
+// =============================================================================
+
+/**
+ * Intervening-if condition (Rule 603.4): "if a creature died this turn".
+ * True when the controlling player's CreaturesDiedThisTurnComponent has count > 0.
+ * Evaluated both at trigger time and at resolution per Rule 603.4.
+ */
+@SerialName("CreatureDiedThisTurn")
+@Serializable
+data object CreatureDiedThisTurnCondition : Condition {
+    override val description: String = "if a creature died this turn"
+    override fun applyTextReplacement(replacer: TextReplacer): Condition = this
+}
+
+// =============================================================================
+// City's Blessing (Ixalan, CR 702.131 / 700.5)
+// =============================================================================
+
+/**
+ * Intervening-if / static condition: "if you have the city's blessing".
+ *
+ * The city's blessing is a permanent player designation (once gained, never lost
+ * for the rest of the game per CR 702.131c). Granted by Ascend abilities when the
+ * controller controls ten or more permanents on resolution.
+ *
+ * Used by spell triggers/effects and by [ConditionalStaticAbility]
+ * (e.g. Tendershoot Dryad's "Saprolings you control get +2/+2 as long as you have
+ * the city's blessing"). The static-ability path goes through
+ * `SourceProjectionCondition.ControllerHasCitysBlessing`.
+ */
+@SerialName("YouHaveCitysBlessing")
+@Serializable
+data object YouHaveCitysBlessing : Condition {
+    override val description: String = "if you have the city's blessing"
+    override fun applyTextReplacement(replacer: TextReplacer): Condition = this
+}
+

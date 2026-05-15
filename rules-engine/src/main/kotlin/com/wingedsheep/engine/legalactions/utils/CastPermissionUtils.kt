@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.scripting.CastSpellTypesFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.ExtraLoyaltyActivation
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
+import com.wingedsheep.sdk.scripting.MayPlayLandsFromGraveyard
 import com.wingedsheep.sdk.scripting.MayPlayPermanentsFromGraveyard
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlayLandsAndCastFilteredFromTopOfLibrary
@@ -243,6 +244,12 @@ class CastPermissionUtils(
                     return true
                 }
             }
+            // Crucible of Worlds style: unlimited land plays from graveyard (land-drop is the limit)
+            if (typeName == com.wingedsheep.sdk.core.CardType.LAND.name &&
+                cardDef.script.staticAbilities.any { it is MayPlayLandsFromGraveyard }
+            ) {
+                return true
+            }
         }
         return false
     }
@@ -259,8 +266,7 @@ class CastPermissionUtils(
         entityId: EntityId,
         state: GameState
     ): List<StaticGrantedAbility> {
-        val targetContainer = state.getEntity(entityId) ?: return emptyList()
-        val targetCard = targetContainer.get<CardComponent>() ?: return emptyList()
+        if (state.getEntity(entityId) == null) return emptyList()
 
         val result = mutableListOf<StaticGrantedAbility>()
 
@@ -270,22 +276,21 @@ class CastPermissionUtils(
             if (container.has<com.wingedsheep.engine.state.components.identity.FaceDownComponent>()) continue
 
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            for (ability in cardDef.staticAbilities) {
+            val classLevel = container.get<com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent>()?.currentLevel
+            for (ability in cardDef.script.effectiveStaticAbilities(classLevel)) {
                 if (ability !is com.wingedsheep.sdk.scripting.GrantActivatedAbility) continue
                 when (val scope = ability.filter.scope) {
                     is com.wingedsheep.sdk.scripting.filters.unified.Scope.Battlefield -> {
                         if (ability.filter.excludeSelf && permanentId == entityId) continue
-                        val filter = ability.filter.baseFilter
-                        val matchesAll = filter.cardPredicates.all { predicate ->
-                            when (predicate) {
-                                is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsCreature ->
-                                    targetCard.typeLine.isCreature
-                                is com.wingedsheep.sdk.scripting.predicates.CardPredicate.HasSubtype ->
-                                    targetCard.typeLine.hasSubtype(predicate.subtype)
-                                else -> true
-                            }
-                        }
-                        if (matchesAll) {
+                        val granterController = state.projectedState.getController(permanentId) ?: continue
+                        val matches = predicateEvaluator.matchesWithProjection(
+                            state,
+                            state.projectedState,
+                            entityId,
+                            ability.filter.baseFilter,
+                            PredicateContext(controllerId = granterController, sourceId = permanentId)
+                        )
+                        if (matches) {
                             result.add(StaticGrantedAbility(ability.ability, permanentId))
                         }
                     }

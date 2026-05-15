@@ -57,8 +57,8 @@
 
 ## Sorceries (7)
 
-- [ ] 1 Cultivate
-- [ ] 1 Farseek
+- [x] 1 Cultivate
+- [x] 1 Farseek
 - [ ] 1 Promise of Loyalty
 - [ ] 1 Secret Rendezvous
 - [ ] 1 Tempt with Bunnies
@@ -67,14 +67,14 @@
 
 ## Artifacts (8)
 
-- [ ] 1 Arcane Signet
+- [x] 1 Arcane Signet
 - [ ] 1 Coveted Jewel
 - [x] 1 Fellwar Stone
 - [ ] 1 Ghirapur Orrery
-- [ ] 1 Mind Stone
-- [ ] 1 Sol Ring
+- [x] 1 Mind Stone
+- [x] 1 Sol Ring
 - [ ] 1 Swiftfoot Boots
-- [ ] 1 Thought Vessel
+- [x] 1 Thought Vessel
 
 ## Enchantments (8)
 

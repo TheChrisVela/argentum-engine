@@ -25,8 +25,12 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.DoubleTokenCreation
+import com.wingedsheep.sdk.scripting.GameEvent as SdkGameEvent
+import com.wingedsheep.sdk.scripting.ModifyTokenCount
 import com.wingedsheep.sdk.scripting.ReplaceTokenCreationWithEquippedCopy
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.sdk.scripting.events.ControllerFilter
 import java.util.UUID
 
 /**
@@ -35,6 +39,69 @@ import java.util.UUID
  * EffectResult with a yes/no decision; otherwise returns null.
  */
 object TokenCreationReplacementHelper {
+
+    /**
+     * Apply token-count replacement effects whose [SdkGameEvent.TokenCreationEvent] filter
+     * matches the player receiving the tokens:
+     * - [DoubleTokenCreation] (Anointed Procession / Exalted Sunborn) multiplies the count
+     *   by 2 per source; stacks multiplicatively when several apply.
+     * - [ModifyTokenCount] shifts the count by a fixed amount per source (clamped at zero).
+     *
+     * Dispatch reads `appliesTo.controller`, mirroring [ReplacementEffectUtils.applyCounterPlacementModifiers]:
+     * `You` matches when the replacement source's controller is the player receiving the
+     * tokens, `Opponent` matches when it isn't, `Any` always matches.
+     *
+     * CR 616.1 hands the order to the affected player when both kinds apply. We default to
+     * modifier-then-doublers, which maximizes the count for positive modifiers (e.g. base 3
+     * with +1 mod and ×2 doubler: 8 vs 7) and matches what a player optimizing for more
+     * tokens would pick. A proper "choose the order" prompt can land when a card actually
+     * combines the two kinds.
+     */
+    fun applyCountReplacements(
+        state: GameState,
+        tokenControllerId: EntityId,
+        baseCount: Int
+    ): Int {
+        if (baseCount <= 0) return baseCount
+
+        var doublings = 0
+        var modifier = 0
+        for (entityId in state.getBattlefield()) {
+            val container = state.getEntity(entityId) ?: continue
+            val sourceController = state.projectedState.getController(entityId)
+                ?: container.get<ControllerComponent>()?.playerId
+                ?: continue
+            val repl = container.get<ReplacementEffectSourceComponent>() ?: continue
+            for (effect in repl.replacementEffects) {
+                val event = when (effect) {
+                    is DoubleTokenCreation -> effect.appliesTo
+                    is ModifyTokenCount -> effect.appliesTo
+                    else -> continue
+                }
+                if (event !is SdkGameEvent.TokenCreationEvent) continue
+                // tokenFilter would need a synthetic token-template snapshot to match
+                // against; no card uses it yet, so we conservatively skip filtered events
+                // rather than treating them as match-all.
+                if (event.tokenFilter != null) continue
+                val controllerMatches = when (event.controller) {
+                    is ControllerFilter.You -> sourceController == tokenControllerId
+                    is ControllerFilter.Opponent -> sourceController != tokenControllerId
+                    is ControllerFilter.Any -> true
+                }
+                if (!controllerMatches) continue
+                when (effect) {
+                    is DoubleTokenCreation -> doublings += 1
+                    is ModifyTokenCount -> modifier += effect.modifier
+                    else -> {}
+                }
+            }
+        }
+
+        var count = baseCount + modifier
+        if (count <= 0) return 0
+        repeat(doublings) { count *= 2 }
+        return count
+    }
 
     /**
      * Check if any equipment controlled by the token creator has a

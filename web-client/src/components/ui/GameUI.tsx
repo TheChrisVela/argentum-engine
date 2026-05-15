@@ -137,7 +137,7 @@ function ConnectionOverlay({
   const handleCreate = () => {
     if (gameMode === 'tournament') {
       // Create lobby with default settings - host can change in lobby
-      createTournamentLobby(['KTK'], 'SEALED')
+      createTournamentLobby(['ECL'], 'SEALED')
     } else {
       // Quick games go through a real lobby; deck *and* set selection live inside it.
       createQuickGameLobby(false)

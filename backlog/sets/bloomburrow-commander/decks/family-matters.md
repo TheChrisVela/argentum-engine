@@ -71,15 +71,15 @@
 
 ## Artifacts (9)
 
-- [ ] 1 Arcane Signet
+- [x] 1 Arcane Signet
 - [ ] 1 Azorius Signet
 - [ ] 1 Bident of Thassa
 - [ ] 1 Boros Signet
 - [x] 1 Fellwar Stone
 - [x] 1 Helm of the Host
 - [ ] 1 Izzet Signet
-- [ ] 1 Mind Stone
-- [ ] 1 Sol Ring
+- [x] 1 Mind Stone
+- [x] 1 Sol Ring
 
 ## Enchantments (3)
 

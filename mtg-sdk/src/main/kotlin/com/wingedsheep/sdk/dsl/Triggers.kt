@@ -405,6 +405,19 @@ object Triggers {
     )
 
     /**
+     * Whenever a nontoken creature you control deals combat damage to a player.
+     * Uses ANY binding — fires for each nontoken creature you control that connects.
+     */
+    val NontokenCreatureYouControlDealsCombatDamageToPlayer: TriggerSpec = TriggerSpec(
+        event = DealsDamageEvent(
+            damageType = DamageType.Combat,
+            recipient = RecipientFilter.AnyPlayer,
+            sourceFilter = GameObjectFilter.Creature.youControl().nontoken()
+        ),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * When this creature deals combat damage to a creature.
      */
     val DealsCombatDamageToCreature: TriggerSpec = TriggerSpec(
@@ -637,6 +650,18 @@ object Triggers {
     )
 
     /**
+     * Whenever you cast a spell, if mana from a Treasure was spent to cast it.
+     *
+     * Used by Alchemist's Talent level 3. The engine records on each cast whether
+     * any of the mana spent was added to the controller's mana pool by a
+     * permanent with the Treasure subtype.
+     */
+    val YouCastSpellPaidWithTreasureMana: TriggerSpec = TriggerSpec(
+        event = SpellCastEvent(player = Player.You, paidWithTreasureMana = true),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * Whenever you cast a noncreature spell.
      */
     val YouCastNoncreature: TriggerSpec = TriggerSpec(
@@ -681,6 +706,18 @@ object Triggers {
      */
     val YouCastEnchantment: TriggerSpec = TriggerSpec(
         event = SpellCastEvent(spellFilter = GameObjectFilter.Enchantment, player = Player.You),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
+     * Whenever you cast an enchantment spell from your hand.
+     */
+    val YouCastEnchantmentFromHand: TriggerSpec = TriggerSpec(
+        event = SpellCastEvent(
+            spellFilter = GameObjectFilter.Enchantment,
+            player = Player.You,
+            castFromZone = com.wingedsheep.sdk.core.Zone.HAND
+        ),
         binding = TriggerBinding.ANY
     )
 

@@ -2,7 +2,7 @@
 
 **Set Size:** 312 cards
 **Release Date:** August 2, 2024
-**Implemented:** 44 / 312
+**Implemented:** 84 / 312
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 37    | 0    |
@@ -16,18 +16,18 @@
 
 ---
 
-- [ ] Abrade
+- [x] Abrade
 - [ ] Academy Manufactor
 - [x] Adarkar Wastes
 - [ ] Aether Channeler
 - [ ] Aetherize
 - [ ] Agate Instigator
-- [ ] Alchemist's Talent
+- [x] Alchemist's Talent
 - [ ] An Offer You Can't Refuse
 - [ ] Angel of the Ruins
 - [ ] Ant Queen
 - [ ] Arasta of the Endless Web
-- [ ] Arcane Signet
+- [x] Arcane Signet
 - [ ] Arthur, Marigold Knight
 - [ ] Azorius Signet
 - [x] Baird, Steward of Argive
@@ -35,21 +35,21 @@
 - [x] Barren Moor
 - [ ] Bastion of Remembrance
 - [x] Battlefield Forge
-- [ ] Beast Within
+- [x] Beast Within
 - [x] Beastmaster Ascension
 - [ ] Beledros Witherbloom
 - [x] Bello, Bard of the Brambles
 - [ ] Berserkers' Onslaught
 - [ ] Bident of Thassa
-- [ ] Big Score
+- [x] Big Score
 - [ ] Binding the Old Gods
 - [ ] Birds of Paradise
 - [ ] Blade Splicer
-- [ ] Blasphemous Act
+- [x] Blasphemous Act
 - [ ] Bloodroot Apothecary
 - [ ] Body of Knowledge
 - [ ] Bojuka Bog
-- [ ] Bootleggers' Stash
+- [x] Bootleggers' Stash
 - [ ] Boros Signet
 - [ ] Boss's Chauffeur
 - [x] Brightcap Badger // Fungus Frolic
@@ -61,7 +61,7 @@
 - [ ] Cascade Bluffs
 - [ ] Castle Ardenvale
 - [ ] Casualties of War
-- [ ] Chaos Warp
+- [x] Chaos Warp
 - [ ] Chart a Course
 - [ ] Chasm Skulker
 - [ ] Chatterfang, Squirrel General
@@ -78,28 +78,28 @@
 - [ ] Communal Brewing
 - [x] Copperline Gorge
 - [ ] Coveted Jewel
-- [ ] Cultivate
+- [x] Cultivate
 - [ ] Curiosity Crafter
 - [ ] Cut a Deal
 - [ ] Deadly Dispute
-- [ ] Decimate
+- [x] Decimate
 - [x] Decree of Pain
 - [ ] Deep Forest Hermit
 - [ ] Derevi, Empyrial Tactician
 - [ ] Devilish Valet
-- [ ] Domri, Anarch of Bolas
+- [x] Domri, Anarch of Bolas
 - [ ] Dusk // Dawn
 - [ ] Echoing Assault
 - [ ] Elspeth, Sun's Champion
 - [ ] End-Raze Forerunners
-- [ ] Esika's Chariot
+- [x] Esika's Chariot
 - [x] Etali, Primal Storm
-- [ ] Evercoat Ursine
+- [x] Evercoat Ursine
 - [x] Evolving Wilds
 - [ ] Exotic Orchard
-- [ ] Explore
+- [x] Explore
 - [ ] Faeburrow Elder
-- [ ] Farseek
+- [x] Farseek
 - [x] Fellwar Stone
 - [ ] Ferrous Lake
 - [ ] Fisher's Talent
@@ -109,33 +109,33 @@
 - [x] Forgotten Cave
 - [ ] Fortune Teller's Talent
 - [ ] Game Trail
-- [ ] Garruk's Packleader
+- [x] Garruk's Packleader
 - [ ] Garruk's Uprising
 - [ ] Garruk, Cursed Huntsman
 - [ ] Generous Gift
-- [ ] Ghalta, Primal Hunger
+- [x] Ghalta, Primal Hunger
 - [ ] Ghirapur Orrery
 - [ ] Gilded Goose
 - [x] Gilded Lotus
 - [ ] Glacial Fortress
 - [ ] Golgari Rot Farm
 - [ ] Golgari Signet
-- [ ] Goreclaw, Terror of Qal Sisma
+- [x] Goreclaw, Terror of Qal Sisma
 - [ ] Gourmand's Talent
 - [x] Gratuitous Violence
 - [ ] Greater Good
 - [ ] Grim Backwoods
-- [ ] Grothama, All-Devouring
-- [ ] Grumgully, the Generous
-- [ ] Gruul Signet
+- [x] Grothama, All-Devouring
+- [x] Grumgully, the Generous
+- [x] Gruul Signet
 - [ ] Gruul Turf
 - [ ] Hanged Executioner
-- [ ] Harmonize
+- [x] Harmonize
 - [ ] Haunted Mire
 - [ ] Haywire Mite
 - [ ] Hazel of the Rootbloom
 - [ ] Hazel's Brewmaster
-- [ ] Hedron Archive
+- [x] Hedron Archive
 - [x] Helm of the Host
 - [x] Hinterland Harbor
 - [ ] Hoofprints of the Stag
@@ -162,10 +162,10 @@
 - [ ] Kwain, Itinerant Meddler
 - [ ] Kykar, Wind's Fury
 - [ ] Liliana of the Dark Realms
-- [ ] Llanowar Loamspeaker
+- [x] Llanowar Loamspeaker
 - [x] Llanowar Wastes
 - [ ] Loran of the Third Path
-- [ ] Lotus Cobra
+- [x] Lotus Cobra
 - [ ] Loyal Warhound
 - [ ] Luminous Broodmoth
 - [ ] Maelstrom Pulse
@@ -175,7 +175,7 @@
 - [ ] Martial Coup
 - [ ] Martial Impetus
 - [ ] Maskwood Nexus
-- [ ] Mind Stone
+- [x] Mind Stone
 - [ ] Moldervine Reclamation
 - [ ] Moonstone Eulogist
 - [ ] Morbid Opportunist
@@ -208,16 +208,16 @@
 - [ ] Prairie Stream
 - [ ] Primeval Bounty
 - [ ] Promise of Loyalty
-- [ ] Prosperous Bandit
+- [x] Prosperous Bandit
 - [ ] Prosperous Innkeeper
 - [ ] Psychosis Crawler
 - [ ] Pull from Tomorrow
 - [ ] Putrefy
-- [ ] Pyreswipe Hawk
+- [x] Pyreswipe Hawk
 - [ ] Raging Ravine
 - [ ] Rain of Riches
-- [ ] Rampaging Baloths
-- [ ] Rampant Growth
+- [x] Rampaging Baloths
+- [x] Rampant Growth
 - [ ] Rapid Augmenter
 - [ ] Rapid Hybridization
 - [ ] Ravenous Squirrel
@@ -228,13 +228,13 @@
 - [ ] Riot Control
 - [ ] Rishkar, Peema Renegade
 - [ ] Rites of Flourishing
-- [ ] Rolling Hamsphere
+- [x] Rolling Hamsphere
 - [ ] Rootbound Crag
 - [ ] Rootcast Apprenticeship
 - [ ] Rose Room Treasurer
 - [ ] Rowdy Research
 - [ ] Rugged Prairie
-- [ ] Sakura-Tribe Elder
+- [x] Sakura-Tribe Elder
 - [ ] Saw in Half
 - [ ] Scurry of Squirrels
 - [x] Seachrome Coast
@@ -253,10 +253,10 @@
 - [ ] Skyclave Apparition
 - [ ] Skycloud Expanse
 - [ ] Skyfisher Spider
-- [ ] Sol Ring
+- [x] Sol Ring
 - [ ] Solemn Simulacrum
 - [ ] Sphinx of Enlightenment
-- [ ] Spine of Ish Sah
+- [x] Spine of Ish Sah
 - [ ] Spirited Companion
 - [ ] Spore Frog
 - [ ] Squirrel Mob
@@ -279,7 +279,7 @@
 - [ ] Sword of the Squeak
 - [ ] Swords to Plowshares
 - [ ] Tainted Wood
-- [ ] Talisman of Impulse
+- [x] Talisman of Impulse
 - [ ] Talisman of Resilience
 - [ ] Tamiyo, Field Researcher
 - [ ] Tear Asunder
@@ -293,7 +293,7 @@
 - [x] Temple of Triumph
 - [ ] Tempt with Bunnies
 - [ ] Tempt with Discovery
-- [ ] Tendershoot Dryad
+- [x] Tendershoot Dryad
 - [ ] Tenuous Truce
 - [ ] Terramorphic Expanse
 - [x] Tetsuko Umezawa, Fugitive
@@ -301,8 +301,8 @@
 - [ ] The Odd Acorn Gang
 - [ ] Thickest in the Thicket
 - [ ] Thopter Engineer
-- [ ] Thought Vessel
-- [ ] Thran Dynamo
+- [x] Thought Vessel
+- [x] Thran Dynamo
 - [ ] Thriving Bluff
 - [ ] Thriving Grove
 - [ ] Thriving Heath
@@ -310,7 +310,7 @@
 - [ ] Time Wipe
 - [ ] Tireless Provisioner
 - [ ] Toski, Bearer of Secrets
-- [ ] Trailtracker Scout
+- [x] Trailtracker Scout
 - [x] Tranquil Thicket
 - [ ] Triskaidekaphile
 - [ ] Twenty-Toed Toad
@@ -318,7 +318,7 @@
 - [ ] Unnatural Growth
 - [ ] Viridescent Bog
 - [ ] Warstorm Surge
-- [ ] Wildsear, Scouring Maw
+- [x] Wildsear, Scouring Maw
 - [ ] Windgrace's Judgment
 - [ ] Wizard Class
 - [ ] Woe Strider

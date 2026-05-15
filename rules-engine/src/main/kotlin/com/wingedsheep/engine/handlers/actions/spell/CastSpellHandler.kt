@@ -149,9 +149,15 @@ class CastSpellHandler(
             action.graveyardLifeCost > 0 && action.cardId in state.getZone(ZoneKey(action.playerId, Zone.GRAVEYARD))
         val hasForageFromGraveyard = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasGraveyardLifeCost &&
             zoneResolver.hasMayCastCreaturesFromGraveyardWithForage(state, action.playerId, action.cardId, cardComponent)
-        val hasCommanderCast = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasGraveyardLifeCost && !hasForageFromGraveyard &&
+        // Warp from graveyard (e.g., Timeline Culler) — `hasWarpPermission` already
+        // checks both hand and graveyard; this branch covers the graveyard case
+        // when `inHand` is false.
+        val hasWarpFromGraveyard = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasGraveyardLifeCost && !hasForageFromGraveyard &&
+            action.useAlternativeCost &&
+            zoneResolver.hasWarpPermission(state, action.playerId, action.cardId)
+        val hasCommanderCast = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasGraveyardLifeCost && !hasForageFromGraveyard && !hasWarpFromGraveyard &&
             zoneResolver.hasCommanderCastPermission(state, action.playerId, action.cardId)
-        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasGraveyardLifeCost && !hasForageFromGraveyard && !hasCommanderCast) {
+        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasGraveyardLifeCost && !hasForageFromGraveyard && !hasWarpFromGraveyard && !hasCommanderCast) {
             return "Card is not in your hand"
         }
 
@@ -264,6 +270,20 @@ class CastSpellHandler(
             if (flashbackAdditional != null) {
                 val flashbackCostError = validateAdditionalCosts(state, listOf(flashbackAdditional), action)
                 if (flashbackCostError != null) return flashbackCostError
+            }
+        }
+
+        // Validate warp's bundled additional cost (e.g., "Warp—{B}, Pay 2 life." on Timeline Culler)
+        if (action.useAlternativeCost && cardDef != null &&
+            zoneResolver.hasWarpPermission(state, action.playerId, action.cardId)
+        ) {
+            val warpAdditional = cardDef.keywordAbilities
+                .filterIsInstance<KeywordAbility.Warp>()
+                .firstOrNull()
+                ?.additionalCost
+            if (warpAdditional != null) {
+                val warpCostError = validateAdditionalCosts(state, listOf(warpAdditional), action)
+                if (warpCostError != null) return warpCostError
             }
         }
 
@@ -523,7 +543,9 @@ class CastSpellHandler(
                 isCreature = cardComponent.typeLine.isCreature,
                 manaValue = cardComponent.manaCost.cmc,
                 hasXInCost = cardComponent.manaCost.hasX,
-                subtypes = cardComponent.typeLine.subtypes.map { it.value }.toSet()
+                subtypes = cardComponent.typeLine.subtypes.map { it.value }.toSet(),
+                isFromExile = isCastFromExile(state, action.cardId),
+                cardTypes = cardComponent.typeLine.cardTypes,
             )
         } else null
 
@@ -610,6 +632,9 @@ class CastSpellHandler(
         return state.activeMayPlayFor(action.cardId, action.playerId, conditionEvaluator)
             .any { it.withAnyManaType }
     }
+
+    private fun isCastFromExile(state: GameState, cardId: EntityId): Boolean =
+        state.turnOrder.any { ownerId -> cardId in state.getZone(ZoneKey(ownerId, Zone.EXILE)) }
 
     private fun validateConspire(
         state: GameState,
@@ -1113,6 +1138,14 @@ class CastSpellHandler(
                         }
                     }
                 }
+                is AdditionalCost.PayLife -> {
+                    val currentLife = state.getEntity(action.playerId)
+                        ?.get<LifeTotalComponent>()?.life ?: 0
+                    // CR 119.4 — you can't pay life unless you have at least that much
+                    if (currentLife < additionalCost.amount) {
+                        return "Not enough life to pay ${additionalCost.amount} life"
+                    }
+                }
                 else -> {}
             }
         }
@@ -1299,6 +1332,14 @@ class CastSpellHandler(
                         ?.additionalCost
                     if (flashbackAdditional != null) add(flashbackAdditional)
                 }
+                // Warp's bundled additional cost (e.g., "Pay 2 life" on Timeline Culler)
+                if (zoneResolver.hasWarpPermission(currentState, action.playerId, action.cardId)) {
+                    val warpAdditional = cardDef.keywordAbilities
+                        .filterIsInstance<KeywordAbility.Warp>()
+                        .firstOrNull()
+                        ?.additionalCost
+                    if (warpAdditional != null) add(warpAdditional)
+                }
             }
             // Runtime additional costs from entity component (e.g., The Infamous Cruelclaw)
             val runtimeCostComp = currentState.getEntity(action.cardId)
@@ -1314,6 +1355,21 @@ class CastSpellHandler(
 
         val flattenedAllCosts = allAdditionalCosts.flatMap {
             if (it is AdditionalCost.Composite) it.steps else listOf(it)
+        }
+        // PayLife additional costs (e.g., Timeline Culler's "Warp—{B}, Pay 2 life")
+        // are auto-paid: the amount is fixed, so no player choice is required and the
+        // payment is applied regardless of whether the client included an
+        // AdditionalCostPayment object.
+        for (additionalCost in flattenedAllCosts) {
+            if (additionalCost !is AdditionalCost.PayLife) continue
+            val playerEntity = currentState.getEntity(action.playerId)
+            val currentLife = playerEntity?.get<LifeTotalComponent>()?.life ?: 0
+            val newLife = currentLife - additionalCost.amount
+            currentState = currentState.updateEntity(action.playerId) { c ->
+                c.with(LifeTotalComponent(newLife))
+            }
+            currentState = DamageUtils.markLifeLostThisTurn(currentState, action.playerId)
+            events.add(LifeChangedEvent(action.playerId, currentLife, newLife, LifeChangeReason.PAYMENT))
         }
         if (flattenedAllCosts.isNotEmpty() && action.additionalCostPayment != null) {
             for (additionalCost in flattenedAllCosts) {
@@ -1610,6 +1666,9 @@ class CastSpellHandler(
                             ))
                         }
                     }
+                    is AdditionalCost.PayLife -> {
+                        // Handled in the auto-pay pre-pass above (PayLife requires no player choice).
+                    }
                     else -> {}
                 }
             }
@@ -1652,7 +1711,9 @@ class CastSpellHandler(
             isCreature = cardComponent.typeLine.isCreature,
             manaValue = cardComponent.manaCost.cmc,
             hasXInCost = cardComponent.manaCost.hasX,
-            subtypes = cardComponent.typeLine.subtypes.map { it.value }.toSet()
+            subtypes = cardComponent.typeLine.subtypes.map { it.value }.toSet(),
+            isFromExile = isCastFromExile(currentState, action.cardId),
+            cardTypes = cardComponent.typeLine.cardTypes,
         )
 
         // "Mana of any type can be spent" — relax colored requirements for cast-from-exile
@@ -1881,7 +1942,8 @@ class CastSpellHandler(
             manaSpentRed = manaSpentEvent?.red ?: 0,
             manaSpentGreen = manaSpentEvent?.green ?: 0,
             manaSpentColorless = manaSpentEvent?.colorless ?: 0,
-            faceIndex = action.faceIndex
+            faceIndex = action.faceIndex,
+            paidWithTreasureMana = paymentResult.paidWithTreasureMana
         )
 
         if (!castResult.isSuccess) {

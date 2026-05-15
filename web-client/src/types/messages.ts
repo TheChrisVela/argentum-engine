@@ -301,6 +301,11 @@ export interface SelectCardsDecision extends PendingDecisionBase {
    * undefined or empty, the UI shows the generic five-colour list.
    */
   readonly availableColors?: readonly string[] | null
+  /**
+   * Maximum total mana value across selected cards (Scout for Survivors). When set, the
+   * UI tracks the running total and disables cards whose mana value would push it over.
+   */
+  readonly maxTotalManaValue?: number | null
 }
 
 /**
@@ -436,6 +441,12 @@ export interface ManaSourceOption {
   readonly name: string
   readonly producesColors: readonly string[]
   readonly producesColorless: boolean
+  /**
+   * Selecting this source sacrifices the permanent in addition to tapping it
+   * (e.g. Treasure tokens — "{T}, Sacrifice this artifact: Add one mana of any color").
+   * Auto-pay never picks these; manual selection performs the sacrifice explicitly.
+   */
+  readonly requiresSacrifice?: boolean
 }
 
 /**
