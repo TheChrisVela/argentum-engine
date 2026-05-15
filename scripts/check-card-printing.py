@@ -58,6 +58,13 @@ SCAFFOLDABLE_SET_TYPES = {
     "funny", "remastered",
 }
 
+# Sets we deliberately don't scaffold; their printings are treated as if they
+# didn't exist when picking the "expected canonical". OM1 (Through the
+# Omenpaths) was folded into its companion expansion SPM — the SPM printings
+# carry the canonical CardDefinitions even though OM1 released three days
+# earlier on Scryfall.
+IGNORED_SET_CODES = {"om1"}
+
 
 @dataclass(frozen=True)
 class Printing:
@@ -186,6 +193,8 @@ def expected_canonical(printings: list[Printing]) -> Printing | None:
     expansion-like printing exists, fall back to the very first printing.
     """
     for p in printings:
+        if p.set_code in IGNORED_SET_CODES:
+            continue
         if p.set_type in SCAFFOLDABLE_SET_TYPES:
             return p
     return printings[0] if printings else None
