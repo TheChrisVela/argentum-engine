@@ -1,9 +1,12 @@
 package com.wingedsheep.mtg.sets.definitions.spm.cards
 
 import com.wingedsheep.sdk.dsl.EffectPatterns
-import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.effects.ForEachTargetEffect
+import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.targets.TargetPermanent
 
 /**
  * Hide on the Ceiling
@@ -19,8 +22,13 @@ val HideOnTheCeiling = card("Hide on the Ceiling") {
     oracleText = "Exile X target artifacts and/or creatures. Return the exiled cards to the battlefield under their owners' control at the beginning of the next end step."
 
     spell {
-        val target = target("target artifact or creature", Targets.CreatureOrArtifact)
-        effect = EffectPatterns.exileUntilEndStep(target)
+        // Pattern shared with Wave of Indifference / Icy Blast: a high static
+        // count + optional stands in for X targets until the SDK gains a
+        // proper DynamicAmount-driven target count.
+        target = TargetPermanent(count = 20, optional = true, filter = TargetFilter.CreatureOrArtifact)
+        effect = ForEachTargetEffect(
+            listOf(EffectPatterns.exileUntilEndStep(EffectTarget.ContextTarget(0)))
+        )
     }
 
     metadata {
