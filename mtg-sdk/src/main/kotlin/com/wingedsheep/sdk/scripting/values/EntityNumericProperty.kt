@@ -33,6 +33,23 @@ sealed interface EntityNumericProperty {
         override val description: String = "mana value"
     }
 
+    /**
+     * Total mana actually paid from the pool to cast a spell on the stack.
+     * Sums every `manaSpent{Color}` bucket on the spell's `SpellOnStackComponent`.
+     *
+     * Differs from [ManaValue]: ManaValue is the printed cost (unaffected by cost
+     * reductions or increases per CR 202.3; for {X} spells, 202.3e fixes the X
+     * portion to the chosen value once the spell is on the stack). ManaSpent
+     * reflects what was actually paid — so cost-reduced spells (affinity, convoke,
+     * etc.) show less than their mana value here. Returns 0 if the entity is not
+     * a spell on the stack.
+     */
+    @SerialName("ManaSpent")
+    @Serializable
+    data object ManaSpent : EntityNumericProperty {
+        override val description: String = "the amount of mana spent to cast it"
+    }
+
     @SerialName("CounterCount")
     @Serializable
     data class CounterCount(val counterType: CounterTypeFilter) : EntityNumericProperty {
