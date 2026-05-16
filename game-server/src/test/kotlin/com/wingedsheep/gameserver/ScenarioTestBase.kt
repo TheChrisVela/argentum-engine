@@ -39,6 +39,7 @@ import com.wingedsheep.mtg.sets.definitions.por.PortalSet
 import com.wingedsheep.mtg.sets.definitions.m12.Magic2012Set
 import com.wingedsheep.mtg.sets.definitions.roe.RiseOfTheEldraziSet
 import com.wingedsheep.mtg.sets.definitions.scg.ScourgeSet
+import com.wingedsheep.mtg.sets.definitions.soi.ShadowsOverInnistradSet
 import com.wingedsheep.mtg.sets.definitions.spm.SpiderManSet
 import com.wingedsheep.mtg.sets.definitions.tdm.TarkirDragonstormSet
 import com.wingedsheep.mtg.sets.definitions.tla.AvatarTheLastAirbenderSet
@@ -130,6 +131,7 @@ abstract class ScenarioTestBase : FunSpec() {
         register(PortalSet.cards); register(PortalSet.basicLands)
         register(RiseOfTheEldraziSet.cards); register(RiseOfTheEldraziSet.basicLands)
         register(ScourgeSet.cards)
+        register(ShadowsOverInnistradSet.cards)
         register(SpiderManSet.cards)
         register(TarkirDragonstormSet.cards)
         register(TempestSet.cards); register(TempestSet.basicLands)

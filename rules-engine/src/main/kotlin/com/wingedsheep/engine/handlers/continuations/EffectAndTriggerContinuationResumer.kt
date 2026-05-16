@@ -29,6 +29,7 @@ class EffectAndTriggerContinuationResumer(
             ExecutionResult.success(state)
         },
         resumer(MayAbilityContinuation::class, ::resumeMayAbility),
+        resumer(MayRevealCardFromHandContinuation::class, ::resumeMayRevealCardFromHand),
         resumer(MayTriggerContinuation::class, ::resumeMayTrigger),
         resumer(ReflexiveTriggerResolveContinuation::class, ::resumeReflexiveTriggerResolve)
     )
@@ -291,6 +292,38 @@ class EffectAndTriggerContinuationResumer(
         }
 
         return checkForMore(result.state, result.events.toList())
+    }
+
+    private fun resumeMayRevealCardFromHand(
+        state: GameState,
+        continuation: MayRevealCardFromHandContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is CardsSelectedResponse) {
+            return ExecutionResult.error(state, "Expected card selection response for may-reveal-from-hand")
+        }
+
+        val chosenCardId = response.selectedCards.firstOrNull()
+
+        if (chosenCardId == null) {
+            // Player declined to reveal — fall through to the "otherwise" branch.
+            val otherwise = continuation.otherwise
+                ?: return checkForMore(state, emptyList())
+            val result = services.effectExecutorRegistry
+                .execute(state, otherwise, continuation.effectContext)
+                .toExecutionResult()
+            return if (result.isPaused) result
+            else checkForMore(result.state, result.events.toList())
+        }
+
+        // Player picked a card — emit the public reveal. The reveal itself is the
+        // entire payoff of the MayReveal atom; any rider effect lives in `otherwise`.
+        val (revealedState, revealEvent) = com.wingedsheep.engine.handlers.effects.composite
+            .MayRevealCardFromHandEffectExecutor.emitReveal(
+                state, continuation.revealerId, chosenCardId, continuation.sourceName,
+            )
+        return checkForMore(revealedState, listOf(revealEvent))
     }
 
     private fun resumeReflexiveTriggerResolve(

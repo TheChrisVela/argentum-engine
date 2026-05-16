@@ -164,6 +164,7 @@ val engineSerializersModule = SerializersModule {
         subclass(ReturnToHandContinuation::class)
         subclass(ExileMultiZoneContinuation::class)
         subclass(MayAbilityContinuation::class)
+        subclass(MayRevealCardFromHandContinuation::class)
         subclass(IfYouDoContinuation::class)
         subclass(HandSizeDiscardContinuation::class)
         subclass(LegendRuleContinuation::class)

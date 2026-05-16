@@ -48,6 +48,7 @@ import com.wingedsheep.mtg.sets.definitions.rix.RivalsOfIxalanSet
 import com.wingedsheep.mtg.sets.definitions.xln.IxalanSet
 import com.wingedsheep.mtg.sets.definitions.roe.RiseOfTheEldraziSet
 import com.wingedsheep.mtg.sets.definitions.scg.ScourgeSet
+import com.wingedsheep.mtg.sets.definitions.soi.ShadowsOverInnistradSet
 import com.wingedsheep.mtg.sets.definitions.tmp.TempestSet
 import com.wingedsheep.mtg.sets.definitions.usg.UrzasSagaSet
 import com.wingedsheep.mtg.sets.definitions.otj.OutlawsOfThunderJunctionSet
@@ -124,6 +125,7 @@ object MtgSetCatalog {
         CoreSet2021Set,
         BattleForZendikarSet,
         AmonkhetSet,
+        ShadowsOverInnistradSet,
     )
 
     private val byCode: Map<String, MtgSet> = all.associateBy { it.code }

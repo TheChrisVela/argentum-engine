@@ -170,6 +170,13 @@ data class GameObjectFilter(
     /** Add a subtype requirement by string */
     fun withSubtype(subtype: String) = withSubtype(Subtype(subtype))
 
+    /** Match any of the specified subtypes (OR logic). */
+    fun withAnySubtype(vararg subtypes: String) = copy(
+        cardPredicates = cardPredicates + CardPredicate.Or(
+            subtypes.map { CardPredicate.HasSubtype(Subtype(it)) }
+        )
+    )
+
     /** Exclude a subtype */
     fun notSubtype(subtype: Subtype) = copy(
         cardPredicates = cardPredicates + CardPredicate.NotSubtype(subtype)

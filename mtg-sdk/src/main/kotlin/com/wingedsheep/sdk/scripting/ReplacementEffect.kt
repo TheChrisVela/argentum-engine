@@ -207,6 +207,45 @@ data class RedirectZoneChange(
  * @param payLifeCost If non-null, the player may pay this much life to have the permanent enter untapped.
  *                    Used for "shock lands" like Steam Vents ("you may pay 2 life. If you don't, it enters tapped").
  */
+/**
+ * Generic "as ~ enters the battlefield, run [effect]" replacement.
+ *
+ * The wrapped [effect] executes via the normal effect-executor pipeline at the
+ * moment the source permanent enters, AFTER it has been placed on the battlefield
+ * (so `EffectTarget.Self` resolves to the entering permanent) but BEFORE the
+ * standard `EntersTapped` check runs. The effect may pause for player input
+ * (continuations, target selection, sub-decisions) just like any other effect.
+ *
+ * Use this to compose ETB-time choices out of existing atoms — e.g. SOI shadow
+ * lands wrap [com.wingedsheep.sdk.scripting.effects.MayRevealCardFromHandEffect]
+ * with `otherwise = Effects.Tap(EffectTarget.Self)`; a future "as ~ enters,
+ * sacrifice another creature" land could wrap `Effects.Sacrifice(filter)`.
+ *
+ * Distinct from a "when ~ enters" [com.wingedsheep.sdk.scripting.trigger.Trigger]:
+ * triggers fire after entry resolves and use the stack, so they can't gate ETB-time
+ * state like the tapped-on-entry flag. This replacement runs synchronously inline
+ * with the entry event.
+ */
+@SerialName("OnEnterRunEffect")
+@Serializable
+data class OnEnterRunEffect(
+    val effect: com.wingedsheep.sdk.scripting.effects.Effect,
+    override val appliesTo: GameEvent = GameEvent.ZoneChangeEvent(
+        filter = GameObjectFilter.Any,
+        to = Zone.BATTLEFIELD
+    )
+) : ReplacementEffect {
+    override val description: String = "As this permanent enters, ${effect.description.lowercase()}"
+
+    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
+        val newEffect = effect.applyTextReplacement(replacer)
+        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
+        return if (newEffect !== effect || newAppliesTo !== appliesTo)
+            copy(effect = newEffect, appliesTo = newAppliesTo)
+        else this
+    }
+}
+
 @SerialName("EntersTapped")
 @Serializable
 data class EntersTapped(

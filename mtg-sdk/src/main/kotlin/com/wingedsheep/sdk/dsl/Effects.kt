@@ -1551,6 +1551,28 @@ object Effects {
         ForceReturnOwnPermanentEffect(filter, excludeSource)
 
     // =========================================================================
+    // Reveal Effects
+    // =========================================================================
+
+    /**
+     * "You may reveal a [filter] card from your hand" — atomic optional reveal.
+     *
+     * If the controller has no matching card in hand, no prompt is shown and
+     * [otherwise] (if any) runs immediately. If they have one or more matches,
+     * they're prompted to pick one to reveal; declining (or confirming with no
+     * selection) runs [otherwise]. Revealing emits a `CardsRevealedEvent` and
+     * stops there.
+     *
+     * Compose with [Tap]/[Sacrifice]/etc. via [otherwise] to express "if you
+     * don't, X" riders — e.g. SOI shadow lands ("you may reveal a Mountain or
+     * Forest from your hand; if you don't, this enters tapped").
+     */
+    fun MayRevealCardFromHand(
+        filter: com.wingedsheep.sdk.scripting.GameObjectFilter,
+        otherwise: Effect? = null,
+    ): Effect = com.wingedsheep.sdk.scripting.effects.MayRevealCardFromHandEffect(filter, otherwise)
+
+    // =========================================================================
     // Tap/Untap Effects
     // =========================================================================
 

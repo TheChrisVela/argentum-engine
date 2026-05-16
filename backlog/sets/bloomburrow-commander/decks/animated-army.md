@@ -97,7 +97,7 @@
 - [x] 5 Forest
 - [x] 5 Forest
 - [x] 1 Forgotten Cave
-- [ ] 1 Game Trail
+- [x] 1 Game Trail
 - [x] 1 Gruul Turf
 - [x] 1 Karplusan Forest
 - [x] 1 Mossfire Valley

@@ -185,6 +185,26 @@ data class MayAbilityContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume after the player picks a card (or declines) for [MayRevealCardFromHandEffect].
+ *
+ * @property revealerId The player who was asked to reveal
+ * @property sourceId The source of the reveal effect (e.g. the entering shadowland)
+ * @property sourceName Name of the source for prompts/events
+ * @property otherwise Effect to run when the player declines or submits an empty selection
+ * @property effectContext Effect context propagated to [otherwise] so `EffectTarget.Self`,
+ *                          chosen targets, controller, etc. resolve correctly
+ */
+@Serializable
+data class MayRevealCardFromHandContinuation(
+    override val decisionId: String,
+    val revealerId: EntityId,
+    val sourceId: EntityId?,
+    val sourceName: String?,
+    val otherwise: Effect?,
+    val effectContext: EffectContext,
+) : ContinuationFrame
+
+/**
  * Resume placing a triggered ability on the stack after the player answers a "may" question.
  *
  * When a triggered ability has both a MayEffect wrapper and targets (like Invigorating Boon's

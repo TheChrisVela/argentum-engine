@@ -24,6 +24,7 @@ import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.EntersWithChoice
+import com.wingedsheep.sdk.scripting.OnEnterRunEffect
 import com.wingedsheep.sdk.scripting.MayPlayLandsFromGraveyard
 import com.wingedsheep.sdk.scripting.MayPlayPermanentsFromGraveyard
 import com.wingedsheep.engine.legalactions.utils.LandDropUtils
@@ -42,6 +43,10 @@ class PlayLandHandler(
     private val triggerDetector: TriggerDetector,
     private val triggerProcessor: TriggerProcessor,
     private val conditionEvaluator: ConditionEvaluator,
+    private val effectExecutor: (com.wingedsheep.engine.state.GameState,
+                                 com.wingedsheep.sdk.scripting.effects.Effect,
+                                 com.wingedsheep.engine.handlers.EffectContext) ->
+        com.wingedsheep.engine.core.EffectResult,
 ) : ActionHandler<PlayLand> {
     override val actionType: KClass<PlayLand> = PlayLand::class
 
@@ -135,8 +140,66 @@ class PlayLandHandler(
             c.with(ControllerComponent(action.playerId))
         }
 
-        // Check for "enters the battlefield tapped" replacement effect
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+
+        // OnEnterRunEffect — generic "as ~ enters, run [effect]" replacement.
+        // Runs BEFORE the EntersTapped check so effects like
+        // Effects.Tap(EffectTarget.Self) (Game Trail's "otherwise" rider) apply
+        // synchronously with entry. May pause for player input via continuations.
+        if (cardDef != null) {
+            val onEnter = cardDef.script.replacementEffects
+                .filterIsInstance<OnEnterRunEffect>()
+                .firstOrNull()
+            if (onEnter != null) {
+                // Use up the land drop and emit the entry event before running the
+                // effect — by this point the land is fully on the battlefield and
+                // EffectTarget.Self resolves to it.
+                newState = newState.updateEntity(action.playerId) { c ->
+                    val landDrops = c.get<LandDropsComponent>() ?: LandDropsComponent()
+                    c.with(landDrops.use())
+                }
+                val zoneChangeEvent = com.wingedsheep.engine.core.ZoneChangeEvent(
+                    action.cardId,
+                    cardComponent.name,
+                    fromZone,
+                    Zone.BATTLEFIELD,
+                    action.playerId,
+                )
+                val onEnterEvents = mutableListOf<com.wingedsheep.engine.core.GameEvent>(zoneChangeEvent)
+                newState = newState.tick()
+
+                val opponentId = newState.turnOrder.firstOrNull { it != action.playerId }
+                val effectContext = EffectContext(
+                    sourceId = action.cardId,
+                    controllerId = action.playerId,
+                    opponentId = opponentId,
+                )
+                val effectResult = effectExecutor(newState, onEnter.effect, effectContext)
+                if (effectResult.isPaused) {
+                    return ExecutionResult.paused(
+                        effectResult.state,
+                        effectResult.pendingDecision!!,
+                        onEnterEvents + effectResult.events,
+                    )
+                }
+                newState = effectResult.state
+                onEnterEvents.addAll(effectResult.events)
+
+                // Fire any triggers from the land entering (landfall, etc.).
+                val triggers = triggerDetector.detectTriggers(newState, onEnterEvents)
+                if (triggers.isNotEmpty()) {
+                    val triggerResult = triggerProcessor.processTriggers(newState, triggers)
+                    val allEvents = onEnterEvents + triggerResult.events
+                    if (triggerResult.isPaused) {
+                        return ExecutionResult.paused(triggerResult.state, triggerResult.pendingDecision!!, allEvents)
+                    }
+                    return ExecutionResult.success(triggerResult.newState, allEvents)
+                }
+                return ExecutionResult.success(newState, onEnterEvents)
+            }
+        }
+
+        // Check for "enters the battlefield tapped" replacement effect
         if (cardDef != null) {
             val entersTapped = cardDef.script.replacementEffects.filterIsInstance<EntersTapped>().firstOrNull()
             if (entersTapped != null) {
@@ -482,6 +545,7 @@ class PlayLandHandler(
                 services.triggerDetector,
                 services.triggerProcessor,
                 services.conditionEvaluator,
+                services.effectExecutorRegistry::execute,
             )
         }
     }

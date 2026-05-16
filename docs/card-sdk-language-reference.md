@@ -179,6 +179,17 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `ReturnSelfToBattlefieldAttached(target)` — return source attached to target (Aura recursion).
 - `ReturnCreaturesPutInGraveyardThisTurn(player)` — Patriarch's Bidding shape.
 
+### Hand reveal
+
+- `Effects.MayRevealCardFromHand(filter, otherwise?)` — atomic "you may reveal a `filter`
+  card from your hand" choice. Computes eligible hand cards; if none, runs `otherwise`
+  silently; otherwise prompts the controller with a `SelectCardsDecision` (min=0, max=1).
+  Revealing emits a `CardsRevealedEvent` and stops; declining (or empty selection) runs
+  `otherwise`. Compose with `Effects.Tap`/`Effects.Sacrifice`/etc. via `otherwise` to
+  express "if you don't, X" riders — e.g. SOI shadow lands wrap this in
+  `OnEnterRunEffect(...)` with `otherwise = Effects.Tap(EffectTarget.Self)` for the
+  "this land enters tapped" branch.
+
 ### Library reveal & free cast
 
 - `Effects.Cascade` — CR 702.85a (`CascadeEffect`). Exile from the top of the controller's library
@@ -1052,6 +1063,12 @@ replacementEffect {
 - `ReplacementEffect.PreventDamage(amount?, direction?, scope?, source?, recipient?)` — prevent damage of a given shape.
 - `ReplacementEffect.EntersBattlefieldTappedUnless(condition)` — ETB tapped unless condition met.
 - `ReplacementEffect.IfYouDoBranchEffect(...)` — branch on "if you do" replacement.
+- `OnEnterRunEffect(effect)` — generic "as ~ enters the battlefield, run [effect]". The wrapped effect
+  executes via the normal effect-executor pipeline at entry time (so `EffectTarget.Self` resolves to
+  the entering permanent) and may pause for player input. Compose with atomic pausable effects like
+  `Effects.MayRevealCardFromHand` to build SOI shadow lands or other "as ~ enters" choices.
+  **Scope today:** only wired into the land-play path (`PlayLandHandler`). When the first non-land
+  permanent needs this, also wire it into `StackResolver.enterPermanentOnBattlefield`.
 - Custom — implement the `ReplacementEffect` interface directly.
 
 Amount-modifying replacements expose **both** `multiplier` (×) and `modifier` (±) on the same type — do not split into
