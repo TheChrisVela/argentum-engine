@@ -104,7 +104,7 @@
 - [x] 1 Mosswort Bridge
 - [x] 4 Mountain
 - [x] 4 Mountain
-- [ ] 1 Path of Ancestry
+- [x] 1 Path of Ancestry
 - [ ] 1 Raging Ravine
 - [x] 1 Reliquary Tower
 - [x] 1 Rootbound Crag

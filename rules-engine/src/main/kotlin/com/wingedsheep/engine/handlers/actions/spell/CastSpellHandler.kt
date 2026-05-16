@@ -2010,8 +2010,16 @@ class CastSpellHandler(
         var allEvents = events + castResult.events
 
         // Apply any spell riders carried by the mana that paid for this spell.
+        // Some riders mutate the spell directly (e.g., Cavern's MakesSpellUncounterable
+        // stamps a component) while others queue a triggered ability above the spell
+        // (e.g., Path of Ancestry's conditional scry).
+        val riderPendingTriggers = mutableListOf<PendingTrigger>()
         for (rider in paymentResult.consumedRiders) {
-            currentCastState = applyManaSpellRider(currentCastState, action.cardId, rider)
+            val (newState, riderTriggers) = applyManaSpellRider(
+                currentCastState, action, cardComponent, rider
+            )
+            currentCastState = newState
+            riderPendingTriggers.addAll(riderTriggers)
         }
 
         // Record Muldrotha graveyard cast permission usage
@@ -2167,7 +2175,7 @@ class CastSpellHandler(
         // Other AP spell-cast triggers follow (placed higher on the stack), then NAP triggers on top,
         // matching APNAP ordering within processTriggers.
         val detectedTriggers = triggerDetector.detectTriggers(currentCastState, allEvents)
-        val triggers = conspirePendingTriggers + stormPendingTriggers + detectedTriggers
+        val triggers = riderPendingTriggers + conspirePendingTriggers + stormPendingTriggers + detectedTriggers
         if (triggers.isNotEmpty()) {
             val triggerResult = triggerProcessor.processTriggers(currentCastState, triggers)
 
@@ -2581,16 +2589,75 @@ class CastSpellHandler(
 
     /**
      * Apply a single [com.wingedsheep.sdk.scripting.effects.ManaSpellRider] to a
-     * spell on the stack. Each rider variant maps to a specific component or
-     * marker on the spell card.
+     * spell on the stack. Each rider variant maps to either a state mutation on
+     * the spell card (e.g. stamping a component) or a [PendingTrigger] that is
+     * queued onto the stack above the spell (for riders whose effect needs the
+     * stack — typically because it requires a player decision like scry).
      */
     private fun applyManaSpellRider(
         state: GameState,
-        spellEntityId: com.wingedsheep.sdk.model.EntityId,
+        action: CastSpell,
+        cardComponent: CardComponent,
         rider: com.wingedsheep.sdk.scripting.effects.ManaSpellRider
-    ): GameState = when (rider) {
+    ): Pair<GameState, List<PendingTrigger>> = when (rider) {
         is com.wingedsheep.sdk.scripting.effects.ManaSpellRider.MakesSpellUncounterable ->
-            state.updateEntity(spellEntityId) { c -> c.with(CantBeCounteredComponent) }
+            state.updateEntity(action.cardId) { c -> c.with(CantBeCounteredComponent) } to emptyList()
+
+        is com.wingedsheep.sdk.scripting.effects.ManaSpellRider.ScryOnSharedTypeWithCommander ->
+            buildScryOnSharedTypeWithCommanderTrigger(state, action, cardComponent, rider.amount)
+    }
+
+    /**
+     * Path of Ancestry's rider: if the cast spell is a creature spell that shares
+     * a creature type with any of the controller's commanders, queue a scry trigger
+     * above the spell. Otherwise no-op.
+     *
+     * Subtypes are read from base [CardComponent] for both the spell (it's on the
+     * stack, not the battlefield, so projected battlefield state doesn't apply) and
+     * for each commander (looked up via [com.wingedsheep.engine.state.components.identity.CommanderRegistryComponent]
+     * and the [CardRegistry]). This matches the printed Scryfall ruling that the
+     * commander's creature types are checked at the moment the mana is spent.
+     */
+    private fun buildScryOnSharedTypeWithCommanderTrigger(
+        state: GameState,
+        action: CastSpell,
+        cardComponent: CardComponent,
+        amount: Int,
+    ): Pair<GameState, List<PendingTrigger>> {
+        if (!cardComponent.typeLine.isCreature) return state to emptyList()
+        val spellSubtypes = cardComponent.typeLine.subtypes.mapTo(mutableSetOf()) { it.value.lowercase() }
+        if (spellSubtypes.isEmpty()) return state to emptyList()
+
+        val registry = state.getEntity(action.playerId)
+            ?.get<com.wingedsheep.engine.state.components.identity.CommanderRegistryComponent>()
+            ?: return state to emptyList()
+        val sharesType = registry.commanderIds.any { commanderId ->
+            val commanderCard = state.getEntity(commanderId)?.get<CardComponent>() ?: return@any false
+            val commanderTypes = commanderCard.typeLine.subtypes
+                .mapTo(mutableSetOf()) { it.value.lowercase() }
+            commanderTypes.any { it in spellSubtypes }
+        }
+        if (!sharesType) return state to emptyList()
+
+        val scryAbility = TriggeredAbility(
+            id = AbilityId.generate(),
+            trigger = SdkGameEvent.SpellCastEvent(player = Player.You),
+            binding = TriggerBinding.SELF,
+            effect = com.wingedsheep.sdk.dsl.EffectPatterns.scry(amount),
+            activeZone = Zone.STACK,
+            descriptionOverride = "Scry $amount"
+        )
+        val pending = PendingTrigger(
+            ability = scryAbility,
+            sourceId = action.cardId,
+            sourceName = cardComponent.name,
+            controllerId = action.playerId,
+            triggerContext = TriggerContext(
+                triggeringEntityId = action.cardId,
+                triggeringPlayerId = action.playerId
+            )
+        )
+        return state to listOf(pending)
     }
 
     companion object {

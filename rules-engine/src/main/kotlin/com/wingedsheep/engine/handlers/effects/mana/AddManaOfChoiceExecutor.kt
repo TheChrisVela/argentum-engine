@@ -15,6 +15,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.scripting.effects.AddManaOfChoiceEffect
+import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import kotlin.reflect.KClass
 
 /**
@@ -115,17 +116,23 @@ class AddManaOfChoiceExecutor(
         val amount = amountEvaluator.evaluate(state, effect.amount, context)
         if (amount <= 0) return EffectResult.success(state)
 
+        // When riders are attached but no restriction is specified, store the mana as
+        // restricted entries under [ManaRestriction.AnySpend] so riders are preserved
+        // through the pool while the mana itself remains spendable on anything.
+        val effectiveRestriction: ManaRestriction? = effect.restriction
+            ?: if (effect.riders.isNotEmpty()) ManaRestriction.AnySpend else null
+
         var newState = state.updateEntity(context.controllerId) { container ->
             val pool = container.get<ManaPoolComponent>() ?: ManaPoolComponent()
-            val updated = if (effect.restriction != null) {
-                pool.addRestricted(color, amount, effect.restriction!!)
+            val updated = if (effectiveRestriction != null) {
+                pool.addRestricted(color, amount, effectiveRestriction, effect.riders)
             } else {
                 pool.add(color, amount)
             }
             container.with(updated)
         }
 
-        if (effect.restriction == null) {
+        if (effectiveRestriction == null) {
             newState = TreasureManaTracker.tagAddedMana(newState, context.controllerId, context.sourceId, amount)
         }
 

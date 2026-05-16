@@ -252,7 +252,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 - `AddMana(color, amount, restriction?)` — add N of one color.
 - `AddColorlessMana(amount, restriction?)` — add colorless.
-- `AddManaOfChoice(colorSet, amount?, restriction?)` — **unified primitive.** Add N mana of one color the controller picks from a resolved [ManaColorSet](#manacolorset). All "any-color from a constrained pool" cards (any color, commander identity, among permanents, lands could produce, source-chosen color) are expressed as this effect plus a different `ManaColorSet`.
+- `AddManaOfChoice(colorSet, amount?, restriction?, riders?)` — **unified primitive.** Add N mana of one color the controller picks from a resolved [ManaColorSet](#manacolorset). All "any-color from a constrained pool" cards (any color, commander identity, among permanents, lands could produce, source-chosen color) are expressed as this effect plus a different `ManaColorSet`. `riders` is a `Set<ManaSpellRider>` consumed when the mana pays for a spell (e.g. Path of Ancestry tags its mana with `ScryOnSharedTypeWithCommander`); when riders are set without a `restriction`, the engine stores the entries under `ManaRestriction.AnySpend` to preserve the rider through the pool.
 - `AddAnyColorMana(amount?, restriction?)` — sugar for `AddManaOfChoice(ManaColorSet.AnyColor, amount)`.
 - `AddManaOfChosenColor(amount?)` — sugar for `AddManaOfChoice(ManaColorSet.SourceChosenColor, amount)`.
 - `AddManaOfColorAmong(filter)` — sugar for `AddManaOfChoice(ManaColorSet.AmongPermanents(filter))`.
@@ -978,6 +978,40 @@ solver picks if there's only one), and that color is added to the pool.
 - `ManaColorSet.AmongPermanents(filter)` — colors of permanents matching `filter`, read via projected state so type/color-changing effects are honored. Mox Amber shape.
 - `ManaColorSet.LandsCouldProduce(scope)` — colors any land in `scope` could produce; tapped state and activation costs are ignored (CR 106.7). `scope` is `LandControllerScope.{YOU, OPPONENTS, ANY}`. Fellwar Stone / Exotic Orchard / Reflecting Pool shape.
 - `ManaColorSet.SourceChosenColor` — the single color stored on the source's `ChosenColorComponent` (set via `EntersWithChoice(ChoiceType.COLOR)`). Uncharted Haven / Ashling Rekindled shape.
+
+### `ManaRestriction`
+
+Spending restrictions attached to a unit of mana when it is added to the pool. Used by
+`AddMana`, `AddColorlessMana`, and `AddManaOfChoice` (via the `restriction` parameter).
+When the engine pays a spell's cost, restricted mana is consumed preferentially when its
+restriction matches the spell context.
+
+- `ManaRestriction.AnySpend` — no restriction; satisfies any spend. Used internally when
+  `AddManaOfChoice(riders = ...)` is provided without an explicit restriction, so the rider
+  set survives in the pool without limiting where the mana can be spent (Path of Ancestry).
+- `ManaRestriction.InstantOrSorceryOnly` — only instants and sorceries.
+- `ManaRestriction.KickedSpellsOnly` — only kicked spells.
+- `ManaRestriction.CreatureSpellsOnly` / `CreatureMV4OrXCost` / `SpellsMV4OrGreater` —
+  creature- or mana-value-gated.
+- `ManaRestriction.SubtypeSpellsOrAbilitiesOnly(subtype, creatureOnly?)` — Cavern of Souls /
+  Unclaimed Territory: only spells of a baked subtype, optionally creature-only.
+- `ManaRestriction.CastFromExileOnly` — only spells cast from exile.
+- `ManaRestriction.CardTypeSpellsOrAbilitiesOnly(cardType, allowSpells?, allowAbilities?)` —
+  Steelswarm Operator shape.
+
+### `ManaSpellRider`
+
+Side-effects attached to mana that fire when the mana is spent on a spell. Orthogonal to
+`ManaRestriction`: the restriction controls *where* the mana may be spent; the rider
+controls *what happens to the spell* when it is spent. The cast pipeline either mutates the
+spell directly (e.g. stamps a component) or queues a triggered ability onto the stack above
+the spell when the rider needs the stack (typically because it requires a player decision).
+
+- `ManaSpellRider.MakesSpellUncounterable` — Cavern of Souls: stamps `CantBeCounteredComponent`
+  on the spell at cast time.
+- `ManaSpellRider.ScryOnSharedTypeWithCommander(amount)` — Path of Ancestry: if the spell is
+  a creature spell that shares a creature type with any of the controller's commanders,
+  queues a `scry amount` triggered ability above the spell.
 
 ### `TurnTracker` keys (used with `TurnTracking`)
 

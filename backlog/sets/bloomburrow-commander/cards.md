@@ -2,7 +2,7 @@
 
 **Set Size:** 312 cards
 **Release Date:** August 2, 2024
-**Implemented:** 106 / 312
+**Implemented:** 108 / 312
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 37    | 0    |
@@ -108,7 +108,7 @@
 - [x] Forgotten Ancient
 - [x] Forgotten Cave
 - [ ] Fortune Teller's Talent
-- [ ] Game Trail
+- [x] Game Trail
 - [x] Garruk's Packleader
 - [x] Garruk's Uprising
 - [ ] Garruk, Cursed Huntsman
@@ -196,7 +196,7 @@
 - [ ] Ornithopter of Paradise
 - [x] Outpost Siege
 - [ ] Overflowing Basin
-- [ ] Path of Ancestry
+- [x] Path of Ancestry
 - [x] Path of Discovery
 - [ ] Path to Exile
 - [ ] Perch Protection

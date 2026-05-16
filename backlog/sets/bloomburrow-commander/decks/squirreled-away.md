@@ -103,7 +103,7 @@
 - [x] 1 Llanowar Wastes
 - [ ] 1 Necroblossom Snarl
 - [ ] 1 Oran-Rief, the Vastwood
-- [ ] 1 Path of Ancestry
+- [x] 1 Path of Ancestry
 - [ ] 4 Swamp
 - [ ] 4 Swamp
 - [ ] 1 Swarmyard

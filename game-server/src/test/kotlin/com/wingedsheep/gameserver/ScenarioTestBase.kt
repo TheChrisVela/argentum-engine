@@ -36,6 +36,7 @@ import com.wingedsheep.mtg.sets.definitions.one.PhyrexiaAllWillBeOneSet
 import com.wingedsheep.mtg.sets.definitions.ons.OnslaughtSet
 import com.wingedsheep.mtg.sets.definitions.otj.OutlawsOfThunderJunctionSet
 import com.wingedsheep.mtg.sets.definitions.por.PortalSet
+import com.wingedsheep.mtg.sets.definitions.pz2.TreasureChestSet
 import com.wingedsheep.mtg.sets.definitions.m12.Magic2012Set
 import com.wingedsheep.mtg.sets.definitions.roe.RiseOfTheEldraziSet
 import com.wingedsheep.mtg.sets.definitions.scg.ScourgeSet
@@ -129,6 +130,7 @@ abstract class ScenarioTestBase : FunSpec() {
         register(OutlawsOfThunderJunctionSet.cards)
         register(PhyrexiaAllWillBeOneSet.cards)
         register(PortalSet.cards); register(PortalSet.basicLands)
+        register(TreasureChestSet.cards)
         register(RiseOfTheEldraziSet.cards); register(RiseOfTheEldraziSet.basicLands)
         register(ScourgeSet.cards)
         register(ShadowsOverInnistradSet.cards)

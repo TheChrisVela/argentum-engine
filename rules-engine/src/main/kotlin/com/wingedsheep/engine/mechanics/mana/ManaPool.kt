@@ -41,6 +41,7 @@ data class SpellPaymentContext(
  * Check whether a mana restriction is satisfied by the spell being cast or ability being activated.
  */
 fun ManaRestriction.isSatisfiedBy(context: SpellPaymentContext): Boolean = when (this) {
+    is ManaRestriction.AnySpend -> true
     is ManaRestriction.InstantOrSorceryOnly -> !context.isAbilityActivation && context.isInstantOrSorcery
     is ManaRestriction.KickedSpellsOnly -> !context.isAbilityActivation && context.isKicked
     is ManaRestriction.CreatureMV4OrXCost ->

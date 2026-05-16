@@ -27,4 +27,26 @@ sealed interface ManaSpellRider {
     data object MakesSpellUncounterable : ManaSpellRider {
         override val description: String = "That spell can't be countered"
     }
+
+    /**
+     * "When that mana is spent to cast a creature spell that shares a creature type
+     * with your commander, scry [amount]." (Path of Ancestry)
+     *
+     * On consumption the cast pipeline checks the spell's projected creature subtypes
+     * against the spell controller's commander(s). If the spell is a creature spell and
+     * shares at least one creature subtype with any of the controller's commanders, a
+     * triggered ability is placed on the stack above the spell that, on resolution,
+     * scries [amount].
+     *
+     * If the rider is consumed but the spell doesn't satisfy the condition (non-creature
+     * spell, no shared creature type, controller has no commander, etc.) the rider is
+     * a no-op. Per CR / Scryfall ruling, creature types are checked at the moment of
+     * casting, not at trigger-resolution.
+     */
+    @SerialName("ScryOnSharedTypeWithCommander")
+    @Serializable
+    data class ScryOnSharedTypeWithCommander(val amount: Int = 1) : ManaSpellRider {
+        override val description: String =
+            "When that mana is spent to cast a creature spell that shares a creature type with your commander, scry $amount"
+    }
 }

@@ -14,6 +14,20 @@ sealed interface ManaRestriction {
     val description: String
 
     /**
+     * No restriction — this mana satisfies any spend context. Used as a marker for
+     * unrestricted mana that still carries [ManaSpellRider]s (e.g., Path of Ancestry,
+     * whose mana is spendable anywhere but triggers a side-effect when consumed on a
+     * matching spell). Plain unrestricted mana with no riders goes into the colored
+     * counters on [com.wingedsheep.engine.mechanics.mana.ManaPool] directly — only
+     * use this when a rider is attached.
+     */
+    @SerialName("AnySpend")
+    @Serializable
+    data object AnySpend : ManaRestriction {
+        override val description: String = ""
+    }
+
+    /**
      * "Spend this mana only to cast instant or sorcery spells."
      */
     @SerialName("InstantOrSorceryOnly")

@@ -96,7 +96,7 @@
 - [ ] 2 Mountain
 - [ ] 1 Opal Palace
 - [ ] 1 Opulent Palace
-- [ ] 1 Path of Ancestry
+- [x] 1 Path of Ancestry
 - [ ] 2 Plains
 - [ ] 1 Primal Beyond
 - [ ] 1 Raging Ravine

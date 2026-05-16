@@ -2,8 +2,7 @@
 
 **Set Size:** 153 cards
 **Release Date:** January 23, 2026
-**Implemented:** 0 / 153
-
+**Implemented:** 1 / 153
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 4     | 0    |
@@ -115,7 +114,7 @@
 - [ ] Opal Palace
 - [ ] Opulent Palace
 - [ ] Painful Truths
-- [ ] Path of Ancestry
+- [x] Path of Ancestry
 - [ ] Path to Exile
 - [ ] Persist
 - [ ] Primal Beyond

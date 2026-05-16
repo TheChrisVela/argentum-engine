@@ -101,7 +101,7 @@
 - [ ] 1 Ifnir Deadlands
 - [ ] 4 Mountain
 - [ ] 1 Nesting Grounds
-- [ ] 1 Path of Ancestry
+- [x] 1 Path of Ancestry
 - [ ] 1 Rakdos Carnarium
 - [ ] 1 Riveteers Overlook
 - [ ] 1 Rootbound Crag

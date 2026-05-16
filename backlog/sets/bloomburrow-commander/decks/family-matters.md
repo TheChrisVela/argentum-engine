@@ -104,7 +104,7 @@
 - [ ] 2 Mountain
 - [ ] 2 Mountain
 - [x] 1 Mystic Monastery
-- [ ] 1 Path of Ancestry
+- [x] 1 Path of Ancestry
 - [ ] 3 Plains
 - [ ] 2 Plains
 - [ ] 1 Rugged Prairie

@@ -106,6 +106,13 @@ data class AddManaOfChoiceEffect(
     val colorSet: ManaColorSet = ManaColorSet.AnyColor,
     val amount: DynamicAmount = DynamicAmount.Fixed(1),
     val restriction: ManaRestriction? = null,
+    /**
+     * Side-effects attached to the produced mana. When non-empty, the mana is stored
+     * as restricted-mana entries so the rider set is preserved through the pool;
+     * if [restriction] is null, [ManaRestriction.AnySpend] is used as a no-op marker
+     * (the mana remains spendable on anything).
+     */
+    val riders: Set<ManaSpellRider> = emptySet(),
 ) : Effect {
     constructor(colorSet: ManaColorSet, amount: Int, restriction: ManaRestriction? = null) :
         this(colorSet, DynamicAmount.Fixed(amount), restriction)
@@ -116,7 +123,8 @@ data class AddManaOfChoiceEffect(
             else -> "${a.description} mana of"
         }
         append("Add $amountText ${colorSet.description}")
-        if (restriction != null) append(". ${restriction.description}")
+        if (restriction != null && restriction.description.isNotEmpty()) append(". ${restriction.description}")
+        for (rider in riders) append(". ${rider.description}")
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
