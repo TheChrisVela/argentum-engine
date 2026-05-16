@@ -245,7 +245,7 @@
 - [ ] Tractor Beam
 - [x] Tragic Trajectory
 - [x] Umbral Collar Zealot
-- [ ] Unravel
+- [x] Unravel
 - [ ] Uthros Psionicist
 - [x] Uthros Scanship
 - [ ] Uthros, Titanic Godcore

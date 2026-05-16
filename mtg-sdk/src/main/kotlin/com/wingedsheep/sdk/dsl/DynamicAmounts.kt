@@ -265,6 +265,9 @@ object DynamicAmounts {
     fun targetManaValue(index: Int = 0): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.Target(index), EntityNumericProperty.ManaValue)
 
+    fun targetManaSpent(index: Int = 0): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Target(index), EntityNumericProperty.ManaSpent)
+
     fun sacrificedPower(index: Int = 0): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.Sacrificed(index), EntityNumericProperty.Power)
 

@@ -11,6 +11,7 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.identity.PlayerComponent
+import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CharacteristicValue
@@ -723,6 +724,12 @@ class DynamicAmountEvaluator(
 
             is EntityNumericProperty.ManaValue ->
                 state.getEntity(entityId)?.get<CardComponent>()?.manaValue ?: 0
+
+            is EntityNumericProperty.ManaSpent -> {
+                val spell = state.getEntity(entityId)?.get<SpellOnStackComponent>() ?: return 0
+                spell.manaSpentWhite + spell.manaSpentBlue + spell.manaSpentBlack +
+                    spell.manaSpentRed + spell.manaSpentGreen + spell.manaSpentColorless
+            }
 
             is EntityNumericProperty.CounterCount -> {
                 val countersComponent = state.getEntity(entityId)?.get<CountersComponent>() ?: return 0

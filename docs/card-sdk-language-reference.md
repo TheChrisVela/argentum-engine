@@ -943,6 +943,12 @@ Numbers computed at resolution time.
 - `TargetPower(target)` — target's current power.
 - `TargetToughness(target)` — target's current toughness.
 - `TargetManaValue(target)` — target's mana value.
+- `DynamicAmounts.targetManaSpent(index)` — sum of all `manaSpent{Color}` buckets on
+  the targeted spell's `SpellOnStackComponent` (i.e. what was actually paid, after
+  cost reductions/increases). Pair with `targetManaValue()` for "if the amount of
+  mana spent to cast that spell was less than its mana value" gates (Unravel).
+  Desugars to `EntityProperty(EntityReference.Target(index), EntityNumericProperty.ManaSpent)`.
+  Returns 0 if the target isn't a spell on the stack.
 - `CardNumericProperty(card, property)` — generic numeric property accessor.
 
 ### Triggering-entity shortcuts (`DynamicAmounts.*` facades)
