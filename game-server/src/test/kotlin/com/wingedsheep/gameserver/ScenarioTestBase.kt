@@ -36,6 +36,7 @@ import com.wingedsheep.mtg.sets.definitions.one.PhyrexiaAllWillBeOneSet
 import com.wingedsheep.mtg.sets.definitions.ons.OnslaughtSet
 import com.wingedsheep.mtg.sets.definitions.otj.OutlawsOfThunderJunctionSet
 import com.wingedsheep.mtg.sets.definitions.por.PortalSet
+import com.wingedsheep.mtg.sets.definitions.m12.Magic2012Set
 import com.wingedsheep.mtg.sets.definitions.roe.RiseOfTheEldraziSet
 import com.wingedsheep.mtg.sets.definitions.scg.ScourgeSet
 import com.wingedsheep.mtg.sets.definitions.spm.SpiderManSet
@@ -117,6 +118,7 @@ abstract class ScenarioTestBase : FunSpec() {
         register(LorwynEclipsedSet.cards); register(LorwynEclipsedSet.basicLands)
         register(LorwynSet.cards); register(LorwynSet.basicLands)
         register(LostCavernsOfIxalanSet.cards)
+        register(Magic2012Set.cards)
         register(MarchOfTheMachineSet.cards)
         register(MirrodinBesiegedSet.cards); register(MirrodinBesiegedSet.basicLands)
         register(MirrodinSet.cards); register(MirrodinSet.basicLands)

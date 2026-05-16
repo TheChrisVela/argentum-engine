@@ -934,6 +934,18 @@ Numbers computed at resolution time.
 - `TargetManaValue(target)` — target's mana value.
 - `CardNumericProperty(card, property)` — generic numeric property accessor.
 
+### Triggering-entity shortcuts (`DynamicAmounts.*` facades)
+
+For triggered abilities whose effect reads a property of the entity that caused the trigger
+(rather than the source of the ability):
+
+- `DynamicAmounts.triggeringPower()` — power of the triggering entity (e.g. Warstorm Surge:
+  "it deals damage equal to its power").
+- `DynamicAmounts.triggeringToughness()` — toughness of the triggering entity.
+- `DynamicAmounts.triggeringManaValue()` — mana value of the triggering entity.
+
+All three desugar to `EntityProperty(EntityReference.Triggering, …)`.
+
 ### Context-plumbed
 
 - `ContextProperty(key)` — value plumbed via `EffectContext` (e.g. damage amount).

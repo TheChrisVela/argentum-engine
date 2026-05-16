@@ -285,4 +285,10 @@ object DynamicAmounts {
 
     fun triggeringManaValue(): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.Triggering, EntityNumericProperty.ManaValue)
+
+    fun triggeringPower(): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Triggering, EntityNumericProperty.Power)
+
+    fun triggeringToughness(): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Triggering, EntityNumericProperty.Toughness)
 }

@@ -85,7 +85,7 @@
 - [x] 1 Sunbird's Invocation
 - [x] 1 Thickest in the Thicket
 - [x] 1 Unnatural Growth
-- [ ] 1 Warstorm Surge
+- [x] 1 Warstorm Surge
 
 ## Lands (38)
 
@@ -93,7 +93,7 @@
 - [x] 1 Command Tower
 - [x] 1 Copperline Gorge
 - [x] 1 Evolving Wilds
-- [ ] 1 Exotic Orchard
+- [x] 1 Exotic Orchard
 - [x] 5 Forest
 - [x] 5 Forest
 - [x] 1 Forgotten Cave
