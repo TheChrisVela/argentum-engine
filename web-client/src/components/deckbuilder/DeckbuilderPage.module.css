@@ -1147,9 +1147,8 @@
 
 .deckRow {
   display: grid;
-  /* Columns: minus, plus, count, name (flex), commander-crown (optional, collapses to 0 when
-     not rendered), mana cost. The optional crown column means the cost column stays the
-     rightmost one whether or not commander controls are shown. */
+  /* Columns: minus, plus, count, name (flex), printing-chip, mana cost. The chip column is
+     auto-sized so it collapses to 0 when the chip is omitted (count=0 placeholder rows). */
   grid-template-columns: 18px 18px 22px 1fr auto auto;
   align-items: center;
   gap: 4px;
@@ -1157,6 +1156,13 @@
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
   cursor: default;
+}
+
+/* Commander-format rows render an additional crown affordance between the name and the
+   printing chip, so we insert a seventh auto column. Without this, the 7th child (mana
+   cost) wraps to a new grid row and the row doubles in height. */
+.deckRowWithCrown {
+  grid-template-columns: 18px 18px 22px 1fr auto auto auto;
 }
 
 .deckRow:hover {

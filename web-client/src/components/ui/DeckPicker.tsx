@@ -20,6 +20,7 @@
  *   POST /api/decks/validate   — authoritative validation pass when a list is non-empty
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { PrintingRef } from '@/types'
 import {
   useDeckLibrary,
   mergeCommanderIntoCards,
@@ -98,6 +99,10 @@ interface ExampleDeck {
   format?: string | null
   /** Designated commander name for commander-shape examples. */
   commander?: string | null
+  /** Preferred printing per card name (sparse). Picker loads these as pinned printings. */
+  printings?: Record<string, PrintingRef> | null
+  /** Preferred printing for the commander, when one is designated. */
+  commanderPrinting?: PrintingRef | null
 }
 
 type ValidationResult = DeckValidationResult

@@ -50,6 +50,20 @@ class DecksController(
          * library-only list strip it before sending.
          */
         val commander: String? = null,
+        /**
+         * Optional preferred printing per card name. When present, the deckbuilder loads
+         * these as the deck's pinned printings (so the art and Scryfall metadata reflect
+         * the precon's printings rather than the canonical default). Sparse — names not in
+         * the map fall back to the default printing. Modeled as a single ref per name
+         * (not per copy) because a starter deck only carries one preferred art per card;
+         * users who want art variants split copies in the deckbuilder after loading.
+         */
+        val printings: Map<String, PrintingRef>? = null,
+        /**
+         * Optional preferred printing for the commander. Separate from [printings] because
+         * the commander itself is stored separately from the rest of the deck (CR 903.6a).
+         */
+        val commanderPrinting: PrintingRef? = null,
     )
 
     data class ValidateRequest(
@@ -131,6 +145,104 @@ class DecksController(
     data class FormatInfo(val id: String, val name: String)
 
     companion object {
+        // Pinned printings for the BLC Animated Army precon. Pulled from the BLC printing
+        // metadata in `:mtg-sets` (collectorNumber on each BLC card definition / reprint).
+        // The commander itself is pinned via [ExampleDeckDTO.commanderPrinting], not here.
+        private val ANIMATED_ARMY_PRINTINGS = mapOf(
+            // Creatures
+            "Brightcap Badger" to PrintingRef("BLC", "28"),
+            "Burnished Hart" to PrintingRef("BLC", "266"),
+            "Etali, Primal Storm" to PrintingRef("BLC", "196"),
+            "Evercoat Ursine" to PrintingRef("BLC", "30"),
+            "Garruk's Packleader" to PrintingRef("BLC", "218"),
+            "Ghalta, Primal Hunger" to PrintingRef("BLC", "220"),
+            "Goreclaw, Terror of Qal Sisma" to PrintingRef("BLC", "222"),
+            "Grothama, All-Devouring" to PrintingRef("BLC", "224"),
+            "Grumgully, the Generous" to PrintingRef("BLC", "253"),
+            "Kodama of the East Tree" to PrintingRef("BLC", "227"),
+            "Llanowar Loamspeaker" to PrintingRef("BLC", "228"),
+            "Lotus Cobra" to PrintingRef("BLC", "229"),
+            "Prosperous Bandit" to PrintingRef("BLC", "25"),
+            "Pyreswipe Hawk" to PrintingRef("BLC", "26"),
+            "Rampaging Baloths" to PrintingRef("BLC", "233"),
+            "Sakura-Tribe Elder" to PrintingRef("BLC", "236"),
+            // Teapot Slinger and Wandertale Mentor are new BLB cards bundled into the
+            // precon; no BLC reprint exists, so they ship as their BLB printings.
+            "Teapot Slinger" to PrintingRef("BLB", "157"),
+            "Tendershoot Dryad" to PrintingRef("BLC", "242"),
+            "Trailtracker Scout" to PrintingRef("BLC", "35"),
+            "Wandertale Mentor" to PrintingRef("BLB", "240"),
+            "Wildsear, Scouring Maw" to PrintingRef("BLC", "8"),
+            // Planeswalker
+            "Domri, Anarch of Bolas" to PrintingRef("BLC", "98"),
+            // Instants
+            "Abrade" to PrintingRef("BLC", "191"),
+            "Beast Within" to PrintingRef("BLC", "206"),
+            "Big Score" to PrintingRef("BLC", "193"),
+            "Chaos Warp" to PrintingRef("BLC", "115"),
+            "Starstorm" to PrintingRef("BLC", "203"),
+            // Sorceries
+            "Blasphemous Act" to PrintingRef("BLC", "114"),
+            "Cultivate" to PrintingRef("BLC", "212"),
+            "Decimate" to PrintingRef("BLC", "251"),
+            "Explore" to PrintingRef("BLC", "216"),
+            "Farseek" to PrintingRef("BLC", "119"),
+            "Harmonize" to PrintingRef("BLC", "120"),
+            "Rampant Growth" to PrintingRef("BLC", "234"),
+            // Artifacts
+            "Arcane Signet" to PrintingRef("BLC", "127"),
+            "Bootleggers' Stash" to PrintingRef("BLC", "207"),
+            "Esika's Chariot" to PrintingRef("BLC", "215"),
+            "Fellwar Stone" to PrintingRef("BLC", "269"),
+            "Gilded Lotus" to PrintingRef("BLC", "271"),
+            "Gruul Signet" to PrintingRef("BLC", "273"),
+            "Hedron Archive" to PrintingRef("BLC", "275"),
+            "Mind Stone" to PrintingRef("BLC", "280"),
+            "Rolling Hamsphere" to PrintingRef("BLC", "39"),
+            "Sol Ring" to PrintingRef("BLC", "129"),
+            "Spine of Ish Sah" to PrintingRef("BLC", "285"),
+            "Talisman of Impulse" to PrintingRef("BLC", "287"),
+            "Thought Vessel" to PrintingRef("BLC", "289"),
+            "Thran Dynamo" to PrintingRef("BLC", "290"),
+            // Enchantments
+            "Alchemist's Talent" to PrintingRef("BLC", "22"),
+            "Berserkers' Onslaught" to PrintingRef("BLC", "192"),
+            "Garruk's Uprising" to PrintingRef("BLC", "219"),
+            "Gratuitous Violence" to PrintingRef("BLC", "197"),
+            "Greater Good" to PrintingRef("BLC", "223"),
+            "Outpost Siege" to PrintingRef("BLC", "199"),
+            "Path of Discovery" to PrintingRef("BLC", "231"),
+            "Primeval Bounty" to PrintingRef("BLC", "232"),
+            "Rain of Riches" to PrintingRef("BLC", "200"),
+            "Sunbird's Invocation" to PrintingRef("BLC", "116"),
+            "Thickest in the Thicket" to PrintingRef("BLC", "34"),
+            "Unnatural Growth" to PrintingRef("BLC", "245"),
+            "Warstorm Surge" to PrintingRef("BLC", "117"),
+            // Lands (basics fall back to BLB — BLC ships no basics of its own)
+            "Cinder Glade" to PrintingRef("BLC", "299"),
+            "Command Tower" to PrintingRef("BLC", "130"),
+            "Copperline Gorge" to PrintingRef("BLC", "301"),
+            "Evolving Wilds" to PrintingRef("BLC", "302"),
+            "Exotic Orchard" to PrintingRef("BLC", "131"),
+            "Forest" to PrintingRef("BLB", "278"),
+            "Forgotten Cave" to PrintingRef("BLC", "305"),
+            "Game Trail" to PrintingRef("BLC", "306"),
+            "Gruul Turf" to PrintingRef("BLC", "310"),
+            "Karplusan Forest" to PrintingRef("BLC", "314"),
+            "Mossfire Valley" to PrintingRef("BLC", "316"),
+            "Mosswort Bridge" to PrintingRef("BLC", "317"),
+            "Mountain" to PrintingRef("BLB", "274"),
+            "Path of Ancestry" to PrintingRef("BLC", "322"),
+            "Raging Ravine" to PrintingRef("BLC", "324"),
+            "Reliquary Tower" to PrintingRef("BLC", "132"),
+            "Rootbound Crag" to PrintingRef("BLC", "326"),
+            "Sheltered Thicket" to PrintingRef("BLC", "330"),
+            "Temple of Abandon" to PrintingRef("BLC", "338"),
+            "Terramorphic Expanse" to PrintingRef("BLC", "345"),
+            "Tranquil Thicket" to PrintingRef("BLC", "350"),
+            "Wooded Ridgeline" to PrintingRef("BLC", "353"),
+        )
+
         // Bloomburrow-only tribal decks. Selesnya Rabbits, Rakdos Lizards, Golgari Squirrels,
         // and Simic Frogs are taken from the Bloomburrow Constructed Midweek Magic decklists
         // (https://mtgazone.com/midweek-magic-bloomburrow-constructed/). Boros Mice and Orzhov
@@ -329,15 +441,18 @@ class DecksController(
                 )
             ),
             // Bloomburrow Commander preconstructed deck. "Animated Army" is the Gruul
-            // (Bello, Bard of the Brambles) deck from the Bloomburrow Commander set;
-            // every card is registered in BLC (commander + reprints + new spells) or
-            // the matching BLB printing it reprints.
+            // (Bello, Bard of the Brambles) deck from the Bloomburrow Commander set.
+            // Printings are pinned to BLC where the precon shipped them; the two new BLB
+            // cards included in the precon (Teapot Slinger, Wandertale Mentor) and the
+            // basic lands fall back to their BLB printings.
             ExampleDeckDTO(
                 id = "animated_army",
                 name = "Animated Army",
                 description = "Bloomburrow Commander precon: Bello, Bard of the Brambles (GR).",
                 format = DeckFormat.COMMANDER,
                 commander = "Bello, Bard of the Brambles",
+                commanderPrinting = PrintingRef(setCode = "BLC", collectorNumber = "1"),
+                printings = ANIMATED_ARMY_PRINTINGS,
                 cards = mapOf(
                     "Bello, Bard of the Brambles" to 1,
                     "Brightcap Badger" to 1,

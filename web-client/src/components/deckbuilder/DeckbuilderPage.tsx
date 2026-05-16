@@ -105,6 +105,10 @@ interface ExampleDeck {
   format?: string | null
   /** Designated commander name for commander-shape examples. */
   commander?: string | null
+  /** Preferred printing per card name (sparse). */
+  printings?: Record<string, PrintingRef> | null
+  /** Preferred printing for the commander. */
+  commanderPrinting?: PrintingRef | null
 }
 
 type SortMode = 'name' | 'cmc' | 'color' | 'rarity'
@@ -823,12 +827,24 @@ export function DeckbuilderPage() {
       return
     }
     setDeckCards({ ...ex.cards })
-    if (ex.format) setActiveFormat(ex.format)
     setCommander(ex.commander ?? null)
     setActiveDeckId(null)
-    setPinnedPrintings({})
+    // Pre-fill pinned printings from the example. The commander's pin is keyed by name
+    // alongside the rest — same shape `pinnedPrintingsFromEntries` produces on saved-deck
+    // load, so the art-cache backfill below picks it up automatically.
+    const initialPins: Record<string, PrintingRef> = { ...(ex.printings ?? {}) }
+    if (ex.commander && ex.commanderPrinting) initialPins[ex.commander] = ex.commanderPrinting
+    setPinnedPrintings(initialPins)
     setDeckName(ex.name)
-    navigate(`/deckbuilder${searchSuffix()}`)
+    // Stamp the example's format into the URL inside the navigate call (rather than via
+    // a separate setActiveFormat) so it lands before render. Without this, the next
+    // render still sees the old `activeFormat`, the "clear commander when not a commander
+    // format" effect fires, and the just-set commander designation gets wiped. Same race
+    // and same fix as handleLoadSaved above.
+    const params = new URLSearchParams(searchParams)
+    if (ex.format) params.set('fmt', ex.format.toUpperCase())
+    const suffix = params.toString()
+    navigate(`/deckbuilder${suffix ? `?${suffix}` : ''}`)
     setExamplesOpen(false)
   }
 
@@ -3527,6 +3543,9 @@ const DeckRow = memo(function DeckRow({
   const atCap = entry.count >= cap
   const rowClasses = [
     styles.deckRow,
+    // Commander format always renders the crown affordance on each row, which adds a 7th
+    // grid child. Switch to the 7-column template so the mana cost doesn't wrap to a new line.
+    showCommanderControls ? styles.deckRowWithCrown : '',
     illegal ? styles.deckRowIllegal : '',
     unknown ? styles.deckRowUnknown : '',
     isCommanderRow ? styles.deckRowCommander : '',
