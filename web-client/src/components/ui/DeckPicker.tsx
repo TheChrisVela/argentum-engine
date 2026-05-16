@@ -23,6 +23,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   useDeckLibrary,
   mergeCommanderIntoCards,
+  stripCommanderFromCards,
   type SavedDeck,
 } from '@/store/deckLibrary'
 import {
@@ -252,6 +253,16 @@ export function DeckPicker({
     return saved?.commander ?? null
   }, [tab, decks, selectedSavedId])
 
+  // Strip the commander out of `currentDeck` before crossing the network boundary. `currentDeck`
+  // keeps the commander baked in so the totalCards display reads "100 cards" for a Commander
+  // deck, but the server's `Deck.cards` is documented as the library only (CR 903.6a) — the
+  // validator / lobby registrar adds the commander on top of `cards`. Sending both would count
+  // the commander twice. Mirrors the equivalent strip in DeckbuilderPage.
+  const deckListForServer = useMemo(
+    () => stripCommanderFromCards(currentDeck, currentCommander),
+    [currentDeck, currentCommander],
+  )
+
   // Push the current deck up. We deliberately suppress empty emissions from non-Random tabs
   // so that landing on the Saved tab with nothing selected doesn't auto-submit `{}` to the
   // server — that would mark the player as "deck selected" with an empty deck and surface as
@@ -259,8 +270,8 @@ export function DeckPicker({
   // On the Random tab `{}` *is* the chosen deck (server generates a random pool), so emit it.
   useEffect(() => {
     if (tab !== 'random' && Object.keys(currentDeck).length === 0) return
-    onDeckChange(currentDeck, currentCommander)
-  }, [tab, currentDeck, currentCommander, onDeckChange])
+    onDeckChange(deckListForServer, currentCommander)
+  }, [tab, currentDeck, deckListForServer, currentCommander, onDeckChange])
 
   // Server-side validation when the deck is non-empty.
   useEffect(() => {
@@ -276,8 +287,9 @@ export function DeckPicker({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        deckList: currentDeck,
+        deckList: deckListForServer,
         ...(format ? { format } : {}),
+        ...(currentCommander ? { commander: currentCommander } : {}),
       }),
       signal: ctrl.signal,
     })
@@ -297,7 +309,7 @@ export function DeckPicker({
     return () => {
       ctrl.abort()
     }
-  }, [currentDeck, onValidityChange, format])
+  }, [currentDeck, deckListForServer, currentCommander, onValidityChange, format])
 
   const stats = useMemo(() => computeDeckStats(currentDeck, cards), [currentDeck, cards])
   const totalCards = Object.values(currentDeck).reduce((a, b) => a + b, 0)
