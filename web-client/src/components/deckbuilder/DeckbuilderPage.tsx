@@ -101,6 +101,10 @@ interface ExampleDeck {
   name: string
   description: string
   cards: Record<string, number>
+  /** Deck format this example is built for. Null = no format hint. */
+  format?: string | null
+  /** Designated commander name for commander-shape examples. */
+  commander?: string | null
 }
 
 type SortMode = 'name' | 'cmc' | 'color' | 'rarity'
@@ -819,7 +823,8 @@ export function DeckbuilderPage() {
       return
     }
     setDeckCards({ ...ex.cards })
-    setCommander(null)
+    if (ex.format) setActiveFormat(ex.format)
+    setCommander(ex.commander ?? null)
     setActiveDeckId(null)
     setPinnedPrintings({})
     setDeckName(ex.name)

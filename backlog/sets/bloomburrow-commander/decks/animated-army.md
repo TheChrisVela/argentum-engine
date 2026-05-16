@@ -42,7 +42,7 @@
 - [x] 1 Beast Within
 - [x] 1 Big Score
 - [x] 1 Chaos Warp
-- [x] 1 Starsto/rm
+- [x] 1 Starstorm
 
 ## Sorceries (7)
 

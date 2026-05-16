@@ -34,7 +34,22 @@ class DecksController(
         val id: String,
         val name: String,
         val description: String,
-        val cards: Map<String, Int>
+        val cards: Map<String, Int>,
+        /**
+         * Deck-construction format this example is built for. Null means "no format hint" —
+         * the picker shows the example regardless of the active format. When set, the
+         * deckbuilder pre-selects the format on load and the lobby picker filters the
+         * Examples tab to examples matching its constrained format.
+         */
+        val format: DeckFormat? = null,
+        /**
+         * Designated commander card name for commander-shape examples (CR 903.5b). When
+         * present, the deckbuilder pre-fills the commander slot and the picker validates
+         * the deck under commander rules. The commander is included in [cards] (matching
+         * the convention used by the import-from-text flow); consumers that need the
+         * library-only list strip it before sending.
+         */
+        val commander: String? = null,
     )
 
     data class ValidateRequest(
@@ -311,6 +326,103 @@ class DecksController(
                     "Realm of Koh" to 4,
                     "Soulstone Sanctuary" to 2,
                     "Swamp" to 18
+                )
+            ),
+            // Bloomburrow Commander preconstructed deck. "Animated Army" is the Gruul
+            // (Bello, Bard of the Brambles) deck from the Bloomburrow Commander set;
+            // every card is registered in BLC (commander + reprints + new spells) or
+            // the matching BLB printing it reprints.
+            ExampleDeckDTO(
+                id = "animated_army",
+                name = "Animated Army",
+                description = "Bloomburrow Commander precon: Bello, Bard of the Brambles (GR).",
+                format = DeckFormat.COMMANDER,
+                commander = "Bello, Bard of the Brambles",
+                cards = mapOf(
+                    "Bello, Bard of the Brambles" to 1,
+                    "Brightcap Badger" to 1,
+                    "Burnished Hart" to 1,
+                    "Etali, Primal Storm" to 1,
+                    "Evercoat Ursine" to 1,
+                    "Garruk's Packleader" to 1,
+                    "Ghalta, Primal Hunger" to 1,
+                    "Goreclaw, Terror of Qal Sisma" to 1,
+                    "Grothama, All-Devouring" to 1,
+                    "Grumgully, the Generous" to 1,
+                    "Kodama of the East Tree" to 1,
+                    "Llanowar Loamspeaker" to 1,
+                    "Lotus Cobra" to 1,
+                    "Prosperous Bandit" to 1,
+                    "Pyreswipe Hawk" to 1,
+                    "Rampaging Baloths" to 1,
+                    "Sakura-Tribe Elder" to 1,
+                    "Teapot Slinger" to 1,
+                    "Tendershoot Dryad" to 1,
+                    "Trailtracker Scout" to 1,
+                    "Wandertale Mentor" to 1,
+                    "Wildsear, Scouring Maw" to 1,
+                    "Domri, Anarch of Bolas" to 1,
+                    "Abrade" to 1,
+                    "Beast Within" to 1,
+                    "Big Score" to 1,
+                    "Chaos Warp" to 1,
+                    "Starstorm" to 1,
+                    "Blasphemous Act" to 1,
+                    "Cultivate" to 1,
+                    "Decimate" to 1,
+                    "Explore" to 1,
+                    "Farseek" to 1,
+                    "Harmonize" to 1,
+                    "Rampant Growth" to 1,
+                    "Arcane Signet" to 1,
+                    "Bootleggers' Stash" to 1,
+                    "Esika's Chariot" to 1,
+                    "Fellwar Stone" to 1,
+                    "Gilded Lotus" to 1,
+                    "Gruul Signet" to 1,
+                    "Hedron Archive" to 1,
+                    "Mind Stone" to 1,
+                    "Rolling Hamsphere" to 1,
+                    "Sol Ring" to 1,
+                    "Spine of Ish Sah" to 1,
+                    "Talisman of Impulse" to 1,
+                    "Thought Vessel" to 1,
+                    "Thran Dynamo" to 1,
+                    "Alchemist's Talent" to 1,
+                    "Berserkers' Onslaught" to 1,
+                    "Garruk's Uprising" to 1,
+                    "Gratuitous Violence" to 1,
+                    "Greater Good" to 1,
+                    "Outpost Siege" to 1,
+                    "Path of Discovery" to 1,
+                    "Primeval Bounty" to 1,
+                    "Rain of Riches" to 1,
+                    "Sunbird's Invocation" to 1,
+                    "Thickest in the Thicket" to 1,
+                    "Unnatural Growth" to 1,
+                    "Warstorm Surge" to 1,
+                    "Cinder Glade" to 1,
+                    "Command Tower" to 1,
+                    "Copperline Gorge" to 1,
+                    "Evolving Wilds" to 1,
+                    "Exotic Orchard" to 1,
+                    "Forest" to 10,
+                    "Forgotten Cave" to 1,
+                    "Game Trail" to 1,
+                    "Gruul Turf" to 1,
+                    "Karplusan Forest" to 1,
+                    "Mossfire Valley" to 1,
+                    "Mosswort Bridge" to 1,
+                    "Mountain" to 8,
+                    "Path of Ancestry" to 1,
+                    "Raging Ravine" to 1,
+                    "Reliquary Tower" to 1,
+                    "Rootbound Crag" to 1,
+                    "Sheltered Thicket" to 1,
+                    "Temple of Abandon" to 1,
+                    "Terramorphic Expanse" to 1,
+                    "Tranquil Thicket" to 1,
+                    "Wooded Ridgeline" to 1
                 )
             )
         )

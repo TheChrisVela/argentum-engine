@@ -94,6 +94,10 @@ interface ExampleDeck {
   name: string
   description: string
   cards: Record<string, number>
+  /** Deck format this example is built for. Null = no format hint. */
+  format?: string | null
+  /** Designated commander name for commander-shape examples. */
+  commander?: string | null
 }
 
 type ValidationResult = DeckValidationResult
@@ -163,6 +167,11 @@ export function DeckPicker({
         : (tabs[0] ?? 'paste')
   const [tab, setTab] = useState<Tab>(() => initialTab)
   const [pasteText, setPasteText] = useState('')
+  // Commander designation that rides along with the Paste tab. The paste textarea has no
+  // commander UI of its own — loading a commander-shape example is the only way this gets
+  // populated. Cleared whenever the user edits the paste text manually so a stale designation
+  // can't outlive the original example contents.
+  const [pasteCommander, setPasteCommander] = useState<string | null>(null)
   const [selectedSavedId, setSelectedSavedId] = useState<string | null>(null)
   const [pendingName, setPendingName] = useState('')
   const [cards, setCards] = useState<Record<string, CardSummary>>({})
@@ -246,12 +255,16 @@ export function DeckPicker({
     }
   }, [tab, pasteText, decks, selectedSavedId])
 
-  // Commander only originates from saved decks today (paste / examples / random don't carry one).
+  // Commander designation. Saved decks store one explicitly; commander-shape examples carry
+  // theirs through Paste via [pasteCommander]. Random has no commander hint.
   const currentCommander: string | null = useMemo(() => {
-    if (tab !== 'saved') return null
-    const saved = decks.find((d) => d.id === selectedSavedId)
-    return saved?.commander ?? null
-  }, [tab, decks, selectedSavedId])
+    if (tab === 'saved') {
+      const saved = decks.find((d) => d.id === selectedSavedId)
+      return saved?.commander ?? null
+    }
+    if (tab === 'paste') return pasteCommander
+    return null
+  }, [tab, decks, selectedSavedId, pasteCommander])
 
   // Strip the commander out of `currentDeck` before crossing the network boundary. `currentDeck`
   // keeps the commander baked in so the totalCards display reads "100 cards" for a Commander
@@ -316,6 +329,7 @@ export function DeckPicker({
 
   const handleLoadExample = (ex: ExampleDeck) => {
     setPasteText(formatDeckText(ex.cards))
+    setPasteCommander(ex.commander ?? null)
     setPendingName(ex.name)
     setTab('paste')
   }
@@ -340,6 +354,14 @@ export function DeckPicker({
     return out
   }, [decks])
   const legalityMap = useDeckLegalFormats(legalityInput)
+
+  // Examples filtered by the lobby's format (when set). Examples with no format hint stay
+  // visible everywhere — same permissive rule as the existing saved-deck legality fallback.
+  const visibleExamples = useMemo(() => {
+    if (!format) return examples
+    const target = format.toUpperCase()
+    return examples.filter((ex) => !ex.format || ex.format.toUpperCase() === target)
+  }, [examples, format])
 
   // Saved decks filtered by the lobby's format (when set). While the legality response is in
   // flight we leave the unfiltered list visible so the picker doesn't briefly empty out.
@@ -388,14 +410,18 @@ export function DeckPicker({
 
         {tab === 'examples' && (
           <div className={styles.exampleGrid}>
-            {examples.map((ex) => (
+            {visibleExamples.map((ex) => (
               <button key={ex.id} className={styles.exampleCard} onClick={() => handleLoadExample(ex)} disabled={disabled}>
                 <span className={styles.exampleName}>{ex.name}</span>
                 <span className={styles.exampleDesc}>{ex.description}</span>
                 <span className={styles.savedItemCount}>{Object.values(ex.cards).reduce((a, b) => a + b, 0)} cards</span>
               </button>
             ))}
-            {examples.length === 0 && <p className={styles.helperText}>Loading examples…</p>}
+            {visibleExamples.length === 0 && (
+              <p className={styles.helperText}>
+                {examples.length === 0 ? 'Loading examples…' : 'No examples for this format.'}
+              </p>
+            )}
           </div>
         )}
 
@@ -403,7 +429,12 @@ export function DeckPicker({
           <>
             <textarea
               value={pasteText}
-              onChange={(e) => setPasteText(e.target.value)}
+              onChange={(e) => {
+                setPasteText(e.target.value)
+                // A manual edit voids any commander designation an example may have carried —
+                // the user might have removed the commander card from the list entirely.
+                if (pasteCommander !== null) setPasteCommander(null)
+              }}
               disabled={disabled}
               className={styles.textarea}
               placeholder={'4 Lightning Bolt\n4 Goblin Guide\n12 Mountain\n…'}
