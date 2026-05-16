@@ -69,6 +69,7 @@ import com.wingedsheep.sdk.scripting.conditions.TriggeringEntityWasNotPutByThisS
 import com.wingedsheep.sdk.scripting.conditions.TriggeringSpellHasSingleTarget
 import com.wingedsheep.sdk.scripting.conditions.CollectionContainsMatch
 import com.wingedsheep.sdk.scripting.conditions.IsFirstSpellOfTypeCastThisTurn
+import com.wingedsheep.sdk.scripting.conditions.IsFirstSpellPaidWithTreasureManaCastThisTurn
 import com.wingedsheep.sdk.scripting.conditions.SourceAbilityResolvedNTimesThisTurn
 import com.wingedsheep.sdk.scripting.conditions.ManaSpentToCastIncludes
 import com.wingedsheep.sdk.scripting.conditions.WasKicked
@@ -151,6 +152,8 @@ class ConditionEvaluator {
             is YouAttackedWithCreaturesThisTurn -> evaluateYouAttackedWithCreaturesThisTurn(state, condition, context)
             is YouWereAttackedThisStep -> evaluateYouWereAttackedThisStep(state, context)
             is IsFirstSpellOfTypeCastThisTurn -> evaluateFirstSpellOfType(state, condition, context)
+            is IsFirstSpellPaidWithTreasureManaCastThisTurn ->
+                evaluateFirstSpellPaidWithTreasureMana(state, context)
             is YouCastSpellsThisTurn -> evaluateYouCastSpellsThisTurn(state, condition, context)
             is SourceAbilityResolvedNTimesThisTurn -> evaluateSourceAbilityResolvedNTimes(state, condition, context)
 
@@ -583,6 +586,15 @@ class ConditionEvaluator {
         val records = state.spellsCastThisTurnByPlayer[context.controllerId] ?: return false
         val count = records.count { evaluator.matchesFilter(it, condition.spellFilter) }
         return count == 1
+    }
+
+    private fun evaluateFirstSpellPaidWithTreasureMana(
+        state: GameState,
+        context: EffectContext
+    ): Boolean {
+        val records = state.spellsCastThisTurnByPlayer[context.controllerId] ?: return false
+        return records.count { it.paidWithTreasureMana } == 1 &&
+            records.lastOrNull()?.paidWithTreasureMana == true
     }
 
     private fun evaluateYouCastSpellsThisTurn(

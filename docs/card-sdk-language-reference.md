@@ -852,6 +852,9 @@ keywordAbilities(KeywordAbility.Protection(Color.BLUE), KeywordAbility.Annihilat
 
 - `YouAttackedWithCreaturesThisTurn(filter, atLeast)` — Raid/Battalion shape.
 - `YouCastSpellsThisTurn(atLeast, filter)` — Prowess/Magecraft shape.
+- `IsFirstSpellPaidWithTreasureManaCastThisTurn` — gates a triggered ability to fire only
+  on the first spell each turn that mana from a Treasure was spent to cast (Rain of
+  Riches). Reads `CastSpellRecord.paidWithTreasureMana` on the per-player spell history.
 
 ### Composition
 

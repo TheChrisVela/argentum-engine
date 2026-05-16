@@ -38,6 +38,7 @@ import com.wingedsheep.mtg.sets.definitions.mbs.MirrodinBesiegedSet
 import com.wingedsheep.mtg.sets.definitions.mrd.MirrodinSet
 import com.wingedsheep.mtg.sets.definitions.mkm.MurdersAtKarlovManorSet
 import com.wingedsheep.mtg.sets.definitions.mom.MarchOfTheMachineSet
+import com.wingedsheep.mtg.sets.definitions.ncc.NewCapennaCommanderSet
 import com.wingedsheep.mtg.sets.definitions.one.PhyrexiaAllWillBeOneSet
 import com.wingedsheep.mtg.sets.definitions.ons.OnslaughtSet
 import com.wingedsheep.mtg.sets.definitions.por.PortalSet
@@ -90,6 +91,7 @@ object MtgSetCatalog {
         InnistradMidnightHuntSet,
         InnistradCrimsonVowSet,
         MarchOfTheMachineSet,
+        NewCapennaCommanderSet,
         MurdersAtKarlovManorSet,
         WildsOfEldrainSet,
         RivalsOfIxalanSet,

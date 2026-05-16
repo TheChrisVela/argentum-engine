@@ -462,6 +462,18 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.YouCastSpellsThisTurn(filter, atLeast)
 
     /**
+     * If this is the first spell you've cast this turn that mana from a Treasure was
+     * spent to cast. Used by Rain of Riches ("The first spell you cast each turn that
+     * mana from a Treasure was spent to cast has cascade").
+     *
+     * Reads the controller's `CastSpellRecord` history and is true only when exactly
+     * one record this turn carries `paidWithTreasureMana = true` and that record is
+     * the most recent one (i.e., this spell).
+     */
+    val IsFirstSpellPaidWithTreasureManaCastThisTurn: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.IsFirstSpellPaidWithTreasureManaCastThisTurn
+
+    /**
      * As long as you've lost life this turn.
      * Used for Essence Channeler.
      */

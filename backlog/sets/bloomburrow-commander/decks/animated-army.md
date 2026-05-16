@@ -81,7 +81,7 @@
 - [x] 1 Outpost Siege
 - [x] 1 Path of Discovery
 - [x] 1 Primeval Bounty
-- [ ] 1 Rain of Riches
+- [x] 1 Rain of Riches
 - [ ] 1 Sunbird's Invocation
 - [ ] 1 Thickest in the Thicket
 - [ ] 1 Unnatural Growth

@@ -548,11 +548,16 @@ data class CommanderDamageEntry(
 /**
  * Snapshot of a spell's card characteristics at cast time,
  * used for retroactive filter matching (e.g., "did you cast a historic spell this turn?").
+ *
+ * [paidWithTreasureMana] captures whether any of the mana spent to cast the spell was
+ * added by tapping a Treasure (see Rain of Riches, "the first spell you cast each turn
+ * that mana from a Treasure was spent to cast").
  */
 @Serializable
 data class CastSpellRecord(
     val typeLine: TypeLine,
     val manaValue: Int,
     val colors: Set<Color>,
-    val isFaceDown: Boolean
+    val isFaceDown: Boolean,
+    val paidWithTreasureMana: Boolean = false,
 )

@@ -30,6 +30,7 @@ import com.wingedsheep.mtg.sets.definitions.mid.InnistradMidnightHuntSet
 import com.wingedsheep.mtg.sets.definitions.mkm.MurdersAtKarlovManorSet
 import com.wingedsheep.mtg.sets.definitions.mom.MarchOfTheMachineSet
 import com.wingedsheep.mtg.sets.definitions.mrd.MirrodinSet
+import com.wingedsheep.mtg.sets.definitions.ncc.NewCapennaCommanderSet
 import com.wingedsheep.mtg.sets.definitions.one.PhyrexiaAllWillBeOneSet
 import com.wingedsheep.mtg.sets.definitions.ons.OnslaughtSet
 import com.wingedsheep.mtg.sets.definitions.otj.OutlawsOfThunderJunctionSet
@@ -118,6 +119,7 @@ abstract class ScenarioTestBase : FunSpec() {
         register(MirrodinBesiegedSet.cards); register(MirrodinBesiegedSet.basicLands)
         register(MirrodinSet.cards); register(MirrodinSet.basicLands)
         register(MurdersAtKarlovManorSet.cards)
+        register(NewCapennaCommanderSet.cards)
         register(OnslaughtSet.cards); register(OnslaughtSet.basicLands)
         register(OutlawsOfThunderJunctionSet.cards)
         register(PhyrexiaAllWillBeOneSet.cards)

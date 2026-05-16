@@ -1929,7 +1929,8 @@ class CastSpellHandler(
                 typeLine = cardComponent.typeLine,
                 manaValue = cardComponent.manaValue,
                 colors = cardComponent.colors,
-                isFaceDown = action.castFaceDown
+                isFaceDown = action.castFaceDown,
+                paidWithTreasureMana = paymentResult.paidWithTreasureMana,
             )
             val existing = currentState.spellsCastThisTurnByPlayer[action.playerId] ?: emptyList()
             currentState = currentState.copy(

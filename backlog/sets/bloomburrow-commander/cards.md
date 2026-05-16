@@ -2,7 +2,7 @@
 
 **Set Size:** 312 cards
 **Release Date:** August 2, 2024
-**Implemented:** 97 / 312
+**Implemented:** 98 / 312
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 37    | 0    |
@@ -215,7 +215,7 @@
 - [ ] Putrefy
 - [x] Pyreswipe Hawk
 - [ ] Raging Ravine
-- [ ] Rain of Riches
+- [x] Rain of Riches
 - [x] Rampaging Baloths
 - [x] Rampant Growth
 - [ ] Rapid Augmenter

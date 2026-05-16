@@ -129,6 +129,21 @@ data class IsFirstSpellOfTypeCastThisTurn(
     override fun applyTextReplacement(replacer: TextReplacer): Condition = this
 }
 
+/**
+ * Condition: "if this is the first spell you've cast this turn that mana from a Treasure
+ * was spent to cast." Used by Rain of Riches.
+ *
+ * The triggering spell itself must have been paid for with treasure mana, and it must be
+ * the only such spell in the controller's `CastSpellRecord` history for the turn.
+ */
+@SerialName("IsFirstSpellPaidWithTreasureManaCastThisTurn")
+@Serializable
+data object IsFirstSpellPaidWithTreasureManaCastThisTurn : Condition {
+    override val description: String =
+        "if it's the first spell you've cast this turn that mana from a Treasure was spent to cast"
+    override fun applyTextReplacement(replacer: TextReplacer): Condition = this
+}
+
 // =============================================================================
 // Ability Resolution Conditions
 // =============================================================================
