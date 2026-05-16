@@ -605,7 +605,8 @@ For modal spells, prefer the explicit `targetPlayerControls(target)` DSL form; p
 - `EachOpponentUpkeep` — at each opponent's upkeep.
 - `YourEndStep` — beginning of your end step.
 - `EachEndStep` — beginning of each end step.
-- `BeginCombat` — start of combat.
+- `BeginCombat` — start of combat on your turn.
+- `EachCombat` — beginning of each combat (any player's turn).
 - `FirstMainPhase` — start of pre-combat main.
 - `YourPostcombatMain` — start of post-combat main.
 

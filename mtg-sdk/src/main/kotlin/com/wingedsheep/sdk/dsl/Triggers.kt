@@ -509,6 +509,14 @@ object Triggers {
     )
 
     /**
+     * At the beginning of each combat.
+     */
+    val EachCombat: TriggerSpec = TriggerSpec(
+        event = StepEvent(Step.BEGIN_COMBAT, Player.Each),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * At the beginning of your first main phase.
      */
     val FirstMainPhase: TriggerSpec = TriggerSpec(

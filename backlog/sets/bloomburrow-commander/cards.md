@@ -2,7 +2,7 @@
 
 **Set Size:** 312 cards
 **Release Date:** August 2, 2024
-**Implemented:** 102 / 312
+**Implemented:** 103 / 312
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 37    | 0    |
@@ -315,7 +315,7 @@
 - [ ] Triskaidekaphile
 - [ ] Twenty-Toed Toad
 - [ ] Twilight Mire
-- [ ] Unnatural Growth
+- [x] Unnatural Growth
 - [ ] Viridescent Bog
 - [ ] Warstorm Surge
 - [x] Wildsear, Scouring Maw

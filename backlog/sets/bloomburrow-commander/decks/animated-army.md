@@ -84,7 +84,7 @@
 - [x] 1 Rain of Riches
 - [x] 1 Sunbird's Invocation
 - [x] 1 Thickest in the Thicket
-- [ ] 1 Unnatural Growth
+- [x] 1 Unnatural Growth
 - [ ] 1 Warstorm Surge
 
 ## Lands (38)
