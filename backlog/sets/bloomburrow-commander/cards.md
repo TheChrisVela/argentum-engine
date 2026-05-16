@@ -2,7 +2,7 @@
 
 **Set Size:** 312 cards
 **Release Date:** August 2, 2024
-**Implemented:** 95 / 312
+**Implemented:** 96 / 312
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 37    | 0    |
@@ -197,7 +197,7 @@
 - [ ] Outpost Siege
 - [ ] Overflowing Basin
 - [ ] Path of Ancestry
-- [ ] Path of Discovery
+- [x] Path of Discovery
 - [ ] Path to Exile
 - [ ] Perch Protection
 - [ ] Perplexing Test

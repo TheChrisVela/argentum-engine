@@ -40,6 +40,7 @@ import com.wingedsheep.mtg.sets.definitions.mom.MarchOfTheMachineSet
 import com.wingedsheep.mtg.sets.definitions.one.PhyrexiaAllWillBeOneSet
 import com.wingedsheep.mtg.sets.definitions.ons.OnslaughtSet
 import com.wingedsheep.mtg.sets.definitions.por.PortalSet
+import com.wingedsheep.mtg.sets.definitions.rix.RivalsOfIxalanSet
 import com.wingedsheep.mtg.sets.definitions.roe.RiseOfTheEldraziSet
 import com.wingedsheep.mtg.sets.definitions.scg.ScourgeSet
 import com.wingedsheep.mtg.sets.definitions.tmp.TempestSet
@@ -90,6 +91,7 @@ object MtgSetCatalog {
         MarchOfTheMachineSet,
         MurdersAtKarlovManorSet,
         WildsOfEldrainSet,
+        RivalsOfIxalanSet,
         LostCavernsOfIxalanSet,
         BloomburrowSet,
         BloomburrowCommanderSet,
