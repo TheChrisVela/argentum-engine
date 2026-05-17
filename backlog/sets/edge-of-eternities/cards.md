@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 186 / 261
+**Implemented:** 188 / 261
 ---
 
 - [x] Adagia, Windswept Bastion
@@ -216,7 +216,7 @@
 - [ ] Sunstar Chaplain
 - [x] Sunstar Expansionist
 - [x] Sunstar Lightsmith
-- [ ] Survey Mechan
+- [x] Survey Mechan
 - [x] Susurian Dirgecraft
 - [ ] Susurian Voidborn
 - [ ] Susur Secundi, Void Altar
