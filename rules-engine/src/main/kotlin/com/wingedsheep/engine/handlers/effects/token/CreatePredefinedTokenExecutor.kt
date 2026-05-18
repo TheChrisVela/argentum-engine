@@ -117,6 +117,8 @@ class CreatePredefinedTokenExecutor(
 
             val battlefieldZone = ZoneKey(tokenControllerId, Zone.BATTLEFIELD)
             newState = newState.addToZone(battlefieldZone, tokenId)
+            newState = com.wingedsheep.engine.handlers.effects.PermanentEntryTracker
+                .recordFromCard(newState, tokenControllerId, tokenComponent)
         }
 
         val events = createdTokenIds.map { tokenId ->

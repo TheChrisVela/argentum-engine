@@ -100,6 +100,8 @@ class CreateTokenCopyOfEquippedCreatureExecutor(
         // Add to battlefield
         val battlefieldZone = ZoneKey(controllerId, Zone.BATTLEFIELD)
         newState = newState.addToZone(battlefieldZone, tokenId)
+        newState = com.wingedsheep.engine.handlers.effects.PermanentEntryTracker
+            .recordFromCard(newState, controllerId, tokenCard)
 
         val events = listOf(
             ZoneChangeEvent(

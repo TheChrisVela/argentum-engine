@@ -243,6 +243,8 @@ object TokenCreationReplacementHelper {
 
             val battlefieldZone = ZoneKey(controllerId, Zone.BATTLEFIELD)
             newState = newState.addToZone(battlefieldZone, tokenId)
+            newState = com.wingedsheep.engine.handlers.effects.PermanentEntryTracker
+                .recordFromCard(newState, controllerId, tokenCard)
 
             // Apply the equipped creature's printed enters-with-counters replacement effects
             // (and any global ones from other permanents).

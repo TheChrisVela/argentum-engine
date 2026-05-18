@@ -277,6 +277,8 @@ object ZoneTransitionService {
                 newState = applyBattlefieldEntry(
                     newState, entityId, cardComponent, destControllerId, options, fromZone
                 )
+                // Record entry for per-player ETB-by-type tracking (Mechan Shieldmate and similar).
+                newState = PermanentEntryTracker.recordFromCard(newState, destControllerId, cardComponent)
                 // Handle Saga entering the battlefield (Rule 714.3a)
                 val (sagaState, sagaEvents) = applySagaEntryIfNeeded(newState, entityId)
                 newState = sagaState

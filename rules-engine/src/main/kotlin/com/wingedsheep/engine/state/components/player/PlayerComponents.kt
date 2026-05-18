@@ -501,6 +501,23 @@ data class CardsLeftGraveyardThisTurnComponent(val count: Int = 0) : Component
 data object SacrificedFoodThisTurnComponent : Component
 
 /**
+ * Tracks which card types have entered the battlefield under this player's control this turn.
+ * Holds the base [com.wingedsheep.sdk.core.CardType] names captured at the moment of entry, so
+ * the record is insensitive to later state changes — the entry of an artifact remains recorded
+ * even if the permanent is destroyed, loses its artifact type, or changes controllers later in
+ * the turn.
+ *
+ * Cleared at end of turn by CleanupPhaseManager.
+ *
+ * Used for conditions like Mechan Shieldmate's "as long as an artifact entered the battlefield
+ * under your control this turn".
+ */
+@Serializable
+data class PermanentTypesEnteredBattlefieldThisTurnComponent(
+    val cardTypes: Set<com.wingedsheep.sdk.core.CardType> = emptySet()
+) : Component
+
+/**
  * Marker component indicating that this player has put a counter on a creature this turn.
  * Cleared at end of turn by CleanupPhaseManager.
  *

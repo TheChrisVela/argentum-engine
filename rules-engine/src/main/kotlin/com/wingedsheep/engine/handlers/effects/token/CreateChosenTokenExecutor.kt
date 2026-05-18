@@ -174,6 +174,8 @@ class CreateChosenTokenExecutor(
         var newState = state.withEntity(tokenId, container)
         val battlefieldZone = ZoneKey(context.controllerId, Zone.BATTLEFIELD)
         newState = newState.addToZone(battlefieldZone, tokenId)
+        newState = com.wingedsheep.engine.handlers.effects.PermanentEntryTracker
+            .recordFromCard(newState, context.controllerId, tokenComponent)
 
         val events = listOf(
             ZoneChangeEvent(

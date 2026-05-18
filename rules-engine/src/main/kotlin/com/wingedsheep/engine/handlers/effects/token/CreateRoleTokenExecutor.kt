@@ -103,6 +103,8 @@ class CreateRoleTokenExecutor(
 
         val battlefieldZone = ZoneKey(tokenControllerId, Zone.BATTLEFIELD)
         newState = newState.addToZone(battlefieldZone, tokenId)
+        newState = com.wingedsheep.engine.handlers.effects.PermanentEntryTracker
+            .recordFromCard(newState, tokenControllerId, tokenComponent)
 
         events.add(
             ZoneChangeEvent(

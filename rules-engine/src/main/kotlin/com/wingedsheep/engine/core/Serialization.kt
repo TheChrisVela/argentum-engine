@@ -389,6 +389,7 @@ val engineSerializersModule = SerializersModule {
         subclass(PlayerHexproofComponent::class)
         subclass(PlayerShroudComponent::class)
         subclass(SacrificedFoodThisTurnComponent::class)
+        subclass(PermanentTypesEnteredBattlefieldThisTurnComponent::class)
         subclass(SpellsCantBeCounteredComponent::class)
         subclass(PutCounterOnCreatureThisTurnComponent::class)
         subclass(SkipNextTurnComponent::class)

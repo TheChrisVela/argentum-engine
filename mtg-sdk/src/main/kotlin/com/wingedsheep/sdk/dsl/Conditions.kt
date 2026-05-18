@@ -1,5 +1,6 @@
 package com.wingedsheep.sdk.dsl
 
+import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Subtype
@@ -563,6 +564,26 @@ object Conditions {
      */
     val SacrificedFoodThisTurn: ConditionInterface =
         trackerAtLeast(com.wingedsheep.sdk.scripting.values.TurnTracker.FOOD_SACRIFICED)
+
+    /**
+     * If a permanent of the given card type entered the battlefield under the given player's
+     * control this turn. The permanent need not still be on the battlefield, still be of that
+     * type, or still be under that player's control — only the entry event matters.
+     *
+     * Used for Mechan Shieldmate (EOE): "As long as an artifact entered the battlefield under
+     * your control this turn ..."
+     */
+    fun PermanentTypeEnteredBattlefieldThisTurn(
+        cardType: CardType,
+        player: Player = Player.You
+    ): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.PermanentTypeEnteredBattlefieldThisTurn(cardType, player)
+
+    /**
+     * Shortcut: if an artifact entered the battlefield under your control this turn.
+     */
+    val ArtifactEnteredBattlefieldThisTurn: ConditionInterface =
+        PermanentTypeEnteredBattlefieldThisTurn(CardType.ARTIFACT)
 
     /**
      * If you put a counter on a creature this turn.

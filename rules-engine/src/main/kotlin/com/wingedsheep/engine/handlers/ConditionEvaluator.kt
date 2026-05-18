@@ -71,6 +71,7 @@ import com.wingedsheep.sdk.scripting.conditions.WasKicked
 import com.wingedsheep.sdk.scripting.conditions.BlightWasPaid
 import com.wingedsheep.sdk.scripting.conditions.YouControlSource
 import com.wingedsheep.sdk.scripting.conditions.PlayerAttackedWithCreaturesThisTurn
+import com.wingedsheep.sdk.scripting.conditions.PermanentTypeEnteredBattlefieldThisTurn
 import com.wingedsheep.sdk.scripting.conditions.PlayerCastSpellsThisTurn
 import com.wingedsheep.sdk.scripting.conditions.PlayerHasCitysBlessing
 import com.wingedsheep.sdk.scripting.conditions.CreatureDiedThisTurnCondition
@@ -144,6 +145,8 @@ class ConditionEvaluator {
             is PlayerAttackedWithCreaturesThisTurn -> evaluateAttackedWithCreaturesCtx(state, condition, ctx)
             is PlayerCastSpellsThisTurn -> evaluateCastSpellsThisTurnCtx(state, condition, ctx)
             is PlayerHasCitysBlessing -> evaluateHasCitysBlessingCtx(state, condition, ctx)
+            is PermanentTypeEnteredBattlefieldThisTurn ->
+                evaluatePermanentTypeEnteredBattlefieldThisTurnCtx(state, condition, ctx)
 
             // Global facts (no controller/source needed).
             is VoidCondition ->
@@ -422,6 +425,18 @@ class ConditionEvaluator {
     ): Boolean {
         val playerId = resolvePlayer(state, condition.player, ctx) ?: return false
         return state.getEntity(playerId)?.has<PlayerCitysBlessingComponent>() == true
+    }
+
+    private fun evaluatePermanentTypeEnteredBattlefieldThisTurnCtx(
+        state: GameState,
+        condition: PermanentTypeEnteredBattlefieldThisTurn,
+        ctx: ConditionEvaluationContext
+    ): Boolean {
+        val playerId = resolvePlayer(state, condition.player, ctx) ?: return false
+        val tracker = state.getEntity(playerId)
+            ?.get<com.wingedsheep.engine.state.components.player.PermanentTypesEnteredBattlefieldThisTurnComponent>()
+            ?: return false
+        return condition.cardType in tracker.cardTypes
     }
 
     private fun evaluateYouControlSource(state: GameState, context: EffectContext): Boolean {

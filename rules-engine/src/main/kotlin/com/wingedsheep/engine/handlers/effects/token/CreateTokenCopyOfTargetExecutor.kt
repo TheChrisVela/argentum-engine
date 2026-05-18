@@ -132,6 +132,8 @@ class CreateTokenCopyOfTargetExecutor(
             newState = newState.withEntity(tokenId, container)
             val battlefieldZone = ZoneKey(controllerId, Zone.BATTLEFIELD)
             newState = newState.addToZone(battlefieldZone, tokenId)
+            newState = com.wingedsheep.engine.handlers.effects.PermanentEntryTracker
+                .recordFromCard(newState, controllerId, tokenCard)
 
             for (ability in effect.triggeredAbilities) {
                 val grant = GrantedTriggeredAbility(

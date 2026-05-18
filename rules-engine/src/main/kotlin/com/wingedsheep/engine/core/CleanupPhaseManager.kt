@@ -29,6 +29,7 @@ import com.wingedsheep.engine.state.components.player.LifeGainedAmountThisTurnCo
 import com.wingedsheep.engine.state.components.player.LifeGainedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.LifeLostThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PutCounterOnCreatureThisTurnComponent
+import com.wingedsheep.engine.state.components.player.PermanentTypesEnteredBattlefieldThisTurnComponent
 import com.wingedsheep.engine.state.components.player.SacrificedFoodThisTurnComponent
 import com.wingedsheep.engine.state.components.player.WasDealtCombatDamageThisTurnComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
@@ -363,6 +364,9 @@ class CleanupPhaseManager(
                 }
                 if (result.has<SacrificedFoodThisTurnComponent>()) {
                     result = result.without<SacrificedFoodThisTurnComponent>()
+                }
+                if (result.has<PermanentTypesEnteredBattlefieldThisTurnComponent>()) {
+                    result = result.without<PermanentTypesEnteredBattlefieldThisTurnComponent>()
                 }
                 if (result.has<PutCounterOnCreatureThisTurnComponent>()) {
                     result = result.without<PutCounterOnCreatureThisTurnComponent>()

@@ -1087,6 +1087,14 @@ default to "you" so card authors don't need to pass it explicitly.
 - `IsFirstSpellPaidWithTreasureManaCastThisTurn` — gates a triggered ability to fire only
   on the first spell each turn that mana from a Treasure was spent to cast (Rain of
   Riches). Reads `CastSpellRecord.paidWithTreasureMana` on the per-player spell history.
+- `PermanentTypeEnteredBattlefieldThisTurn(cardType, player = Player.You)` — true if a
+  permanent of `cardType` entered the battlefield under `player`'s control at any point
+  this turn. Pure ETB tracker: the permanent need not still be on the battlefield, still
+  be of that type, or still be under the same controller — only the entry event matters
+  (so Mechan Shieldmate's "as long as an artifact entered ... this turn" stays satisfied
+  even if the artifact is destroyed before combat). Backed by the per-player
+  `PermanentTypesEnteredBattlefieldThisTurnComponent`, cleared by `CleanupPhaseManager` at
+  end of turn. Shortcut: `Conditions.ArtifactEnteredBattlefieldThisTurn`.
 
 ### Composition
 

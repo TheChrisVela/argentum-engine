@@ -1,5 +1,6 @@
 package com.wingedsheep.sdk.scripting.conditions
 
+import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.references.Player
@@ -154,6 +155,30 @@ data object IsFirstSpellPaidWithTreasureManaCastThisTurn : Condition {
     override val description: String =
         "if it's the first spell you've cast this turn that mana from a Treasure was spent to cast"
     override fun applyTextReplacement(replacer: TextReplacer): Condition = this
+}
+
+/**
+ * Condition: "If a permanent of [cardType] entered the battlefield under [player]'s control this turn."
+ *
+ * Pure event tracker — the permanent does not need to still be on the battlefield, still be of
+ * that type, or still be under that player's control when the condition is evaluated. Once the
+ * type was recorded at entry, it remains true for the rest of the turn.
+ *
+ * Used for Mechan Shieldmate (EOE): "As long as an artifact entered the battlefield under your
+ * control this turn, this creature can attack as though it didn't have defender."
+ */
+@SerialName("PermanentTypeEnteredBattlefieldThisTurn")
+@Serializable
+data class PermanentTypeEnteredBattlefieldThisTurn(
+    val cardType: CardType,
+    val player: Player = Player.You
+) : Condition {
+    override val description: String =
+        "if ${anA(cardType.displayName)} entered the battlefield under ${player.possessive} control this turn"
+    override fun applyTextReplacement(replacer: TextReplacer): Condition = this
+
+    private fun anA(word: String): String =
+        if (word.firstOrNull()?.lowercaseChar() in setOf('a', 'e', 'i', 'o', 'u')) "an $word" else "a $word"
 }
 
 // =============================================================================
