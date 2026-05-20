@@ -4,6 +4,7 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.model.EntityId
@@ -122,16 +123,27 @@ object ReplacementEffectUtils {
         sourceControllerId: EntityId
     ): Boolean {
         val projected = state.projectedState
+        // Entities still on the stack (about to enter the battlefield) are not in the
+        // projected state yet, so fall back to base components for those. Battlefield
+        // permanents go through projected state so control-changing effects (Annex,
+        // Blatant Thievery) are honored.
+        val projectedController = projected.getController(targetId)
+        val effectiveController = projectedController
+            ?: state.getEntity(targetId)?.get<ControllerComponent>()?.playerId
         return when (recipient) {
             is RecipientFilter.CreatureYouControl -> {
-                val isCreature = projected.isCreature(targetId)
-                val isControlled = projected.getController(targetId) == sourceControllerId
+                val isCreature = if (projectedController != null) {
+                    projected.isCreature(targetId)
+                } else {
+                    state.getEntity(targetId)?.get<CardComponent>()?.typeLine?.isCreature == true
+                }
+                val isControlled = effectiveController == sourceControllerId
                 isCreature && isControlled
             }
             is RecipientFilter.Any -> true
             is RecipientFilter.Self -> targetId == sourceEntityId
             is RecipientFilter.PermanentYouControl -> {
-                projected.getController(targetId) == sourceControllerId
+                effectiveController == sourceControllerId
             }
             is RecipientFilter.You -> targetId == sourceControllerId
             is RecipientFilter.Matching -> {
