@@ -21,6 +21,10 @@ import kotlinx.serialization.Serializable
  * @property manaCost The mana cost to pay
  * @property sourceId The source of the counter-unless-pays effect
  * @property sourceName Name of the source for event messages
+ * @property onPaid Optional rider executed only on the "they paid" branch (e.g. Divert
+ *   Disaster's "If they do, you create a Lander token"). The rider runs with
+ *   [controllerId] as its controller — i.e. the controller of the counter effect, who
+ *   is "you" in the rider text — not the spell's controller who paid.
  */
 @Serializable
 data class CounterUnlessPaysContinuation(
@@ -31,7 +35,8 @@ data class CounterUnlessPaysContinuation(
     val sourceId: EntityId?,
     val sourceName: String?,
     val exileOnCounter: Boolean = false,
-    val controllerId: EntityId? = null
+    val controllerId: EntityId? = null,
+    val onPaid: Effect? = null
 ) : ContinuationFrame
 
 /**
@@ -143,7 +148,11 @@ data class CounterUnlessPaysManaSelectionContinuation(
     val availableSources: List<ManaSourceOption>,
     val autoPaySuggestion: List<EntityId>,
     val exileOnCounter: Boolean = false,
-    val controllerId: EntityId? = null
+    val controllerId: EntityId? = null,
+    /** See [CounterUnlessPaysContinuation.onPaid]. */
+    val onPaid: Effect? = null,
+    /** See [CounterUnlessPaysContinuation.sourceId]. Carried for the rider's [EffectContext]. */
+    val sourceId: EntityId? = null
 ) : ContinuationFrame
 
 /**

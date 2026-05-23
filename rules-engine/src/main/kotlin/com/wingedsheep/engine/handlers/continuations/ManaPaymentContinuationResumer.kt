@@ -69,7 +69,14 @@ class ManaPaymentContinuationResumer(
                         )
                     )
                 }
-                return checkForMore(currentState, emptyList())
+                return runOnPaidThenCheckForMore(
+                    currentState,
+                    emptyList(),
+                    continuation.onPaid,
+                    continuation.controllerId ?: continuation.payingPlayerId,
+                    continuation.sourceId,
+                    checkForMore
+                )
             }
 
             // Need to tap sources — show mana source selection UI
@@ -112,7 +119,9 @@ class ManaPaymentContinuationResumer(
                 availableSources = sourceOptions,
                 autoPaySuggestion = autoPaySuggestion,
                 exileOnCounter = continuation.exileOnCounter,
-                controllerId = continuation.controllerId
+                controllerId = continuation.controllerId,
+                onPaid = continuation.onPaid,
+                sourceId = continuation.sourceId
             )
 
             val stateWithDecision = state.withPendingDecision(decision)
@@ -367,6 +376,15 @@ class ManaPaymentContinuationResumer(
                 events.addAll(manual.events)
 
                 if (subCostSources.isNotEmpty()) {
+                    if (continuation.onPaid != null) {
+                        // No card today routes an onPaid rider through a tap-permanents
+                        // sub-cost source. Bail loudly so the next card that hits this
+                        // path is noticed in CI rather than silently dropping the rider.
+                        return ExecutionResult.error(
+                            state,
+                            "onPaid rider through tap-permanents sub-cost is not implemented"
+                        )
+                    }
                     // Persist the pool from the first-phase taps so the sub-cost
                     // continuation reads it off the player's mana pool component on resume.
                     currentState = currentState.updateEntity(playerId) { container ->
@@ -416,8 +434,55 @@ class ManaPaymentContinuationResumer(
             )
         }
 
-        // Spell resolves normally — don't counter it
-        return checkForMore(currentState, events)
+        // Spell resolves normally — don't counter it.
+        return runOnPaidThenCheckForMore(
+            currentState,
+            events,
+            continuation.onPaid,
+            continuation.controllerId ?: continuation.payingPlayerId,
+            continuation.sourceId,
+            checkForMore
+        )
+    }
+
+    /**
+     * Run the optional "If they do, …" rider that fires only when the spell's controller
+     * paid the counter-unless cost, then continue the pipeline.
+     *
+     * The rider executes with [riderController] as `controllerId` (the controller of the
+     * counter effect, i.e. "you" in "you create a Lander token"), with the spell's
+     * opponent as `opponentId`. If the rider pauses for a sub-decision we surface that
+     * pause directly; on error we also propagate it. Otherwise events from the prior
+     * payment phase are concatenated with the rider's events.
+     */
+    private fun runOnPaidThenCheckForMore(
+        state: GameState,
+        priorEvents: List<GameEvent>,
+        onPaid: com.wingedsheep.sdk.scripting.effects.Effect?,
+        riderController: EntityId,
+        sourceId: EntityId?,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (onPaid == null) return checkForMore(state, priorEvents)
+
+        val opponentId = state.turnOrder.firstOrNull { it != riderController }
+        val riderContext = com.wingedsheep.engine.handlers.EffectContext(
+            sourceId = sourceId,
+            controllerId = riderController,
+            opponentId = opponentId
+        )
+        val riderResult = services.effectExecutorRegistry
+            .execute(state, onPaid, riderContext)
+            .toExecutionResult()
+        if (riderResult.error != null) return riderResult
+        if (riderResult.isPaused) {
+            return ExecutionResult.paused(
+                riderResult.state,
+                riderResult.pendingDecision!!,
+                priorEvents + riderResult.events
+            )
+        }
+        return checkForMore(riderResult.state, priorEvents + riderResult.events)
     }
 
     /**
