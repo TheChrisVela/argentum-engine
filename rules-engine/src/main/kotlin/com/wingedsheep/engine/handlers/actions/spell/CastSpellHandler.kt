@@ -2204,20 +2204,22 @@ class CastSpellHandler(
                     triggerResult.state.withPriority(action.playerId),
                     triggerResult.pendingDecision!!,
                     allEvents + triggerResult.events
-                )
+                ).copy(triggersAlreadyProcessed = true)
             }
 
             allEvents = allEvents + triggerResult.events
             return ExecutionResult.success(
                 triggerResult.newState.withPriority(action.playerId),
                 allEvents
-            )
+            ).copy(triggersAlreadyProcessed = true)
         }
 
+        // detectTriggers ran above (no matches) — flag the result so resumers don't
+        // re-scan the cast events.
         return ExecutionResult.success(
             currentCastState.withPriority(action.playerId),
             allEvents
-        )
+        ).copy(triggersAlreadyProcessed = true)
     }
 
     /**

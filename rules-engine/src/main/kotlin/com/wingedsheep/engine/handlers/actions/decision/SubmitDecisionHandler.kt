@@ -104,8 +104,17 @@ class SubmitDecisionHandler(
                     return ExecutionResult.success(sbaResult.newState, combinedEvents)
                 }
 
-                // Process triggers
-                val triggers = triggerDetector.detectTriggers(sbaResult.newState, combinedEvents)
+                // Process triggers. When the resumed chain re-entered an action handler
+                // that already ran detection on its own emitted events (e.g.,
+                // `CastSpellHandler` re-entered via `finalizeModalCast` after a cast-time
+                // mode picker), skip those events here — re-detecting would double-queue
+                // battlefield triggers like Riku of Many Paths.
+                val eventsToDetect = if (result.triggersAlreadyProcessed) {
+                    listOf(submittedEvent) + sbaResult.events
+                } else {
+                    combinedEvents
+                }
+                val triggers = triggerDetector.detectTriggers(sbaResult.newState, eventsToDetect)
                 if (triggers.isNotEmpty()) {
                     val triggerResult = triggerProcessor.processTriggers(sbaResult.newState, triggers)
 
@@ -138,7 +147,7 @@ class SubmitDecisionHandler(
             // Detect them here and queue as a PendingTriggersContinuation BELOW the
             // topmost continuation so they fire after the in-flight one resolves.
             // Mirrors PassPriorityHandler.resolveTopOfStack's mid-resolution handling.
-            if (result.isPaused) {
+            if (result.isPaused && !result.triggersAlreadyProcessed) {
                 val deferredTriggers = triggerDetector.detectTriggers(result.state, result.events)
                 if (deferredTriggers.isNotEmpty()) {
                     val pending = PendingTriggersContinuation(

@@ -154,6 +154,99 @@ class RikuOfManyPathsScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("Brigid's Command cast via the cast-time picker triggers Riku only once total") {
+                // Reproduces the real-game flow: empty chosenModes at cast, the cast-time
+                // picker drives mode + per-mode-target prompts, and the spell only lands
+                // on the stack once everything is selected. SpellCastEvent fires once →
+                // Riku triggers once → presents exactly one "(1 of 2)" decision (X = 2).
+                val game = scenario()
+                    .withPlayers("Caster", "Opponent")
+                    .withCardOnBattlefield(1, "Riku of Many Paths")
+                    .withCardInHand(1, "Brigid's Command")
+                    .withLandsOnBattlefield(1, "Plains", 1)
+                    .withLandsOnBattlefield(1, "Forest", 1)
+                    .withLandsOnBattlefield(1, "Island", 1)
+                    .withCardInLibrary(1, "Forest")
+                    .withCardOnBattlefield(2, "Grizzly Bears")
+                    .withCardInLibrary(2, "Forest")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val rikuId = game.findPermanent("Riku of Many Paths")!!
+
+                // Cast Brigid's Command with no pre-chosen modes — engages the cast-time
+                // mode picker just like the UI does.
+                game.castSpell(1, "Brigid's Command")
+
+                // First cast-time decision: pick Brigid's mode 1 ("Target player creates...").
+                // Mode 0 (Kithkin copy) is filtered (Alice has no Kithkin to copy), so the
+                // picker offers [mode 1, mode 2, mode 3] — mode 1 is at offered index 0.
+                val brigidPick1 = game.getPendingDecision()
+                brigidPick1.shouldNotBeNull()
+                brigidPick1.shouldBeInstanceOf<ChooseOptionDecision>()
+                withClue("Brigid's first pick must be at cast time (1 of 2 for Brigid's Command)") {
+                    brigidPick1.prompt shouldContain "Brigid's Command"
+                    brigidPick1.prompt shouldContain "1 of 2"
+                }
+                game.pickOption(0)
+
+                // Second cast-time decision: pick Brigid's mode 2 ("+3/+3 creature you control").
+                // After removing mode 1, available = [mode 2, mode 3]; mode 2 is at offered index 0.
+                val brigidPick2 = game.getPendingDecision()
+                brigidPick2.shouldNotBeNull()
+                brigidPick2.shouldBeInstanceOf<ChooseOptionDecision>()
+                brigidPick2.prompt shouldContain "Brigid's Command"
+                game.pickOption(0)
+
+                // Per-mode targets: Brigid mode 1 wants a player; mode 2 wants a creature
+                // you control. The cast-time picker prompts for each in pick order.
+                game.selectTargets(listOf(game.player2Id))
+                game.selectTargets(listOf(rikuId))
+
+                // After the final target pick, the spell has landed on the stack and
+                // SpellCastEvent has fired. Inspect the stack BEFORE resolving anything:
+                // exactly one Riku trigger object should be there.
+                val rikuTriggersOnStack = game.state.stack.count { stackId ->
+                    val container = game.state.getEntity(stackId) ?: return@count false
+                    val triggered = container.get<com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent>()
+                    triggered?.sourceId == rikuId
+                }
+                withClue("Exactly one Riku trigger should be on the stack right after the cast finishes — not duplicated by detect+process running twice") {
+                    rikuTriggersOnStack shouldBe 1
+                }
+
+                game.resolveStack()
+
+                // Inspect what Riku presents.
+                val rikuPick = game.getPendingDecision()
+                rikuPick.shouldNotBeNull()
+                rikuPick.shouldBeInstanceOf<ChooseOptionDecision>()
+                withClue("After full cast-time flow Riku must present ONE choose-up-to-X prompt — labelled 1 of 2 (X = 2)") {
+                    rikuPick.prompt shouldContain "Riku of Many Paths"
+                    rikuPick.prompt shouldContain "1 of 2"
+                }
+
+                // Resolve Riku's two mode picks: counter+trample, then Bird.
+                game.pickOption(1)
+                val rikuPick2 = game.getPendingDecision()
+                rikuPick2.shouldNotBeNull()
+                rikuPick2.shouldBeInstanceOf<ChooseOptionDecision>()
+                rikuPick2.prompt shouldContain "2 of 2"
+                game.pickOption(1)
+                game.resolveStack()
+
+                withClue("After Riku and Brigid resolve, no further decisions or stack entries") {
+                    game.getPendingDecision().shouldBeNull()
+                    game.state.stack.isEmpty() shouldBe true
+                }
+
+                // Sanity: each Riku mode applied exactly once.
+                val counters = game.state.getEntity(rikuId)?.get<CountersComponent>()
+                counters?.getCount(CounterType.PLUS_ONE_PLUS_ONE) shouldBe 1
+                countBirdTokensControlledBy(game, game.player1Id) shouldBe 1
+            }
+
             test("choose-two modal cast → Riku triggers exactly once (not once per mode)") {
                 // Regression: the trigger fires per SpellCastEvent, not per chosen mode.
                 // A 2-mode Brigid's Command cast must produce exactly one AbilityTriggeredEvent

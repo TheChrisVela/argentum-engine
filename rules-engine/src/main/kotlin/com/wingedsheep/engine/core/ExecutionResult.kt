@@ -18,7 +18,16 @@ data class ExecutionResult(
     val state: GameState,
     val events: List<GameEvent> = emptyList(),
     val error: String? = null,
-    val pendingDecision: PendingDecision? = null
+    val pendingDecision: PendingDecision? = null,
+    /**
+     * `true` when the producing action handler already ran [TriggerDetector] over
+     * [events] and put any resulting triggers on the stack itself. Callers resuming
+     * a paused action (notably `SubmitDecisionHandler`) must skip detection on
+     * [events] when this is set; otherwise battlefield triggers like Riku of Many
+     * Paths would be duplicated on the stack — once by the handler, once by the
+     * resumer running on the same `SpellCastEvent`.
+     */
+    val triggersAlreadyProcessed: Boolean = false
 ) {
     val isSuccess: Boolean get() = error == null && pendingDecision == null
     val isPaused: Boolean get() = pendingDecision != null
