@@ -274,7 +274,12 @@ data class WardTapPermanentsSubCostContinuation(
     /** Source IDs still to process. Head is the one the current prompt is for. */
     val pendingSubCostSources: List<EntityId>,
     /** Original mana-source menu, kept for source-name lookups when emitting events. */
-    val availableSources: List<ManaSourceOption>
+    val availableSources: List<ManaSourceOption>,
+    /** See [CounterUnlessPaysContinuation.onPaid]. Carried so the rider fires after the
+     *  spell's controller finishes paying through a tap-permanents sub-cost source. */
+    val onPaid: Effect? = null,
+    /** See [CounterUnlessPaysContinuation.sourceId]. Carried for the rider's [EffectContext]. */
+    val sourceId: EntityId? = null
 ) : ContinuationFrame
 
 /**

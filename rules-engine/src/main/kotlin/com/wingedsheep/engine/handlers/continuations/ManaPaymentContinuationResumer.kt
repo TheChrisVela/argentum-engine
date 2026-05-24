@@ -376,15 +376,6 @@ class ManaPaymentContinuationResumer(
                 events.addAll(manual.events)
 
                 if (subCostSources.isNotEmpty()) {
-                    if (continuation.onPaid != null) {
-                        // No card today routes an onPaid rider through a tap-permanents
-                        // sub-cost source. Bail loudly so the next card that hits this
-                        // path is noticed in CI rather than silently dropping the rider.
-                        return ExecutionResult.error(
-                            state,
-                            "onPaid rider through tap-permanents sub-cost is not implemented"
-                        )
-                    }
                     // Persist the pool from the first-phase taps so the sub-cost
                     // continuation reads it off the player's mana pool component on resume.
                     currentState = currentState.updateEntity(playerId) { container ->
@@ -404,7 +395,9 @@ class ManaPaymentContinuationResumer(
                         exileOnCounter = continuation.exileOnCounter,
                         controllerId = continuation.controllerId,
                         pendingSubCostSources = subCostSources,
-                        availableSources = continuation.availableSources
+                        availableSources = continuation.availableSources,
+                        onPaid = continuation.onPaid,
+                        sourceId = continuation.sourceId
                     )
                 }
             }
@@ -1131,7 +1124,9 @@ class ManaPaymentContinuationResumer(
         exileOnCounter: Boolean,
         controllerId: EntityId?,
         pendingSubCostSources: List<EntityId>,
-        availableSources: List<ManaSourceOption>
+        availableSources: List<ManaSourceOption>,
+        onPaid: com.wingedsheep.sdk.scripting.effects.Effect? = null,
+        sourceId: EntityId? = null
     ): ExecutionResult {
         val headSourceId = pendingSubCostSources.first()
         val sourceName = availableSources.firstOrNull { it.entityId == headSourceId }?.name
@@ -1180,7 +1175,9 @@ class ManaPaymentContinuationResumer(
             exileOnCounter = exileOnCounter,
             controllerId = controllerId,
             pendingSubCostSources = pendingSubCostSources,
-            availableSources = availableSources
+            availableSources = availableSources,
+            onPaid = onPaid,
+            sourceId = sourceId
         )
 
         val stateWithDecision = state.withPendingDecision(decision)
@@ -1295,7 +1292,9 @@ class ManaPaymentContinuationResumer(
                 exileOnCounter = continuation.exileOnCounter,
                 controllerId = continuation.controllerId,
                 pendingSubCostSources = remaining,
-                availableSources = continuation.availableSources
+                availableSources = continuation.availableSources,
+                onPaid = continuation.onPaid,
+                sourceId = continuation.sourceId
             )
         }
 
@@ -1322,6 +1321,15 @@ class ManaPaymentContinuationResumer(
                 )
             )
         }
-        return checkForMore(currentState, events)
+        // Payment fully resolved through the sub-cost source — fire the "If they do, …"
+        // rider (no-op when null), with the counter's controller as "you".
+        return runOnPaidThenCheckForMore(
+            currentState,
+            events,
+            continuation.onPaid,
+            continuation.controllerId ?: continuation.payingPlayerId,
+            continuation.sourceId,
+            checkForMore
+        )
     }
 }

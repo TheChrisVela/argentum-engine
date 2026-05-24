@@ -1,11 +1,14 @@
 package com.wingedsheep.gameserver.scenarios
 
+import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.core.YesNoDecision
+import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.gameserver.ScenarioTestBase
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -113,6 +116,63 @@ class DivertDisasterScenarioTest : ScenarioTestBase() {
                     game.isOnBattlefield("Lander") shouldBe false
                 }
 
+                game.isInGraveyard(1, "Divert Disaster") shouldBe true
+            }
+
+            test("opponent pays via Springleaf Drum's tap-permanents sub-cost, rider still fires") {
+                // Springleaf Drum ({T}, Tap an untapped creature you control: Add one mana of
+                // any color) is a mana source with a tap-permanents sub-cost. Paying the {2}
+                // through it routes the rider through WardTapPermanentsSubCostContinuation —
+                // the path that previously bailed. The Lander must still be created for the
+                // Divert Disaster caster once payment completes.
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardInHand(1, "Divert Disaster")
+                    .withLandsOnBattlefield(1, "Island", 2)
+                    .withCardInHand(2, "Shock")
+                    .withLandsOnBattlefield(2, "Mountain", 2) // one for Shock's {R}, one for {1} of {2}
+                    .withCardOnBattlefield(2, "Springleaf Drum")
+                    .withCardOnBattlefield(2, "Grizzly Bears") // tapped to satisfy the Drum's sub-cost
+                    .withCardInLibrary(1, "Island")
+                    .withCardInLibrary(2, "Mountain")
+                    .withActivePlayer(2)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val drumId = game.findPermanent("Springleaf Drum").shouldNotBeNull()
+                val bearsId = game.findPermanent("Grizzly Bears").shouldNotBeNull()
+
+                game.castSpellTargetingPlayer(2, "Shock", targetPlayerNumber = 1)
+                game.passPriority()
+                game.castSpellTargetingStackSpell(1, "Divert Disaster", "Shock")
+                game.resolveStack()
+
+                game.getPendingDecision().shouldBeInstanceOf<YesNoDecision>()
+                game.answerYesNo(true)
+
+                // Pay {2} by manually picking the Drum plus one land (auto-pay never selects
+                // sub-cost sources). The Drum carries requiresTappingAnotherPermanent.
+                val manaDecision = game.getPendingDecision().shouldBeInstanceOf<SelectManaSourcesDecision>()
+                val drumSource = manaDecision.availableSources.first { it.entityId == drumId }
+                drumSource.requiresTappingAnotherPermanent shouldBe true
+                val landSource = manaDecision.availableSources.first { !it.requiresTappingAnotherPermanent }
+                game.submitManaSourcesDecision(listOf(landSource.entityId, drumSource.entityId), autoPay = false)
+
+                // The Drum's sub-cost prompts for an untapped creature to tap.
+                val tapPrompt = game.getPendingDecision().shouldBeInstanceOf<SelectCardsDecision>()
+                tapPrompt.options shouldContain bearsId
+                game.selectCards(listOf(bearsId))
+
+                // Shock resolves: Player 1 takes 2 damage.
+                game.resolveStack()
+                game.getLifeTotal(1) shouldBe 18
+
+                // The rider fired despite the payment running through the sub-cost path, and
+                // the Lander is controlled by Player 1 (the counter's caster — "you").
+                val landerId = game.findPermanent("Lander").shouldNotBeNull()
+                game.state.getEntity(landerId)?.get<ControllerComponent>()?.playerId shouldBe game.player1Id
+
+                // Drum and the tapped creature are both tapped; Divert Disaster resolved.
                 game.isInGraveyard(1, "Divert Disaster") shouldBe true
             }
         }
