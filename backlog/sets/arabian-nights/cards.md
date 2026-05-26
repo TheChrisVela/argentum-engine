@@ -72,7 +72,7 @@
 - [ ] Singing Tree
 - [x] Wyluli Wolf
 - [ ] Aladdin's Lamp
-- [ ] Aladdin's Ring
+- [x] Aladdin's Ring
 - [ ] Bottle of Suleiman
 - [ ] Brass Man
 - [ ] City in a Bottle
