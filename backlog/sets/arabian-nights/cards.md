@@ -68,7 +68,7 @@
 - [ ] Ifh-Bíff Efreet
 - [ ] Metamorphosis
 - [ ] Nafs Asp
-- [ ] Sandstorm
+- [x] Sandstorm
 - [ ] Singing Tree
 - [x] Wyluli Wolf
 - [ ] Aladdin's Lamp
