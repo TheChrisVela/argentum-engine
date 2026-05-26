@@ -256,6 +256,10 @@ object DynamicAmounts {
     fun sourceToughness(): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.Toughness)
 
+    /** Power of the creature the source Aura/Equipment is attached to. */
+    fun enchantedCreaturePower(): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.EnchantedCreature, EntityNumericProperty.Power)
+
     fun targetPower(index: Int = 0): DynamicAmount =
         DynamicAmount.EntityProperty(EntityReference.Target(index), EntityNumericProperty.Power)
 

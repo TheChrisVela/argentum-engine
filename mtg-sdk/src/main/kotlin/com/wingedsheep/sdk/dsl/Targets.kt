@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.targets.AnyTarget
+import com.wingedsheep.sdk.scripting.targets.TargetOther
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import com.wingedsheep.sdk.scripting.targets.TargetCreatureOrPlaneswalker
 import com.wingedsheep.sdk.scripting.targets.TargetObject
@@ -178,6 +179,13 @@ object Targets {
      * Any target (creature, player, or planeswalker).
      */
     val Any: TargetRequirement = AnyTarget()
+
+    /**
+     * Any target other than the creature the source is attached to — for Aura/Equipment
+     * abilities worded "enchanted/equipped creature deals damage … to any other target".
+     */
+    val AnyOtherThanEnchantedCreature: TargetRequirement =
+        TargetOther(AnyTarget(), excludeAttachedCreature = true)
 
     /**
      * Target creature or player.

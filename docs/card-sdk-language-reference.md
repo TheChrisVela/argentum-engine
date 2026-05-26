@@ -469,6 +469,10 @@ Composed pipelines (`GatherCards → SelectFromCollection → MoveCollection` sh
 ### Cast-time (`Targets.*` / `TargetRequirement`)
 
 - `Targets.Any` — any creature, player, or planeswalker.
+- `Targets.AnyOtherThanEnchantedCreature` — any target except the creature the source Aura/Equipment
+  is attached to. Desugars to `TargetOther(AnyTarget(), excludeAttachedCreature = true)`; for Aura/Equipment
+  abilities worded "enchanted/equipped creature deals damage … to **any other target**" (e.g. Pain for All),
+  where the dealer is the attached creature, not the ability's source permanent.
 - `Targets.Creature` — any creature.
 - `Targets.Player` — any player.
 - `Targets.Planeswalker` — any planeswalker.
@@ -1197,6 +1201,20 @@ For triggered abilities whose effect reads a property of the entity that caused 
 - `DynamicAmounts.triggeringManaValue()` — mana value of the triggering entity.
 
 All three desugar to `EntityProperty(EntityReference.Triggering, …)`.
+
+### Attached-creature shortcut (`DynamicAmounts.*` facade)
+
+For Aura/Equipment abilities that read a property of the creature the source is attached to (rather
+than the source permanent itself — for an Aura, `EntityReference.Source` is the Aura, not the creature):
+
+- `DynamicAmounts.enchantedCreaturePower()` — power of the attached creature (e.g. Pain for All:
+  "enchanted creature deals damage equal to its power"). Desugars to
+  `EntityProperty(EntityReference.EnchantedCreature, EntityNumericProperty.Power)`. The
+  `EnchantedCreature` reference resolves through the source's `AttachedToComponent` (state-aware), so it
+  needs an effect context with a `sourceId`; it returns 0 in predicate/filter-only contexts that don't
+  thread state. When read in a **triggered ability** and the attached creature has already left the
+  battlefield by resolution (e.g. removed in response to the aura's ETB trigger), it falls back to the
+  creature's last-known power — captured when the trigger fired — per CR 608.2g, rather than 0.
 
 ### Context-plumbed
 

@@ -311,12 +311,18 @@ data class TargetObject(
  *
  * If [excludeSourceId] is set (or sourceId is provided at validation time), that id
  * is also excluded — useful for "another target spell" semantics.
+ *
+ * If [excludeAttachedCreature] is set, the creature the source is attached to (its
+ * Aura/Equipment target) is excluded instead of the source itself — used for "enchanted
+ * creature deals damage … to any other target" wording, where the dealer is the attached
+ * creature rather than the ability's source permanent.
  */
 @SerialName("TargetOther")
 @Serializable
 data class TargetOther(
     val baseRequirement: TargetRequirement,
     val excludeSourceId: EntityId? = null,
+    val excludeAttachedCreature: Boolean = false,
     override val id: String? = null
 ) : TargetRequirement {
     override val description: String = baseRequirement.description

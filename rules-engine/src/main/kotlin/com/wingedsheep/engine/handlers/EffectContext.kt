@@ -97,6 +97,14 @@ data class EffectContext(
     /** Toughness of the triggering entity the moment it left the battlefield (dies/leaves triggers) */
     val triggerLastKnownToughness: Int? = null,
     /**
+     * Power of the creature an Aura/Equipment was attached to, captured when its triggered
+     * ability fired. Read by [EntityReference.EnchantedCreature] power reads as last-known
+     * information (CR 608.2g) when the attached creature — and the aura — have left the
+     * battlefield before the ability resolves (e.g. the creature is removed in response to
+     * the aura's enters-the-battlefield trigger). Null for non-attached sources.
+     */
+    val enchantedCreatureLastKnownPower: Int? = null,
+    /**
      * Last-known counter map (counter-type-string → count) of the trigger's source the
      * moment it left the battlefield. Read by `MoveAllLastKnownCountersEffect` when a
      * dies/leaves trigger needs to put every counter — not just +1/+1 — onto another

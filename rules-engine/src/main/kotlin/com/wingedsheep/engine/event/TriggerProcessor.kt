@@ -457,7 +457,8 @@ class TriggerProcessor(
                 trigger.triggerContext.lastKnownDamageDealtByPlayers,
             lastKnownPower = trigger.triggerContext.lastKnownPower,
             lastKnownToughness = trigger.triggerContext.lastKnownToughness,
-            triggerModesChosenCount = trigger.triggerContext.modesChosenCount
+            triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
+            enchantedCreatureLastKnownPower = trigger.triggerContext.enchantedCreatureLastKnownPower
         )
 
         // Push the continuation onto the stack
@@ -504,7 +505,8 @@ class TriggerProcessor(
             targetingSourceEntityId = trigger.triggerContext.targetingSourceEntityId,
             lastKnownPower = trigger.triggerContext.lastKnownPower,
             lastKnownToughness = trigger.triggerContext.lastKnownToughness,
-            triggerModesChosenCount = trigger.triggerContext.modesChosenCount
+            triggerModesChosenCount = trigger.triggerContext.modesChosenCount,
+            enchantedCreatureLastKnownPower = trigger.triggerContext.enchantedCreatureLastKnownPower
         )
 
         return stackResolver.putTriggeredAbility(

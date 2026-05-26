@@ -90,6 +90,9 @@ data class TriggeredAbilityOnStackComponent(
     val lastKnownToughness: Int? = null, // Toughness at the moment the triggering entity left the battlefield (dies/leaves)
     /** Number of mode picks recorded by the spell-cast that fired this trigger (Riku of Many Paths). */
     val triggerModesChosenCount: Int? = null,
+    /** Power of the aura/equipment's attached creature, captured at trigger time; LKI for
+     *  "enchanted creature ... its power" reads when the creature has left (CR 608.2g). */
+    val enchantedCreatureLastKnownPower: Int? = null,
     // Modal fields — populated when this triggered ability is a copy of a modal spell (700.2g).
     // Copies inherit the original's chosen modes; targets either inherit too (StormCopy default)
     // or are re-chosen by the copy controller while modes stay fixed.

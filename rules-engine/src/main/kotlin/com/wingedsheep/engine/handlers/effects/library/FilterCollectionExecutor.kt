@@ -143,5 +143,6 @@ class FilterCollectionExecutor : EffectExecutor<FilterCollectionEffect> {
             is EntityReference.IterationEntity -> context.pipeline.iterationTarget
             is EntityReference.FromCostStorage ->
                 context.pipeline.storedCollections[ref.collectionName]?.getOrNull(ref.index)
+            is EntityReference.EnchantedCreature -> null // Attachment lookup needs state, not threaded here
         }
 }

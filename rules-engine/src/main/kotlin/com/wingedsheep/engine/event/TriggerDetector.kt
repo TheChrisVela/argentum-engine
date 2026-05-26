@@ -829,6 +829,16 @@ class TriggerDetector(
                             controllerId
                         }
 
+                        // Lock in the attached creature's power for Aura/Equipment abilities that
+                        // read "enchanted/equipped creature ... its power" (e.g. Pain for All). The
+                        // creature — and the aura — may leave before the ability resolves (removed in
+                        // response to the aura's ETB trigger), in which case the resolver falls back to
+                        // this last-known value (CR 608.2g).
+                        val enchantedPower = state.getEntity(entityId)
+                            ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
+                            ?.targetId
+                            ?.let { projected.getPower(it) }
+
                         triggers.add(
                             PendingTrigger(
                                 ability = ability,
@@ -836,6 +846,7 @@ class TriggerDetector(
                                 sourceName = cardComponent.name,
                                 controllerId = effectiveControllerId,
                                 triggerContext = TriggerContext.fromEvent(event)
+                                    .copy(enchantedCreatureLastKnownPower = enchantedPower)
                             )
                         )
                     }

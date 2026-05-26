@@ -61,7 +61,15 @@ data class TriggerContext(
      * `ContextPropertyKey.MODES_CHOSEN_ON_TRIGGERING_SPELL` so abilities like Riku of
      * Many Paths can scale by "the number of times you chose a mode for that spell."
      */
-    val modesChosenCount: Int? = null
+    val modesChosenCount: Int? = null,
+    /**
+     * Power of the creature the trigger's source (an Aura/Equipment) was attached to, captured
+     * when the trigger fired. Carried as last-known information (CR 608.2g) so that an
+     * "enchanted creature deals damage equal to its power" ability still uses the right power
+     * if the creature — and the aura — leave before the ability resolves. Null for non-attached
+     * sources. Populated by [TriggerDetector], not [fromEvent] (which has no game state).
+     */
+    val enchantedCreatureLastKnownPower: Int? = null
 ) {
     companion object {
         fun fromEvent(event: com.wingedsheep.engine.core.GameEvent): TriggerContext {

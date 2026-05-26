@@ -486,6 +486,7 @@ class PredicateEvaluator {
             is EntityReference.AffectedEntity -> null // Only available during projection
             is EntityReference.IterationEntity -> null // Only available during ForEachInGroup iteration
             is EntityReference.FromCostStorage -> null // Cost-pipeline state is not threaded into PredicateContext
+            is EntityReference.EnchantedCreature -> null // Attachment lookup needs state, not threaded here
         }
     }
 

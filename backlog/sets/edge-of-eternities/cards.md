@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 208 / 261
+**Implemented:** 212 / 261
 ---
 
 - [x] Adagia, Windswept Bastion
@@ -134,7 +134,7 @@
 - [x] Mechan Assembler
 - [x] Mechan Navigator
 - [x] Mechanozoa
-- [ ] Mechan Shieldmate
+- [x] Mechan Shieldmate
 - [x] Melded Moxite
 - [ ] Meltstrider Eulogist
 - [x] Meltstrider's Gear
@@ -158,7 +158,7 @@
 - [ ] Orbital Plunge
 - [x] Oreplate Pangolin
 - [x] Ouroboroid
-- [ ] Pain for All
+- [x] Pain for All
 - [x] Perigee Beckoner
 - [x] Pinnacle Emissary
 - [x] Pinnacle Kill-Ship
@@ -196,7 +196,7 @@
 - [x] Shattered Wings
 - [x] Singularity Rupture
 - [x] Sinister Cryologist
-- [ ] Skystinger
+- [x] Skystinger
 - [x] Slagdrill Scrapper
 - [x] Sledge-Class Seedship
 - [x] Sothera, the Supervoid

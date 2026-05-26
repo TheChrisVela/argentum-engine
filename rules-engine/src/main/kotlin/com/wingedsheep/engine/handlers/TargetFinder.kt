@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers
 
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.CantBeTargetedByOpponentAbilitiesComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerHexproofComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerShroudComponent
@@ -74,8 +75,14 @@ class TargetFinder(
             is TargetSpellOrPermanent -> findSpellOrPermanentTargets(state, requirement, controllerId, sourceId, targetingSourceType)
             is TargetOther -> {
                 // For TargetOther, find targets for the base requirement but exclude the source
+                // (or, for "enchanted creature deals damage to any other target", the attached creature).
                 val baseTargets = findLegalTargets(state, requirement.baseRequirement, controllerId, sourceId, ignoreTargetingRestrictions, targetingSourceType, triggeringEntityId)
-                val excludeId = requirement.excludeSourceId ?: sourceId
+                val excludeId = requirement.excludeSourceId
+                    ?: if (requirement.excludeAttachedCreature) {
+                        sourceId?.let { state.getEntity(it)?.get<AttachedToComponent>()?.targetId }
+                    } else {
+                        sourceId
+                    }
                 if (excludeId != null) baseTargets.filter { it != excludeId } else baseTargets
             }
         }

@@ -42,6 +42,18 @@ sealed interface EntityReference {
         override val description: String = "the triggering creature"
     }
 
+    /**
+     * The creature an Aura/Equipment ability's source is attached to. Resolves via the
+     * source permanent's attachment relationship — the same creature
+     * [com.wingedsheep.sdk.scripting.targets.EffectTarget.EnchantedCreature] points at.
+     * Used for "enchanted creature deals damage equal to its power" style auras.
+     */
+    @SerialName("EnchantedCreature")
+    @Serializable
+    data object EnchantedCreature : EntityReference {
+        override val description: String = "enchanted creature"
+    }
+
     /** A permanent tapped as cost, by index. */
     @SerialName("TappedAsCost")
     @Serializable

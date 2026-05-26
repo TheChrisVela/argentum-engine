@@ -6,6 +6,7 @@ import com.wingedsheep.engine.legalactions.TargetInfo
 import com.wingedsheep.engine.mechanics.targeting.HexproofSuppression
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerHexproofComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerShroudComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -72,7 +73,7 @@ class TargetEnumerationUtils(
             is TargetObject -> findValidObjectTargets(state, playerId, requirement.filter, sourceId)
             is TargetOther -> {
                 val baseTargets = findValidTargets(state, playerId, requirement.baseRequirement, sourceId)
-                val excludeId = requirement.excludeSourceId ?: sourceId
+                val excludeId = resolveOtherExclusion(state, requirement, sourceId)
                 if (excludeId != null) baseTargets.filter { it != excludeId } else baseTargets
             }
             is TargetSpellOrPermanent -> {
@@ -98,6 +99,22 @@ class TargetEnumerationUtils(
             }
         }
     }
+
+    /**
+     * Which entity a [TargetOther] requirement excludes: an explicit [TargetOther.excludeSourceId],
+     * else the source's attached creature when [TargetOther.excludeAttachedCreature] is set
+     * ("enchanted creature deals damage … to any other target"), else the source itself.
+     */
+    private fun resolveOtherExclusion(
+        state: GameState,
+        requirement: TargetOther,
+        sourceId: EntityId?
+    ): EntityId? = requirement.excludeSourceId
+        ?: if (requirement.excludeAttachedCreature) {
+            sourceId?.let { state.getEntity(it)?.get<AttachedToComponent>()?.targetId }
+        } else {
+            sourceId
+        }
 
     fun shouldAutoSelectPlayerTarget(
         requirement: TargetRequirement,
