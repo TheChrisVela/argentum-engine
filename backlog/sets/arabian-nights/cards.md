@@ -72,7 +72,7 @@
 - [x] Wyluli Wolf
 - [ ] Aladdin's Lamp
 - [x] Aladdin's Ring
-- [ ] Bottle of Suleiman
+- [x] Bottle of Suleiman
 - [ ] Brass Man
 - [ ] City in a Bottle
 - [x] Dancing Scimitar
