@@ -28,7 +28,7 @@
 - [ ] Shahrazad
 - [ ] War Elephant
 - [ ] Dandân
-- [ ] Fishliver Oil
+- [x] Fishliver Oil
 - [x] Flying Men
 - [x] Giant Tortoise
 - [ ] Island Fish Jasconius
