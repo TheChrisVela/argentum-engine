@@ -70,7 +70,7 @@
 - [ ] Nafs Asp
 - [ ] Sandstorm
 - [ ] Singing Tree
-- [ ] Wyluli Wolf
+- [x] Wyluli Wolf
 - [ ] Aladdin's Lamp
 - [ ] Aladdin's Ring
 - [ ] Bottle of Suleiman
