@@ -87,7 +87,7 @@
 - [x] Bazaar of Baghdad
 - [x] City of Brass
 - [x] Desert
-- [ ] Diamond Valley
+- [x] Diamond Valley
 - [ ] Elephant Graveyard
 - [x] Island of Wak-Wak
 - [ ] Library of Alexandria
