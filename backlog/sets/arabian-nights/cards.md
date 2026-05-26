@@ -42,7 +42,7 @@
 - [ ] Erg Raiders
 - [ ] Guardian Beast
 - [ ] Hasran Ogress
-- [ ] Junún Efreet
+- [x] Junún Efreet
 - [x] Juzám Djinn
 - [x] Khabál Ghoul
 - [ ] Oubliette
