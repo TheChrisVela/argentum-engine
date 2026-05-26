@@ -165,7 +165,19 @@ class DynamicAmountEvaluator(
 
             // Composable entity property — replaces SourcePower, TargetPower, CountersOnSelf, etc.
             is DynamicAmount.EntityProperty -> {
-                val entityId = resolveEntityId(amount.entity, context, state) ?: return 0
+                val entityId = resolveEntityId(amount.entity, context, state)
+                // Enchanted-creature power reads use last-known information when the source aura
+                // has detached: the enchanted creature (and the aura) can leave the battlefield
+                // before the ability resolves — e.g. removed in response to the aura's ETB
+                // trigger — and "deals damage equal to its power" must use the power as it last
+                // existed on the battlefield (CR 608.2g). Captured at trigger time.
+                if (amount.entity is EntityReference.EnchantedCreature &&
+                    amount.numericProperty is EntityNumericProperty.Power &&
+                    (entityId == null || entityId !in state.getBattlefield())
+                ) {
+                    return context.enchantedCreatureLastKnownPower ?: 0
+                }
+                if (entityId == null) return 0
                 // Sacrificed entities already left battlefield — consult the P/T snapshot
                 // captured at sacrifice time (Rule 112.7a / 608.2h — "as it last existed
                 // on the battlefield") before falling through to base stats.

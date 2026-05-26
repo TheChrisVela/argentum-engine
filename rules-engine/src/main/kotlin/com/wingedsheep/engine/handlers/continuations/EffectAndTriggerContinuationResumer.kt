@@ -103,7 +103,8 @@ class EffectAndTriggerContinuationResumer(
             triggerTotalCounterCount = continuation.triggerTotalCounterCount,
             triggerLastKnownCounters = continuation.triggerLastKnownCounters,
             triggerLastKnownDamageDealtByPlayers = continuation.triggerLastKnownDamageDealtByPlayers,
-            triggerModesChosenCount = continuation.triggerModesChosenCount
+            triggerModesChosenCount = continuation.triggerModesChosenCount,
+            enchantedCreatureLastKnownPower = continuation.enchantedCreatureLastKnownPower
         )
 
         val stackResult = services.stackResolver.putTriggeredAbility(

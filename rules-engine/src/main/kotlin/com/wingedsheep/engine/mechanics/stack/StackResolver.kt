@@ -1546,6 +1546,7 @@ class StackResolver(
             targetingSourceEntityId = abilityComponent.targetingSourceEntityId,
             triggerLastKnownPower = abilityComponent.lastKnownPower,
             triggerLastKnownToughness = abilityComponent.lastKnownToughness,
+            enchantedCreatureLastKnownPower = abilityComponent.enchantedCreatureLastKnownPower,
             triggerModesChosenCount = abilityComponent.triggerModesChosenCount,
             xValue = abilityComponent.xValue,
             damageDistribution = abilityComponent.damageDistribution,

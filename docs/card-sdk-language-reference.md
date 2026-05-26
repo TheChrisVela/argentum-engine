@@ -1212,7 +1212,9 @@ than the source permanent itself — for an Aura, `EntityReference.Source` is th
   `EntityProperty(EntityReference.EnchantedCreature, EntityNumericProperty.Power)`. The
   `EnchantedCreature` reference resolves through the source's `AttachedToComponent` (state-aware), so it
   needs an effect context with a `sourceId`; it returns 0 in predicate/filter-only contexts that don't
-  thread state.
+  thread state. When read in a **triggered ability** and the attached creature has already left the
+  battlefield by resolution (e.g. removed in response to the aura's ETB trigger), it falls back to the
+  creature's last-known power — captured when the trigger fired — per CR 608.2g, rather than 0.
 
 ### Context-plumbed
 

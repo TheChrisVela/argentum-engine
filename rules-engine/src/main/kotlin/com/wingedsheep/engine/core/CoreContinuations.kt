@@ -59,7 +59,9 @@ data class TriggeredAbilityContinuation(
     val triggerLastKnownDamageDealtByPlayers: Map<EntityId, Int>? = null,
     val lastKnownPower: Int? = null,
     val lastKnownToughness: Int? = null,
-    val triggerModesChosenCount: Int? = null
+    val triggerModesChosenCount: Int? = null,
+    /** Power of the aura/equipment's attached creature, captured at trigger time (CR 608.2g LKI). */
+    val enchantedCreatureLastKnownPower: Int? = null
 ) : ContinuationFrame
 
 /**

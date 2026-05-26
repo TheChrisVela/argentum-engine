@@ -63,6 +63,40 @@ class PainForAllScenarioTest : ScenarioTestBase() {
                 }
             }
 
+            test("ETB uses last-known power when the enchanted creature leaves in response (CR 608.2g)") {
+                val game = scenario()
+                    .withPlayers("Aura Player", "Opponent")
+                    .withCardOnBattlefield(1, "Hulking Cyclops") // 5/4, mana value 5 — Fading Hope won't scry
+                    .withCardInHand(1, "Pain for All")
+                    .withCardInHand(1, "Fading Hope") // {U} instant bounce — removes the creature without dealing damage
+                    .withLandsOnBattlefield(1, "Mountain", 3)
+                    .withLandsOnBattlefield(1, "Island", 3)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val cyclops = game.findPermanent("Hulking Cyclops")!!
+
+                // Aura resolves and attaches; the ETB trigger goes on the stack and asks for "any
+                // other target". Aim it at the opponent.
+                game.castSpell(1, "Pain for All", cyclops)
+                game.resolveStack()
+                game.selectTargets(listOf(game.player2Id))
+
+                // In RESPONSE to the ETB trigger (still on the stack), bounce our own enchanted
+                // creature. The Aura falls off to the graveyard before the trigger resolves, so the
+                // creature's power is no longer readable from live state.
+                game.castSpell(1, "Fading Hope", cyclops)
+                game.resolveStack()
+
+                withClue("Enchanted creature was bounced to its owner's hand") {
+                    game.findPermanent("Hulking Cyclops") shouldBe null
+                }
+                withClue("ETB still deals last-known power (5) to the opponent despite the creature leaving") {
+                    game.getLifeTotal(2) shouldBe 15
+                }
+            }
+
             test("\"any other target\" cannot be the enchanted creature itself") {
                 val game = scenario()
                     .withPlayers("Aura Player", "Opponent")
@@ -130,6 +164,46 @@ class PainForAllScenarioTest : ScenarioTestBase() {
                     game.state.getEntity(cyclops)?.get<DamageComponent>()?.amount shouldBe 2
                 }
                 withClue("Each opponent took 2 damage from the retaliation trigger") {
+                    game.getLifeTotal(2) shouldBe 18
+                }
+                withClue("Aura controller's life should be unchanged") {
+                    game.getLifeTotal(1) shouldBe 20
+                }
+            }
+
+            test("retaliation still resolves when the triggering damage is lethal to the enchanted creature") {
+                val game = scenario()
+                    .withPlayers("Aura Player", "Opponent")
+                    .withCardOnBattlefield(1, "Grizzly Bears") // 2/2 — dies to 2 damage
+                    .withCardInHand(1, "Pain for All")
+                    .withCardInHand(1, "Shock") // deals 2 — lethal to the 2/2
+                    .withLandsOnBattlefield(1, "Mountain", 4)
+                    .withCardOnBattlefield(2, "Hulking Cyclops") // 5/4 ETB sink, survives — isolates opponent life
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val bears = game.findPermanent("Grizzly Bears")!!
+                val opponentSink = game.findPermanent("Hulking Cyclops")!!
+
+                game.castSpell(1, "Pain for All", bears)
+                game.resolveStack()
+                game.selectTargets(listOf(opponentSink)) // ETB damage into the sink, not the player
+                game.resolveStack()
+
+                withClue("Opponent's life unchanged after ETB (damage hit the sink creature)") {
+                    game.getLifeTotal(2) shouldBe 20
+                }
+
+                // Deal lethal (2) to the 2/2 enchanted creature. Ruling: lethal damage still triggers
+                // the retaliation, which resolves even though the creature (and Aura) have left.
+                game.castSpell(1, "Shock", bears)
+                game.resolveStack()
+
+                withClue("Enchanted creature died to the lethal damage") {
+                    game.findPermanent("Grizzly Bears") shouldBe null
+                }
+                withClue("Each opponent still took 2 from the retaliation despite the creature dying") {
                     game.getLifeTotal(2) shouldBe 18
                 }
                 withClue("Aura controller's life should be unchanged") {
