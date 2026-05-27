@@ -13,7 +13,7 @@
 - [x] Annul
 - [x] Anticausal Vestige
 - [x] Archenemy's Charm
-- [ ] Astelli Reclaimer
+- [x] Astelli Reclaimer
 - [x] Atmospheric Greenhouse
 - [x] Atomic Microsizer
 - [x] Auxiliary Boosters

@@ -320,6 +320,27 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
         override fun applyTextReplacement(replacer: TextReplacer): CardPredicate = this
     }
 
+    /**
+     * Mana value at most the amount of mana actually spent to cast a referenced entity.
+     *
+     * Resolves the reference (typically [EntityReference.Source]) and reads its mana-spent
+     * record: the live `SpellOnStackComponent` buckets while the source is still a spell, or
+     * the `CastRecordComponent` snapshot once it has resolved into a permanent. Returns no
+     * match when neither is present (e.g., the source was put onto the battlefield without
+     * being cast, so 0 mana was spent — CR-faithful for "X is the amount of mana spent").
+     *
+     * Used by Edge of Eternities warp payoffs like Astelli Reclaimer: "return target ...
+     * card with mana value X or less ..., where X is the amount of mana spent to cast this
+     * creature." X is 5 cast for {3}{W}{W}, 3 cast with warp for {2}{W}, 0 cast for free.
+     */
+    @SerialName("ManaValueAtMostEntityManaSpent")
+    @Serializable
+    data class ManaValueAtMostEntityManaSpent(val reference: EntityReference) : CardPredicate {
+        override val description: String =
+            "with mana value less than or equal to the mana spent to cast ${reference.description}"
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate = this
+    }
+
     // =============================================================================
     // Power/Toughness Predicates
     // =============================================================================

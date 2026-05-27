@@ -443,6 +443,7 @@ internal class AffectsFilterResolver {
         is CardPredicate.ManaValueAtLeast -> card.manaValue >= predicate.min
         // Entity-relative — layer-projection has no trigger/source context for filter purposes here.
         is CardPredicate.ManaValueAtMostEntity -> false
+        is CardPredicate.ManaValueAtMostEntityManaSpent -> false
         is CardPredicate.NameEquals -> card.name == predicate.name
         is CardPredicate.HasBasicLandType -> if (isFaceDown) false else subtypes.any { it.equals(predicate.landType, ignoreCase = true) }
         is CardPredicate.And -> predicate.predicates.all { matchesCardPredicateForProjection(it, card, container, projected, types, subtypes, colors, keywords, isFaceDown) }

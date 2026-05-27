@@ -371,7 +371,7 @@ class TargetFinder(
 
             for (cardId in graveyard) {
                 if (filter.excludeSelf && cardId == sourceId) continue
-                val predicateContext = PredicateContext(controllerId = controllerId, ownerId = playerId)
+                val predicateContext = PredicateContext(controllerId = controllerId, ownerId = playerId, sourceId = sourceId)
                 if (predicateEvaluator.matches(state, state.projectedState, cardId, filter.baseFilter, predicateContext)) {
                     targets.add(cardId)
                 }

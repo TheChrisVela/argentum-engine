@@ -830,6 +830,7 @@ class CostCalculator(
             is CardPredicate.ManaValueAtLeast -> cardDef.manaCost.cmc >= predicate.min
             // CostCalculator has no entity context; predicate has no static answer here.
             is CardPredicate.ManaValueAtMostEntity -> false
+            is CardPredicate.ManaValueAtMostEntityManaSpent -> false
 
             is CardPredicate.PowerEquals -> cardDef.creatureStats?.basePower == predicate.value
             is CardPredicate.PowerAtMost -> (cardDef.creatureStats?.basePower ?: 0) <= predicate.max

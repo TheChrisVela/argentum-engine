@@ -227,6 +227,11 @@ data class GameObjectFilter(
         cardPredicates = cardPredicates + CardPredicate.ManaValueAtMostEntity(reference)
     )
 
+    /** Mana value at most the mana actually spent to cast a referenced entity (source, etc.) */
+    fun manaValueAtMostEntityManaSpent(reference: EntityReference) = copy(
+        cardPredicates = cardPredicates + CardPredicate.ManaValueAtMostEntityManaSpent(reference)
+    )
+
     /** Power equals */
     fun power(value: Int) = copy(
         cardPredicates = cardPredicates + CardPredicate.PowerEquals(value)
