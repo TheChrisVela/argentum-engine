@@ -39,6 +39,7 @@ import com.wingedsheep.mtg.sets.definitions.lgn.LegionsSet
 import com.wingedsheep.mtg.sets.definitions.lrw.LorwynSet
 import com.wingedsheep.mtg.sets.definitions.ecl.LorwynEclipsedSet
 import com.wingedsheep.mtg.sets.definitions.lci.LostCavernsOfIxalanSet
+import com.wingedsheep.mtg.sets.definitions.ltr.LordOfTheRingsSet
 import com.wingedsheep.mtg.sets.definitions.mbs.MirrodinBesiegedSet
 import com.wingedsheep.mtg.sets.definitions.mir.MirageSet
 import com.wingedsheep.mtg.sets.definitions.mrd.MirrodinSet
@@ -138,6 +139,7 @@ object MtgSetCatalog {
         AmonkhetSet,
         ShadowsOverInnistradSet,
         WorldwakeSet,
+        LordOfTheRingsSet,
     )
 
     private val byCode: Map<String, MtgSet> = all.associateBy { it.code }
