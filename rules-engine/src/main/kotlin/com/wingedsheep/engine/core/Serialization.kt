@@ -290,6 +290,7 @@ val engineSerializersModule = SerializersModule {
         subclass(ChosenCreatureTypeComponent::class)
         subclass(CantBeCounteredComponent::class)
         subclass(ChosenCreatureComponent::class)
+        subclass(ChosenLandTypeComponent::class)
         subclass(ChosenModeComponent::class)
         subclass(EmblemSourceComponent::class)
         subclass(CommanderComponent::class)
