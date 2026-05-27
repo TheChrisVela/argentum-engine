@@ -86,6 +86,7 @@ internal class EffectSorter {
         if (effectB.modification is Modification.AddType ||
             effectB.modification is Modification.RemoveType ||
             effectB.modification is Modification.SetBasicLandTypes ||
+            effectB.modification is Modification.SetBasicLandTypesFromChosen ||
             effectB.modification is Modification.SetCardTypes ||
             effectB.modification is Modification.SetAllSubtypes ||
             effectB.modification is Modification.SetCreatureSubtypes ||

@@ -208,6 +208,21 @@ data class SetEnchantedLandType(
 }
 
 /**
+ * Enchanted land becomes the basic land type chosen as the source entered (resolved from the
+ * source's `ChosenLandTypeComponent`). Used for auras like Phantasmal Terrain:
+ * "As this Aura enters, choose a basic land type. Enchanted land is the chosen type."
+ * This replaces all existing land subtypes with the chosen type (Rule 305.7). The
+ * chosen-value counterpart to [SetEnchantedLandType], mirroring [GrantChosenColor]'s
+ * relationship to [GrantColor]. If the source has no chosen land type, no change is applied.
+ */
+@SerialName("SetEnchantedLandTypeFromChosen")
+@Serializable
+data object SetEnchantedLandTypeFromChosen : StaticAbility {
+    override val description: String = "Enchanted land is the chosen type"
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
+}
+
+/**
  * Adds card types and subtypes to a group of permanents, in addition to their existing types.
  * Used for Ygra: "Other creatures are Food artifacts in addition to their other types."
  *

@@ -944,6 +944,12 @@ staticAbility {
 - `ModifyStatsForCreatureGroup` — lord-style P/T booster targeting a group.
 - `GrantKeywordByCounter` — Aurification — keyword based on counters present.
 - `AddCreatureTypeByCounter` — subtype based on counters present.
+- `SetEnchantedLandType(landType)` — "Enchanted land is an Island" — replaces the enchanted
+  land's basic land types with a fixed type (Rule 305.7). (Sea's Claim)
+- `SetEnchantedLandTypeFromChosen` — "Enchanted land is the chosen type" — same, but reads the
+  type from the source's `ChosenLandTypeComponent` (paired with
+  `EntersWithChoice(ChoiceType.BASIC_LAND_TYPE)`). Chosen-value counterpart to
+  `SetEnchantedLandType`, mirroring `GrantChosenColor`/`GrantColor`. (Phantasmal Terrain)
 - `ConditionalStaticAbility` — static gated by a runtime `Condition`.
 - `Effects.CreatePermanentEmblem(...)` — emblem with static abilities (planeswalker ultimates).
 - `AttackTax(amountPerAttacker: DynamicAmount)` — Propaganda / Ghostly Prison / Windborn Muse /
@@ -1381,6 +1387,19 @@ EntersWithChoice(
 - Writes `ChosenModeComponent(modeId)` on the permanent.
 - Downstream triggers/conditions gate via `SourceChosenModeIs("khans")`.
 - Icons live in `web-client/src/assets/icons/options/`.
+
+**Other `ChoiceType`s** — `ChoiceType.COLOR` writes `ChosenColorComponent` (read by
+`GrantChosenColor`), `ChoiceType.CREATURE_TYPE` writes `ChosenCreatureTypeComponent`,
+`ChoiceType.CREATURE_ON_BATTLEFIELD` writes `ChosenCreatureComponent`, and
+`ChoiceType.BASIC_LAND_TYPE` writes `ChosenLandTypeComponent` (read by
+`SetEnchantedLandTypeFromChosen`). Example — Phantasmal Terrain ("As this Aura enters,
+choose a basic land type. Enchanted land is the chosen type."):
+
+```kotlin
+auraTarget = Targets.Land
+replacementEffect(EntersWithChoice(ChoiceType.BASIC_LAND_TYPE))
+staticAbility { ability = SetEnchantedLandTypeFromChosen }
+```
 
 ### Other choice effects
 

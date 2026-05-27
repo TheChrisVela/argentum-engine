@@ -32,6 +32,7 @@ import com.wingedsheep.sdk.scripting.conditions.Compare
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.ControlEnchantedPermanent
 import com.wingedsheep.sdk.scripting.SetEnchantedLandType
+import com.wingedsheep.sdk.scripting.SetEnchantedLandTypeFromChosen
 import com.wingedsheep.sdk.scripting.GrantKeywordByCounter
 import com.wingedsheep.sdk.scripting.GrantProtection
 import com.wingedsheep.sdk.scripting.GrantSubtype
@@ -406,6 +407,15 @@ class StaticAbilityHandler(
                 // Replaces all basic land subtypes with the specified type (Rule 305.7)
                 ContinuousEffectData(
                     modification = Modification.SetBasicLandTypes(setOf(ability.landType)),
+                    affectsFilter = AffectsFilter.AttachedPermanent
+                )
+            }
+            is SetEnchantedLandTypeFromChosen -> {
+                // "Enchanted land is the chosen type" - Layer 4 type-changing effect.
+                // The chosen type is resolved at projection time from the source's
+                // ChosenLandTypeComponent; replaces all basic land subtypes (Rule 305.7).
+                ContinuousEffectData(
+                    modification = Modification.SetBasicLandTypesFromChosen,
                     affectsFilter = AffectsFilter.AttachedPermanent
                 )
             }

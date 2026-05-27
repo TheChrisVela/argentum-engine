@@ -533,6 +533,16 @@ class ModalAndCloneContinuationResumer(
                     c.with(com.wingedsheep.engine.state.components.identity.ChosenModeComponent(modeId))
                 }
             }
+            com.wingedsheep.sdk.scripting.ChoiceType.BASIC_LAND_TYPE -> {
+                if (response !is OptionChosenResponse) {
+                    return ExecutionResult.error(state, "Expected option chosen response for land type choice")
+                }
+                val chosenType = continuation.landTypes.getOrNull(response.optionIndex)
+                    ?: return ExecutionResult.error(state, "Invalid land type index: ${response.optionIndex}")
+                state.updateEntity(spellId) { c ->
+                    c.with(com.wingedsheep.engine.state.components.identity.ChosenLandTypeComponent(chosenType))
+                }
+            }
         }
 
         // Check if the card has remaining choices to chain to
@@ -621,6 +631,16 @@ class ModalAndCloneContinuationResumer(
                     ?: return ExecutionResult.error(state, "Invalid mode option index: ${response.optionIndex}")
                 state.updateEntity(continuation.landId) { c ->
                     c.with(com.wingedsheep.engine.state.components.identity.ChosenModeComponent(modeId))
+                }
+            }
+            com.wingedsheep.sdk.scripting.ChoiceType.BASIC_LAND_TYPE -> {
+                if (response !is OptionChosenResponse) {
+                    return ExecutionResult.error(state, "Expected option chosen response for land type choice")
+                }
+                val chosenType = continuation.landTypes.getOrNull(response.optionIndex)
+                    ?: return ExecutionResult.error(state, "Invalid land type index: ${response.optionIndex}")
+                state.updateEntity(continuation.landId) { c ->
+                    c.with(com.wingedsheep.engine.state.components.identity.ChosenLandTypeComponent(chosenType))
                 }
             }
         }

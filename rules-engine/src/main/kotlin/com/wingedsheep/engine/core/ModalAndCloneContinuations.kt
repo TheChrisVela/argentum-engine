@@ -189,7 +189,13 @@ data class EntersWithChoiceSpellContinuation(
      * indexes into this list to recover the stable mode id stored on the
      * resulting [com.wingedsheep.engine.state.components.identity.ChosenModeComponent].
      */
-    val modeOptionIds: List<String> = emptyList()
+    val modeOptionIds: List<String> = emptyList(),
+    /**
+     * For [com.wingedsheep.sdk.scripting.ChoiceType.BASIC_LAND_TYPE] choices, the
+     * positionally aligned list of basic land type options presented. The response's
+     * chosen index indexes into this list.
+     */
+    val landTypes: List<String> = emptyList()
 ) : ContinuationFrame
 
 /**
@@ -217,6 +223,9 @@ data class EntersWithChoiceLandContinuation(
     /** For [com.wingedsheep.sdk.scripting.ChoiceType.MODE] choices, see
      *  [EntersWithChoiceSpellContinuation.modeOptionIds]. */
     val modeOptionIds: List<String> = emptyList(),
+    /** For [com.wingedsheep.sdk.scripting.ChoiceType.BASIC_LAND_TYPE] choices, see
+     *  [EntersWithChoiceSpellContinuation.landTypes]. */
+    val landTypes: List<String> = emptyList(),
     val fromZone: Zone = Zone.HAND
 ) : ContinuationFrame
 

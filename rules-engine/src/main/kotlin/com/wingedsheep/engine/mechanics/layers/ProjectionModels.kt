@@ -296,6 +296,18 @@ sealed interface Modification {
     }
 
     /**
+     * Replace all basic land subtypes with the type chosen as the source entered
+     * (resolved dynamically from the source's ChosenLandTypeComponent).
+     * Used by Phantasmal Terrain: "Enchanted land is the chosen type."
+     * The chosen-value counterpart to [SetBasicLandTypes], mirroring [AddChosenColor].
+     * If the source has no chosen land type, no modification is applied.
+     */
+    @Serializable
+    data object SetBasicLandTypesFromChosen : Modification {
+        override val layer get() = Layer.TYPE
+    }
+
+    /**
      * Replace ALL card types with the given set.
      * Used for "is a Food artifact" effects that completely replace card types.
      * Removes all existing card types (Creature, Land, Enchantment, etc.)

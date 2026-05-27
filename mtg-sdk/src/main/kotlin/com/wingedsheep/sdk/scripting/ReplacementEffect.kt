@@ -740,7 +740,15 @@ enum class ChoiceType {
      * mode is stored on the permanent and queryable via
      * [com.wingedsheep.sdk.scripting.conditions.SourceChosenModeIs].
      */
-    MODE
+    MODE,
+    /**
+     * Choose a basic land type (Plains, Island, Swamp, Mountain, or Forest)
+     * (e.g., Phantasmal Terrain: "As this Aura enters, choose a basic land type").
+     * The chosen type is stored on the permanent in a
+     * [com.wingedsheep.engine.state.components.identity.ChosenLandTypeComponent]
+     * and read by [com.wingedsheep.sdk.scripting.SetEnchantedLandTypeFromChosen].
+     */
+    BASIC_LAND_TYPE
 }
 
 /**
@@ -820,6 +828,11 @@ data class EntersWithChoice(
             } else {
                 "As this permanent enters, choose $labels"
             }
+        }
+        ChoiceType.BASIC_LAND_TYPE -> if (chooser == Player.Opponent) {
+            "As this permanent enters, an opponent chooses a basic land type"
+        } else {
+            "As this permanent enters, choose a basic land type"
         }
     }
 

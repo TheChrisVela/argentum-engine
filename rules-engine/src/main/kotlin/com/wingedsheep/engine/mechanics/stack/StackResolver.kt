@@ -2358,6 +2358,35 @@ class StackResolver(
                     .withPendingDecision(decision)
                 ExecutionResult.paused(pausedState, decision)
             }
+
+            ChoiceType.BASIC_LAND_TYPE -> {
+                val landTypeOptions = com.wingedsheep.sdk.core.Subtype.ALL_BASIC_LAND_TYPES.toList()
+                val decisionId = "choose-land-type-enters-${spellId.value}"
+                val decision = ChooseOptionDecision(
+                    id = decisionId,
+                    playerId = chooserId,
+                    prompt = "Choose a basic land type",
+                    context = DecisionContext(
+                        sourceId = spellId,
+                        sourceName = cardComponent.name,
+                        phase = DecisionPhase.RESOLUTION
+                    ),
+                    options = landTypeOptions,
+                    defaultSearch = ""
+                )
+                val continuation = EntersWithChoiceSpellContinuation(
+                    decisionId = decisionId,
+                    spellId = spellId,
+                    controllerId = controllerId,
+                    ownerId = ownerId,
+                    choiceType = ChoiceType.BASIC_LAND_TYPE,
+                    landTypes = landTypeOptions
+                )
+                val pausedState = state
+                    .pushContinuation(continuation)
+                    .withPendingDecision(decision)
+                ExecutionResult.paused(pausedState, decision)
+            }
         }
     }
 

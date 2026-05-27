@@ -120,6 +120,17 @@ internal class EffectApplicator(
                     values.subtypes.addAll(mod.subtypes)
                     values.types.addAll(mod.subtypes)
                 }
+                is Modification.SetBasicLandTypesFromChosen -> {
+                    val chosenLandType = state.getEntity(effect.sourceId)
+                        ?.get<com.wingedsheep.engine.state.components.identity.ChosenLandTypeComponent>()?.landType
+                    if (chosenLandType != null) {
+                        val basicLandTypes = com.wingedsheep.sdk.core.Subtype.ALL_BASIC_LAND_TYPES
+                        values.subtypes.removeAll { it in basicLandTypes }
+                        values.types.removeAll { it in basicLandTypes }
+                        values.subtypes.add(chosenLandType)
+                        values.types.add(chosenLandType)
+                    }
+                }
                 is Modification.SetCardTypes -> {
                     val cardTypeStrings = setOf("CREATURE", "ARTIFACT", "ENCHANTMENT", "LAND", "PLANESWALKER", "INSTANT", "SORCERY", "BATTLE", "KINDRED")
                     values.types.removeAll { it in cardTypeStrings }

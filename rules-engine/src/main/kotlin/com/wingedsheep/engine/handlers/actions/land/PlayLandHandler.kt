@@ -355,6 +355,35 @@ class PlayLandHandler(
                         null
                     }
 
+                    ChoiceType.BASIC_LAND_TYPE -> {
+                        val landTypeOptions = com.wingedsheep.sdk.core.Subtype.ALL_BASIC_LAND_TYPES.toList()
+                        val decisionId = "choose-land-type-land-enters-${action.cardId.value}"
+                        val decision = com.wingedsheep.engine.core.ChooseOptionDecision(
+                            id = decisionId,
+                            playerId = chooserId,
+                            prompt = "Choose a basic land type",
+                            context = com.wingedsheep.engine.core.DecisionContext(
+                                sourceId = action.cardId,
+                                sourceName = cardComponent.name,
+                                phase = com.wingedsheep.engine.core.DecisionPhase.RESOLUTION
+                            ),
+                            options = landTypeOptions,
+                            defaultSearch = ""
+                        )
+                        val continuation = com.wingedsheep.engine.core.EntersWithChoiceLandContinuation(
+                            decisionId = decisionId,
+                            landId = action.cardId,
+                            controllerId = action.playerId,
+                            choiceType = ChoiceType.BASIC_LAND_TYPE,
+                            landTypes = landTypeOptions,
+                            fromZone = fromZone
+                        )
+                        val pausedState = newState
+                            .pushContinuation(continuation)
+                            .withPendingDecision(decision)
+                        ExecutionResult.paused(pausedState, decision, events)
+                    }
+
                     ChoiceType.MODE -> {
                         if (firstChoice.modeOptions.isEmpty()) {
                             null
