@@ -332,7 +332,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Combat-shape & misc
 
-- `PreventDamageEffect(amount, direction, scope, source?, recipient?)` — prevention shield.
+- `PreventDamageEffect(amount, direction, scope, sourceFilter, reflect, gainLifeFromColors, duration)` — prevention shield. `amount = null` prevents all. `sourceFilter` can be `ChosenSource` (player picks a source on resolution). `reflect` deals prevented damage back to the source's controller (Deflecting Palm). `gainLifeFromColors: Set<Color>` makes the shield's controller gain that much life whenever it prevents damage from a source of one of those colors (Samite Ministration). Facades: `Effects.PreventNextDamage`, `Effects.PreventNextDamageFromChosenSource(amount, target)`, `Effects.PreventAllDamageFromChosenSource(target, gainLifeFromColors)`, `Effects.DeflectNextDamageFromChosenSource()`.
 - `BecomeCreatureEffect(target, p, t, subtypes, keywords, duration)` — animate non-creature (lands, artifacts).
 - `EachPermanentBecomesCopyOfTargetEffect(filter, target)` — Cytoshape-style mass copy.
 - `AnimateLandEffect(target, subtypes, keywords, duration)` — land becomes a creature.
