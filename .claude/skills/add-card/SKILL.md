@@ -170,6 +170,13 @@ Refer back to [architecture-principles.md](../../../docs/architecture-principles
 - Set up minimal board state, exercise new effect in isolation, verify state changes, cover edge cases
 - See [examples.md](examples.md) and [card-sdk-language-reference.md](../../../docs/card-sdk-language-reference.md) for test templates and helpers
 
+**If the card introduced changes to the engine** (any new effect/executor/keyword/trigger/condition/static
+ability/replacement effect from Step 4), **also run `/generate-scenario` for this card** to produce a playable
+DevScenarioController scenario JSON. This gives a manually-loadable board state for exercising the new mechanic in the
+real client, complementing the Kotest scenario test above. Describe the situation you want to set up (the card on the
+battlefield/hand, relevant opposing permanents, the decision you want to trigger) and let the skill emit the scenario
+file.
+
 ## Step 6: Player Experience Review
 
 **Always do this step.** Walk through the card from the player's perspective — what will they see and click?
@@ -471,6 +478,7 @@ If `backlog/sets/{set-name}/cards.md` exists:
 6. **Check existing effects** — Most common effects already exist; compose before creating new ones
 7. **Use immutable patterns** — Never modify state in place
 8. **Test new mechanics** — All new effects/keywords/triggers/conditions need scenario tests
+8b. **Engine changes → `/generate-scenario`** — If the card introduced engine changes (Step 4), run `/generate-scenario` on it to emit a playable DevScenarioController scenario (Step 5)
 9. **Follow naming conventions** — CardName matches file name
 10. **Keep effects data-only** — Logic goes in executors, not effect data classes
 11. **Verify against Scryfall before committing** — Re-check every field against the API data (Step 10)
