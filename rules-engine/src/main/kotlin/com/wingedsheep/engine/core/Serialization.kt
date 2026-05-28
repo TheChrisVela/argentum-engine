@@ -235,6 +235,7 @@ val engineSerializersModule = SerializersModule {
         subclass(RemoveAnyNumberOfCountersContinuation::class)
         subclass(ProliferateContinuation::class)
         subclass(RingTemptContinuation::class)
+        subclass(AmassContinuation::class)
         subclass(StormCopyTargetContinuation::class)
         subclass(StormCopyModalTargetContinuation::class)
         subclass(CopyTriggeredAbilityTargetContinuation::class)
