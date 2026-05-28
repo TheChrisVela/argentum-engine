@@ -184,29 +184,56 @@ data class GrantKeywordToOwnSpells(
 }
 
 /**
- * You may cast spells matching [filter] from your graveyard by paying [lifeCost] life
- * in addition to their other costs. Only during your turn if [duringYourTurnOnly] is true.
+ * You may cast spells matching [filter] from your graveyard, optionally by paying [lifeCost]
+ * life in addition to their other costs. Only during your turn if [duringYourTurnOnly] is true.
  *
- * Used for Festival of Embers ("During your turn, you may cast instant and sorcery spells
- * from your graveyard by paying 1 life in addition to their other costs.")
+ * Normal timing rules still apply — instants any time you have priority, everything else only
+ * at sorcery speed. A spell cast this way uses its normal mana cost (plus the optional life cost).
  *
- * @property filter The filter that spells must match (e.g., instant/sorcery)
- * @property lifeCost The life cost to pay in addition to other costs
+ * Used for:
+ *  - Festival of Embers: `MayCastFromGraveyard(InstantOrSorcery, lifeCost = 1, duringYourTurnOnly = true)`
+ *  - Yawgmoth's Agenda: `MayCastFromGraveyard(Nonland)` — free, any spell type, any turn.
+ *
+ * @property filter The filter that spells must match (e.g., instant/sorcery, or any nonland card)
+ * @property lifeCost The life cost to pay in addition to other costs (0 = free)
  * @property duringYourTurnOnly If true, only castable during your turn
  */
-@SerialName("MayCastFromGraveyardWithLifeCost")
+@SerialName("MayCastFromGraveyard")
 @Serializable
-data class MayCastFromGraveyardWithLifeCost(
+data class MayCastFromGraveyard(
     val filter: GameObjectFilter,
-    val lifeCost: Int = 1,
+    val lifeCost: Int = 0,
     val duringYourTurnOnly: Boolean = false
 ) : StaticAbility {
     override val description: String = buildString {
         if (duringYourTurnOnly) append("During your turn, y") else append("Y")
-        append("ou may cast ${filter.description} spells from your graveyard by paying $lifeCost life in addition to their other costs")
+        append("ou may cast ${filter.description} spells from your graveyard")
+        if (lifeCost > 0) append(" by paying $lifeCost life in addition to their other costs")
     }
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
         val newFilter = filter.applyTextReplacement(replacer)
         return if (newFilter !== filter) copy(filter = newFilter) else this
     }
+}
+
+/**
+ * The controller of a permanent with this static ability can't cast more than [maxPerTurn]
+ * spell(s) each turn. The restriction is per controller — each player is limited only by the
+ * permanents they control (Yawgmoth's Agenda: "You can't cast more than one spell each turn.").
+ *
+ * Spells already cast earlier in the turn count, even if cast before this permanent entered
+ * (per the Yawgmoth's Agenda ruling). The engine enforces this by comparing the controller's
+ * spells-cast-this-turn tally against [maxPerTurn] during cast-legality checks. Copies of
+ * spells and activated/triggered abilities are not "cast" and do not count.
+ *
+ * @property maxPerTurn The maximum number of spells the controller may cast each turn.
+ */
+@SerialName("RestrictSpellsCastPerTurn")
+@Serializable
+data class RestrictSpellsCastPerTurn(
+    val maxPerTurn: Int = 1
+) : StaticAbility {
+    override val description: String =
+        "You can't cast more than $maxPerTurn spell${if (maxPerTurn == 1) "" else "s"} each turn"
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }

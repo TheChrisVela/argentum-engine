@@ -6,7 +6,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.scripting.effects.SacrificeSelfEffect
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.MayCastFromGraveyardWithLifeCost
+import com.wingedsheep.sdk.scripting.MayCastFromGraveyard
 import com.wingedsheep.sdk.scripting.RedirectZoneChange
 import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
 
@@ -29,7 +29,7 @@ val FestivalOfEmbers = card("Festival of Embers") {
     // During your turn, you may cast instant and sorcery spells from your graveyard
     // by paying 1 life in addition to their other costs.
     staticAbility {
-        ability = MayCastFromGraveyardWithLifeCost(
+        ability = MayCastFromGraveyard(
             filter = GameObjectFilter.InstantOrSorcery,
             lifeCost = 1,
             duringYourTurnOnly = true

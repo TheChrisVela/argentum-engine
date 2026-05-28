@@ -82,7 +82,8 @@ class EnumerationContext(
 
     // Cast restrictions
     val cantCastSpells: Boolean by lazy {
-        state.getEntity(playerId)?.has<CantCastSpellsComponent>() == true
+        state.getEntity(playerId)?.has<CantCastSpellsComponent>() == true ||
+            castPermissionUtils.hasReachedSpellCastLimit(state, playerId)
     }
 
     // Alternative casting costs from battlefield permanents (e.g., Jodah)

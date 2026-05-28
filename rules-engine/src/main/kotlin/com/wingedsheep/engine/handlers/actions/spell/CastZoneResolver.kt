@@ -25,6 +25,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
 import com.wingedsheep.sdk.scripting.GrantMayCastFromLinkedExile
 import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.MayCastFromGraveyard
 import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
 import com.wingedsheep.sdk.scripting.MayPlayPermanentsFromGraveyard
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
@@ -165,6 +166,36 @@ class CastZoneResolver(
         for (typeName in permanentTypes.map { it.name }) {
             if (findGraveyardPlayPermissionSource(state, playerId, typeName) != null) {
                 return true
+            }
+        }
+        return false
+    }
+
+    /**
+     * Check if a card can be cast from the graveyard via a [MayCastFromGraveyard] static
+     * ability (e.g., Festival of Embers' life-cost casting, or Yawgmoth's Agenda's free
+     * "cast spells from your graveyard"). Matches the granting permanent's spell filter and
+     * its optional during-your-turn restriction. The optional life cost is paid separately
+     * (carried on the action's `graveyardLifeCost`), so it is not checked here.
+     */
+    fun hasMayCastFromGraveyardPermission(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId,
+        cardComponent: CardComponent
+    ): Boolean {
+        if (cardId !in state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))) return false
+        for (permId in state.getBattlefield(playerId)) {
+            val permCard = state.getEntity(permId)?.get<CardComponent>() ?: continue
+            val permDef = cardRegistry.getCard(permCard.cardDefinitionId) ?: continue
+            for (sa in permDef.script.staticAbilities) {
+                if (sa !is MayCastFromGraveyard) continue
+                if (sa.duringYourTurnOnly && state.activePlayerId != playerId) continue
+                if (predicateEvaluator.matches(
+                        state, state.projectedState, cardId, sa.filter,
+                        PredicateContext(controllerId = playerId)
+                    )
+                ) return true
             }
         }
         return false

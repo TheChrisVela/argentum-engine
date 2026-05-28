@@ -31,7 +31,7 @@ import io.kotest.matchers.shouldBe
  * - Top of library (player-wide PlayFromTopOfLibrary, e.g. Future Sight)
  * - Intrinsic zone cast (MayCastSelfFromZones, e.g. Squee, the Immortal)
  * - Graveyard permanents (MayPlayPermanentsFromGraveyard, e.g. Muldrotha)
- * - Graveyard with life cost (MayCastFromGraveyardWithLifeCost,
+ * - Graveyard with life cost (MayCastFromGraveyard,
  *   e.g. Festival of Embers)
  *
  * Deferred to a follow-up phase: warp from hand/exile, graveyard with forage,
@@ -333,7 +333,7 @@ class CastFromZoneEnumeratorTest : FunSpec({
     }
 
     // -------------------------------------------------------------------------
-    context("Graveyard with life cost (MayCastFromGraveyardWithLifeCost — Festival of Embers)") {
+    context("Graveyard with life cost (MayCastFromGraveyard — Festival of Embers)") {
 
         test("Festival of Embers + instant in graveyard + life available — cast emitted with life cost info") {
             val driver = setupP1(

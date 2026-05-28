@@ -25,6 +25,7 @@ import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlayLandsAndCastFilteredFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PreventActivatedAbilities
 import com.wingedsheep.sdk.scripting.PreventCycling
+import com.wingedsheep.sdk.scripting.RestrictSpellsCastPerTurn
 
 /**
  * Extracted permission-checking helpers from LegalActionsCalculator.
@@ -108,6 +109,29 @@ class CastPermissionUtils(
             if (!satisfied) return false
         }
         return true
+    }
+
+    /**
+     * Whether [playerId] has already cast as many spells this turn as a permanent they
+     * control with [RestrictSpellsCastPerTurn] allows (e.g., Yawgmoth's Agenda: "You can't
+     * cast more than one spell each turn."). When several such permanents are in play, the
+     * most restrictive (smallest [RestrictSpellsCastPerTurn.maxPerTurn]) applies. Returns
+     * false when no such permanent is controlled.
+     */
+    fun hasReachedSpellCastLimit(state: GameState, playerId: EntityId): Boolean {
+        var limit: Int? = null
+        for (entityId in state.getBattlefield(playerId)) {
+            val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
+            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+            for (sa in cardDef.script.staticAbilities) {
+                if (sa is RestrictSpellsCastPerTurn) {
+                    limit = minOf(limit ?: sa.maxPerTurn, sa.maxPerTurn)
+                }
+            }
+        }
+        if (limit == null) return false
+        val castThisTurn = state.playerSpellsCastThisTurn[playerId] ?: 0
+        return castThisTurn >= limit
     }
 
     fun hasPlayFromTopOfLibrary(state: GameState, playerId: EntityId): Boolean {

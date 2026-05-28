@@ -12,7 +12,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.KeywordAbility
-import com.wingedsheep.sdk.scripting.MayCastFromGraveyardWithLifeCost
+import com.wingedsheep.sdk.scripting.MayCastFromGraveyard
 import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -43,7 +43,7 @@ class CastKickerFromZoneTest : FunSpec({
         typeLine = "Enchantment"
 
         staticAbility {
-            ability = MayCastFromGraveyardWithLifeCost(
+            ability = MayCastFromGraveyard(
                 filter = GameObjectFilter.InstantOrSorcery,
                 lifeCost = 1,
                 duringYourTurnOnly = true

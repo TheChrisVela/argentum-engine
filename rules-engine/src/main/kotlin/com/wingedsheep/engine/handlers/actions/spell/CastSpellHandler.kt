@@ -121,6 +121,9 @@ class CastSpellHandler(
 
     private val predicateEvaluator = PredicateEvaluator()
     private val zoneResolver = CastZoneResolver(cardRegistry, conditionEvaluator)
+    private val castPermissionUtils = com.wingedsheep.engine.legalactions.utils.CastPermissionUtils(
+        cardRegistry, predicateEvaluator, conditionEvaluator
+    )
     private val paymentProcessor = CastPaymentProcessor(manaSolver, costHandler, manaAbilitySideEffectExecutor)
     private val grantedKeywordResolver = com.wingedsheep.engine.mechanics.mana.GrantedKeywordResolver(cardRegistry)
 
@@ -145,20 +148,26 @@ class CastSpellHandler(
             zoneResolver.hasMayPlayPermanentFromGraveyardPermission(state, action.playerId, action.cardId, cardComponent)
         val hasFlashback = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard &&
             zoneResolver.hasFlashbackPermission(state, action.playerId, action.cardId)
-        val hasGraveyardLifeCost = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback &&
-            action.graveyardLifeCost > 0 && action.cardId in state.getZone(ZoneKey(action.playerId, Zone.GRAVEYARD))
-        val hasForageFromGraveyard = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasGraveyardLifeCost &&
+        val hasGraveyardCast = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback &&
+            zoneResolver.hasMayCastFromGraveyardPermission(state, action.playerId, action.cardId, cardComponent)
+        val hasForageFromGraveyard = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasGraveyardCast &&
             zoneResolver.hasMayCastCreaturesFromGraveyardWithForage(state, action.playerId, action.cardId, cardComponent)
         // Warp from graveyard (e.g., Timeline Culler) — `hasWarpPermission` already
         // checks both hand and graveyard; this branch covers the graveyard case
         // when `inHand` is false.
-        val hasWarpFromGraveyard = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasGraveyardLifeCost && !hasForageFromGraveyard &&
+        val hasWarpFromGraveyard = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasGraveyardCast && !hasForageFromGraveyard &&
             action.useAlternativeCost &&
             zoneResolver.hasWarpPermission(state, action.playerId, action.cardId)
-        val hasCommanderCast = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasGraveyardLifeCost && !hasForageFromGraveyard && !hasWarpFromGraveyard &&
+        val hasCommanderCast = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasGraveyardCast && !hasForageFromGraveyard && !hasWarpFromGraveyard &&
             zoneResolver.hasCommanderCastPermission(state, action.playerId, action.cardId)
-        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasGraveyardLifeCost && !hasForageFromGraveyard && !hasWarpFromGraveyard && !hasCommanderCast) {
+        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasGraveyardCast && !hasForageFromGraveyard && !hasWarpFromGraveyard && !hasCommanderCast) {
             return "Card is not in your hand"
+        }
+
+        // Per-turn spell cast limit (e.g., Yawgmoth's Agenda: "You can't cast more than one
+        // spell each turn."). Already-cast spells are tallied in playerSpellsCastThisTurn.
+        if (castPermissionUtils.hasReachedSpellCastLimit(state, action.playerId)) {
+            return "You can't cast another spell this turn"
         }
 
         if (hasForageFromGraveyard) {

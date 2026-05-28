@@ -1002,6 +1002,20 @@ staticAbility {
 - `PreventManaPoolEmptying` — mana pools don't empty between steps/phases. (Upwelling)
 - `NoMaximumHandSize` — controller has no hand-size limit. (Thought Vessel)
 - `DampLandManaProduction` — a land tapped for 2+ mana produces `{C}` instead. (Damping Sphere)
+- `RestrictSpellsCastPerTurn(maxPerTurn)` — the controller can't cast more than `maxPerTurn`
+  spell(s) each turn. Per-controller; the most restrictive applies when several are in play.
+  Already-cast spells count, even those cast before this permanent entered. (Yawgmoth's Agenda)
+
+**Alternative play / cast permissions** (let a player play or cast cards from non-hand zones)
+
+- `MayPlayLandsFromGraveyard` — play lands from your graveyard (no per-turn cap). (Icetill Explorer)
+- `MayPlayPermanentsFromGraveyard` — Muldrotha: play a land + cast one permanent spell of each
+  permanent type from your graveyard each turn (per-type-per-turn cap).
+- `MayCastFromGraveyard(filter, lifeCost = 0, duringYourTurnOnly = false)` — cast spells matching
+  `filter` from your graveyard following normal timing, optionally paying `lifeCost` life. Free for
+  Yawgmoth's Agenda (`MayCastFromGraveyard(Nonland)`); `lifeCost = 1, duringYourTurnOnly = true` for
+  Festival of Embers. Pair with `MayPlayLandsFromGraveyard` for "play lands and cast spells from
+  your graveyard". Lands are *played*, not cast, so they need the lands permission separately.
 
 > Multiple lord effects on one card → multiple `staticAbility { }` blocks.
 

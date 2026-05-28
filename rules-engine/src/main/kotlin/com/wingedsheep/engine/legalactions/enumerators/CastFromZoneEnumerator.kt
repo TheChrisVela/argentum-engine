@@ -27,7 +27,7 @@ import com.wingedsheep.sdk.scripting.GrantMayCastFromLinkedExile
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.KeywordAbility
-import com.wingedsheep.sdk.scripting.MayCastFromGraveyardWithLifeCost
+import com.wingedsheep.sdk.scripting.MayCastFromGraveyard
 import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
 import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
@@ -56,7 +56,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
         enumerateGraveyardPermanents(context, result)
         enumerateGraveyardCreaturesWithForage(context, result)
         enumerateFlashback(context, result)
-        enumerateGraveyardWithLifeCost(context, result)
+        enumerateGraveyardCast(context, result)
         enumerateWarp(context, result)
         enumerateCommandZone(context, result)
         enumerateKickerForZoneCasts(context, result)
@@ -1427,18 +1427,18 @@ class CastFromZoneEnumerator : ActionEnumerator {
     }
 
     // =========================================================================
-    // Cast from graveyard with additional life cost (MayCastFromGraveyardWithLifeCost)
+    // Cast from graveyard, optionally for an additional life cost (MayCastFromGraveyard)
     // =========================================================================
 
-    private fun enumerateGraveyardWithLifeCost(
+    private fun enumerateGraveyardCast(
         context: EnumerationContext,
         result: MutableList<LegalAction>
     ) {
         val state = context.state
         val playerId = context.playerId
 
-        // Find permanents with MayCastFromGraveyardWithLifeCost static ability
-        val permissions = mutableListOf<MayCastFromGraveyardWithLifeCost>()
+        // Find permanents with MayCastFromGraveyard static ability
+        val permissions = mutableListOf<MayCastFromGraveyard>()
         for (permId in state.getBattlefield()) {
             val container = state.getEntity(permId) ?: continue
             val controller = container.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId
@@ -1446,7 +1446,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
             val cardComp = container.get<CardComponent>() ?: continue
             val cardDef = context.cardRegistry.getCard(cardComp.cardDefinitionId) ?: continue
             for (sa in cardDef.script.staticAbilities) {
-                if (sa is MayCastFromGraveyardWithLifeCost) {
+                if (sa is MayCastFromGraveyard) {
                     permissions.add(sa)
                 }
             }
@@ -1457,6 +1457,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
         // Check timing restrictions
         for (permission in permissions) {
             if (permission.duringYourTurnOnly && state.activePlayerId != playerId) continue
+            val lifeCost = permission.lifeCost
+            val lifeSuffix = if (lifeCost > 0) " (pay $lifeCost life)" else ""
 
             val graveyardCards = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))
             for (cardId in graveyardCards) {
@@ -1471,7 +1473,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                     )
                 ) continue
 
-                // Check timing: instants at instant speed, sorceries at sorcery speed
+                // Check timing: instants at instant speed, everything else at sorcery speed
                 val isInstant = cardComponent.typeLine.isInstant
                 if (!isInstant && !context.canPlaySorcerySpeed) continue
 
@@ -1481,10 +1483,12 @@ class CastFromZoneEnumerator : ActionEnumerator {
                 val castRestrictions = cardDef.script.castRestrictions
                 if (!context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
 
-                // Check life affordability
-                val currentLife = state.getEntity(playerId)
-                    ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life ?: 0
-                if (currentLife < permission.lifeCost) continue
+                // Check life affordability (only when there is a life cost)
+                if (lifeCost > 0) {
+                    val currentLife = state.getEntity(playerId)
+                        ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life ?: 0
+                    if (currentLife < lifeCost) continue
+                }
 
                 val effectiveCost = context.costCalculator.calculateEffectiveCost(state, cardDef, playerId)
                 val costString = effectiveCost.toString()
@@ -1494,12 +1498,12 @@ class CastFromZoneEnumerator : ActionEnumerator {
                     result.add(
                         LegalAction(
                             actionType = "CastSpell",
-                            description = "Cast ${cardComponent.name} (pay ${permission.lifeCost} life)",
-                            action = CastSpell(playerId, cardId, graveyardLifeCost = permission.lifeCost),
+                            description = "Cast ${cardComponent.name}$lifeSuffix",
+                            action = CastSpell(playerId, cardId, graveyardLifeCost = lifeCost),
                             affordable = false,
                             manaCostString = costString,
                             sourceZone = "GRAVEYARD",
-                            additionalLifeCost = permission.lifeCost
+                            additionalLifeCost = lifeCost
                         )
                     )
                     continue
@@ -1524,8 +1528,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         result.add(
                             LegalAction(
                                 actionType = "CastSpell",
-                                description = "Cast ${cardComponent.name} (pay ${permission.lifeCost} life)",
-                                action = CastSpell(playerId, cardId, graveyardLifeCost = permission.lifeCost),
+                                description = "Cast ${cardComponent.name}$lifeSuffix",
+                                action = CastSpell(playerId, cardId, graveyardLifeCost = lifeCost),
                                 validTargets = firstInfo.validTargets,
                                 requiresTargets = true,
                                 targetCount = firstReq.count,
@@ -1535,7 +1539,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                                 manaCostString = costString,
                                 autoTapPreview = autoTapPreview,
                                 sourceZone = "GRAVEYARD",
-                                additionalLifeCost = permission.lifeCost
+                                additionalLifeCost = lifeCost
                             )
                         )
                     }
@@ -1543,12 +1547,12 @@ class CastFromZoneEnumerator : ActionEnumerator {
                     result.add(
                         LegalAction(
                             actionType = "CastSpell",
-                            description = "Cast ${cardComponent.name} (pay ${permission.lifeCost} life)",
-                            action = CastSpell(playerId, cardId, graveyardLifeCost = permission.lifeCost),
+                            description = "Cast ${cardComponent.name}$lifeSuffix",
+                            action = CastSpell(playerId, cardId, graveyardLifeCost = lifeCost),
                             manaCostString = costString,
                             autoTapPreview = autoTapPreview,
                             sourceZone = "GRAVEYARD",
-                            additionalLifeCost = permission.lifeCost
+                            additionalLifeCost = lifeCost
                         )
                     )
                 }
