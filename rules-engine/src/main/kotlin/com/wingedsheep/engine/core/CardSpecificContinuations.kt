@@ -117,7 +117,7 @@ data class ProliferateContinuation(
 ) : ContinuationFrame
 
 /**
- * Resume after a tempted player chooses which creature becomes their Ring-bearer (CR 701.54a).
+ * Resume after a tempted player chooses which creature becomes their Ring-bearer (CR 701.52a).
  *
  * The emblem and tempt-count increment are applied before the decision; this continuation only
  * moves the Ring-bearer designation to the chosen creature and announces the temptation.

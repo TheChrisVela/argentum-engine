@@ -166,7 +166,7 @@ data class CitysBlessingGainedEvent(
 ) : GameEvent
 
 /**
- * The Ring tempted a player (CR 701.54d). Emitted after the "the Ring tempts you" action
+ * The Ring tempted a player (CR 701.52d). Emitted after the "the Ring tempts you" action
  * completes (even if some or all of it was impossible). Drives "Whenever the Ring tempts you"
  * triggers; see [com.wingedsheep.sdk.scripting.GameEvent.RingTemptedEvent].
  *

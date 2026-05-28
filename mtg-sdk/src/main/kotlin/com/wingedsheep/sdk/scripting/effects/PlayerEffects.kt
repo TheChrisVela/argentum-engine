@@ -490,7 +490,7 @@ data class GainCitysBlessingEffect(
 }
 
 /**
- * "The Ring tempts you" (CR 701.54). The target player gets an emblem named The Ring (if they
+ * "The Ring tempts you" (CR 701.52). The target player gets an emblem named The Ring (if they
  * don't have one) and chooses a creature they control to become their Ring-bearer. The emblem's
  * four cumulative abilities are gated by how many times that player has been tempted.
  *

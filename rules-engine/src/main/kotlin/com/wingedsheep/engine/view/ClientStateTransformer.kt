@@ -1734,7 +1734,7 @@ class ClientStateTransformer(
             )
         }
 
-        // The Ring emblem (CR 701.54). Surface the tempt count so the player can see which of the
+        // The Ring emblem (CR 701.52). Surface the tempt count so the player can see which of the
         // emblem's four cumulative abilities are active and which creature is their Ring-bearer.
         container.get<TheRingComponent>()?.let { ring ->
             val bearerName = state.getBattlefield()

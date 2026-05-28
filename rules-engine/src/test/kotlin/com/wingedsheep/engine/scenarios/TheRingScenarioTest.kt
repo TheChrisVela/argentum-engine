@@ -21,7 +21,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 
 /**
- * Substrate tests for The Ring mechanic (CR 701.54): the "the Ring tempts you" effect, the
+ * Substrate tests for The Ring mechanic (CR 701.52): the "the Ring tempts you" effect, the
  * Ring-bearer designation, the legendary + can't-be-blocked-by-greater-power static abilities,
  * the "Whenever the Ring tempts you" trigger, and the tempt-count-gated combat ability.
  */
@@ -146,6 +146,27 @@ class TheRingScenarioTest : FunSpec({
         driver.getLifeTotal(active) shouldBe lifeBefore + 2
     }
 
+    test("tempting with no creatures still tempts: count increments and the trigger fires (CR 701.52a/d)") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 40))
+        val active = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        // The player controls an enchantment but no creatures, so there's no Ring-bearer to choose.
+        driver.putPermanentOnBattlefield(active, "Ring Watcher")
+        val lifeBefore = driver.getLifeTotal(active)
+
+        // No creature to pick — tempt(...) resolves without a SelectCardsDecision.
+        driver.tempt(active, bearerId = null)
+        driver.bothPass() // resolve the "Whenever the Ring tempts you" triggered ability
+
+        driver.state.getEntity(active)?.get<TheRingComponent>()?.temptCount shouldBe 1
+        driver.state.getBattlefield().any {
+            driver.state.getEntity(it)?.get<RingBearerComponent>() != null
+        } shouldBe false
+        driver.getLifeTotal(active) shouldBe lifeBefore + 2
+    }
+
     test("tempted four times: Ring-bearer's combat damage to a player drains each opponent 3") {
         val driver = createDriver()
         driver.initMirrorMatch(deck = Deck.of("Mountain" to 40))
@@ -228,7 +249,7 @@ class TheRingScenarioTest : FunSpec({
             }
         }
 
-        // The blocker survived combat damage but is sacrificed at end of combat (CR 701.54c, ≥3).
+        // The blocker survived combat damage but is sacrificed at end of combat (CR 701.52c, ≥3).
         driver.findPermanent(opponent, "Stout Blocker") shouldBe null
     }
 })

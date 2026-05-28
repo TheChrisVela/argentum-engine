@@ -19,13 +19,13 @@ import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
- * Resolves [TheRingTemptsYouEffect] — "the Ring tempts you" (CR 701.54).
+ * Resolves [TheRingTemptsYouEffect] — "the Ring tempts you" (CR 701.52).
  *
  * 1. Ensure the tempted player has the Ring emblem ([TheRingComponent]) and increment its tempt
- *    count (CR 701.54c — the emblem and its leveling happen *before* choosing a Ring-bearer).
+ *    count (CR 701.52c — the emblem and its leveling happen *before* choosing a Ring-bearer).
  * 2. If the player controls one or more creatures, pause to let them choose one to become their
  *    Ring-bearer; [RingTemptContinuation] applies the designation and announces the temptation.
- * 3. If the player controls no creature, the temptation still happens (CR 701.54a/d): the count is
+ * 3. If the player controls no creature, the temptation still happens (CR 701.52a/d): the count is
  *    incremented and [RingTemptedEvent] fires with no bearer chosen.
  */
 class TheRingTemptsYouExecutor : EffectExecutor<TheRingTemptsYouEffect> {

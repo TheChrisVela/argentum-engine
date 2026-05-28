@@ -143,15 +143,16 @@ class ConditionEvaluator {
             // Generic source-state primitive — predicate-evaluator against the source entity.
             is SourceMatches -> evaluateSourceMatchesCtx(state, condition, ctx)
 
-            // CR 701.54e: the source is your Ring-bearer (designation for, and controlled by, you).
+            // CR 701.52e: the source is your Ring-bearer — it carries your Ring-bearer designation
+            // and you still control it. The control half reads the projected controller so a
+            // control-changing effect correctly ends the designation.
             is SourceIsRingBearer -> {
                 val sourceId = ctx.sourceId
                 val controllerId = ctx.controllerId
-                val container = if (sourceId != null) state.getEntity(sourceId) else null
-                val bearer = container?.get<RingBearerComponent>()
+                val bearer = sourceId?.let { state.getEntity(it)?.get<RingBearerComponent>() }
                 bearer != null && controllerId != null &&
                     bearer.ownerId == controllerId &&
-                    container.get<ControllerComponent>()?.playerId == controllerId
+                    state.projectedState.getController(sourceId) == controllerId
             }
 
             // Aura-controller-aware modified check (CR 700.4) — distinct enough from the

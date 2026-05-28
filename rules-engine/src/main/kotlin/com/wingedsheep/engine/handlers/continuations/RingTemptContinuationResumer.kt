@@ -11,7 +11,7 @@ import com.wingedsheep.engine.state.components.identity.RingBearerComponent
 import com.wingedsheep.sdk.model.EntityId
 
 /**
- * Resumes "the Ring tempts you" after the tempted player picks their Ring-bearer (CR 701.54a).
+ * Resumes "the Ring tempts you" after the tempted player picks their Ring-bearer (CR 701.52a).
  *
  * The Ring-bearer designation is unique per owner, so this moves it: any creature currently
  * carrying [RingBearerComponent] for the tempted player loses it, and the chosen creature gains it.

@@ -8,7 +8,6 @@ import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.SuppressesWardForGroupComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.RingBearerComponent
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
@@ -191,7 +190,7 @@ class TriggerAbilityResolver(
             else getWardTriggeredAbilities(entityId, cardDefinitionId, state)
 
         // The Ring emblem's abilities belong to the emblem (a player object), not the creature, so
-        // they survive "loses all abilities" effects on the Ring-bearer (CR 701.54c).
+        // they survive "loses all abilities" effects on the Ring-bearer (CR 701.52c).
         val ringBearerAbilities = getRingBearerAbilities(entityId, state)
 
         val allGranted = grantedAbilities + staticGrantedAbilities + attachedGrantedAbilities + wardAbilities + ringBearerAbilities
@@ -206,15 +205,16 @@ class TriggerAbilityResolver(
     }
 
     /**
-     * The Ring emblem's cumulative triggered abilities (CR 701.54c) for [entityId] when it is a
+     * The Ring emblem's cumulative triggered abilities (CR 701.52c) for [entityId] when it is a
      * player's Ring-bearer. "Is your Ring-bearer" requires the creature to be under that owner's
-     * control (CR 701.54e), so a Ring-bearer that changed controllers contributes nothing. The
+     * control (CR 701.52e), so a Ring-bearer that changed controllers contributes nothing. The
      * subset of abilities is gated by the owner's tempt count (see [TheRingAbilities]).
      */
     private fun getRingBearerAbilities(entityId: EntityId, state: GameState): List<TriggeredAbility> {
-        val container = state.getEntity(entityId) ?: return emptyList()
-        val bearer = container.get<RingBearerComponent>() ?: return emptyList()
-        if (container.get<ControllerComponent>()?.playerId != bearer.ownerId) return emptyList()
+        val bearer = state.getEntity(entityId)?.get<RingBearerComponent>() ?: return emptyList()
+        // CR 701.52e: read the *projected* controller — a Ring-bearer stolen by a control-changing
+        // effect is no longer "your Ring-bearer," so it stops contributing the emblem's abilities.
+        if (state.projectedState.getController(entityId) != bearer.ownerId) return emptyList()
         val temptCount = state.getEntity(bearer.ownerId)?.get<TheRingComponent>()?.temptCount ?: return emptyList()
         return TheRingAbilities.abilitiesFor(temptCount)
     }

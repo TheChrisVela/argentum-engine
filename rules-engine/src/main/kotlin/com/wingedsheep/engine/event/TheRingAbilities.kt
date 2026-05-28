@@ -13,7 +13,7 @@ import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
- * The Ring emblem's cumulative triggered abilities (CR 701.54c).
+ * The Ring emblem's cumulative triggered abilities (CR 701.52c).
  *
  * The emblem is a per-player object, but its triggered abilities reference "your Ring-bearer", so
  * they are modeled as SELF-bound triggered abilities living on the Ring-bearer creature.
@@ -51,7 +51,7 @@ object TheRingAbilities {
         binding = TriggerBinding.SELF,
         effect = CreateDelayedTriggerEffect(
             step = Step.END_COMBAT,
-            effect = SacrificeTargetEffect(EffectTarget.TriggeringEntity, byTargetController = true)
+            effect = SacrificeTargetEffect(EffectTarget.TriggeringEntity, sacrificedByItsController = true)
         ),
         descriptionOverride = "Whenever your Ring-bearer becomes blocked by a creature, the blocking creature's controller sacrifices it at end of combat."
     )

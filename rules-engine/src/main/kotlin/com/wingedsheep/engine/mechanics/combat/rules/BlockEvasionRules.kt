@@ -452,10 +452,10 @@ class CantBeBlockedIfCastSpellTypeRule(
 }
 
 /**
- * Ring-bearer evasion (CR 701.54c): a player's Ring-bearer can't be blocked by creatures with
+ * Ring-bearer evasion (CR 701.52c): a player's Ring-bearer can't be blocked by creatures with
  * power greater than the Ring-bearer's power. Driven by the [RingBearerComponent] designation
  * rather than a card static ability, and only while the bearer is still controlled by its
- * designator (CR 701.54e). The dual of [CantBlockCreaturesWithGreaterPowerRule].
+ * designator (CR 701.52e). The dual of [CantBlockCreaturesWithGreaterPowerRule].
  */
 class RingBearerCantBeBlockedByGreaterPowerRule : BlockEvasionRule {
     override fun check(ctx: BlockCheckContext): String? {

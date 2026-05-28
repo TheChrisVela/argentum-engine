@@ -511,7 +511,7 @@ object Effects {
         com.wingedsheep.sdk.scripting.effects.GainCitysBlessingEffect(target)
 
     /**
-     * "The Ring tempts you" (CR 701.54). The target player gets the Ring emblem (if they don't have
+     * "The Ring tempts you" (CR 701.52). The target player gets the Ring emblem (if they don't have
      * one), then chooses a creature they control to become their Ring-bearer. Defaults to the
      * controller. Tempting still happens even if the player controls no creatures.
      */

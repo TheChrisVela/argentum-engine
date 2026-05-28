@@ -1157,11 +1157,11 @@ object Triggers {
     )
 
     // =========================================================================
-    // The Ring Triggers (CR 701.54)
+    // The Ring Triggers (CR 701.52)
     // =========================================================================
 
     /**
-     * Whenever the Ring tempts you (CR 701.54d). Fires when this ability's controller is tempted,
+     * Whenever the Ring tempts you (CR 701.52d). Fires when this ability's controller is tempted,
      * even if some or all of the tempt actions were impossible.
      */
     val RingTemptsYou: TriggerSpec = TriggerSpec(

@@ -128,18 +128,6 @@ class StateProjector(
             }
         }
 
-        // CR 701.54c: a player's Ring-bearer is legendary (the Ring emblem's first ability).
-        // Baked in here so it follows whichever creature currently holds the designation and is
-        // dropped automatically once that creature is no longer under its designator's control
-        // (CR 701.54e). isLegendary() reads the projected type set, so adding "LEGENDARY" suffices.
-        for (entityId in state.getBattlefield()) {
-            val container = state.getEntity(entityId) ?: continue
-            val bearer = container.get<RingBearerComponent>() ?: continue
-            if (container.get<ControllerComponent>()?.playerId == bearer.ownerId) {
-                projectedValues[entityId]?.types?.add("LEGENDARY")
-            }
-        }
-
         // Apply Layer 3 text-changing effects (TextReplacementComponent)
         applyTextReplacements(state, projectedValues)
 
@@ -171,6 +159,20 @@ class StateProjector(
         val typeLayerEffects = nonControlNonPTEffects.filter { it.layer == Layer.TEXT || it.layer == Layer.TYPE }
         for (effect in typeLayerEffects) {
             effectApplicator.applyEffect(effect, state, projectedValues)
+        }
+
+        // CR 701.52c: a player's Ring-bearer is legendary (the Ring emblem's first ability).
+        // Applied here as a type-changing (Layer 4) effect, after Layer 2 control is established, so
+        // it reads the *projected* controller: "is your Ring-bearer" requires the creature to still
+        // be under its designator's control (CR 701.52e), so a Ring-bearer stolen by a control-
+        // changing effect stops being legendary. isLegendary() reads the projected type set, so
+        // adding "LEGENDARY" suffices, and it follows whichever creature currently holds the
+        // designation.
+        for (entityId in state.getBattlefield()) {
+            val bearer = state.getEntity(entityId)?.get<RingBearerComponent>() ?: continue
+            if (projectedValues[entityId]?.controllerId == bearer.ownerId) {
+                projectedValues[entityId]?.types?.add("LEGENDARY")
+            }
         }
 
         // Re-resolve creature-dependent filters for layers 5-6 now that type changes are applied

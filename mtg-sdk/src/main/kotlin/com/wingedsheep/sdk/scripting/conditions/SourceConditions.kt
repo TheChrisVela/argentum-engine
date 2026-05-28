@@ -56,7 +56,7 @@ data object YouControlSource : Condition {
 }
 
 /**
- * Condition: "if this creature is your Ring-bearer" (CR 701.54e).
+ * Condition: "if this creature is your Ring-bearer" (CR 701.52e).
  *
  * True when the source permanent is on the battlefield under the ability's controller and has the
  * Ring-bearer designation for that player. Used by cards whose effects key off "your Ring-bearer".

@@ -46,11 +46,11 @@ import com.wingedsheep.sdk.scripting.conditions.Condition as ConditionInterface
 object Conditions {
 
     // =========================================================================
-    // The Ring (CR 701.54)
+    // The Ring (CR 701.52)
     // =========================================================================
 
     /**
-     * If the source permanent is your Ring-bearer (CR 701.54e).
+     * If the source permanent is your Ring-bearer (CR 701.52e).
      */
     val SourceIsRingBearer: ConditionInterface = SourceIsRingBearerCondition
 
