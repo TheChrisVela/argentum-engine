@@ -136,11 +136,16 @@ data object SacrificeSelfEffect : Effect {
  * was determined at ability resolution time (e.g., Skirk Alarmist's delayed sacrifice).
  *
  * @property target The specific permanent to sacrifice
+ * @property byTargetController When false (default), only sacrifices the target if the effect's
+ *   controller controls it — the "sacrifice the creature you put onto the battlefield" case. When
+ *   true, the permanent's own controller sacrifices it regardless of who controls the effect — the
+ *   "[that creature]'s controller sacrifices it" case (e.g. The Ring's Ring-bearer ability).
  */
 @SerialName("SacrificeTarget")
 @Serializable
 data class SacrificeTargetEffect(
-    val target: EffectTarget = EffectTarget.ContextTarget(0)
+    val target: EffectTarget = EffectTarget.ContextTarget(0),
+    val byTargetController: Boolean = false
 ) : Effect {
     override val description: String = "sacrifice ${target.description}"
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this

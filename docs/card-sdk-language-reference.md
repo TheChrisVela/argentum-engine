@@ -310,7 +310,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Forced sacrifice / discard
 
-- `SacrificeTargetEffect(target)` — target sacrifices itself.
+- `SacrificeTargetEffect(target, byTargetController = false)` — sacrifice a specific permanent. By
+  default only fires if the resolving player controls it; set `byTargetController = true` for
+  "[that creature]'s controller sacrifices it" (e.g. The Ring's Ring-bearer ability).
 - `ForceSacrificeEffect(target, count)` — edict; target sacrifices N creatures.
 - `ForceReturnOwnPermanentEffect(target)` — target bounces one of their own.
 

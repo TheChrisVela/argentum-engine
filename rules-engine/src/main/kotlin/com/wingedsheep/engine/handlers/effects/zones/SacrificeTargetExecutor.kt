@@ -54,7 +54,10 @@ class SacrificeTargetExecutor : EffectExecutor<SacrificeTargetEffect> {
             ?: container.get<ControllerComponent>()?.playerId
             ?: context.controllerId
 
-        if (controllerId != context.controllerId) {
+        // By default "sacrifice it" only sacrifices a permanent the resolving player controls.
+        // When byTargetController is set, the permanent's own controller sacrifices it
+        // ("[that creature]'s controller sacrifices it"), so don't gate on the resolver's control.
+        if (!effect.byTargetController && controllerId != context.controllerId) {
             return EffectResult.success(state)
         }
 

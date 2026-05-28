@@ -51,10 +51,13 @@ class TheRingScenarioTest : FunSpec({
     val Bear = CardDefinition.creature("Ring Bear", ManaCost.parse("{2}"), emptySet(), 2, 2)
     val BigOgre = CardDefinition.creature("Big Ogre", ManaCost.parse("{3}"), emptySet(), 3, 3)
     val SmallGoblin = CardDefinition.creature("Small Goblin", ManaCost.parse("{1}"), emptySet(), 1, 1)
+    // Power 2 (can legally block a 3-power Ring-bearer), toughness 4 (survives 3 combat damage so
+    // it's still around to be sacrificed at end of combat).
+    val StoutBlocker = CardDefinition.creature("Stout Blocker", ManaCost.parse("{3}"), emptySet(), 2, 4)
 
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
-        driver.registerCards(TestCards.all + listOf(RingTempter, RingWatcher, Bear, BigOgre, SmallGoblin))
+        driver.registerCards(TestCards.all + listOf(RingTempter, RingWatcher, Bear, BigOgre, SmallGoblin, StoutBlocker))
         return driver
     }
 
@@ -178,5 +181,54 @@ class TheRingScenarioTest : FunSpec({
 
         // 2 combat damage + 3 from the Ring's fourth ability.
         driver.getLifeTotal(opponent) shouldBe opponentLifeBefore - 5
+    }
+
+    test("tempted three times: blocker of the Ring-bearer is sacrificed at end of combat") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 40))
+        val active = driver.activePlayer!!
+        val opponent = driver.getOpponent(active)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val bearer = driver.putCreatureOnBattlefield(active, "Big Ogre") // 3/3
+        driver.removeSummoningSickness(bearer)
+        val blocker = driver.putCreatureOnBattlefield(opponent, "Stout Blocker") // 2/4, survives combat
+        repeat(3) { driver.tempt(active, bearer) }
+        driver.state.getEntity(active)?.get<TheRingComponent>()?.temptCount shouldBe 3
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(active, listOf(bearer), opponent)
+
+        // The ≥2 "draw a card, then discard a card" attack trigger resolves first — auto-resolve its
+        // discard decision and advance to the declare-blockers step before declaring blockers.
+        var g1 = 0
+        while (driver.currentStep != Step.DECLARE_BLOCKERS && g1++ < 20) {
+            when (val decision = driver.pendingDecision) {
+                is SelectCardsDecision ->
+                    driver.submitDecision(
+                        decision.playerId,
+                        CardsSelectedResponse(decision.id, decision.options.take(maxOf(1, decision.minSelections)))
+                    )
+                else -> driver.bothPass()
+            }
+        }
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(bearer)))
+
+        // Resolve the becomes-blocked trigger, combat damage, and the end-of-combat sacrifice.
+        var g2 = 0
+        while (driver.currentStep != Step.POSTCOMBAT_MAIN && g2++ < 40) {
+            when (val decision = driver.pendingDecision) {
+                is SelectCardsDecision ->
+                    driver.submitDecision(
+                        decision.playerId,
+                        CardsSelectedResponse(decision.id, decision.options.take(maxOf(1, decision.minSelections)))
+                    )
+                is CombatResolutionDecision -> driver.confirmCombatDamage()
+                else -> driver.bothPass()
+            }
+        }
+
+        // The blocker survived combat damage but is sacrificed at end of combat (CR 701.54c, ≥3).
+        driver.findPermanent(opponent, "Stout Blocker") shouldBe null
     }
 })

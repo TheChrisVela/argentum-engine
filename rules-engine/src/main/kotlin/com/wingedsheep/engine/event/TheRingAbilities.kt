@@ -51,7 +51,7 @@ object TheRingAbilities {
         binding = TriggerBinding.SELF,
         effect = CreateDelayedTriggerEffect(
             step = Step.END_COMBAT,
-            effect = SacrificeTargetEffect(EffectTarget.TriggeringEntity)
+            effect = SacrificeTargetEffect(EffectTarget.TriggeringEntity, byTargetController = true)
         ),
         descriptionOverride = "Whenever your Ring-bearer becomes blocked by a creature, the blocking creature's controller sacrifices it at end of combat."
     )
