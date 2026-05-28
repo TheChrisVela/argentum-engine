@@ -110,6 +110,7 @@ class StackResolver(
         wasBlightPaid: Boolean = false,
         wasWarped: Boolean = false,
         wasEvoked: Boolean = false,
+        wasImpending: Boolean = false,
         chosenModes: List<Int> = emptyList(),
         modeTargetsOrdered: List<List<ChosenTarget>> = emptyList(),
         modeTargetRequirements: Map<Int, List<TargetRequirement>> = emptyMap(),
@@ -175,6 +176,7 @@ class StackResolver(
                 castFromZone = castFromZone,
                 wasWarped = wasWarped,
                 wasEvoked = wasEvoked,
+                wasImpending = wasImpending,
                 beheldCards = beheldCards,
                 chosenEntitySnapshots = chosenEntitySnapshots,
                 manaSpentWhite = manaSpentWhite,
@@ -974,6 +976,24 @@ class StackResolver(
             // Track if this permanent was cast for its evoke cost
             if (spellComponent.wasEvoked) {
                 updated = updated.with(com.wingedsheep.engine.state.components.battlefield.EvokedComponent)
+            }
+
+            // Impending (CR 702.176a): a permanent cast for its impending cost enters with
+            // N time counters. The "isn't a creature" static and the end-step removal trigger
+            // both gate on impending-cost-paid AND has-time-counter, so we stamp a
+            // CastForImpendingComponent marker that survives the countdown — without it, a
+            // normally-cast permanent that gained a time counter from some other effect
+            // would incorrectly stop being a creature.
+            if (spellComponent.wasImpending) {
+                val impendingTime = cardDef?.keywordAbilities
+                    ?.filterIsInstance<KeywordAbility.Impending>()
+                    ?.firstOrNull()?.time ?: 0
+                if (impendingTime > 0) {
+                    val existingCounters = updated.get<CountersComponent>() ?: CountersComponent()
+                    updated = updated
+                        .with(existingCounters.withAdded(CounterType.TIME, impendingTime))
+                        .with(com.wingedsheep.engine.state.components.battlefield.CastForImpendingComponent)
+                }
             }
 
             // For split-layout cards (CR 709), attach a RoomComponent recording every face's
