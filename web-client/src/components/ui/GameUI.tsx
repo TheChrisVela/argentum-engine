@@ -698,6 +698,7 @@ function LobbyOverlay({
   const tournamentState = useGameStore((state) => state.tournamentState)
   const [copied, setCopied] = useState(false)
   const [showIncompleteSets, setShowIncompleteSets] = useState(false)
+  const [incompleteSearch, setIncompleteSearch] = useState('')
 
   // Show tournament standings when tournament is active
   if (tournamentState) {
@@ -751,6 +752,20 @@ function LobbyOverlay({
   const completeSets = lobbyState.settings.availableSets.filter((s) => !s.incomplete)
   const incompleteSets = lobbyState.settings.availableSets.filter((s) => s.incomplete)
   const selectedIncompleteCount = incompleteSets.filter((s) => lobbyState.settings.setCodes.includes(s.code)).length
+  // Searchable multi-select inside the modal — match on set name or code, like the deckbuilder picker.
+  const incompleteSearchNeedle = incompleteSearch.trim().toLowerCase()
+  const filteredIncompleteSets = incompleteSearchNeedle
+    ? incompleteSets.filter(
+        (s) =>
+          s.name.toLowerCase().includes(incompleteSearchNeedle) ||
+          s.code.toLowerCase().includes(incompleteSearchNeedle),
+      )
+    : incompleteSets
+
+  const closeIncompleteSets = () => {
+    setShowIncompleteSets(false)
+    setIncompleteSearch('')
+  }
 
   const toggleSet = (code: string) => {
     const isSelected = lobbyState.settings.setCodes.includes(code)
@@ -767,6 +782,24 @@ function LobbyOverlay({
         key={set.code}
         onClick={() => toggleSet(set.code)}
         className={`${styles.settingsButton} ${isSelected ? (isAnyDraft ? `${styles.settingsButtonActive} ${styles.settingsButtonDraft}` : styles.settingsButtonActive) : ''}`}
+      >
+        <span>{set.name}</span>
+        {set.implementedCount != null && (
+          <span className={styles.setButtonCardCount}>{set.implementedCount} cards</span>
+        )}
+      </button>
+    )
+  }
+
+  // Full-width toggle row used inside the searchable incomplete-sets multi-select.
+  const renderIncompleteSetRow = (set: AvailableSet) => {
+    const isSelected = lobbyState.settings.setCodes.includes(set.code)
+    return (
+      <button
+        key={set.code}
+        type="button"
+        onClick={() => toggleSet(set.code)}
+        className={`${styles.settingsButton} ${styles.incompleteSetRow} ${isSelected ? styles.settingsButtonActive : ''}`}
       >
         <span>{set.name}</span>
         {set.implementedCount != null && (
@@ -1384,19 +1417,35 @@ function LobbyOverlay({
       </div>
 
       {showIncompleteSets && (
-        <div className={styles.deckViewerBackdrop} onClick={() => setShowIncompleteSets(false)}>
+        <div className={styles.deckViewerBackdrop} onClick={closeIncompleteSets}>
           <div className={styles.deckViewerPanel} style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
             <div className={styles.deckViewerHeader}>
               <h3 className={styles.deckViewerTitle}>Incomplete sets</h3>
-              <button className={styles.deckViewerClose} onClick={() => setShowIncompleteSets(false)}>×</button>
+              <button className={styles.deckViewerClose} onClick={closeIncompleteSets}>×</button>
             </div>
             <div className={styles.deckViewerBody}>
               <p className={styles.incompleteSetsNote}>
                 These sets aren't fully implemented yet — some cards are missing, so boosters draw from a
-                combined pool of the cards that exist. Selecting one mixes it into your pool.
+                combined pool of the cards that exist. Pick any number to mix into your pool.
               </p>
-              <div className={styles.setSelectionGrid} style={{ justifyContent: 'flex-start' }}>
-                {renderGroupedSets(incompleteSets)}
+              <input
+                type="text"
+                className={styles.incompleteSetsSearch}
+                placeholder="Search sets by name or code…"
+                value={incompleteSearch}
+                spellCheck={false}
+                autoComplete="off"
+                autoFocus
+                onChange={(e) => setIncompleteSearch(e.target.value)}
+              />
+              <div className={styles.incompleteSetsList}>
+                {filteredIncompleteSets.length > 0 ? (
+                  filteredIncompleteSets.map(renderIncompleteSetRow)
+                ) : (
+                  <div className={styles.incompleteSetsEmpty}>
+                    {incompleteSearchNeedle ? 'No sets match your search.' : 'No incomplete sets available.'}
+                  </div>
+                )}
               </div>
             </div>
           </div>

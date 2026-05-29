@@ -1324,6 +1324,55 @@
   margin: 0 0 var(--space-3);
 }
 
+.incompleteSetsSearch {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: var(--space-2);
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  outline: none;
+}
+
+.incompleteSetsSearch:focus {
+  border-color: var(--color-accent-dark);
+}
+
+.incompleteSetsSearch::placeholder {
+  color: var(--text-disabled);
+}
+
+.incompleteSetsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 48vh;
+  overflow-y: auto;
+}
+
+.incompleteSetRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  text-align: left;
+}
+
+.incompleteSetRow .setButtonCardCount {
+  flex-shrink: 0;
+}
+
+.incompleteSetsEmpty {
+  font-size: var(--font-sm);
+  color: var(--text-disabled);
+  text-align: center;
+  padding: var(--space-4) 0;
+}
+
 
 /* =========================================================================
  * Player List

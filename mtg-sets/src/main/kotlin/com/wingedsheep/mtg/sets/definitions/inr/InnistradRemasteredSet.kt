@@ -15,6 +15,7 @@ object InnistradRemasteredSet : MtgSet {
     override val code = "INR"
     override val displayName = "Innistrad Remastered"
     override val releaseDate = "2025-01-24"
+    override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)

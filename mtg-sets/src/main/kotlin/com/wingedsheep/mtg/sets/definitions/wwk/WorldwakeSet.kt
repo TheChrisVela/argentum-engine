@@ -19,6 +19,7 @@ object WorldwakeSet : MtgSet {
     override val code = "WWK"
     override val displayName = "Worldwake"
     override val releaseDate = "2010-02-05"
+    override val incomplete = true
     override val sealedSupported = false
 
     override val cards: List<CardDefinition> by lazy {

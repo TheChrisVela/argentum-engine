@@ -15,6 +15,7 @@ object AvatarTheLastAirbenderSet : MtgSet {
     override val code = "TLA"
     override val displayName = "Avatar: The Last Airbender"
     override val releaseDate = "2025-11-21"
+    override val incomplete = true
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
