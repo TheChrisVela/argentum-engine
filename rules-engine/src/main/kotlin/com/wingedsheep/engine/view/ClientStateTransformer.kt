@@ -38,6 +38,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.scripting.LookAtFaceDownCreatures
 import com.wingedsheep.sdk.scripting.LookAtTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
+import com.wingedsheep.sdk.scripting.RevealTopOfLibrary
 import com.wingedsheep.sdk.scripting.conditions.AllConditions
 import com.wingedsheep.sdk.scripting.conditions.AnyCondition
 import com.wingedsheep.sdk.scripting.conditions.Compare
@@ -172,10 +173,12 @@ class ClientStateTransformer(
         }
         // --- FIX END ---
 
-        // Reveal top library card for players with PlayFromTopOfLibrary (e.g., Future Sight)
-        // The top card is revealed to ALL players per the card's oracle text.
+        // Reveal top library card for players who "play with the top card revealed"
+        // (PlayFromTopOfLibrary, e.g. Future Sight; or RevealTopOfLibrary, e.g. Goblin Spy).
+        // The top card is revealed to ALL players per the card's oracle text. The two abilities
+        // differ only in play permission (handled elsewhere); the public reveal is identical.
         for (ownerId in state.turnOrder) {
-            if (hasPlayFromTopOfLibrary(state, ownerId)) {
+            if (revealsTopOfLibraryPublicly(state, ownerId)) {
                 val library = state.getLibrary(ownerId)
                 if (library.isNotEmpty()) {
                     val topCardId = library.first()
@@ -353,13 +356,16 @@ class ClientStateTransformer(
     }
 
     /**
-     * Check if a player controls a permanent with PlayFromTopOfLibrary.
+     * Check if a player controls a permanent that reveals the top card of their library to all
+     * players — either [PlayFromTopOfLibrary] (Future Sight) or [RevealTopOfLibrary] (Goblin Spy).
+     * The two abilities share the public-reveal visibility; they diverge only in play permission,
+     * which is handled by the cast/play-from-top paths (keyed on [PlayFromTopOfLibrary] alone).
      */
-    private fun hasPlayFromTopOfLibrary(state: GameState, playerId: EntityId): Boolean {
+    private fun revealsTopOfLibraryPublicly(state: GameState, playerId: EntityId): Boolean {
         for (entityId in state.getBattlefield(playerId)) {
             val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            if (cardDef.script.staticAbilities.any { it is PlayFromTopOfLibrary }) {
+            if (cardDef.script.staticAbilities.any { it is PlayFromTopOfLibrary || it is RevealTopOfLibrary }) {
                 return true
             }
         }

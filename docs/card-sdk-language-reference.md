@@ -1150,6 +1150,23 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   Festival of Embers. Pair with `MayPlayLandsFromGraveyard` for "play lands and cast spells from
   your graveyard". Lands are *played*, not cast, so they need the lands permission separately.
 
+**Top-of-library reveal & play** (reveal the top card of a library, optionally with permission to
+play it from there). Visibility (public reveal to all players) and play permission are separate
+concerns — the `ClientStateTransformer` reveals the top card for `PlayFromTopOfLibrary` *or*
+`RevealTopOfLibrary`, while the cast/play-from-top paths key only on the play-granting variants.
+
+- `RevealTopOfLibrary` — *public reveal only*, no play permission: the controller's top card is
+  shown to all players, but can only be played once drawn. (**Goblin Spy**)
+- `PlayFromTopOfLibrary` — public reveal **and** "play lands and cast spells from the top of your
+  library" (all card types). (Future Sight)
+- `PlayLandsAndCastFilteredFromTopOfLibrary(spellFilter)` — like `PlayFromTopOfLibrary` but only
+  spells matching `spellFilter` are castable (lands always playable). (Glarb, Calamity's Augur =
+  `GameObjectFilter.Any.manaValueAtLeast(4)`)
+- `CastSpellTypesFromTopOfLibrary(filter)` — cast only matching spell types from the top; no land
+  play, no full public reveal. (Precognition Field = instants/sorceries)
+- `LookAtTopOfLibrary` — *private*: the controller may look at their own top card any time (revealed
+  only to them, not opponents). (Lens of Clarity, Vizier of the Menagerie)
+
 > Multiple lord effects on one card → multiple `staticAbility { }` blocks.
 
 ---

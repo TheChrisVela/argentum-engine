@@ -255,6 +255,24 @@ data object LookAtTopOfLibrary : StaticAbility {
 }
 
 /**
+ * Play with the top card of your library revealed (to all players), without granting any
+ * permission to play it from there. Used for Goblin Spy.
+ *
+ * This is the public-reveal half of [PlayFromTopOfLibrary] with the play permission removed:
+ * the controller's top card is shown to everyone, but it can only be played once it's drawn.
+ * The engine treats it identically to [PlayFromTopOfLibrary] for *visibility* (the
+ * ClientStateTransformer reveals the top card to all players), but unlike that ability it does
+ * not appear in any cast/play-from-top permission path.
+ */
+@SerialName("RevealTopOfLibrary")
+@Serializable
+data object RevealTopOfLibrary : StaticAbility {
+    override val description: String =
+        "Play with the top card of your library revealed."
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
+}
+
+/**
  * You may play lands and cast spells matching a filter from the top of your library.
  * Unlike PlayFromTopOfLibrary, this restricts which spells can be cast (but always allows lands).
  * Used for Glarb, Calamity's Augur (mana value 4 or greater).

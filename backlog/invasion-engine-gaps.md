@@ -140,7 +140,7 @@ cards, not one.
 |---|---------|----------------------|
 | #6 | **Pyre Zombie** | ✅ **Implemented** (`inv/cards/PyreZombie.kt`). Graveyard-functional upkeep trigger via `triggerZone = Zone.GRAVEYARD` + `MayPayManaEffect({1}{B}{B}, ReturnToHand(Self))` (same shape as Onslaught's Gigapede); sac ability = `Costs.Composite(Mana({1}{R}{R}), SacrificeSelf)` → `DealDamage(2, Targets.Any)`. The `triggeredAbility { }` builder already surfaces `triggerZone`; `TriggerDetector` scans graveyard cards (`TriggerDetector.kt:359-405`). No engine work. |
 | #12 | **Backlash**, **Agonizing Demise** (kicked) | `EffectTarget.TargetController` already exists (`EffectTarget.kt:57-62`), plus `ControllerOfTriggeringEntity`. Backlash = `DealDamage(amount = DynamicAmounts.targetPower(0), target = EffectTarget.TargetController)`; Agonizing Demise riders on `Conditions.WasKicked`. |
-| #20 | **Goblin Spy** | `MiscStaticAbilities.LookAtTopOfLibrary` / `PlayFromTopOfLibrary` exist (`MiscStaticAbilities.kt:162-201`). One nuance: Goblin Spy reveals to **all** players (public), `LookAtTopOfLibrary` is private. Add a sibling `RevealTopOfLibrary` data object (public reveal, no play permission) mirroring the existing ones — ~5 lines, not a new system. |
+| #20 | **Goblin Spy** | ✅ **Implemented** (`inv/cards/GoblinSpy.kt`). Added sibling `RevealTopOfLibrary` data object (public reveal, no play permission) and united the `ClientStateTransformer` public-reveal path so it fires for `PlayFromTopOfLibrary` **or** `RevealTopOfLibrary`; cast/play-from-top permission stays keyed on `PlayFromTopOfLibrary`. See gap #20 below. |
 | #2 (half) | **Coalition Victory** | ✅ **Implemented** (`inv/cards/CoalitionVictory.kt`). "A creature of each color" = `Compare(DynamicAmounts.colorsAmongPermanents(Player.You, GameObjectFilter.Creature), GTE, Fixed(5))` (a single 5-color creature satisfies it — matches the official ruling, and `Aggregation.DISTINCT_COLORS` caps at 5). "A land of each basic land type" = `Conditions.BasicLandTypesAtLeast(5)`. Combined with `Conditions.All(...)` inside a `ConditionalEffect` → `Effects.WinGame()`. No new primitive. |
 | #4 (runtime) | **Rewards of Diversity**, **Pure Reflection** (trigger half) | `SpellCastEvent(player = Player.Opponent / Player.Each)` is already matched at runtime (`TriggerMatcher.matchesPlayer`, lines 668-675). Rewards of Diversity = trigger on `Player.Opponent` + multicolored filter, payoff to `Player.TriggeringPlayer`. Only ergonomic gap: facade constants (see #4 below). |
 
@@ -741,10 +741,17 @@ pieces — the trigger, the collection filter, and the retarget effect — are r
 
 ---
 
-### #20 — Play with top card revealed · Goblin Spy
+### #20 — Play with top card revealed · Goblin Spy ✅ DONE
 
-**Already buildable** modulo a public-reveal variant — see the table. Add `RevealTopOfLibrary` data
-object (public) beside the existing private `LookAtTopOfLibrary`. ~5 lines.
+> **Implemented (primitive + card).** New SDK `data object RevealTopOfLibrary` — the public-reveal-only
+> sibling of `PlayFromTopOfLibrary` (reveals the controller's top card to all players, grants no play
+> permission). The two abilities were *united* on the visibility path: `ClientStateTransformer`'s public
+> top-card reveal now fires for a player controlling **either** `PlayFromTopOfLibrary` **or**
+> `RevealTopOfLibrary` (one shared `revealsTopOfLibraryPublicly` predicate), while the cast/play-from-top
+> permission paths stay keyed on `PlayFromTopOfLibrary` alone. **Goblin Spy** ({R} 1/1 Goblin Rogue)
+> authored in `definitions/inv/cards/GoblinSpy.kt` as a single `staticAbility { ability = RevealTopOfLibrary }`.
+> Covered by `GoblinSpyTest` (opponent sees the top card; no reveal source → hidden; reveal grants no
+> cast-from-top permission). Documented in the SDK reference's new "Top-of-library reveal & play" subsection.
 
 ---
 
@@ -781,8 +788,8 @@ filter.
 
 ## Suggested build order (highest leverage first)
 
-0. **Close the already-buildable cards** (#6, #12, #20, Coalition Victory, Rewards of Diversity) — pure
-   card authoring plus ≤2 trivial surfacing tweaks (graveyard `activeZone` setter, public
+0. **Close the already-buildable cards** (#6 ✅, #12, #20 ✅, Coalition Victory ✅, Rewards of Diversity ✅) —
+   pure card authoring plus ≤2 trivial surfacing tweaks (graveyard `activeZone` setter, public
    `RevealTopOfLibrary`, opponent-cast facade constants).
 1. **`ColorIsMostCommon` self-condition** (#1) — 5 djinns from one condition.
 2. **Opponent/any-player cast facade** (#4) ✅ — runtime-wired; facade added, Rewards of Diversity + Pure Reflection done.
