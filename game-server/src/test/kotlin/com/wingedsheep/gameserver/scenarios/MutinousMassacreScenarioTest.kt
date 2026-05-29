@@ -6,8 +6,11 @@ import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.gameserver.ScenarioTestBase
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Subtype
+import com.wingedsheep.sdk.model.CardDefinition
 import io.kotest.assertions.withClue
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -27,10 +30,22 @@ import io.kotest.matchers.types.shouldBeInstanceOf
  * - Grizzly Bears  : {1}{G} = MV 2 (even)
  * - Raging Cougar  : {2}{R} = MV 3 (odd)
  * - Hill Giant     : {3}{R} = MV 4 (even)
+ *
+ * The "(Zero is even.)" clause and the {X}->0 ruling are exercised by an {X}-cost creature
+ * (mana value 0), which must be treated as even.
  */
 class MutinousMassacreScenarioTest : ScenarioTestBase() {
 
     private val stateProjector = StateProjector()
+
+    // An {X}-cost creature: X is 0 off the stack, so mana value is 0 — even (CR ruling).
+    private val xCostBeast = CardDefinition.creature(
+        name = "MM X Beast",
+        manaCost = ManaCost.parse("{X}"),
+        subtypes = setOf(Subtype("Beast")),
+        power = 2,
+        toughness = 2
+    )
 
     private fun TestGame.chooseMode(descriptionContains: String) {
         val decision = getPendingDecision()
@@ -44,6 +59,8 @@ class MutinousMassacreScenarioTest : ScenarioTestBase() {
     }
 
     init {
+        cardRegistry.register(xCostBeast)
+
         context("Mutinous Massacre — Odd mode") {
             test("destroys odd-MV creatures, steals/untaps/hastes the rest") {
                 val game = scenario()
@@ -184,6 +201,66 @@ class MutinousMassacreScenarioTest : ScenarioTestBase() {
                 val afterEot = stateProjector.project(game.state)
                 withClue("Hill Giant should return to Player 2's control at end of turn") {
                     afterEot.getController(stolenGiant) shouldBe game.player2Id
+                }
+            }
+        }
+
+        context("Mutinous Massacre — zero is even") {
+            test("an {X}-cost creature (MV 0) is destroyed by Even, spared by Odd") {
+                // Even mode: MV-0 beast dies, odd Llanowar Elves (MV 1) survives.
+                run {
+                    val game = scenario()
+                        .withPlayers("Player", "Opponent")
+                        .withCardInHand(1, "Mutinous Massacre")
+                        .withLandsOnBattlefield(1, "Swamp", 4)
+                        .withLandsOnBattlefield(1, "Mountain", 3)
+                        .withCardOnBattlefield(2, "MM X Beast")      // MV 0 — even
+                        .withCardOnBattlefield(2, "Llanowar Elves")  // MV 1 — odd
+                        .withActivePlayer(1)
+                        .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                        .build()
+
+                    game.castSpell(1, "Mutinous Massacre")
+                    game.chooseMode("Even")
+                    game.resolveStack()
+
+                    withClue("MM X Beast (MV 0) should be destroyed by Even — zero is even") {
+                        game.isInGraveyard(2, "MM X Beast") shouldBe true
+                    }
+                    withClue("Llanowar Elves (MV 1, odd) should survive Even mode") {
+                        game.isOnBattlefield("Llanowar Elves") shouldBe true
+                    }
+                }
+
+                // Odd mode: MV-0 beast survives (and is stolen), odd Llanowar Elves dies.
+                run {
+                    val game = scenario()
+                        .withPlayers("Player", "Opponent")
+                        .withCardInHand(1, "Mutinous Massacre")
+                        .withLandsOnBattlefield(1, "Swamp", 4)
+                        .withLandsOnBattlefield(1, "Mountain", 3)
+                        .withCardOnBattlefield(2, "MM X Beast")      // MV 0 — even
+                        .withCardOnBattlefield(2, "Llanowar Elves")  // MV 1 — odd
+                        .withActivePlayer(1)
+                        .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                        .build()
+
+                    val stolenBeast = game.findPermanent("MM X Beast")!!
+
+                    game.castSpell(1, "Mutinous Massacre")
+                    game.chooseMode("Odd")
+                    game.resolveStack()
+
+                    withClue("MM X Beast (MV 0, even) should survive Odd mode") {
+                        game.isOnBattlefield("MM X Beast") shouldBe true
+                    }
+                    withClue("Llanowar Elves (MV 1, odd) should be destroyed by Odd mode") {
+                        game.isInGraveyard(2, "Llanowar Elves") shouldBe true
+                    }
+                    val projected = stateProjector.project(game.state)
+                    withClue("Surviving MV-0 beast should be stolen by Player 1") {
+                        projected.getController(stolenBeast) shouldBe game.player1Id
+                    }
                 }
             }
         }
