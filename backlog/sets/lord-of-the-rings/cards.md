@@ -48,7 +48,7 @@ starter-deck/special cards and basic lands.
 - [x] Landroval, Horizon Witness
 - [x] Lost to Legend
 - [x] Nimble Hobbit
-- [ ] Now for Wrath, Now for Ruin!
+- [x] Now for Wrath, Now for Ruin!
 - [x] Protector of Gondor
 - [x] Reprieve
 - [x] Rosie Cotton of South Lane
