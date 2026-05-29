@@ -100,6 +100,7 @@ sealed interface KeywordAbility {
                 scope.colors.joinToString(" and from ") { it.displayName.lowercase() }
             is ProtectionScope.CardType -> "Protection from ${scope.cardType.lowercase()}"
             is ProtectionScope.Subtype -> "Protection from ${scope.subtype}s"
+            is ProtectionScope.Supertype -> "Protection from ${scope.supertype.lowercase()}"
             is ProtectionScope.Everything -> "Protection from everything"
             is ProtectionScope.EachOpponent -> "Protection from each opponent"
         }
@@ -121,6 +122,7 @@ sealed interface KeywordAbility {
                 scope.colors.joinToString(" and from ") { it.displayName.lowercase() }
             is ProtectionScope.CardType -> "Hexproof from ${scope.cardType.lowercase()}"
             is ProtectionScope.Subtype -> "Hexproof from ${scope.subtype}s"
+            is ProtectionScope.Supertype -> "Hexproof from ${scope.supertype.lowercase()}"
             is ProtectionScope.Everything -> "Hexproof from everything"
             is ProtectionScope.EachOpponent -> "Hexproof from each opponent"
         }
@@ -558,6 +560,10 @@ sealed interface KeywordAbility {
          */
         fun protectionFromSubtype(subtype: String): KeywordAbility =
             Protection(ProtectionScope.Subtype(subtype))
+
+        /** Protection from a supertype — "from legendary creatures" (Tsabo Tavoc). */
+        fun protectionFromSupertype(supertype: String): KeywordAbility =
+            Protection(ProtectionScope.Supertype(supertype))
 
         /**
          * Plain Devour: sacrifice any number of creatures as this enters, N counters each.

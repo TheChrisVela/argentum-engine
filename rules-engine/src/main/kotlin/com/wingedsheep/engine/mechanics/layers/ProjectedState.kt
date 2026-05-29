@@ -70,6 +70,13 @@ class ProjectedState(
 
     fun getSubtypes(entityId: EntityId): Set<String> = projectedValues[entityId]?.subtypes ?: emptySet()
 
+    /**
+     * Supertypes projected onto this entity (e.g. LEGENDARY). Supertypes are stored in the same
+     * projected [types] set as card types, so they are isolated by name here for protection checks.
+     */
+    fun getSupertypes(entityId: EntityId): Set<String> =
+        getTypes(entityId).intersect(setOf("BASIC", "LEGENDARY", "SNOW", "WORLD"))
+
     fun hasSubtype(entityId: EntityId, subtype: String): Boolean =
         getSubtypes(entityId).any { it.equals(subtype, ignoreCase = true) }
 

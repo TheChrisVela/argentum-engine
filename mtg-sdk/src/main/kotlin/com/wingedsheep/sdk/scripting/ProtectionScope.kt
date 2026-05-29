@@ -31,6 +31,11 @@ sealed interface ProtectionScope {
     @Serializable
     data class Subtype(val subtype: String) : ProtectionScope
 
+    /** Protection from a supertype — "from legendary creatures" (Tsabo Tavoc). */
+    @SerialName("ProtectionScope.Supertype")
+    @Serializable
+    data class Supertype(val supertype: String) : ProtectionScope
+
     /** Protection from everything (Rule 702.16i). */
     @SerialName("ProtectionScope.Everything")
     @Serializable

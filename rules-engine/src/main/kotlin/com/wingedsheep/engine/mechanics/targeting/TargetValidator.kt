@@ -147,8 +147,38 @@ class TargetValidator {
         val protectionFromOpponentError = checkProtectionFromEachOpponent(state, target, casterId)
         if (protectionFromOpponentError != null) return protectionFromOpponentError
 
+        // Check protection from supertype, e.g. "protection from legendary creatures" (Rule 702.16)
+        val protectionFromSupertypeError = checkProtectionFromSupertype(state, target, sourceId)
+        if (protectionFromSupertypeError != null) return protectionFromSupertypeError
+
         // Check protection from color and creature subtype (Rule 702.16)
         return checkProtection(state, target, sourceColors, sourceSubtypes)
+    }
+
+    /**
+     * Check if a target has protection from one of the source's supertypes
+     * (e.g. "protection from legendary creatures"). Format: PROTECTION_FROM_SUPERTYPE_<SUPERTYPE>.
+     */
+    private fun checkProtectionFromSupertype(
+        state: GameState,
+        target: ChosenTarget,
+        sourceId: EntityId?
+    ): String? {
+        if (sourceId == null) return null
+        val entityId = when (target) {
+            is ChosenTarget.Permanent -> target.entityId
+            else -> return null
+        }
+        if (entityId !in state.getBattlefield()) return null
+
+        val projected = state.projectedState
+        for (supertype in projected.getSupertypes(sourceId)) {
+            if (projected.hasKeyword(entityId, "PROTECTION_FROM_SUPERTYPE_${supertype.uppercase()}")) {
+                val cardName = state.getEntity(entityId)?.get<CardComponent>()?.name ?: "target"
+                return "$cardName has protection from ${supertype.lowercase()} permanents"
+            }
+        }
+        return null
     }
 
     /**

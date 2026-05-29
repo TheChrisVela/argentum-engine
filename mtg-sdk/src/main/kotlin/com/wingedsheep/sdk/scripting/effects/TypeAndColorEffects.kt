@@ -322,6 +322,32 @@ data class ChooseColorForTargetEffect(
 }
 
 /**
+ * Replace the target's colors with the single color chosen earlier in this resolution
+ * (read from [com.wingedsheep.engine.handlers.EffectContext.chosenColor]). Must run inside
+ * a [ChooseColorThenEffect] block. Models "target ... becomes the color of your choice"
+ * (Blind Seer).
+ *
+ * The target may be a permanent on the battlefield or a spell on the stack — the Layer-5
+ * color projection applies the change in both zones (gap #11).
+ *
+ * @property target Which spell/permanent is recolored
+ * @property duration How long the color change lasts
+ */
+@SerialName("ChangeColorToChosen")
+@Serializable
+data class ChangeColorToChosenEffect(
+    val target: EffectTarget = EffectTarget.ContextTarget(0),
+    val duration: Duration = Duration.EndOfTurn
+) : Effect {
+    override val description: String = buildString {
+        append("${target.description} becomes the color of your choice")
+        if (duration.description.isNotEmpty()) append(" ${duration.description}")
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}
+
+/**
  * Make the target become the color the controller picked when activating a
  * mana ability that produces one mana of any color (i.e. the value supplied via
  * [com.wingedsheep.engine.handlers.EffectContext.manaColorChoice]).

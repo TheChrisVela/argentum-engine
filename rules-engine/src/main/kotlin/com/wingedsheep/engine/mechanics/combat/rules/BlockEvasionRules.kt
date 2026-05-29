@@ -339,6 +339,24 @@ class ProtectionFromSubtypeRule : BlockEvasionRule {
 }
 
 /**
+ * Protection from supertype: Attacker can't be blocked by creatures of a supertype it has
+ * protection from (e.g. "protection from legendary creatures").
+ */
+class ProtectionFromSupertypeRule : BlockEvasionRule {
+    override fun check(ctx: BlockCheckContext): String? {
+        val attackerName = ctx.state.getEntity(ctx.attackerId)?.get<CardComponent>()?.name ?: "Creature"
+        val blockerName = ctx.state.getEntity(ctx.blockerId)?.get<CardComponent>()?.name ?: "Creature"
+
+        for (supertype in ctx.projected.getSupertypes(ctx.blockerId)) {
+            if (ctx.projected.hasKeyword(ctx.attackerId, "PROTECTION_FROM_SUPERTYPE_${supertype.uppercase()}")) {
+                return "$attackerName has protection from ${supertype.lowercase()} and can't be blocked by $blockerName"
+            }
+        }
+        return null
+    }
+}
+
+/**
  * CanOnlyBlockCreaturesWith: Blocker can only block creatures matching a filter
  * (e.g. Realm of Koh's Spirit token: "can't block ... non-Spirit creatures").
  *
@@ -495,6 +513,7 @@ fun defaultBlockEvasionRules(
     CantBeBlockedIfCastSpellTypeRule(predicateEvaluator),
     ProtectionFromColorRule(),
     ProtectionFromSubtypeRule(),
+    ProtectionFromSupertypeRule(),
     ProtectionFromEachOpponentRule(),
     CanOnlyBlockCreaturesWithRule(predicateEvaluator),
     CantBlockCreaturesWithGreaterPowerRule(),

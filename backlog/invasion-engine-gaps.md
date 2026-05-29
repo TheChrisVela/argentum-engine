@@ -1,11 +1,12 @@
 # Invasion — Engine Gap Analysis
 
-Cross-reference of the **275 remaining (unimplemented) Invasion cards** against the engine's
+Cross-reference of the **248 remaining (unimplemented) Invasion cards** against the engine's
 actual capabilities (SDK reference + source verification, May 2026). Generated to scope what
 must be built before the set can be completed.
 
-**Status at time of writing:** 59 / 335 implemented (18%). Card list comes from
-`scripts/card-status --list --set INV`.
+**Status:** 87 / 335 implemented (26%) — up from 59 / 335 (18%) at time of writing, after gaps
+#1–#13 (incl. Blind Seer, Backlash, Agonizing Demise, Tsabo Tavoc) and the cards they unlocked.
+Card list comes from `scripts/card-status --list --set INV`.
 
 ## Bottom line
 
@@ -27,7 +28,7 @@ all supported:
 - Counter spells/abilities, reanimation + mass reanimation (Bringer shape), prevent-damage shields, choose-a-number, search/reveal/mill/scry pipelines, mana rocks/taplands/sac-lands/cameos.
 
 What follows are the **genuine gaps** — elements no current SDK primitive expresses. ~21 distinct
-elements, concentrated in ~35 of the 275 cards. The other ~240 are implementable now.
+elements, concentrated in ~35 cards. The remaining majority are implementable now.
 
 ---
 
@@ -472,21 +473,32 @@ Extraction, Memoricide, Sadistic Sacrament all follow this exact shape); `StoreC
 
 ---
 
-### #11 — Color-change applied to a spell on the stack · Blind Seer, Crystal Spray
+### #11 — Color-change applied to a spell on the stack · Blind Seer ✅ DONE (Crystal Spray deferred to #17)
 
-**What exists.** `ChangeColorEffect` exists but `ChangeColorExecutor` (`:28-29`) silently fizzles if the
-target isn't on the battlefield, and color projection runs only over the battlefield.
+> **Implemented (Blind Seer; engine + card).** Two surgical engine changes let a Layer-5 color change
+> apply to a spell on the stack: (1) `ChangeColorExecutor` (and the new chosen-color sibling) accept a
+> target on the **stack** as well as the battlefield; (2) `StateProjector.collectContinuousEffects` keeps
+> a floating effect's affected entity when it is on the stack (previously battlefield-only), so the recolor
+> projects onto the spell. `EffectApplicator.applyEffect` already `getOrPut`s the entity, so the spell's
+> `projectedState.getColors(spellId)` reads the new color during resolution (driving color-matching checks
+> like protection); an un-recolored stack spell still has no projection entry and falls back to its base
+> `CardComponent` colors. New atomic `Effects.ChangeColorToChosen(target, duration)` +
+> `ChangeColorToChosenExecutor` reads `EffectContext.chosenColor`, composing with the existing single-color
+> `Effects.ChooseColorThen`. **Blind Seer** authored in `definitions/inv/cards/BlindSeer.kt`
+> (`{1}{U}: Target spell or permanent becomes the color of your choice until end of turn`, via
+> `TargetSpellOrPermanent`), covered by `BlindSeerTest` (recolor a permanent + recolor a spell on the stack).
+>
+> **Scoping correction:** the gap doc framed Blind Seer as "the color **or colors** of your choice"; the
+> actual Oracle text is a *single* color, until end of turn, so it reuses the existing single-color choice
+> (no multi-select decision needed). **Crystal Spray is a text-changing card (#17), not a color change** —
+> it stays deferred to that gap; the stack-object color projection built here is the reusable prerequisite
+> for any future "target spell becomes [color]" card.
 
-**Plan.**
-1. Relax the battlefield guard in `ChangeColorExecutor` to also accept stack entities (spells have a
-   `CardComponent`).
-2. Extend the Layer-5 color projection to also project floating color effects onto **stack** objects,
-   so a recolored spell reads its new color during resolution and for color-matching checks.
-3. Target requirement = `TargetObject` whose filter admits stack spells (Blind Seer: "target spell or
-   permanent").
+**What existed.** `ChangeColorEffect` exists but `ChangeColorExecutor` (`:28-29`) silently fizzled if the
+target wasn't on the battlefield, and color projection ran only over the battlefield.
 
 **Leverage.** Stack-object color projection is the prerequisite for any "target spell becomes [color]"
-card; pairs with #17 for Crystal Spray. Medium effort (projection scope change is the real work).
+card; pairs with #17 for Crystal Spray.
 
 ---
 
@@ -496,7 +508,22 @@ card; pairs with #17 for Crystal Spray. Medium effort (projection scope change i
 
 ---
 
-### #13 — Protection from a supertype + legendary targeting · Tsabo Tavoc
+### #13 — Protection from a supertype + legendary targeting · Tsabo Tavoc ✅ DONE
+
+> **Implemented (primitive + card).** New `ProtectionScope.Supertype(supertype)` variant +
+> `KeywordAbility.protectionFromSupertype(...)` facade; `ProtectionComponent` grew a `supertypes` set,
+> extracted in `GameInitializer`, `ScenarioTestBase`, and `DevScenarioController`. `StateProjector`
+> synthesizes `PROTECTION_FROM_SUPERTYPE_<X>` keywords; `ProjectedState.getSupertypes()` isolates
+> supertypes from the combined projected type set. All four protection pillars consult it: targeting
+> (`TargetValidator.checkProtectionFromSupertype`), blocking (`BlockEvasionRules.ProtectionFromSupertypeRule`,
+> registered in `defaultBlockEvasionRules`), and combat damage (`CombatDamagePipeline.ProtectionModifier`'s
+> `protectedBySupertype`). "Destroy target legendary creature" reuses the existing
+> `TargetObject(TargetFilter(baseFilter = GameObjectFilter.Creature.legendary()))` — no new targeting
+> primitive. **Tsabo Tavoc** authored in `definitions/inv/cards/TsaboTavoc.kt` (protection from legendary
+> creatures via `protectionFromSupertype("Legendary")`, combat-damage sacrifice trigger, {T} destroy-legendary
+> ability). Covered by `TsaboTavocScenarioTest`. **Scoping note:** `ProtectionScope.Supertype` is a pure
+> supertype-quality check; the engine treats "legendary creatures" as "legendary" since every protection-relevant
+> source (blocker / combat-damage source / ability source) is a creature in practice.
 
 **What exists.** `ProtectionScope` covers Color/Colors/CardType/Subtype/Everything/EachOpponent but not
 supertype. `CardPredicate.IsLegendary` exists (filter only).

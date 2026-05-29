@@ -99,15 +99,17 @@ internal class ProtectionModifier : CombatDamageModifier {
         return assignments.filter { assignment ->
             val sourceColors = projected.getColors(assignment.sourceId)
             val sourceSubtypes = projected.getSubtypes(assignment.sourceId)
+            val sourceSupertypes = projected.getSupertypes(assignment.sourceId)
             val protectedByColor = sourceColors.any { projected.hasKeyword(assignment.targetId, "PROTECTION_FROM_$it") }
             val protectedBySubtype = sourceSubtypes.any { projected.hasKeyword(assignment.targetId, "PROTECTION_FROM_SUBTYPE_${it.uppercase()}") }
+            val protectedBySupertype = sourceSupertypes.any { projected.hasKeyword(assignment.targetId, "PROTECTION_FROM_SUPERTYPE_${it.uppercase()}") }
             val protectedFromOpponent = projected.hasKeyword(assignment.targetId, "PROTECTION_FROM_EACH_OPPONENT") &&
                 run {
                     val srcController = projected.getController(assignment.sourceId)
                     val tgtController = projected.getController(assignment.targetId)
                     srcController != null && tgtController != null && srcController != tgtController
                 }
-            !protectedByColor && !protectedBySubtype && !protectedFromOpponent
+            !protectedByColor && !protectedBySubtype && !protectedBySupertype && !protectedFromOpponent
         }
     }
 }

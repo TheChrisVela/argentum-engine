@@ -7,37 +7,37 @@ import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.sdk.scripting.effects.ChangeColorEffect
+import com.wingedsheep.sdk.scripting.effects.ChangeColorToChosenEffect
 import kotlin.reflect.KClass
 
 /**
- * Executor for [ChangeColorEffect].
+ * Executor for [ChangeColorToChosenEffect] (Blind Seer:
+ * "{1}{U}: Target spell or permanent becomes the color of your choice until end of turn").
  *
- * Resolves the target and creates a Layer-5 floating effect that replaces its colors with
- * the configured set for the given duration. An empty color set turns the target colorless.
+ * Runs inside a [com.wingedsheep.sdk.scripting.effects.ChooseColorThenEffect], which has already
+ * stamped the chosen color onto [EffectContext.chosenColor]. Creates a Layer-5 floating effect
+ * that replaces the target's colors with that single color. The target may be a battlefield
+ * permanent or a spell on the stack — the color projection reads the recolored entry in both
+ * zones (gap #11).
  */
-class ChangeColorExecutor : EffectExecutor<ChangeColorEffect> {
+class ChangeColorToChosenExecutor : EffectExecutor<ChangeColorToChosenEffect> {
 
-    override val effectType: KClass<ChangeColorEffect> = ChangeColorEffect::class
+    override val effectType: KClass<ChangeColorToChosenEffect> = ChangeColorToChosenEffect::class
 
     override fun execute(
         state: GameState,
-        effect: ChangeColorEffect,
+        effect: ChangeColorToChosenEffect,
         context: EffectContext
     ): EffectResult {
+        val chosenColor = context.chosenColor ?: return EffectResult.success(state)
         val targetId = context.resolveTarget(effect.target, state) ?: return EffectResult.success(state)
-        // Color changes apply to battlefield permanents and to spells on the stack (Blind Seer:
-        // "target spell or permanent becomes the color or colors of your choice"). The Layer-5
-        // color projection reads the recolored entry for both zones (a stack spell's projected
-        // colors drive color-matching checks during resolution, e.g. protection). Any other zone
-        // (hand, graveyard) has no projected color to change, so silently fizzle there.
         if (!state.getBattlefield().contains(targetId) && !state.stack.contains(targetId)) {
             return EffectResult.success(state)
         }
 
         val newState = state.addFloatingEffect(
             layer = Layer.COLOR,
-            modification = SerializableModification.ChangeColor(effect.colors),
+            modification = SerializableModification.ChangeColor(setOf(chosenColor.name)),
             affectedEntities = setOf(targetId),
             duration = effect.duration,
             context = context

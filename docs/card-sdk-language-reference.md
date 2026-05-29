@@ -267,6 +267,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `BecomeChosenManaColor(target)` — adopt the previously chosen color.
 - `ChangeColor(colors, target, duration)` — replace colors with the given set.
 - `BecomeAllColors(target, duration)` — five-color until end of turn.
+- `ChangeColorToChosen(target, duration)` — replace the target's colors with the single color picked
+  by a preceding `ChooseColorThen` (read from `EffectContext.chosenColor`). The target may be a
+  **spell on the stack** or a permanent — the color projection reads the recolored entry in both
+  zones, so a recolored spell's new color drives color-matching checks (e.g. protection) during
+  resolution. Compose as `ChooseColorThen(then = ChangeColorToChosen(target))` for "target ...
+  becomes the color of your choice" (Blind Seer).
 
 ### Mana
 
@@ -1172,6 +1178,7 @@ composite abilities).
 - `Ward(amount)` — opponent pays cost to target this.
 - `Protection(color)` — protection from a single color.
 - `ProtectionFrom(set)` — protection from a set of colors/types.
+- `Protection(ProtectionScope.Supertype("Legendary"))` / `KeywordAbility.protectionFromSupertype("Legendary")` — protection from a supertype, e.g. "protection from legendary creatures" (Tsabo Tavoc). Enforced across targeting, blocking, and combat damage via projected `PROTECTION_FROM_SUPERTYPE_<X>` keywords.
 - `Affinity(filter)` — cost reduction per matching permanent.
 - `Amplify(n)` — ETB reveal-creatures-for-counters.
 - `Devour(multiplier, sacrificeFilter, variant)` — "As this enters, you may sacrifice any number of [sacrificeFilter]. It enters with [multiplier] × that many +1/+1 counters." Plain Devour uses `sacrificeFilter = Creature` and `variant = ""`; the Edge of Eternities variant "Devour land N" uses `KeywordAbility.devourLand(n)` (`sacrificeFilter = Land`, `variant = "land"`). The keyword surfaces the rules text; pair with [`EntersWithDevour`](#15-replacement-effects) for the mechanical behavior.

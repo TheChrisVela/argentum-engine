@@ -837,8 +837,11 @@ class DevScenarioController(
             val protectionSubtypes = protections.mapNotNull {
                 (it.scope as? ProtectionScope.Subtype)?.subtype
             }.toSet()
-            if (protectionColors.isNotEmpty() || protectionSubtypes.isNotEmpty()) {
-                container = container.with(ProtectionComponent(protectionColors, protectionSubtypes))
+            val protectionSupertypes = protections.mapNotNull {
+                (it.scope as? ProtectionScope.Supertype)?.supertype
+            }.toSet()
+            if (protectionColors.isNotEmpty() || protectionSubtypes.isNotEmpty() || protectionSupertypes.isNotEmpty()) {
+                container = container.with(ProtectionComponent(protectionColors, protectionSubtypes, protectionSupertypes))
             }
 
             // Add HexproofFromColorComponent for cards with hexproof from color

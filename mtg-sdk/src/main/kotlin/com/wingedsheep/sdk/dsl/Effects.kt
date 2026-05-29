@@ -98,6 +98,7 @@ import com.wingedsheep.sdk.scripting.effects.RepeatCondition
 import com.wingedsheep.sdk.scripting.effects.RepeatWhileEffect
 import com.wingedsheep.sdk.scripting.effects.ReplaceNextDrawWithEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseOptionEffect
+import com.wingedsheep.sdk.scripting.effects.ChangeColorToChosenEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseColorForTargetEffect
 import com.wingedsheep.sdk.scripting.effects.BecomeChosenManaColorEffect
 import com.wingedsheep.sdk.scripting.effects.ChangeColorEffect
@@ -953,6 +954,17 @@ object Effects {
         target: EffectTarget = EffectTarget.ContextTarget(0),
         duration: Duration = Duration.EndOfTurn
     ): Effect = ChangeColorEffect(target, Color.entries.map { it.name }.toSet(), duration)
+
+    /**
+     * Make [target] become the chosen color for [duration]. Must run inside a [ChooseColorThen]
+     * block — reads the chosen color from the effect context. The target may be a spell on the
+     * stack or a permanent. Used by Blind Seer:
+     * "{1}{U}: Target spell or permanent becomes the color of your choice until end of turn."
+     */
+    fun ChangeColorToChosen(
+        target: EffectTarget = EffectTarget.ContextTarget(0),
+        duration: Duration = Duration.EndOfTurn
+    ): Effect = ChangeColorToChosenEffect(target = target, duration = duration)
 
     /**
      * Set a creature's base power to a dynamic value.

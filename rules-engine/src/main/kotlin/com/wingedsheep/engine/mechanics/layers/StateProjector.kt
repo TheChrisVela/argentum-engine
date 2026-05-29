@@ -99,6 +99,7 @@ class StateProjector(
                         cardComponent.baseFlags.map { it.name } +
                         (container.get<ProtectionComponent>()?.colors?.map { "PROTECTION_FROM_${it.name}" } ?: emptyList()) +
                         (container.get<ProtectionComponent>()?.subtypes?.map { "PROTECTION_FROM_SUBTYPE_${it.uppercase()}" } ?: emptyList()) +
+            (container.get<ProtectionComponent>()?.supertypes?.map { "PROTECTION_FROM_SUPERTYPE_${it.uppercase()}" } ?: emptyList()) +
                         (container.get<HexproofFromColorComponent>()?.colors?.map { "HEXPROOF_FROM_${it.name}" } ?: emptyList()) +
                         (container.get<ToxicComponent>()?.let { listOf("TOXIC_${it.amount}") } ?: emptyList())).toMutableSet(),
                     colors = cardComponent.colors.map { it.name }.toMutableSet(),
@@ -407,8 +408,12 @@ class StateProjector(
                     projectedValues
                 )
             } else {
+                // Floating effects normally target battlefield permanents, but a color-change
+                // effect can target a spell on the stack (Blind Seer). Stack entities are valid
+                // affected targets so the recolor projects onto the spell during resolution; an
+                // entity that has since left both zones is dropped (its effect is now inert).
                 floating.effect.affectedEntities.filter { entityId ->
-                    state.getBattlefield().contains(entityId)
+                    state.getBattlefield().contains(entityId) || state.stack.contains(entityId)
                 }.toSet()
             }
 

@@ -12,5 +12,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ProtectionComponent(
     val colors: Set<Color>,
-    val subtypes: Set<String> = emptySet()
+    val subtypes: Set<String> = emptySet(),
+    val supertypes: Set<String> = emptySet()
 ) : Component
