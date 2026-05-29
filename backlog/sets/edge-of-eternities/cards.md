@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 222 / 261
+**Implemented:** 223 / 261
 ---
 
 - [x] Adagia, Windswept Bastion
@@ -130,7 +130,7 @@
 - [x] Loading Zone
 - [x] Lost in Space
 - [x] Lumen-Class Frigate
-- [ ] Luxknight Breacher
+- [x] Luxknight Breacher
 - [x] Mechan Assembler
 - [x] Mechan Navigator
 - [x] Mechanozoa
