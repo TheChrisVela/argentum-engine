@@ -41,6 +41,7 @@ class CompositeExecutors(
     private val reflexiveTriggerEffectExecutor by lazy { ReflexiveTriggerEffectExecutor(effectExecutor, targetFinder, decisionHandler) }
     private val flipCoinExecutor by lazy { FlipCoinExecutor(effectExecutor) }
     private val forEachInGroupExecutor by lazy { ForEachInGroupExecutor(effectExecutor) }
+    private val forEachInCollectionExecutor by lazy { ForEachInCollectionExecutor(effectExecutor) }
     private val repeatWhileExecutor by lazy { RepeatWhileExecutor(effectExecutor) }
     private val conditionalOnCollectionExecutor by lazy { ConditionalOnCollectionExecutor(effectExecutor) }
     private val flipTwoCoinsExecutor by lazy { FlipTwoCoinsExecutor(effectExecutor) }
@@ -65,6 +66,7 @@ class CompositeExecutors(
         forEachPlayerExecutor,
         forEachCapturedControllerExecutor,
         forEachInGroupExecutor,
+        forEachInCollectionExecutor,
         ifYouDoEffectExecutor,
         mayEffectExecutor,
         mayRevealCardFromHandEffectExecutor,

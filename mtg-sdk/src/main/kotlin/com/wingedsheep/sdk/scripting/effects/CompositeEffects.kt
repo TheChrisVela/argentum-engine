@@ -807,6 +807,41 @@ data class ForEachPlayerEffect(
 }
 
 /**
+ * Run a sub-effect once for each permanent/card in a named pipeline collection.
+ *
+ * For each entity in `storedCollections[collection]` (snapshotted at resolution), the
+ * sub-effect runs with `pipeline.iterationTarget` set to that entity — so a single-target
+ * effect referencing [com.wingedsheep.sdk.scripting.targets.EffectTarget.Self] applies to
+ * the current entity. This is the collection-based sibling of [ForEachInGroupEffect]
+ * (which iterates a battlefield filter): use it to apply a per-entity effect to a *chosen*
+ * set of permanents rather than a re-evaluated filter.
+ *
+ * Example — "only creatures in the chosen pile can attack" (Fight or Flight): after a
+ * Gather → Select → ChoosePile pipeline, run `ForEachInCollection(nonChosenPile,
+ * CantAttack(Self))` so each creature in the restricted pile gets its own snapshot
+ * can't-attack floating effect (creatures entering later are unaffected).
+ *
+ * @property collection Name of the pipeline collection to iterate
+ * @property effect The effect to run for each entity (typically targeting `EffectTarget.Self`)
+ */
+@SerialName("ForEachInCollection")
+@Serializable
+data class ForEachInCollectionEffect(
+    val collection: String,
+    val effect: Effect
+) : Effect {
+    override val description: String = buildString {
+        append("For each permanent in $collection, ")
+        append(effect.description.replaceFirstChar { it.lowercase() })
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect {
+        val newEffect = effect.applyTextReplacement(replacer)
+        return if (newEffect !== effect) copy(effect = newEffect) else this
+    }
+}
+
+/**
  * Flip a coin. Execute one effect if you win, another if you lose.
  * "Flip a coin. If you win the flip, [wonEffect]. If you lose the flip, [lostEffect]."
  *

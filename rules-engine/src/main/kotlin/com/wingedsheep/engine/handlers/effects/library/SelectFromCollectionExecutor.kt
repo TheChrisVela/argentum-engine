@@ -275,6 +275,15 @@ class SelectFromCollectionExecutor : EffectExecutor<SelectFromCollectionEffect> 
                     }
                     picked
                 }
+                is SelectionRestriction.OnePerBasicLandType -> {
+                    // One slot per distinct basic land type present among eligible lands.
+                    // Typeless lands contribute nothing (they can't be kept).
+                    eligibleCards.flatMap { cardId ->
+                        state.getEntity(cardId)?.get<CardComponent>()?.typeLine?.subtypes
+                            ?.filter { it.value in com.wingedsheep.sdk.core.Subtype.ALL_BASIC_LAND_TYPES }
+                            ?: emptySet()
+                    }.toSet().size
+                }
             }
             if (limit < ceiling) ceiling = limit
         }
@@ -347,6 +356,7 @@ class SelectFromCollectionExecutor : EffectExecutor<SelectFromCollectionEffect> 
             onePerColor = effect.restrictions.any { it is SelectionRestriction.OnePerColor },
             availableColors = controllerPermanentColors?.map { it.name },
             onePerCardName = effect.restrictions.any { it is SelectionRestriction.OnePerCardName },
+            onePerBasicLandType = effect.restrictions.any { it is SelectionRestriction.OnePerBasicLandType },
             maxTotalManaValue = effect.restrictions
                 .filterIsInstance<SelectionRestriction.TotalManaValueAtMost>()
                 .also {

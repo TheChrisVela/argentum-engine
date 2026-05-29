@@ -56,9 +56,13 @@ class ForEachPlayerExecutor(
             val remainingPlayers = players.drop(index + 1)
 
             // Create a per-player context with controllerId set to the current player
-            // and fresh storedCollections
+            // and fresh storedCollections. Recompute opponentId relative to the iterated
+            // player so Chooser.Opponent / Player.Opponent inside the loop resolve to *this*
+            // player's opponent (e.g. Bend or Break: an opponent of each separating player
+            // chooses that player's pile), not the original caster's opponent.
             val perPlayerContext = outerContext.copy(
                 controllerId = playerId,
+                opponentId = state.turnOrder.firstOrNull { it != playerId } ?: outerContext.opponentId,
                 pipeline = outerContext.pipeline.copy(storedCollections = emptyMap())
             )
 

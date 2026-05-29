@@ -151,6 +151,13 @@ data class SelectCardsDecision(
     /** When true, at most one card of each name may be selected */
     val onePerCardName: Boolean = false,
     /**
+     * When true, at most one land of each basic land type may be selected; a selected
+     * land claims every basic land type it has, and a land with no basic land type can't
+     * be selected at all (Global Ruin). The server enforces this; the UI should disable
+     * lands sharing an already-claimed basic land type.
+     */
+    val onePerBasicLandType: Boolean = false,
+    /**
      * Maximum sum of mana values across selected cards (Scout for Survivors). null
      * means no cap. {X} contributes 0 (CR 202.3e for cards not on the stack). The
      * UI is expected to disable cards whose mana value would push the running total

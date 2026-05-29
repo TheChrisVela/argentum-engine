@@ -347,6 +347,26 @@ sealed interface SelectionRestriction {
     data class TotalManaValueAtMost(val max: Int) : SelectionRestriction {
         override val description: String = "with total mana value $max or less"
     }
+
+    /**
+     * At most one land of each basic land type (Plains/Island/Swamp/Mountain/Forest)
+     * may be selected. A selected land claims *every* basic land type it has, so a dual
+     * land that is both a Plains and an Island consumes both slots (Global Ruin ruling).
+     *
+     * Unlike [OnePerColor] — where a colourless card is unconstrained and always
+     * selectable — a land with **no** basic land type can't be kept at all: "chooses
+     * ... a land of each basic land type" only lets you keep typed lands, so a typeless
+     * land falls into the remainder. The executor enforces this server-side: a selection
+     * naming a typeless land, or a second land sharing an already-claimed basic type, is
+     * rejected (in response order) and falls through to the remainder collection.
+     *
+     * Used for Global Ruin.
+     */
+    @SerialName("OnePerBasicLandType")
+    @Serializable
+    data object OnePerBasicLandType : SelectionRestriction {
+        override val description: String = "at most one land of each basic land type"
+    }
 }
 
 /**

@@ -755,7 +755,46 @@ pieces — the trigger, the collection filter, and the retarget effect — are r
 
 ---
 
-### #21 — "Each player separates; an opponent chooses a pile" + chosen-pile restriction · 5 cards
+### #21 — "Each player separates; an opponent chooses a pile" + chosen-pile restriction · 5 cards ✅ DONE
+
+> **Implemented (all 5 cards).** The verification corrected the gap's premise: two of the three proposed
+> "additions" already existed. **`CardSource.ControlledPermanents(player, filter)`** gathers a player's
+> permanents (proposed addition #1 — already present), and a full **`ForEachPlayerEffect`** combinator
+> (executor + `ForEachPlayerContinuation` + auto-resumer) already iterates players running a pausing
+> sub-pipeline (proposed addition #2 — already present). The only fix it needed: `ForEachPlayerExecutor`
+> now recomputes `opponentId` for each per-player context, so `Chooser.Opponent` / `Player.Opponent`
+> inside the loop resolve to the *iterated* player's opponent (Bend or Break: an opponent of each
+> separating player chooses that player's pile).
+>
+> Proposed addition #3 (a chosen-pile restriction) was built as **one generic, broadly-reusable atom**
+> instead of a `GroupFilter.InStoredCollection` variant (which can't work — a `dynamicGroupFilter` is
+> re-evaluated at projection with no pipeline access, so the chosen pile would be lost): new
+> **`ForEachInCollectionEffect(collection, effect)`** runs a sub-effect once per entity in a stored
+> collection with `iterationTarget` set — the collection-based sibling of `ForEachInGroupEffect`. The
+> "only the chosen pile can attack/block" payoff then *composes* from existing atoms:
+> `ForEachInCollection(nonChosenPile, Effects.CantAttack(EffectTarget.Self))` snapshots a per-creature
+> can't-attack/can't-block floating effect (creatures entering after the split are unaffected). For
+> Global Ruin a new **`SelectionRestriction.OnePerBasicLandType`** (cap + resumer trim + decision flag)
+> keeps one land per basic type and rejects typeless lands.
+>
+> Cards authored in `definitions/inv/cards/`, each composed from the pile primitives (Gather → Select →
+> ChoosePile → Move/Tap/restrict), covered by per-card scenario tests in `game-server`
+> (`DeathOrGloryScenarioTest`, `BendOrBreakScenarioTest`, `GlobalRuinScenarioTest`,
+> `FightOrFlightScenarioTest`, `StandOrFallScenarioTest`):
+> - **Death or Glory** — pure pile composition over the graveyard (opponent picks the exiled pile; the
+>   other returns to the battlefield). No engine change.
+> - **Bend or Break** — `ForEachPlayer(Each)`: each player separates their nontoken lands, an opponent
+>   destroys one pile (`MoveCollection(Destroy)`), the other is tapped (`TapUntapCollection`).
+> - **Global Ruin** — `ForEachPlayer(Each)` + `SelectFromCollection(OnePerBasicLandType)` →
+>   `MoveCollection(Sacrifice)` of the remainder.
+> - **Fight or Flight** — `Triggers.phase(BEGIN_COMBAT, EachOpponent)`; you split the active player's
+>   creatures, they pick the attacking pile, the rest get `CantAttack` via `ForEachInCollection`.
+> - **Stand or Fall** — `Triggers.BeginCombat` + `ForEachPlayer(EachOpponent)`; you (the source's
+>   controller, via `Chooser.SourceController`) split each defender's creatures, they pick the blocking
+>   pile, the rest get `CantBlock`.
+>
+> **Scoping note:** per-player iteration runs separate → choose → resolve in turn order (the engine is
+> two-player in practice, where the printed simultaneity of the destroys is moot).
 
 **What exists.** `ChoosePileEffect` (binary chooser, `Chooser.Opponent` supported) +
 `SelectFromCollectionEffect` partition + the `factOrFiction` pattern. `CantAttackGroupEffect` /
@@ -802,7 +841,8 @@ filter.
 6. **Tapped-for-mana event + rider + replacement** (#3) — 3 cards, reusable mana hooks.
 7. **Name-a-card choice + filter** (#10) ✅ — `OptionType.CARD_NAME` / `Effects.ChooseCardName` +
    `StoreCardName` (capture-from-chosen-card) + `NameEqualsChosen` filter; Desperate Research + Lobotomy done.
-8. **Pile-separation trio** (#21) — 5 cards from three composable additions.
+8. **Pile-separation trio** (#21) ✅ — 5 cards; the gather + per-player primitives already existed, so it
+   reduced to one `opponentId` fix, a generic `ForEachInCollection` atom, and `OnePerBasicLandType`.
 9. Scope additions: protection supertype (#13 ✅), dynamic-color protection (#15 ✅), chosen-type
    landwalk (#14 ✅), discard-at-random cost (#9 ✅) — small, independent.
 10. Bespoke / heavier: stack color-change (#11 ✅), life auction (#16 ✅), text-changing (#17 ✅),

@@ -1754,8 +1754,21 @@ Counter effects live in §4 (`AddCounters`, `RemoveCounters`, `Proliferate`, `Mo
   `ForEachPlayerEffect`). Used by Builder's Bane via the
   `GatherCards(ChosenTargets) → CaptureControllers → MoveCollection(Destroy, storeMovedAs) → ForEachCapturedController`
   shape.
-- `SelectFromCollectionEffect(from, into, selectCount?, allowZero?, alwaysPrompt?)` — let a player pick from a
-  collection.
+- `ForEachInCollectionEffect(collection, effect)` — run `effect` once per entity in a named pipeline collection
+  (snapshotted at resolution), with `pipeline.iterationTarget` set to that entity. Collection-based sibling of
+  `ForEachInGroupEffect` (which iterates a battlefield filter): use it to apply a per-entity effect to a *chosen*
+  set rather than a re-evaluated filter. Pair with a single-target effect on `EffectTarget.Self` — e.g.
+  `ForEachInCollection(nonChosenPile, Effects.CantAttack(EffectTarget.Self))` gives each creature in a chosen pile
+  its own snapshot can't-attack floating effect (Fight or Flight / Stand or Fall; creatures entering after the
+  split are unaffected).
+- `SelectFromCollectionEffect(from, into, selectCount?, allowZero?, alwaysPrompt?, restrictions?)` — let a player pick
+  from a collection. `restrictions` (`List<SelectionRestriction>`) cap and trim the picks server-side: `OnePerCardType`,
+  `OnePerColor(matchControllerPermanentColors?)`, `OnePerCardName`, `TotalManaValueAtMost(max)`, and
+  `OnePerBasicLandType`. `OnePerBasicLandType` keeps at most one land of each basic land type (a kept land claims
+  *every* basic type it has) and — unlike `OnePerColor`, where a colourless card is unconstrained — a land with no
+  basic land type can't be kept at all (Global Ruin: "chooses a land of each basic land type, then sacrifices the
+  rest"). Each restriction also exposes a boolean flag on `SelectCardsDecision` (`onePerBasicLandType`, …) so the UI
+  can disable redundant picks.
 
 **Linked exile**
 

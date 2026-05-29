@@ -18,6 +18,15 @@ function extractCardTypes(typeLine: string): string[] {
   return mainTypes.trim().split(/\s+/).filter((w) => CARD_TYPES.has(w))
 }
 
+/** The five basic land types, used for the OnePerBasicLandType restriction. */
+const BASIC_LAND_TYPES = new Set(['Plains', 'Island', 'Swamp', 'Mountain', 'Forest'])
+
+/** Extract basic land subtypes from a type-line (e.g. "Land — Plains Island" → ["Plains", "Island"]). */
+function extractBasicLandTypes(typeLine: string): string[] {
+  const subtypes = typeLine.split(/[—–-]/)[1] ?? ''
+  return subtypes.trim().split(/\s+/).filter((w) => BASIC_LAND_TYPES.has(w))
+}
+
 /** Map colour name → display symbol + CSS colour for the indicator pip. */
 const COLOR_PIPS: Record<string, { symbol: string; bg: string; fg: string }> = {
   WHITE: { symbol: 'W', bg: '#f8f6e8', fg: '#3a3320' },
@@ -130,6 +139,17 @@ export function CardSelectionDecision({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [decision.onePerColor, decision.cardInfo, selectedCards, gameState?.cards])
 
+  // OnePerBasicLandType: compute which basic land types are already claimed by selected cards.
+  const claimedLandTypes = useMemo(() => {
+    if (!decision.onePerBasicLandType) return new Set<string>()
+    const types = new Set<string>()
+    for (const id of selectedCards) {
+      const typeLine = decision.cardInfo?.[id]?.typeLine ?? gameState?.cards[id]?.typeLine ?? ''
+      for (const t of extractBasicLandTypes(typeLine)) types.add(t)
+    }
+    return types
+  }, [decision.onePerBasicLandType, decision.cardInfo, selectedCards, gameState?.cards])
+
   /** Read a card's mana value: prefer gameState (server-computed), fall back to parsing the cost string. */
   const manaValueForCard = (cardId: EntityId): number => {
     const fromState = gameState?.cards[cardId]?.manaValue
@@ -160,6 +180,12 @@ export function CardSelectionDecision({
     }
     if (decision.maxTotalManaValue != null) {
       if (totalManaValueSelected + manaValueForCard(cardId) > decision.maxTotalManaValue) return true
+    }
+    if (decision.onePerBasicLandType) {
+      const typeLine = decision.cardInfo?.[cardId]?.typeLine ?? gameState?.cards[cardId]?.typeLine ?? ''
+      const landTypes = extractBasicLandTypes(typeLine)
+      // A land with no basic land type can't be kept; one sharing a claimed type is blocked.
+      if (landTypes.length === 0 || landTypes.some((t) => claimedLandTypes.has(t))) return true
     }
     return false
   }

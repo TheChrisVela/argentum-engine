@@ -380,7 +380,15 @@ class LibraryAndZoneContinuationResumer(
             val claimedTypes = mutableSetOf<com.wingedsheep.sdk.core.CardType>()
             val claimedColors = mutableSetOf<com.wingedsheep.sdk.core.Color>()
             val claimedNames = mutableSetOf<String>()
+            val claimedLandTypes = mutableSetOf<com.wingedsheep.sdk.core.Subtype>()
             var runningManaValue = 0
+            // Basic land subtypes a card has (Plains/Island/Swamp/Mountain/Forest), for OnePerBasicLandType.
+            fun basicLandTypesOf(cardId: EntityId): Set<com.wingedsheep.sdk.core.Subtype> =
+                state.getEntity(cardId)
+                    ?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()
+                    ?.typeLine?.subtypes
+                    ?.filter { it.value in com.wingedsheep.sdk.core.Subtype.ALL_BASIC_LAND_TYPES }
+                    ?.toSet() ?: emptySet()
             for (cardId in response.selectedCards) {
                 val acceptsAllRestrictions = continuation.restrictions.all { restriction ->
                     when (restriction) {
@@ -409,6 +417,11 @@ class LibraryAndZoneContinuationResumer(
                                 ?.manaValue ?: 0
                             runningManaValue + mv <= restriction.max
                         }
+                        is SelectionRestriction.OnePerBasicLandType -> {
+                            val types = basicLandTypesOf(cardId)
+                            // A typeless land can't be kept; a typed land needs all its types free.
+                            types.isNotEmpty() && types.none { it in claimedLandTypes }
+                        }
                     }
                 }
                 if (acceptsAllRestrictions) {
@@ -436,6 +449,9 @@ class LibraryAndZoneContinuationResumer(
                                 runningManaValue += state.getEntity(cardId)
                                     ?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()
                                     ?.manaValue ?: 0
+                            }
+                            is SelectionRestriction.OnePerBasicLandType -> {
+                                claimedLandTypes += basicLandTypesOf(cardId)
                             }
                         }
                     }
