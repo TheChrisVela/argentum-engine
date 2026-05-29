@@ -191,6 +191,8 @@ export type {
   OrderObjectsDecision,
   ChooseNumberDecision,
   ChooseOptionDecision,
+  ChooseReplacementDecision,
+  OptionMetadata,
   BudgetModalDecision,
   BudgetModeOption,
   DistributeDecision,

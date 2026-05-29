@@ -9,7 +9,9 @@ import com.wingedsheep.engine.core.ChooseColorDecision
 import com.wingedsheep.engine.core.ChooseModeDecision
 import com.wingedsheep.engine.core.ChooseNumberDecision
 import com.wingedsheep.engine.core.ChooseOptionDecision
+import com.wingedsheep.engine.core.ChooseReplacementDecision
 import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.ReplacementChosenResponse
 import com.wingedsheep.engine.core.ColorChosenResponse
 import com.wingedsheep.engine.core.CombatResolutionDecision
 import com.wingedsheep.engine.core.CombatResolutionResponse
@@ -64,6 +66,7 @@ object DecisionValidators {
             is OrderObjectsDecision -> validateOrder(decision, response)
             is SplitPilesDecision -> validateSplitPiles(decision, response)
             is ChooseOptionDecision -> validateOption(decision, response)
+            is ChooseReplacementDecision -> validateReplacement(decision, response)
             is BudgetModalDecision -> validateBudgetModal(decision, response)
             is AssignDamageDecision -> validateDamageAssignment(decision, response)
             is CombatResolutionDecision -> validateCombatResolution(decision, response)
@@ -323,6 +326,24 @@ object DecisionValidators {
         }
         if (response.optionIndex < 0 || response.optionIndex >= decision.options.size) {
             return "Invalid option index: ${response.optionIndex}"
+        }
+        return null
+    }
+
+    private fun validateReplacement(decision: ChooseReplacementDecision, response: DecisionResponse): String? {
+        if (response !is ReplacementChosenResponse) {
+            return "Expected replacement choice response"
+        }
+        if (response.fromIndex < 0 || response.fromIndex >= decision.fromOptions.size) {
+            return "Invalid from index: ${response.fromIndex}"
+        }
+        if (response.toIndex < 0 || response.toIndex >= decision.toOptions.size) {
+            return "Invalid to index: ${response.toIndex}"
+        }
+        // If the FROM constrains its allowed TO set, enforce it (Crystal Spray: same category).
+        val allowed = decision.allowedToByFrom.getOrNull(response.fromIndex)
+        if (allowed != null && !allowed.contains(response.toIndex)) {
+            return "Replacement ${decision.toOptions[response.toIndex]} not allowed for ${decision.fromOptions[response.fromIndex]}"
         }
         return null
     }

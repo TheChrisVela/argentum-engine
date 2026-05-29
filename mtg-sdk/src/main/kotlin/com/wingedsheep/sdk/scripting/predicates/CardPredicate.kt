@@ -149,14 +149,20 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
     @Serializable
     data class HasColor(val color: Color) : CardPredicate {
         override val description: String = color.displayName.lowercase()
-        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate = this
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate {
+            val replaced = replacer.replaceColor(color)
+            return if (replaced != color) copy(color = replaced) else this
+        }
     }
 
     @SerialName("NotColor")
     @Serializable
     data class NotColor(val color: Color) : CardPredicate {
         override val description: String = "non${color.displayName.lowercase()}"
-        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate = this
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate {
+            val replaced = replacer.replaceColor(color)
+            return if (replaced != color) copy(color = replaced) else this
+        }
     }
 
     /**

@@ -16,7 +16,12 @@ export function ChooseOptionDecisionUI({
 }: {
   decision: ChooseOptionDecision
 }) {
-  const [filter, setFilter] = useState(decision.defaultSearch ?? '')
+  // Prefill the search box from defaultSearch only for long lists (e.g. ~280 creature types),
+  // where narrowing is essential. Short lists (color words / land types) stay fully visible so
+  // the player sees every option — defaultSearch still pre-selects one via initialIndex below.
+  const [filter, setFilter] = useState(
+    decision.options.length > 20 ? (decision.defaultSearch ?? '') : '',
+  )
   const [minimized, setMinimized] = useState(false)
   const [hoveredPreviewCard, setHoveredPreviewCard] = useState<{ name: string; imageUri: string | null | undefined } | null>(null)
 

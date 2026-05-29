@@ -715,6 +715,9 @@
 }
 
 .optionItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
   background: none;
   border: 1px solid transparent;
@@ -724,6 +727,69 @@
   text-align: left;
   cursor: pointer;
   transition: background-color 0.1s, color 0.1s;
+}
+
+.optionItemPip {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Text-change "from → to" replacement picker (Crystal Spray, Artificial Evolution). */
+.replacementPreview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-lg);
+}
+
+.replacementArrow {
+  color: var(--text-tertiary);
+  font-size: var(--font-xl);
+}
+
+.replacementChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-3);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.replacementChipEmpty {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border-default);
+  color: var(--text-tertiary);
+}
+
+.replacementColumns {
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.replacementColumn {
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  max-width: 280px;
+}
+
+.replacementColumnTitle {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
 }
 
 .optionItem:hover {

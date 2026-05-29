@@ -19,6 +19,7 @@ import com.wingedsheep.engine.state.components.combat.PlayerAttackedThisTurnComp
 import com.wingedsheep.engine.state.components.combat.PlayerAttackersThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.PlayWithoutPayingCostComponent
+import com.wingedsheep.engine.state.components.identity.TextReplacementComponent
 import com.wingedsheep.engine.state.components.player.AdditionalCombatPhasesComponent
 import com.wingedsheep.engine.state.components.player.CantCastSpellsComponent
 import com.wingedsheep.engine.state.components.player.DamageBonusComponent
@@ -428,6 +429,18 @@ class CleanupPhaseManager(
                         .without<WasDealtDamageThisTurnComponent>()
                         .without<DamageDealtByPlayersThisTurnComponent>()
                 }
+            }
+        }
+
+        // 5b. Strip "until end of turn" text replacements (Crystal Spray). Indefinite
+        // replacements (Artificial Evolution) have Duration.Permanent and survive.
+        for ((entityId, container) in newState.entities) {
+            val textReplacement = container.get<TextReplacementComponent>() ?: continue
+            if (textReplacement.replacements.none { it.duration is Duration.EndOfTurn }) continue
+            val remaining = textReplacement.replacements.filter { it.duration !is Duration.EndOfTurn }
+            newState = newState.updateEntity(entityId) { c ->
+                if (remaining.isEmpty()) c.without<TextReplacementComponent>()
+                else c.with(textReplacement.copy(replacements = remaining))
             }
         }
 

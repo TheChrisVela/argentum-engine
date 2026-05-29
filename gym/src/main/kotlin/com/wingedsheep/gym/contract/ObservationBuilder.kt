@@ -9,6 +9,7 @@ import com.wingedsheep.engine.core.ChooseColorDecision
 import com.wingedsheep.engine.core.ChooseModeDecision
 import com.wingedsheep.engine.core.ChooseNumberDecision
 import com.wingedsheep.engine.core.ChooseOptionDecision
+import com.wingedsheep.engine.core.ChooseReplacementDecision
 import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.core.ColorChosenResponse
 import com.wingedsheep.engine.core.DecisionResponse
@@ -384,6 +385,11 @@ class ObservationBuilder(
                 val view = baseView(decision, PendingDecisionKind.CHOOSE_OPTION, baseShape, structured = false)
                 view to ActionRegistry.ofDecisionResponses(responses)
             }
+            is ChooseReplacementDecision ->
+                // Two-index (from, to) pick — emitted as a structured decision (trainer submits the
+                // DecisionResponse directly rather than via the flat action-ID space).
+                baseView(decision, PendingDecisionKind.CHOOSE_REPLACEMENT, baseShape, structured = true) to
+                    ActionRegistry.EMPTY
             is SelectCardsDecision -> {
                 if (decision.minSelections == 1 && decision.maxSelections == 1 && !decision.ordered) {
                     val responses = decision.options.map {

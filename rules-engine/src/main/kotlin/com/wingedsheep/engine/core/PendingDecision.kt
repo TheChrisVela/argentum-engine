@@ -336,6 +336,35 @@ data class ChooseOptionDecision(
 ) : PendingDecision
 
 /**
+ * Player picks a replacement in one screen: a FROM word and a TO word, shown together as
+ * "from → to". Used by text-changing cards (Crystal Spray, Artificial Evolution) so the two
+ * halves of the choice are one component instead of two sequential prompts.
+ *
+ * @property fromOptions the words that may be replaced (already ordered "relevant first").
+ * @property toOptions the candidate replacements.
+ * @property fromMetadata / toMetadata per-option icon/description, positionally aligned.
+ * @property allowedToByFrom index-aligned to [fromOptions]: entry i lists the [toOptions] indices
+ *   allowed when FROM option i is chosen. An empty outer list means every TO is allowed for any FROM
+ *   (Artificial Evolution). Crystal Spray populates it to keep the replacement in the same category
+ *   (color↔color, land↔land) and exclude the chosen word.
+ * @property defaultFromIndex a FROM option to pre-select (the first on-card word), or null.
+ */
+@Serializable
+@SerialName("ChooseReplacementDecision")
+data class ChooseReplacementDecision(
+    override val id: String,
+    override val playerId: EntityId,
+    override val prompt: String,
+    override val context: DecisionContext,
+    val fromOptions: List<String>,
+    val toOptions: List<String>,
+    val fromMetadata: List<OptionMetadata> = emptyList(),
+    val toMetadata: List<OptionMetadata> = emptyList(),
+    val allowedToByFrom: List<List<Int>> = emptyList(),
+    val defaultFromIndex: Int? = null
+) : PendingDecision
+
+/**
  * Player must assign combat damage from an attacker to blockers.
  *
  * Per CR 510.1c: Damage must be assigned in order. A creature cannot be
@@ -567,6 +596,17 @@ data class PilesSplitResponse(
 data class OptionChosenResponse(
     override val decisionId: String,
     val optionIndex: Int
+) : DecisionResponse
+
+/**
+ * Response to [ChooseReplacementDecision]: the chosen FROM and TO option indices.
+ */
+@Serializable
+@SerialName("ReplacementChosenResponse")
+data class ReplacementChosenResponse(
+    override val decisionId: String,
+    val fromIndex: Int,
+    val toIndex: Int
 ) : DecisionResponse
 
 /**

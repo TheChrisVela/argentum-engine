@@ -341,6 +341,24 @@ class StateProjector(
                     values.keywords.add("$protectionSubtypePrefix$transformed")
                 }
             }
+
+            // Rewrite protection-from-color keywords for color-word changes (Crystal Spray:
+            // "protection from red" -> "protection from blue"). Color protection keywords are
+            // "PROTECTION_FROM_<COLOR.name>"; skip the SUBTYPE_/SUPERTYPE_ variants by only
+            // matching suffixes that name an actual Color.
+            val colorPrefix = "PROTECTION_FROM_"
+            val colorProtectionKeywords = values.keywords.filter { kw ->
+                kw.startsWith(colorPrefix) &&
+                    com.wingedsheep.sdk.core.Color.entries.any { it.name == kw.removePrefix(colorPrefix) }
+            }
+            for (keyword in colorProtectionKeywords) {
+                val originalColor = com.wingedsheep.sdk.core.Color.valueOf(keyword.removePrefix(colorPrefix))
+                val transformed = textReplacement.replaceColor(originalColor)
+                if (transformed != originalColor) {
+                    values.keywords.remove(keyword)
+                    values.keywords.add("$colorPrefix${transformed.name}")
+                }
+            }
         }
     }
 

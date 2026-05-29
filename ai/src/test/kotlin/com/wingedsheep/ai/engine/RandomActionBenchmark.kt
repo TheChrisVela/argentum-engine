@@ -218,6 +218,14 @@ private fun randomDecisionResponse(decision: PendingDecision, rng: Random): Deci
 
         is YesNoDecision -> YesNoResponse(decision.id, rng.nextBoolean())
 
+        is ChooseReplacementDecision -> {
+            val fromIndex = rng.nextInt(decision.fromOptions.size)
+            val allowed = decision.allowedToByFrom.getOrNull(fromIndex)
+            val toIndex = if (allowed != null && allowed.isNotEmpty()) allowed[rng.nextInt(allowed.size)]
+            else rng.nextInt(decision.toOptions.size)
+            ReplacementChosenResponse(decision.id, fromIndex, toIndex)
+        }
+
         is ChooseModeDecision -> {
             val available = decision.modes.filter { it.available }
             val count = rng.nextInt(decision.minModes, decision.maxModes + 1).coerceAtMost(available.size)

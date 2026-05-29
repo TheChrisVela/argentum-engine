@@ -430,6 +430,24 @@ export interface ChooseOptionDecision extends PendingDecisionBase {
 }
 
 /**
+ * Pick a text-change replacement in one screen: a FROM word and a TO word shown as "from → to".
+ * Used by Crystal Spray / Artificial Evolution.
+ */
+export interface ChooseReplacementDecision extends PendingDecisionBase {
+  readonly type: 'ChooseReplacementDecision'
+  readonly fromOptions: readonly string[]
+  readonly toOptions: readonly string[]
+  readonly fromMetadata?: readonly OptionMetadata[]
+  readonly toMetadata?: readonly OptionMetadata[]
+  /**
+   * Index-aligned to `fromOptions`: entry i lists the `toOptions` indices allowed when FROM option i
+   * is chosen. Empty outer list => every TO allowed for any FROM (Artificial Evolution).
+   */
+  readonly allowedToByFrom?: readonly (readonly number[])[]
+  readonly defaultFromIndex?: number | null
+}
+
+/**
  * Player must distribute an amount (e.g., damage) among targets.
  * Used for effects like Forked Lightning that deal divided damage.
  */
@@ -622,6 +640,7 @@ export type PendingDecision =
   | OrderObjectsDecision
   | ChooseNumberDecision
   | ChooseOptionDecision
+  | ChooseReplacementDecision
   | BudgetModalDecision
   | DistributeDecision
   | ChooseColorDecision

@@ -273,6 +273,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   zones, so a recolored spell's new color drives color-matching checks (e.g. protection) during
   resolution. Compose as `ChooseColorThen(then = ChangeColorToChosen(target))` for "target ...
   becomes the color of your choice" (Blind Seer).
+- `ChangeWordInText(target, duration)` — Layer-3 text change: the player picks one **color word**
+  or **basic land type** on the target and a replacement of the same category, recorded as a
+  `TextReplacement` on the target. A basic-land-type swap flows through the projected type line, so
+  the land's mana (via `IntrinsicManaAbilities`), landwalk relevance, and type checks all follow
+  automatically (Forest→Island taps for `{U}`); a color-word swap rewrites protection-from-color and
+  `HasColor`/`NotColor` filters. `duration = EndOfTurn` is stripped at cleanup; `Permanent` is the
+  Artificial-Evolution-style indefinite change. The player picks the FROM and TO words on **one
+  screen** (a `ChooseReplacementDecision`), with words **present on the target** surfaced first
+  (labeled "On <card>") so a no-op pick is discouraged, and a live `from → to` preview. (Crystal Spray)
 
 ### Mana
 

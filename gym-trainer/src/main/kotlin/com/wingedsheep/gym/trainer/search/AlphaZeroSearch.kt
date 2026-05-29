@@ -7,6 +7,7 @@ import com.wingedsheep.engine.core.ChooseColorDecision
 import com.wingedsheep.engine.core.ChooseModeDecision
 import com.wingedsheep.engine.core.ChooseNumberDecision
 import com.wingedsheep.engine.core.ChooseOptionDecision
+import com.wingedsheep.engine.core.ChooseReplacementDecision
 import com.wingedsheep.engine.core.ChooseTargetsDecision
 import com.wingedsheep.engine.core.ColorChosenResponse
 import com.wingedsheep.engine.core.CombatResolutionDecision
@@ -272,6 +273,7 @@ class AlphaZeroSearch<T>(
                 d.options.map { CardsSelectedResponse(d.id, listOf(it)) }
             else null
         is ChooseTargetsDecision,
+        is ChooseReplacementDecision,
         is DistributeDecision,
         is OrderObjectsDecision,
         is SplitPilesDecision,

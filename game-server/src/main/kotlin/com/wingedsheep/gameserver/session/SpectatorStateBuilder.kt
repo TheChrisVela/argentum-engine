@@ -77,6 +77,7 @@ class SpectatorStateBuilder(
             is AssignDamageDecision -> "Assigning damage"
             is CombatResolutionDecision -> "Assigning combat damage"
             is ChooseOptionDecision -> "Making a choice"
+            is ChooseReplacementDecision -> "Changing text"
             is BudgetModalDecision -> "Choosing modes"
             is SelectManaSourcesDecision -> "Selecting mana sources"
         }

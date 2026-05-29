@@ -11,6 +11,7 @@ import { CombatResolutionBoard } from './CombatResolutionBoard'
 import { YesNoDecisionUI } from './YesNoDecisionUI'
 import { ChooseNumberDecisionUI } from './ChooseNumberDecisionUI'
 import { ChooseOptionDecisionUI } from './ChooseOptionDecisionUI'
+import { ChooseReplacementDecisionUI } from './ChooseReplacementDecisionUI'
 import { BudgetModalDecisionUI } from './BudgetModalDecisionUI'
 import { ChooseColorDecisionUI } from './ChooseColorDecisionUI'
 import { CardSelectionDecision } from './CardSelectionDecisionUI'
@@ -136,6 +137,13 @@ export function DecisionUI() {
   if (pendingDecision.type === 'ChooseOptionDecision') {
     return (
       <ChooseOptionDecisionUI key={pendingDecision.id} decision={pendingDecision} />
+    )
+  }
+
+  // Handle ChooseReplacementDecision (text-change "from → to": Crystal Spray, Artificial Evolution)
+  if (pendingDecision.type === 'ChooseReplacementDecision') {
+    return (
+      <ChooseReplacementDecisionUI key={pendingDecision.id} decision={pendingDecision} />
     )
   }
 

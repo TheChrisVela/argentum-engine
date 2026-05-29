@@ -35,6 +35,7 @@ class ContinuationHandler(
         registerModule(chainResumer)
         registerAutoResumerModule(chainResumer)
         registerModule(CreatureTypeChoiceContinuationResumer(services))
+        registerModule(com.wingedsheep.engine.handlers.continuations.TextReplacementContinuationResumer(services))
         registerModule(DrawReplacementContinuationResumer(services))
         registerModule(CardSpecificContinuationResumer(services))
         registerModule(DiscardAndDrawContinuationResumer(services))

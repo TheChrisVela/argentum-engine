@@ -682,6 +682,7 @@ export type GameStore = {
   submitYesNoDecision: (choice: boolean) => void
   submitNumberDecision: (number: number) => void
   submitOptionDecision: (optionIndex: number) => void
+  submitReplacementDecision: (fromIndex: number, toIndex: number) => void
   submitBudgetModalDecision: (selectedModeIndices: readonly number[]) => void
   submitDistributeDecision: (distribution: Record<EntityId, number>) => void
   submitDamageAssignmentDecision: (assignments: Record<EntityId, number>) => void

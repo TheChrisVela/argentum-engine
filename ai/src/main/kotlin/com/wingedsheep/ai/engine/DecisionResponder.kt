@@ -58,6 +58,7 @@ class DecisionResponder(
             is OrderObjectsDecision -> respondOrder(state, decision, playerId)
             is SplitPilesDecision -> respondSplitPiles(state, decision, playerId)
             is ChooseOptionDecision -> respondOption(state, decision, playerId)
+            is ChooseReplacementDecision -> respondReplacement(decision)
             is BudgetModalDecision -> respondBudgetModal(decision)
             is AssignDamageDecision -> respondDamageAssignment(state, decision)
             is CombatResolutionDecision -> respondCombatResolution(decision)
@@ -65,6 +66,22 @@ class DecisionResponder(
             is ReorderLibraryDecision -> respondReorderLibrary(state, decision, playerId)
             is SelectManaSourcesDecision -> respondManaSelection(decision)
         }
+    }
+
+    // ── Text-change replacement (Crystal Spray, Artificial Evolution) ────
+
+    /**
+     * Picks the pre-selected (on-card) FROM word and a valid same-category replacement. A heuristic
+     * default — text-changing rarely matters to the AI, so this just makes a legal, non-degenerate
+     * choice rather than simulating.
+     */
+    private fun respondReplacement(decision: ChooseReplacementDecision): DecisionResponse {
+        val fromIndex = decision.defaultFromIndex?.takeIf { it in decision.fromOptions.indices } ?: 0
+        val allowed = decision.allowedToByFrom.getOrNull(fromIndex)
+        val toIndex = allowed?.firstOrNull()
+            ?: decision.toOptions.indices.firstOrNull { decision.toOptions[it] != decision.fromOptions.getOrNull(fromIndex) }
+            ?: 0
+        return ReplacementChosenResponse(decision.id, fromIndex, toIndex)
     }
 
     // ── Target selection ─────────────────────────────────────────────────

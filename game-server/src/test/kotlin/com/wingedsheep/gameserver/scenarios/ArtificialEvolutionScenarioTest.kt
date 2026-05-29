@@ -1,8 +1,8 @@
 package com.wingedsheep.gameserver.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
-import com.wingedsheep.engine.core.ChooseOptionDecision
-import com.wingedsheep.engine.core.OptionChosenResponse
+import com.wingedsheep.engine.core.ChooseReplacementDecision
+import com.wingedsheep.engine.core.ReplacementChosenResponse
 import com.wingedsheep.engine.state.components.identity.TextReplacementComponent
 import com.wingedsheep.gameserver.ScenarioTestBase
 import com.wingedsheep.sdk.core.CounterType
@@ -27,18 +27,20 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 class ArtificialEvolutionScenarioTest : ScenarioTestBase() {
 
     /**
-     * Helper to choose a creature type from a ChooseOptionDecision by name.
+     * Helper to perform a text-change from one creature type to another via the single
+     * [ChooseReplacementDecision] (from + to picked together).
      */
-    private fun ScenarioTestBase.TestGame.chooseCreatureType(typeName: String) {
+    private fun ScenarioTestBase.TestGame.chooseReplacement(from: String, to: String) {
         val decision = getPendingDecision()
         decision.shouldNotBeNull()
-        decision.shouldBeInstanceOf<ChooseOptionDecision>()
-        val options = decision.options
-        val index = options.indexOf(typeName)
-        withClue("Creature type '$typeName' should be in options $options") {
-            (index >= 0) shouldBe true
+        decision.shouldBeInstanceOf<ChooseReplacementDecision>()
+        val fromIndex = decision.fromOptions.indexOf(from)
+        val toIndex = decision.toOptions.indexOf(to)
+        withClue("'$from' should be in fromOptions and '$to' in toOptions") {
+            (fromIndex >= 0) shouldBe true
+            (toIndex >= 0) shouldBe true
         }
-        submitDecision(OptionChosenResponse(decision.id, index))
+        submitDecision(ReplacementChosenResponse(decision.id, fromIndex, toIndex))
     }
 
     init {
@@ -59,11 +61,8 @@ class ArtificialEvolutionScenarioTest : ScenarioTestBase() {
                 game.castSpell(1, "Artificial Evolution", wellwisher)
                 game.resolveStack()
 
-                // Decision 1: Choose FROM creature type (Elf)
-                game.chooseCreatureType("Elf")
-
-                // Decision 2: Choose TO creature type (Goblin)
-                game.chooseCreatureType("Goblin")
+                // Replace Elf with Goblin (from + to in one decision)
+                game.chooseReplacement("Elf", "Goblin")
 
                 // Wellwisher should now have TextReplacementComponent
                 val entity = game.state.getEntity(wellwisher)
@@ -95,8 +94,7 @@ class ArtificialEvolutionScenarioTest : ScenarioTestBase() {
                 val wellwisher = game.findPermanent("Wellwisher")!!
                 game.castSpell(1, "Artificial Evolution", wellwisher)
                 game.resolveStack()
-                game.chooseCreatureType("Elf")
-                game.chooseCreatureType("Goblin")
+                game.chooseReplacement("Elf", "Goblin")
 
                 // Now activate Wellwisher's ability (tap: gain 1 life per Goblin)
                 val cardDef = cardRegistry.getCard("Wellwisher")!!
@@ -134,8 +132,7 @@ class ArtificialEvolutionScenarioTest : ScenarioTestBase() {
                 val vanguard = game.findPermanent("Elvish Vanguard")!!
                 game.castSpell(1, "Artificial Evolution", vanguard)
                 game.resolveStack()
-                game.chooseCreatureType("Elf")
-                game.chooseCreatureType("Bear")
+                game.chooseReplacement("Elf", "Bear")
 
                 // Now cast Grizzly Bears (a Bear creature)
                 game.castSpell(1, "Grizzly Bears")
@@ -165,26 +162,16 @@ class ArtificialEvolutionScenarioTest : ScenarioTestBase() {
                 game.castSpell(1, "Artificial Evolution", wellwisher)
                 game.resolveStack()
 
-                // Step 1: FROM type options should include Wall
-                val fromDecision = game.getPendingDecision()
-                fromDecision.shouldNotBeNull()
-                fromDecision.shouldBeInstanceOf<ChooseOptionDecision>()
-                val fromOptions = fromDecision.options
+                // One decision carries both lists: Wall is offered as a FROM word but excluded
+                // from the TO words ("The new creature type can't be Wall.").
+                val decision = game.getPendingDecision()
+                decision.shouldNotBeNull()
+                decision.shouldBeInstanceOf<ChooseReplacementDecision>()
                 withClue("Wall should be available as the FROM creature type") {
-                    fromOptions shouldContain "Wall"
+                    decision.fromOptions shouldContain "Wall"
                 }
-
-                // Choose Wall as FROM type
-                game.chooseCreatureType("Wall")
-
-                // Step 2: TO type options must NOT include Wall
-                // ("The new creature type can't be Wall.")
-                val toDecision = game.getPendingDecision()
-                toDecision.shouldNotBeNull()
-                toDecision.shouldBeInstanceOf<ChooseOptionDecision>()
-                val toOptions = toDecision.options
                 withClue("Wall must not be available as the TO creature type (card restriction)") {
-                    toOptions shouldNotContain "Wall"
+                    decision.toOptions shouldNotContain "Wall"
                 }
             }
 
@@ -210,8 +197,7 @@ class ArtificialEvolutionScenarioTest : ScenarioTestBase() {
                 val wellwisher = game.findPermanent("Wellwisher")!!
                 game.castSpell(1, "Artificial Evolution", wellwisher)
                 game.resolveStack()
-                game.chooseCreatureType("Elf")
-                game.chooseCreatureType("Goblin")
+                game.chooseReplacement("Elf", "Goblin")
 
                 // Verify projected subtypes changed
                 clientState = game.getClientState(1)
@@ -254,8 +240,7 @@ class ArtificialEvolutionScenarioTest : ScenarioTestBase() {
                 game.resolveStack()
 
                 // Choose Bird as FROM type, Ape as TO type
-                game.chooseCreatureType("Bird")
-                game.chooseCreatureType("Ape")
+                game.chooseReplacement("Bird", "Ape")
 
                 // Now Airborne Aid resolves — it now reads "Draw a card for each Ape"
                 // There are no Apes on the battlefield, so Player 2 should draw 0 cards
@@ -281,8 +266,7 @@ class ArtificialEvolutionScenarioTest : ScenarioTestBase() {
                 val wellwisher = game.findPermanent("Wellwisher")!!
                 game.castSpell(1, "Artificial Evolution", wellwisher)
                 game.resolveStack()
-                game.chooseCreatureType("Elf")
-                game.chooseCreatureType("Goblin")
+                game.chooseReplacement("Elf", "Goblin")
 
                 // Advance to end of turn and back
                 game.passUntilPhase(Phase.ENDING, Step.END)
@@ -337,8 +321,7 @@ class ArtificialEvolutionScenarioTest : ScenarioTestBase() {
                 val brigadier = game.findPermanent("Aven Brigadier")!!
                 game.castSpell(1, "Artificial Evolution", brigadier)
                 game.resolveStack()
-                game.chooseCreatureType("Bird")
-                game.chooseCreatureType("Bear")
+                game.chooseReplacement("Bird", "Bear")
 
                 // After: Storm Crow should be 1/2 (lost Bird bonus, not a Soldier)
                 clientState = game.getClientState(1)
@@ -386,8 +369,7 @@ class ArtificialEvolutionScenarioTest : ScenarioTestBase() {
                 val bears = game.findPermanent("Grizzly Bears")!!
                 game.castSpell(1, "Artificial Evolution", bears)
                 game.resolveStack()
-                game.chooseCreatureType("Bear")
-                game.chooseCreatureType("Bird")
+                game.chooseReplacement("Bear", "Bird")
 
                 // After: Grizzly Bears is now a Bird, should get +1/+1 from Aven Brigadier
                 clientState = game.getClientState(1)

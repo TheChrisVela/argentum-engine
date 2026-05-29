@@ -4,9 +4,9 @@ Cross-reference of the **248 remaining (unimplemented) Invasion cards** against 
 actual capabilities (SDK reference + source verification, May 2026). Generated to scope what
 must be built before the set can be completed.
 
-**Status:** 90 / 335 implemented (27%) — up from 59 / 335 (18%) at time of writing, after gaps
-#1–#16 (incl. Blind Seer, Backlash, Agonizing Demise, Tsabo Tavoc, Traveler's Cloak, Pledge of
-Loyalty, Mages' Contest) and the cards they unlocked.
+**Status:** 91 / 335 implemented (27%) — up from 59 / 335 (18%) at time of writing, after gaps
+#1–#17 (incl. Blind Seer, Backlash, Agonizing Demise, Tsabo Tavoc, Traveler's Cloak, Pledge of
+Loyalty, Mages' Contest, Crystal Spray) and the cards they unlocked.
 Card list comes from `scripts/card-status --list --set INV`.
 
 ## Bottom line
@@ -626,16 +626,47 @@ was the precedent for a projection-time, board-derived keyword grant.
 
 ---
 
-### #17 — Text-changing (color word / land-type word) · Crystal Spray
+### #17 — Text-changing (color word / land-type word) · Crystal Spray ✅ DONE
 
-**What exists.** Only `ChangeCreatureTypeTextEffect` (Layer 3, via `TextReplacementComponent`).
+> **Implemented (primitive + card + UX).** `Effects.ChangeWordInText(target, duration)` +
+> `ChangeWordInTextEffect`; the player picks a color word or basic land type and a same-category
+> replacement at resolution (executor → `ChooseFromWord`/`ChooseToWord` continuations →
+> `WordChangeChoiceContinuationResumer`), recorded as a `TextReplacement(from, to, category, duration)`
+> on the target's `TextReplacementComponent`. The `TextReplacer` SDK interface grew `replaceColor`;
+> `CardPredicate.HasColor`/`NotColor` now rewrite their color. `StateProjector.applyTextReplacements`
+> rewrites basic-land subtypes (creature-type path generalized to land types) and
+> `PROTECTION_FROM_<COLOR>` keywords; `CleanupPhaseManager` strips `EndOfTurn` replacements.
+> **Crystal Spray** (`{2}{U}` Instant, `ChangeWordInText(target).then(DrawCards(1))`) authored in
+> `definitions/inv/cards/CrystalSpray.kt`; covered by `CrystalSprayTest` (Forest→Island taps blue,
+> end-of-turn revert, protection-from-color rewrite).
+>
+> **The key architectural insight:** basic-land mana is derived from the **projected** type line
+> (`IntrinsicManaAbilities.forEntity` reads projected subtypes, and intrinsic abilities *replace* the
+> card's declared mana ability), so a Forest→Island subtype rewrite makes the land tap for `{U}` with
+> **zero mana-code changes** — mana, landwalk, and type checks all follow the projection.
+>
+> **Scoping corrections vs. the original plan.** (1) Real Oracle is `{2}{U}` Instant, "**until end of
+> turn**" + immediate "Draw a card" (no delayed trigger) — not the indefinite/`{1}{U}` framing above.
+> (2) No `WordCategory` parameter on the effect: the category is inferred from the chosen word, and the
+> `TextReplacementCategory` enum already existed. (3) Color/land-type words inside a *resolving spell's*
+> structured effect text (e.g. "destroy target red creature" while the spell resolves) and oracle
+> reminder text remain the **flagged long tail** — the implemented projection covers permanents
+> (subtypes, mana, protection, color filters), which is the practical universe; targeting a stack spell
+> is legal but its projection effect is limited to color.
+>
+> **UX (per follow-up feedback).** The choose-word/choose-type flow was reworked and the same
+> treatment retrofitted to **Artificial Evolution** (`ChangeCreatureTypeText`), which players found
+> confusing. (1) FROM and TO are now **one screen** — a single `ChooseReplacementDecision`
+> (+`ReplacementChosenResponse`) carrying both lists, rendered by `ChooseReplacementDecisionUI` with a
+> live "from → to" preview, replacing the old two sequential `ChooseOptionDecision`s. (2) Words/types
+> **actually present on the target** sort first and are labeled "On <card>" (one pre-selected), so
+> players stop picking a FROM that isn't there (a silent no-op). For creature types "present" means a
+> subtype **or a type named in the card's rules text** — e.g. "Beast" in Wirewood Savage's trigger,
+> which the trigger resolver rewrites (covered by `TextChangeRelevanceTest`). (3) Crystal Spray's TO
+> list is category-constrained (`allowedToByFrom`: color↔color, land↔land) and shows inline mana pips
+> (reusing the mana-symbol SVGs via a new `optionPip` lookup, kept separate from the Siege tile layout).
 
-**Plan.** Add `ChangeWordInTextEffect(target, category: WordCategory { COLOR, BASIC_LAND_TYPE }, from,
-to, duration)`, mirroring the creature-type text effect. The genuine difficulty: the engine's abilities
-are **structured data**, not literal text, so a true text-change must reinterpret color/land-type
-references inside serialized abilities (mana production, color conditions). Scope this carefully —
-deliver the common cases (color words in printed colors/mana, land-type words in mana abilities) and
-flag the long tail. Couples with #11 (Crystal Spray targets spells too). **Bespoke / lower priority.**
+**What existed.** Only `ChangeCreatureTypeTextEffect` (Layer 3, via `TextReplacementComponent`).
 
 ---
 
@@ -728,5 +759,5 @@ filter.
 8. **Pile-separation trio** (#21) — 5 cards from three composable additions.
 9. Scope additions: protection supertype (#13 ✅), dynamic-color protection (#15 ✅), chosen-type
    landwalk (#14 ✅), discard-at-random cost (#9 ✅) — small, independent.
-10. Bespoke / heavier: stack color-change (#11 ✅), life auction (#16 ✅), Mana Maze restriction (#18),
-    reveal-and-compare (#19), text-changing (#17).
+10. Bespoke / heavier: stack color-change (#11 ✅), life auction (#16 ✅), text-changing (#17 ✅),
+    Mana Maze restriction (#18), reveal-and-compare (#19).

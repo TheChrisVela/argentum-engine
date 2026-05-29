@@ -1,7 +1,7 @@
 package com.wingedsheep.gameserver.scenarios
 
-import com.wingedsheep.engine.core.ChooseOptionDecision
-import com.wingedsheep.engine.core.OptionChosenResponse
+import com.wingedsheep.engine.core.ChooseReplacementDecision
+import com.wingedsheep.engine.core.ReplacementChosenResponse
 import com.wingedsheep.gameserver.ScenarioTestBase
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
@@ -24,16 +24,17 @@ import io.kotest.matchers.types.shouldBeInstanceOf
  */
 class ArtificialEvolutionEndemicPlagueComboTest : ScenarioTestBase() {
 
-    private fun ScenarioTestBase.TestGame.chooseCreatureType(typeName: String) {
+    private fun ScenarioTestBase.TestGame.chooseReplacement(from: String, to: String) {
         val decision = getPendingDecision()
         decision.shouldNotBeNull()
-        decision.shouldBeInstanceOf<ChooseOptionDecision>()
-        val options = decision.options
-        val index = options.indexOf(typeName)
-        withClue("Creature type '$typeName' should be in options") {
-            (index >= 0) shouldBe true
+        decision.shouldBeInstanceOf<ChooseReplacementDecision>()
+        val fromIndex = decision.fromOptions.indexOf(from)
+        val toIndex = decision.toOptions.indexOf(to)
+        withClue("'$from' should be in fromOptions and '$to' in toOptions") {
+            (fromIndex >= 0) shouldBe true
+            (toIndex >= 0) shouldBe true
         }
-        submitDecision(OptionChosenResponse(decision.id, index))
+        submitDecision(ReplacementChosenResponse(decision.id, fromIndex, toIndex))
     }
 
     init {
@@ -66,8 +67,7 @@ class ArtificialEvolutionEndemicPlagueComboTest : ScenarioTestBase() {
                 game.resolveStack()
 
                 // Choose FROM type: Goblin → TO type: Elf
-                game.chooseCreatureType("Goblin")
-                game.chooseCreatureType("Elf")
+                game.chooseReplacement("Goblin", "Elf")
 
                 // Verify Festering Goblin is now a Zombie Elf
                 val clientState = game.getClientState(1)
@@ -124,8 +124,7 @@ class ArtificialEvolutionEndemicPlagueComboTest : ScenarioTestBase() {
                 val festeringGoblin = game.findPermanent("Festering Goblin")!!
                 game.castSpell(1, "Artificial Evolution", festeringGoblin)
                 game.resolveStack()
-                game.chooseCreatureType("Goblin")
-                game.chooseCreatureType("Elf")
+                game.chooseReplacement("Goblin", "Elf")
 
                 // Cast Endemic Plague, sacrificing Festering Goblin
                 game.castSpellWithAdditionalSacrifice(1, "Endemic Plague", "Festering Goblin")

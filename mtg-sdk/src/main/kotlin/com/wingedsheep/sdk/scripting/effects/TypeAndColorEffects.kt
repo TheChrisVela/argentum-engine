@@ -402,3 +402,34 @@ data class ChangeCreatureTypeTextEffect(
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }
+
+/**
+ * Change the text of target spell or permanent by replacing all instances of one
+ * color word with another, or one basic land type with another, for [duration].
+ *
+ * Used by Crystal Spray. Resolution involves two player decisions:
+ * 1. Choose the word to replace (FROM) — a color word or a basic land type.
+ * 2. Choose the replacement word (TO), of the same category.
+ *
+ * The executor adds (or extends) a [com.wingedsheep.engine.state.components.identity.TextReplacementComponent]
+ * on the target entity with the chosen replacement. Because a basic-land subtype change
+ * flows through the projected type line, mana production, landwalk, and type checks all
+ * follow automatically; color-word changes rewrite protection-from-color and color filters.
+ *
+ * @param duration How long the text change lasts. Crystal Spray uses [Duration.EndOfTurn];
+ *   indefinite changes (Artificial Evolution shape) would use [Duration.Permanent].
+ */
+@SerialName("ChangeWordInText")
+@Serializable
+data class ChangeWordInTextEffect(
+    val target: EffectTarget = EffectTarget.ContextTarget(0),
+    val duration: Duration = Duration.EndOfTurn
+) : Effect {
+    override val description: String = buildString {
+        append("Change the text of ${target.description} by replacing all instances of one color word with another or one basic land type with another")
+        if (duration is Duration.EndOfTurn) append(" until end of turn")
+        append(".")
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}
