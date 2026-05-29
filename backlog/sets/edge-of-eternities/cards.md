@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 233 / 261
+**Implemented:** 234 / 261
 ---
 
 - [x] Adagia, Windswept Bastion
@@ -122,7 +122,7 @@
 - [x] Kavaron Turbodrone
 - [ ] Kav Landseeker
 - [x] Knight Luminary
-- [ ] Larval Scoutlander
+- [x] Larval Scoutlander
 - [x] Lashwhip Predator
 - [x] Lightless Evangel
 - [ ] Lightstall Inquisitor
