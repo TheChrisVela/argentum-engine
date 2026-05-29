@@ -2,7 +2,7 @@
 
 **Set Size:** 291 cards (261 Draft / 30 Extra)
 **Release Date:** June 23, 2023
-**Implemented:** 163 / 291
+**Implemented:** 176 / 291
 Run `scripts/card-status --set LTR` (and `--list --set LTR`) to verify status at any time.
 The split below mirrors that script: **Draft** = Scryfall `booster: true`; **Extra** =
 starter-deck/special cards and basic lands.
@@ -48,7 +48,7 @@ starter-deck/special cards and basic lands.
 - [x] Landroval, Horizon Witness
 - [x] Lost to Legend
 - [x] Nimble Hobbit
-- [ ] Now for Wrath, Now for Ruin!
+- [x] Now for Wrath, Now for Ruin!
 - [x] Protector of Gondor
 - [x] Reprieve
 - [x] Rosie Cotton of South Lane
@@ -60,7 +60,7 @@ starter-deck/special cards and basic lands.
 - [ ] Stalwarts of Osgiliath
 - [x] Tale of Tinúviel
 - [x] Took Reaper
-- [ ] War of the Last Alliance
+- [x] War of the Last Alliance
 - [x] Westfold Rider
 - [ ] You Cannot Pass!
 
@@ -80,9 +80,9 @@ starter-deck/special cards and basic lands.
 - [ ] Gandalf, Friend of the Shire
 - [ ] Glorious Gale
 - [ ] Goldberry, River-Daughter
-- [ ] Grey Havens Navigator
+- [x] Grey Havens Navigator
 - [x] Hithlain Knots
-- [ ] Horses of the Bruinen
+- [x] Horses of the Bruinen
 - [x] Ioreth of the Healing House
 - [x] Isolation at Orthanc
 - [x] Ithilien Kingfisher
@@ -94,10 +94,10 @@ starter-deck/special cards and basic lands.
 - [x] Pelargir Survivor
 - [ ] Press the Enemy
 - [ ] Rangers of Ithilien
-- [ ] Saruman the White
+- [x] Saruman the White
 - [x] Saruman's Trickery
 - [ ] Scroll of Isildur
-- [ ] Soothing of Sméagol
+- [x] Soothing of Sméagol
 - [x] Stern Scolding
 - [x] Storm of Saruman
 - [ ] Surrounded by Orcs
@@ -108,7 +108,7 @@ starter-deck/special cards and basic lands.
 ### Black
 
 - [x] Bitter Downfall
-- [ ] The Black Breath
+- [x] The Black Breath
 - [ ] Call of the Ring
 - [x] Cirith Ungol Patrol
 - [x] Claim the Precious
@@ -130,7 +130,7 @@ starter-deck/special cards and basic lands.
 - [x] Mordor Trebuchet
 - [x] Morgul-Knife Wound
 - [ ] Nasty End
-- [ ] Nazgûl
+- [x] Nazgûl
 - [x] Oath of the Grey Host
 - [ ] One Ring to Rule Them All
 - [ ] Orcish Bowmasters
@@ -159,7 +159,7 @@ starter-deck/special cards and basic lands.
 - [x] Erkenbrand, Lord of Westfold
 - [ ] Fall of Cair Andros
 - [ ] Fear, Fire, Foes!
-- [ ] Fiery Inscription
+- [x] Fiery Inscription
 - [x] Fire of Orthanc
 - [ ] Foray of Orcs
 - [x] Gimli, Counter of Kills
@@ -190,7 +190,7 @@ starter-deck/special cards and basic lands.
 ### Green
 
 - [x] Bag End Porter
-- [ ] Bombadil's Song
+- [x] Bombadil's Song
 - [x] Brandywine Farmer
 - [ ] Celeborn the Wise
 - [ ] Chance-Met Elves
@@ -235,7 +235,7 @@ starter-deck/special cards and basic lands.
 - [x] Arwen, Mortal Queen
 - [ ] Arwen Undómiel
 - [ ] The Balrog, Durin's Bane
-- [ ] Bilbo, Retired Burglar
+- [x] Bilbo, Retired Burglar
 - [x] Butterbur, Bree Innkeeper
 - [x] Denethor, Ruling Steward
 - [x] Doors of Durin
@@ -334,7 +334,7 @@ starter-deck/special cards and basic lands.
 
 ### Red
 
-- [ ] Assault on Osgiliath
+- [x] Assault on Osgiliath
 
 ### Green
 
@@ -392,7 +392,7 @@ starter-deck/special cards and basic lands.
 
 ### Black
 
-- [ ] Warg Rider
+- [x] Warg Rider
 
 ### Red
 
