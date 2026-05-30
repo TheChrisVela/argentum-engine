@@ -93,4 +93,5 @@ export const counterManaClass: Record<string, string> = {
   GROWTH: 'counter-charge',
   TIME: 'counter-time',
   FEATHER: 'counter-charge',
+  HOURGLASS: 'counter-time',
 }
