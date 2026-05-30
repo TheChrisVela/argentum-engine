@@ -1093,10 +1093,13 @@ class ActivateAbilityHandler(
         // the eligible restricted mana for the cost — and any unconsumed remainder stays
         // restricted in the pool instead of laundering into unrestricted mana.
         for (source in solution.sources) {
-            // ManaSolver always emits a manaProduced entry per tapped source; a missing
-            // entry would indicate a solver bug, not a runtime gap to swallow silently.
-            val production = solution.manaProduced[source.entityId]
-                ?: error("solution.sources contains ${source.name} without a matching manaProduced entry")
+            // A tapped source may legitimately have no manaProduced entry: ManaSolver taps
+            // extra sources to pay the *internal* activation cost of a mana ability (e.g. the
+            // {1} in Hidden Grotto's "{1}, {T}: Add one mana of any color"). That mana is
+            // consumed by the ability's own cost rather than flowing into the spell/ability
+            // payment pool, so the solver intentionally omits it from manaProduced. Such a
+            // source is still tapped above; it just contributes nothing to the pool here.
+            val production = solution.manaProduced[source.entityId] ?: continue
             val color = production.color
             val restriction = if (color != null) {
                 source.colorRestrictions[color] ?: source.restriction

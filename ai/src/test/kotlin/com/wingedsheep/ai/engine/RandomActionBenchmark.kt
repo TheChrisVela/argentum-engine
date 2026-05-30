@@ -4,7 +4,7 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.mtg.sets.definitions.por.PortalSet
+import com.wingedsheep.mtg.sets.MtgSetCatalog
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
@@ -22,20 +22,23 @@ import kotlin.time.measureTime
  * Measures raw engine throughput: enumerate legal actions → pick random → process.
  *
  * Disabled by default. Run with:
- *   ./gradlew :rules-engine:test --tests "*.RandomActionBenchmark" -Dbenchmark=true
- *   ./gradlew :rules-engine:test --tests "*.RandomActionBenchmark" -Dbenchmark=true -DbenchmarkGames=100
+ *   ./gradlew :ai:test --tests "*.RandomActionBenchmark" -Dbenchmark=true
+ *   ./gradlew :ai:test --tests "*.RandomActionBenchmark" -Dbenchmark=true -DbenchmarkGames=100
+ *   ./gradlew :ai:test --tests "*.RandomActionBenchmark" -Dbenchmark=true -DbenchmarkGames=200 -DbenchmarkSet=BLB
  */
 class RandomActionBenchmark : FunSpec({
 
     val numGames = System.getProperty("benchmarkGames")?.toIntOrNull() ?: 20
     val benchmarkEnabled = System.getProperty("benchmark") == "true"
+    val setCode = System.getProperty("benchmarkSet") ?: "POR"
 
-    test("benchmark: $numGames random-action games in parallel").config(enabled = benchmarkEnabled) {
+    test("benchmark: $numGames random-action games in parallel ($setCode)").config(enabled = benchmarkEnabled) {
+        val set = MtgSetCatalog.requireByCode(setCode)
         val registry = CardRegistry().apply {
-            register(PortalSet.cards)
-            register(PortalSet.basicLands)
+            register(set.cards)
+            register(set.basicLands)
         }
-        val allCards = PortalSet.cards
+        val allCards = set.cards
         val cores = Runtime.getRuntime().availableProcessors()
         val pool = Executors.newFixedThreadPool(cores)
         val completionService = ExecutorCompletionService<RandomGameResult>(pool)
@@ -59,6 +62,7 @@ class RandomActionBenchmark : FunSpec({
 
             val results = (1..numGames).map { completionService.take().get() }
 
+            val crashed = results.filter { it.crashError != null }
             val completed = results.count { it.gameOver }
             val avgTurns = results.map { it.turns }.average()
             val avgActions = results.map { it.actions }.average()
@@ -69,6 +73,14 @@ class RandomActionBenchmark : FunSpec({
             println()
             println("--- SUMMARY ($numGames games, random actions) ---")
             println("Completed:  $completed / ${results.size} (${completed * 100 / results.size}%)")
+            println("Crashed:    ${crashed.size} / ${results.size} (engine exceptions)")
+            if (crashed.isNotEmpty()) {
+                println()
+                println("--- ENGINE EXCEPTIONS (distinct, with game count) ---")
+                crashed.groupingBy { it.crashError!! }.eachCount()
+                    .entries.sortedByDescending { it.value }
+                    .forEach { (msg, n) -> println("  [${n}x] $msg") }
+            }
             println("Turns:      avg=${String.format("%.1f", avgTurns)}, min=${results.minOf { it.turns }}, max=${results.maxOf { it.turns }}")
             println("Actions:    avg=${avgActions.roundToInt()}, min=${results.minOf { it.actions }}, max=${results.maxOf { it.actions }}")
             println("CPU/game:   avg=${avgMs.roundToInt()}ms, min=${results.minOf { it.durationMs }}ms, max=${results.maxOf { it.durationMs }}ms")
@@ -100,7 +112,8 @@ class RandomActionBenchmark : FunSpec({
 private data class RandomGameResult(
     val turns: Int, val actions: Int, val durationMs: Long,
     val winner: String, val gameOver: Boolean,
-    val enumerateNs: Long = 0, val processNs: Long = 0, val decisionNs: Long = 0
+    val enumerateNs: Long = 0, val processNs: Long = 0, val decisionNs: Long = 0,
+    val crashError: String? = null
 )
 
 /**
@@ -132,50 +145,57 @@ private fun playRandomGame(
     var lastProgressTurn = 0
     var lastProgressAction = 0
     var stuckCount = 0
+    var crashError: String? = null
 
     val duration = measureTime {
-        while (!state.gameOver && state.turnNumber < maxTurns) {
-            // Stuck detection
-            if (actionCount - lastProgressAction > 1000 && state.turnNumber == lastProgressTurn) {
-                stuckCount++
-                if (stuckCount >= 3) break
-            }
-            if (state.turnNumber > lastProgressTurn) {
-                lastProgressTurn = state.turnNumber
-                lastProgressAction = actionCount
-                stuckCount = 0
-            }
+        try {
+            while (!state.gameOver && state.turnNumber < maxTurns) {
+                // Stuck detection
+                if (actionCount - lastProgressAction > 1000 && state.turnNumber == lastProgressTurn) {
+                    stuckCount++
+                    if (stuckCount >= 3) break
+                }
+                if (state.turnNumber > lastProgressTurn) {
+                    lastProgressTurn = state.turnNumber
+                    lastProgressAction = actionCount
+                    stuckCount = 0
+                }
 
-            val pendingDecision = state.pendingDecision
-            val action = if (pendingDecision != null) {
-                val t0 = System.nanoTime()
-                val response = randomDecisionResponse(pendingDecision, rng)
-                decisionNs += System.nanoTime() - t0
-                SubmitDecision(pendingDecision.playerId, response)
-            } else {
-                val priorityPlayer = state.priorityPlayerId ?: break
-                val t0 = System.nanoTime()
-                val legalActions = enumerator.enumerate(state, priorityPlayer)
-                enumerateNs += System.nanoTime() - t0
-                val affordable = legalActions.filter { it.affordable }
-                if (affordable.isEmpty()) break
-                affordable[rng.nextInt(affordable.size)].action
-            }
+                val pendingDecision = state.pendingDecision
+                val action = if (pendingDecision != null) {
+                    val t0 = System.nanoTime()
+                    val response = randomDecisionResponse(pendingDecision, rng)
+                    decisionNs += System.nanoTime() - t0
+                    SubmitDecision(pendingDecision.playerId, response)
+                } else {
+                    val priorityPlayer = state.priorityPlayerId ?: break
+                    val t0 = System.nanoTime()
+                    val legalActions = enumerator.enumerate(state, priorityPlayer)
+                    enumerateNs += System.nanoTime() - t0
+                    val affordable = legalActions.filter { it.affordable }
+                    if (affordable.isEmpty()) break
+                    affordable[rng.nextInt(affordable.size)].action
+                }
 
-            val t0 = System.nanoTime()
-            val r = processor.process(state, action).result
-            processNs += System.nanoTime() - t0
-            if (r.error != null) {
-                // If random action failed, just pass priority
-                val t1 = System.nanoTime()
-                val fallback = processor.process(state, PassPriority(action.playerId)).result
-                processNs += System.nanoTime() - t1
-                if (fallback.error != null) break
-                state = fallback.state
-            } else {
-                state = r.state
+                val t0 = System.nanoTime()
+                val r = processor.process(state, action).result
+                processNs += System.nanoTime() - t0
+                if (r.error != null) {
+                    // If random action failed, just pass priority
+                    val t1 = System.nanoTime()
+                    val fallback = processor.process(state, PassPriority(action.playerId)).result
+                    processNs += System.nanoTime() - t1
+                    if (fallback.error != null) break
+                    state = fallback.state
+                } else {
+                    state = r.state
+                }
+                actionCount++
             }
-            actionCount++
+        } catch (e: Throwable) {
+            // An engine exception (not a returned error) — record it and end this game
+            // rather than killing the whole benchmark run.
+            crashError = "${e::class.simpleName}: ${e.message}"
         }
     }
 
@@ -184,6 +204,7 @@ private fun playRandomGame(
         actions = actionCount,
         durationMs = duration.inWholeMilliseconds,
         winner = when {
+            crashError != null -> "crash"
             !state.gameOver -> "timeout"
             state.winnerId == p1 -> "P1"
             state.winnerId == p2 -> "P2"
@@ -192,7 +213,8 @@ private fun playRandomGame(
         gameOver = state.gameOver,
         enumerateNs = enumerateNs,
         processNs = processNs,
-        decisionNs = decisionNs
+        decisionNs = decisionNs,
+        crashError = crashError
     )
 }
 

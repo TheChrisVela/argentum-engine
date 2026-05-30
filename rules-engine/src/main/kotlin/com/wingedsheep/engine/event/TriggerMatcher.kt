@@ -547,6 +547,12 @@ class TriggerMatcher(
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsInstant -> cardComponent.typeLine.isInstant
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsSorcery -> cardComponent.typeLine.isSorcery
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsBasicLand -> cardComponent.typeLine.isLand && cardComponent.typeLine.supertypes.contains(com.wingedsheep.sdk.core.Supertype.BASIC)
+            is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsPermanent -> cardComponent.typeLine.isPermanent
+            is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsNonland -> !cardComponent.typeLine.isLand
+            is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsNoncreature -> !cardComponent.typeLine.isCreature
+            is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsNonenchantment -> !cardComponent.typeLine.isEnchantment
+            is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsLegendary -> cardComponent.typeLine.isLegendary
+            is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsNonlegendary -> !cardComponent.typeLine.isLegendary
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.HasSubtype ->
                 cardComponent.typeLine.hasSubtype(predicate.subtype)
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.HasAnyOfSubtypes ->

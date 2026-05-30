@@ -6,11 +6,23 @@ import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.blb.cards.HiddenGrotto
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Subtype
+import com.wingedsheep.sdk.core.TypeLine
+import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.model.CardDefinition
+import com.wingedsheep.sdk.model.CardScript
+import com.wingedsheep.sdk.model.CreatureStats
 import com.wingedsheep.sdk.model.Deck
+import com.wingedsheep.sdk.scripting.AbilityCost
+import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.scripting.ActivatedAbility
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import java.util.UUID
 
 /**
  * Tests for Hidden Grotto.
@@ -28,6 +40,26 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 class HiddenGrottoTest : FunSpec({
 
     val anyColorAbilityId = HiddenGrotto.activatedAbilities[1].id
+
+    // A creature with a non-mana {G}{G} activated pump ability. Activating it auto-taps for
+    // {G}{G}; with only one Forest available, the solver routes the second {G} through Hidden
+    // Grotto's any-color ability, which itself costs {1} — funded by tapping a basic. That
+    // basic lands in solution.sources with no manaProduced entry (its mana is consumed by the
+    // activation cost), which previously made autoTapForManaCost throw.
+    val pumpAbilityId = AbilityId(UUID.randomUUID().toString())
+    val grottoBeast = CardDefinition(
+        name = "Grotto Beast",
+        manaCost = ManaCost.parse("{2}{G}"),
+        typeLine = TypeLine.creature(setOf(Subtype("Beast"))),
+        creatureStats = CreatureStats(2, 2),
+        script = CardScript.permanent(
+            ActivatedAbility(
+                id = pumpAbilityId,
+                cost = AbilityCost.Mana(ManaCost.parse("{G}{G}")),
+                effect = Effects.ModifyStats(1, 1, EffectTarget.Self),
+            )
+        )
+    )
 
     test("cannot activate {1}, {T}: Add one mana of any color using its own mana ability") {
         val driver = GameTestDriver()
@@ -96,6 +128,35 @@ class HiddenGrottoTest : FunSpec({
         result.isSuccess shouldBe true
         // Forest pays one {G}; Hidden Grotto's any-color ability pays the other {G}
         // but requires {1} — which must come from tapping the Swamp.
+        driver.isTapped(forest) shouldBe true
+        driver.isTapped(grotto) shouldBe true
+        driver.isTapped(swamp) shouldBe true
+    }
+
+    test("activating an ability auto-taps a basic to fund Grotto's {1} without crashing") {
+        val driver = GameTestDriver()
+        driver.registerCards(TestCards.all + listOf(grottoBeast))
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 20, "Plains" to 20))
+
+        val activePlayer = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val forest = driver.putPermanentOnBattlefield(activePlayer, "Forest")
+        val grotto = driver.putPermanentOnBattlefield(activePlayer, "Hidden Grotto")
+        val swamp = driver.putPermanentOnBattlefield(activePlayer, "Swamp")
+        val beast = driver.putPermanentOnBattlefield(activePlayer, "Grotto Beast")
+
+        val result = driver.submit(
+            ActivateAbility(
+                playerId = activePlayer,
+                sourceId = beast,
+                abilityId = pumpAbilityId
+            )
+        )
+
+        // {G}{G}: Forest pays one {G}; Hidden Grotto's any-color ability pays the other {G},
+        // and its own {1} is funded by tapping the Swamp.
+        result.isSuccess shouldBe true
         driver.isTapped(forest) shouldBe true
         driver.isTapped(grotto) shouldBe true
         driver.isTapped(swamp) shouldBe true

@@ -26,6 +26,7 @@ tasks.withType<Test>().configureEach {
     systemProperty("benchmarkGames", System.getProperty("benchmarkGames") ?: "10")
     systemProperty("benchmarkMaxTurns", System.getProperty("benchmarkMaxTurns") ?: "50")
     systemProperty("benchmarkOutputDir", System.getProperty("benchmarkOutputDir") ?: System.getProperty("java.io.tmpdir"))
+    systemProperty("benchmarkSet", System.getProperty("benchmarkSet") ?: "POR")
 
     // Forward per-player benchmark config
     for (prefix in listOf("p1", "p2")) {
