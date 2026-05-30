@@ -50,6 +50,11 @@ clean:
 check:
     ./gradlew check
 
+# Report implemented vs missing cards for a set (e.g., just card-status --set BLB --list)
+[group: 'build']
+card-status *ARGS:
+    scripts/card-status {{ARGS}}
+
 # Verify backlog/sets/*/cards.md headers match actual [x] / [x]+[ ] counts
 [group: 'build']
 check-backlog:
