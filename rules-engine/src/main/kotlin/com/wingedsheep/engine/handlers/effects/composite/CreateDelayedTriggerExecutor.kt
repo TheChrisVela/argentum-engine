@@ -59,12 +59,18 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
         // current turn, that end step qualifies — don't skip to the following turn.
         // Only bump notBeforeTurn when the current turn's end step has already begun (or passed),
         // i.e. we're in END or CLEANUP on the controller's turn.
-        val notBeforeTurn = if (effect.onControllerNextTurn) {
-            val onControllersTurn = context.controllerId == state.activePlayerId
-            val endStepAlreadyStarted = state.step == Step.END || state.step == Step.CLEANUP
-            if (onControllersTurn && endStepAlreadyStarted) state.turnNumber + 1 else null
-        } else {
-            null
+        //
+        // skipCurrentTurn ("on your next turn") is stricter: the current turn never
+        // qualifies, regardless of step. Combine with fireOnlyOnControllersTurn = true
+        // to land on the controller's upcoming turn.
+        val notBeforeTurn = when {
+            effect.skipCurrentTurn -> state.turnNumber + 1
+            effect.onControllerNextTurn -> {
+                val onControllersTurn = context.controllerId == state.activePlayerId
+                val endStepAlreadyStarted = state.step == Step.END || state.step == Step.CLEANUP
+                if (onControllersTurn && endStepAlreadyStarted) state.turnNumber + 1 else null
+            }
+            else -> null
         }
 
         val delayedTrigger = DelayedTriggeredAbility(

@@ -544,7 +544,17 @@ data class CreateDelayedTriggerEffect(
      * trigger deferred to the controller's following turn. Typically combined with
      * [fireOnlyOnControllersTurn] = true.
      */
-    val onControllerNextTurn: Boolean = false
+    val onControllerNextTurn: Boolean = false,
+    /**
+     * If true, the trigger is deferred past the current turn unconditionally — it
+     * cannot fire until a turn whose number is greater than the current turn, no
+     * matter the current step. Use this for "on your next turn"-style timing where
+     * the current turn's end step must NOT satisfy the trigger even if it hasn't
+     * begun yet (e.g. Kav Landseeker). Typically combined with
+     * [fireOnlyOnControllersTurn] = true so the trigger lands on the controller's
+     * upcoming turn rather than an intervening opponent turn.
+     */
+    val skipCurrentTurn: Boolean = false
 ) : Effect {
     override val description: String = when {
         trigger != null -> "create a delayed trigger that fires on ${trigger.event::class.simpleName}"
