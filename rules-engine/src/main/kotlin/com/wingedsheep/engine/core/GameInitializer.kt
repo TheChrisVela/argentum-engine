@@ -351,6 +351,7 @@ class GameInitializer(
                 spellEffect = cardDef.spellEffect,
                 imageUri = printing?.imageUri ?: cardDef.metadata.imageUri,
                 backFaceImageUri = printing?.backFaceImageUri ?: cardDef.backFace?.metadata?.imageUri,
+                hasNonManaActivatedAbility = cardDef.hasNonManaActivatedAbility,
             ),
             OwnerComponent(ownerId),
             ControllerComponent(ownerId)

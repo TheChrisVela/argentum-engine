@@ -30,6 +30,14 @@ data class CardComponent(
     val spellEffect: Effect? = null,
     val imageUri: String? = null,
     val backFaceImageUri: String? = null,
+    /**
+     * Precomputed from the card definition: does this card have at least one intrinsic
+     * activated ability that isn't a mana ability (and isn't a loyalty ability)? Used by
+     * static filters such as Tsabo's Web ("each land with an activated ability that isn't
+     * a mana ability"). This reflects the card's printed abilities only — abilities granted
+     * by other continuous effects are not counted here.
+     */
+    val hasNonManaActivatedAbility: Boolean = false,
 ) : Component {
     // Convenience accessors
     val isCreature: Boolean get() = typeLine.isCreature

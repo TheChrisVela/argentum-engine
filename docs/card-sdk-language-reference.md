@@ -381,6 +381,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `HijackNextTurnEffect(target)` — you control target's next turn.
 - `GrantCantBeBlockedByChosenColorEffect(target, duration)` — unblockable except by chosen color.
 - `CantCastSpellsEffect(target, until?)` — target can't cast spells.
+- `Effects.CantPlayLandsThisTurn(target = Controller)` (`PreventLandPlaysThisTurnEffect`) — the target player can't
+  play lands for the rest of this turn (sets remaining land drops to 0). Defaults to the controller (Rock Jockey);
+  pass `EffectTarget.ContextTarget(n)` for "target player can't play lands this turn" cards like Turf Wound.
 
 ### Forced sacrifice / discard
 
@@ -700,6 +703,11 @@ work for abilities-on-stack (which carry no `CardComponent`).
   includes at least one chosen target matching `subfilter`. Player targets are skipped. The
   subfilter inherits the outer `PredicateContext`, so `Land.youControl()` inside the subfilter
   resolves against the outer chooser. Used by Teferi's Response.
+- `CardPredicate.HasNonManaActivatedAbility` — matches a permanent whose printed activated abilities
+  include at least one that isn't a mana ability and isn't a loyalty ability (battlefield-activatable).
+  Backed by the precomputed `CardComponent.hasNonManaActivatedAbility` flag (set at entity creation from
+  `CardDefinition.hasNonManaActivatedAbility`), so abilities granted by other continuous effects are not
+  counted. Used by Tsabo's Web ("each land with an activated ability that isn't a mana ability …").
 
 ### `StatePredicate` — battlefield state checks
 

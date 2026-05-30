@@ -632,6 +632,20 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
     }
 
     /**
+     * Matches a permanent that has at least one intrinsic activated ability that isn't a
+     * mana ability (and isn't a loyalty ability). Backed by the precomputed
+     * `CardComponent.hasNonManaActivatedAbility` flag, so abilities granted by other
+     * continuous effects are not counted. Used by Tsabo's Web: "Each land with an activated
+     * ability that isn't a mana ability doesn't untap during its controller's untap step."
+     */
+    @SerialName("HasNonManaActivatedAbility")
+    @Serializable
+    data object HasNonManaActivatedAbility : CardPredicate {
+        override val description: String = "with an activated ability that isn't a mana ability"
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate = this
+    }
+
+    /**
      * Matches a spell or ability on the stack at least one of whose chosen targets
      * matches [subfilter]. Player targets are skipped (they aren't card-like and have
      * no game-object filter to match against). Used by cards like Teferi's Response

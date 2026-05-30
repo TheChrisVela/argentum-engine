@@ -249,6 +249,18 @@ data class CardDefinition(
     /** Activated abilities on this card */
     val activatedAbilities get() = script.activatedAbilities
 
+    /**
+     * True if this card has at least one intrinsic activated ability that isn't a mana
+     * ability and isn't a loyalty ability, activatable from the battlefield. Used by static
+     * filters like Tsabo's Web ("each land with an activated ability that isn't a mana ability").
+     */
+    val hasNonManaActivatedAbility: Boolean
+        get() = script.activatedAbilities.any {
+            !it.isManaAbility &&
+                !it.isPlaneswalkerAbility &&
+                it.activateFromZone == com.wingedsheep.sdk.core.Zone.BATTLEFIELD
+        }
+
     /** Static abilities (continuous effects) on this card */
     val staticAbilities get() = script.staticAbilities
 

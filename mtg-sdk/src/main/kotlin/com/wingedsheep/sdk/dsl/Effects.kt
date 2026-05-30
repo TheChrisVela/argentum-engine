@@ -45,6 +45,7 @@ import com.wingedsheep.sdk.scripting.effects.CantBlockEffect
 import com.wingedsheep.sdk.scripting.effects.SetSuspectedEffect
 import com.wingedsheep.sdk.scripting.effects.CantBlockGroupEffect
 import com.wingedsheep.sdk.scripting.effects.CantCastSpellsEffect
+import com.wingedsheep.sdk.scripting.effects.PreventLandPlaysThisTurnEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.IfYouDoEffect
 import com.wingedsheep.sdk.scripting.effects.SuccessCriterion
@@ -1861,6 +1862,14 @@ object Effects {
      */
     fun CantCastSpells(target: EffectTarget = EffectTarget.PlayerRef(Player.Opponent), duration: Duration = Duration.EndOfTurn): Effect =
         CantCastSpellsEffect(target, duration)
+
+    /**
+     * A player can't play lands for the rest of this turn (sets remaining land drops to 0).
+     * Defaults to the controller (Rock Jockey); pass a target for "target player can't
+     * play lands this turn" cards like Turf Wound.
+     */
+    fun CantPlayLandsThisTurn(target: EffectTarget = EffectTarget.Controller): Effect =
+        PreventLandPlaysThisTurnEffect(target)
 
     /**
      * Target player skips their next turn.

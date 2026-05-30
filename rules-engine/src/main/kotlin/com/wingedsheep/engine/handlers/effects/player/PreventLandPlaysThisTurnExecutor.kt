@@ -21,7 +21,8 @@ class PreventLandPlaysThisTurnExecutor : EffectExecutor<PreventLandPlaysThisTurn
         effect: PreventLandPlaysThisTurnEffect,
         context: EffectContext
     ): EffectResult {
-        val playerId = context.controllerId
+        val playerId = context.resolvePlayerTarget(effect.target)
+            ?: return EffectResult.error(state, "No valid target for prevent land plays effect")
 
         val currentLandDrops = state.getEntity(playerId)?.get<LandDropsComponent>()
             ?: return EffectResult.error(state, "Player has no LandDropsComponent")

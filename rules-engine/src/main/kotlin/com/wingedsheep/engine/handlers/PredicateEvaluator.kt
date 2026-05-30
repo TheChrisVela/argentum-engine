@@ -178,6 +178,7 @@ class PredicateEvaluator {
             CardPredicate.IsNontoken -> !container.has<TokenComponent>()
             CardPredicate.IsLegendary -> "LEGENDARY" in types
             CardPredicate.IsNonlegendary -> "LEGENDARY" !in types
+            CardPredicate.HasNonManaActivatedAbility -> card.hasNonManaActivatedAbility
 
             // Color predicates - use projected colors
             is CardPredicate.HasColor -> predicate.color.name in colors
@@ -813,6 +814,9 @@ class PredicateEvaluator {
             CardPredicate.IsActivatedOrTriggeredAbility -> false
             CardPredicate.IsTriggeredAbility -> false
             CardPredicate.IsActivatedAbility -> false
+
+            // A cast-spell record has no battlefield permanent to inspect for activated abilities.
+            CardPredicate.HasNonManaActivatedAbility -> false
 
             // Stack-relative targeting predicate — historical cast records have no
             // chosen-target snapshot, so this always returns false here.

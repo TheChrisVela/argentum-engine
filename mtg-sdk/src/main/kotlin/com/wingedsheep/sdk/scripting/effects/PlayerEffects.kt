@@ -128,14 +128,21 @@ data class TakeExtraTurnEffect(
 }
 
 /**
- * Prevent the controller from playing lands for the rest of this turn.
+ * Prevent the target player from playing lands for the rest of this turn.
  * Sets the player's remaining land drops to 0.
- * Used for cards like Rock Jockey.
+ * Defaults to the controller (e.g. Rock Jockey); pass a [EffectTarget.PlayerRef]
+ * for "target player can't play lands this turn" cards like Turf Wound.
  */
 @SerialName("PreventLandPlaysThisTurn")
 @Serializable
-data object PreventLandPlaysThisTurnEffect : Effect {
-    override val description: String = "You can't play lands this turn"
+data class PreventLandPlaysThisTurnEffect(
+    val target: EffectTarget = EffectTarget.Controller
+) : Effect {
+    override val description: String = when (target) {
+        is EffectTarget.Controller -> "You can't play lands this turn"
+        is EffectTarget.ContextTarget -> "Target player can't play lands this turn"
+        else -> "${target.description.replaceFirstChar { it.uppercase() }} can't play lands this turn"
+    }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }

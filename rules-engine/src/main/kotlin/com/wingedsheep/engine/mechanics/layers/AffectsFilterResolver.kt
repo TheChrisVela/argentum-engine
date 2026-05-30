@@ -412,6 +412,7 @@ internal class AffectsFilterResolver {
         CardPredicate.IsNontoken -> !container.has<com.wingedsheep.engine.state.components.identity.TokenComponent>()
         CardPredicate.IsLegendary -> "LEGENDARY" in types
         CardPredicate.IsNonlegendary -> "LEGENDARY" !in types
+        CardPredicate.HasNonManaActivatedAbility -> card.hasNonManaActivatedAbility
         is CardPredicate.HasSubtype -> if (isFaceDown) false else subtypes.any { it.equals(predicate.subtype.value, ignoreCase = true) }
         is CardPredicate.NotSubtype -> if (isFaceDown) true else subtypes.none { it.equals(predicate.subtype.value, ignoreCase = true) }
         is CardPredicate.HasAnyOfSubtypes -> if (isFaceDown) false else predicate.subtypes.any { sub -> subtypes.any { it.equals(sub.value, ignoreCase = true) } }
