@@ -102,6 +102,8 @@ continuations, layer system, mana, priority): [`docs/architecture-principles.md`
 - **Unit / integration / scenario tests** — Kotest in `rules-engine` and `game-server`.
 - **E2E tests** — Playwright in `e2e-scenarios/`, run against full stack. Patterns, scenario config, and `GamePage`
   helper reference: [`docs/e2e-test-patterns.md`](docs/e2e-test-patterns.md).
+- **Manual self-play** — drive a full game over the gym server's HTTP step loop to shake out new-set cards that
+  don't behave as printed: [`docs/gym-self-play-testing.md`](docs/gym-self-play-testing.md).
 - Run: `just test` · `just test-rules` · `just test-class <Name>`.
 
 ## Documentation index
@@ -119,3 +121,4 @@ continuations, layer system, mana, priority): [`docs/architecture-principles.md`
 | [`web-client-architecture.md`](docs/web-client-architecture.md) | Frontend architecture, WebSocket API |
 | [`e2e-test-patterns.md`](docs/e2e-test-patterns.md) | Playwright fixtures, GamePage helpers, scenario config |
 | [`gym-deckbuild-env.md`](docs/gym-deckbuild-env.md) | Sealed deckbuild gym env (build → play pipeline) + how to supply your own win-rate reward |
+| [`gym-self-play-testing.md`](docs/gym-self-play-testing.md) | Driving the gym server over HTTP to manually self-play and surface broken cards |
