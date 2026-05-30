@@ -49,6 +49,7 @@ import com.wingedsheep.mtg.sets.definitions.tdm.TarkirDragonstormSet
 import com.wingedsheep.mtg.sets.definitions.tla.AvatarTheLastAirbenderSet
 import com.wingedsheep.mtg.sets.definitions.tmp.TempestSet
 import com.wingedsheep.mtg.sets.definitions.usg.UrzasSagaSet
+import com.wingedsheep.mtg.sets.definitions.vis.VisionsSet
 import com.wingedsheep.mtg.sets.definitions.vow.InnistradCrimsonVowSet
 import com.wingedsheep.mtg.sets.definitions.war.WarOfTheSparkSet
 import com.wingedsheep.mtg.sets.definitions.woe.WildsOfEldrainSet
@@ -144,6 +145,7 @@ abstract class ScenarioTestBase : FunSpec() {
         register(TarkirDragonstormSet.cards)
         register(TempestSet.cards); register(TempestSet.basicLands)
         register(UrzasSagaSet.cards); register(UrzasSagaSet.basicLands)
+        register(VisionsSet.cards)
         register(WarOfTheSparkSet.cards)
         register(WildsOfEldrainSet.cards)
     }

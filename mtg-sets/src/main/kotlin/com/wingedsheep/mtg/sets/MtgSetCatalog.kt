@@ -60,6 +60,7 @@ import com.wingedsheep.mtg.sets.definitions.scg.ScourgeSet
 import com.wingedsheep.mtg.sets.definitions.soi.ShadowsOverInnistradSet
 import com.wingedsheep.mtg.sets.definitions.tmp.TempestSet
 import com.wingedsheep.mtg.sets.definitions.usg.UrzasSagaSet
+import com.wingedsheep.mtg.sets.definitions.vis.VisionsSet
 import com.wingedsheep.mtg.sets.definitions.otj.OutlawsOfThunderJunctionSet
 import com.wingedsheep.mtg.sets.definitions.spm.SpiderManSet
 import com.wingedsheep.mtg.sets.definitions.tdm.TarkirDragonstormSet
@@ -85,6 +86,7 @@ object MtgSetCatalog {
         PortalSet,
         PortalSecondAgeSet,
         MirageSet,
+        VisionsSet,
         TempestSet,
         ExodusSet,
         UrzasSagaSet,
