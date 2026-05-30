@@ -301,6 +301,13 @@ object Targets {
     )
 
     /**
+     * Target activated ability on the stack (not triggered abilities; mana abilities can't be targeted).
+     */
+    val ActivatedAbility: TargetRequirement = TargetObject(
+        filter = TargetFilter.ActivatedAbilityOnStack
+    )
+
+    /**
      * Target triggered ability you control on the stack.
      */
     val TriggeredAbilityYouControl: TargetRequirement = TargetObject(

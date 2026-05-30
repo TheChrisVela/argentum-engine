@@ -125,6 +125,9 @@ class PredicateEvaluator {
         if (predicate is CardPredicate.IsTriggeredAbility) {
             return container.has<TriggeredAbilityOnStackComponent>()
         }
+        if (predicate is CardPredicate.IsActivatedAbility) {
+            return container.has<ActivatedAbilityOnStackComponent>()
+        }
         // Stack-relative targeting predicate: read the stack entity's TargetsComponent
         // and match each chosen target against the subfilter. Works for both spells and
         // activated/triggered abilities (none of which have CardComponent for the
@@ -472,6 +475,7 @@ class PredicateEvaluator {
             // Handled before CardComponent check above — unreachable here
             CardPredicate.IsActivatedOrTriggeredAbility -> false
             CardPredicate.IsTriggeredAbility -> false
+            CardPredicate.IsActivatedAbility -> false
             is CardPredicate.TargetsMatching -> false
         }
     }
@@ -808,6 +812,7 @@ class PredicateEvaluator {
             // Stack ability check — cast spells are not abilities
             CardPredicate.IsActivatedOrTriggeredAbility -> false
             CardPredicate.IsTriggeredAbility -> false
+            CardPredicate.IsActivatedAbility -> false
 
             // Stack-relative targeting predicate — historical cast records have no
             // chosen-target snapshot, so this always returns false here.

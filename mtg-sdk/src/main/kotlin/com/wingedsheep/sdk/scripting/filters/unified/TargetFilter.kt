@@ -205,6 +205,12 @@ data class TargetFilter(
             zone = Zone.STACK
         )
 
+        /** Target activated ability on the stack (not triggered, not spells; mana abilities never use the stack) */
+        val ActivatedAbilityOnStack = TargetFilter(
+            GameObjectFilter(cardPredicates = listOf(CardPredicate.IsActivatedAbility)),
+            zone = Zone.STACK
+        )
+
         /** Target any spell or ability on the stack (spells and activated/triggered abilities) */
         val SpellOrAbilityOnStack = TargetFilter(GameObjectFilter.Companion.Any, zone = Zone.STACK)
     }

@@ -688,6 +688,9 @@ work for abilities-on-stack (which carry no `CardComponent`).
   (Stifle).
 - `CardPredicate.IsTriggeredAbility` — triggered abilities only (excludes activated abilities and
   spells).
+- `CardPredicate.IsActivatedAbility` — activated abilities only (excludes triggered abilities and
+  spells). Mana abilities never use the stack, so they're never matched. Exposed as the
+  `Targets.ActivatedAbility` target requirement (Bind: "Counter target activated ability").
 - `CardPredicate.TargetsMatching(subfilter)` — true when the stack object's `TargetsComponent`
   includes at least one chosen target matching `subfilter`. Player targets are skipped. The
   subfilter inherits the outer `PredicateContext`, so `Land.youControl()` inside the subfilter
