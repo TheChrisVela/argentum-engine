@@ -1118,6 +1118,12 @@ staticAbility {
   `CantAttackUnless` (which is defender-relative), this depends on the whole proposed attacker
   group, so it's validated against the other declared attackers at declaration time (projected
   state; self never counts as its own co-attacker).
+- `AttackerCountLimit(maxAttackers)` / `BlockerCountLimit(maxBlockers)` — global combat caps
+  (Dueling Grounds — "No more than one creature can attack/block each combat"). Constrain the
+  *total* declared attacker/blocker set across all players, not a single creature, so they are
+  enforced as a whole-declaration check in `AttackPhaseManager`/`BlockPhaseManager` rather than a
+  per-creature rule. While any permanent with the ability is on the battlefield, declaring more
+  than the smallest cap is rejected. (`BlockerCountLimit` counts distinct blocking creatures.)
 
 **Spell cost statics — `ModifySpellCost`**
 
