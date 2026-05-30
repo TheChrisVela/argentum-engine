@@ -40,7 +40,7 @@ class PlayerExecutors(
     override fun executors(): List<EffectExecutor<*>> = listOf(
         AmassExecutor(effectExecutor),
         AddCombatPhaseExecutor(),
-        AnyPlayerMayPayExecutor(),
+        AnyPlayerMayPayExecutor(executeEffect = effectExecutor),
         CantCastSpellsExecutor(),
         CreateGlobalTriggeredAbilityUntilEndOfTurnExecutor(),
         CreateGlobalTriggeredAbilityWithDurationExecutor(),

@@ -757,32 +757,53 @@ data class MayPayXForEffect(
 }
 
 /**
- * "Any player may [cost]. If a player does, [consequence]."
+ * "Any player may [cost]." with branching outcomes based on whether anyone paid.
  *
  * Each player in APNAP order gets the chance to pay the cost. As soon as
- * any player does, the consequence is executed and no further players are asked.
- * If no player pays, nothing happens.
+ * any player does, [consequence] is executed and no further players are asked.
+ * If no player pays, [consequenceIfNonePaid] is executed instead.
  *
- * Example: Prowling Pangolin - "Any player may sacrifice two creatures.
- * If a player does, sacrifice Prowling Pangolin."
+ * This single primitive covers both directions of the template:
+ *  - "any player may [cost]; if a player does, [X]" → set [consequence] (Prowling Pangolin).
+ *  - "[X] unless any player pays [cost]" → set [consequenceIfNonePaid] (Aether Rift). Use the
+ *    [com.wingedsheep.sdk.dsl.Effects.UnlessAnyPlayerPays] facade for this reading.
+ *
+ * Either consequence may be null (no effect for that branch). The effect runs inside a
+ * pipeline transparently: the surrounding pipeline's stored collections / chosen values are
+ * carried into whichever consequence fires, so a consequence can reference a collection built
+ * earlier in the same resolution (e.g. "return the discarded card this way").
+ *
+ * Supported costs: [PayCost.Sacrifice] (card selection) and [PayCost.PayLife] (yes/no).
  *
  * @property cost The cost any player may choose to pay
- * @property consequence The effect that happens if a player pays
+ * @property consequence The effect that happens if a player pays (null = nothing)
+ * @property consequenceIfNonePaid The effect that happens if no player pays (null = nothing)
  */
 @SerialName("AnyPlayerMayPay")
 @Serializable
 data class AnyPlayerMayPayEffect(
     val cost: PayCost,
-    val consequence: Effect
+    val consequence: Effect? = null,
+    val consequenceIfNonePaid: Effect? = null
 ) : Effect {
-    override val description: String =
-        "Any player may ${cost.description}. If a player does, ${consequence.description}"
+    override val description: String = buildString {
+        when {
+            consequenceIfNonePaid != null && consequence == null ->
+                append("${consequenceIfNonePaid.description} unless any player ${cost.description}")
+            else -> {
+                append("Any player may ${cost.description}.")
+                if (consequence != null) append(" If a player does, ${consequence.description}.")
+                if (consequenceIfNonePaid != null) append(" If no player does, ${consequenceIfNonePaid.description}.")
+            }
+        }
+    }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect {
         val newCost = cost.applyTextReplacement(replacer)
-        val newConsequence = consequence.applyTextReplacement(replacer)
-        return if (newCost !== cost || newConsequence !== consequence)
-            copy(cost = newCost, consequence = newConsequence) else this
+        val newConsequence = consequence?.applyTextReplacement(replacer)
+        val newConsequenceIfNonePaid = consequenceIfNonePaid?.applyTextReplacement(replacer)
+        return if (newCost !== cost || newConsequence !== consequence || newConsequenceIfNonePaid !== consequenceIfNonePaid)
+            copy(cost = newCost, consequence = newConsequence, consequenceIfNonePaid = newConsequenceIfNonePaid) else this
     }
 }
 

@@ -47,6 +47,8 @@ import com.wingedsheep.sdk.scripting.effects.CantBlockGroupEffect
 import com.wingedsheep.sdk.scripting.effects.CantCastSpellsEffect
 import com.wingedsheep.sdk.scripting.effects.PreventLandPlaysThisTurnEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.effects.AnyPlayerMayPayEffect
+import com.wingedsheep.sdk.scripting.costs.PayCost
 import com.wingedsheep.sdk.scripting.effects.IfYouDoEffect
 import com.wingedsheep.sdk.scripting.effects.SuccessCriterion
 import com.wingedsheep.sdk.scripting.effects.GrantDamageBonusEffect
@@ -348,6 +350,22 @@ object Effects {
      * Delegates to the EffectPatterns pipeline: ForEachPlayer(EachOpponent) → Gather → Select → Move.
      */
     fun EachOpponentDiscards(count: Int = 1): Effect = EffectPatterns.eachOpponentDiscards(count)
+
+    /**
+     * "Any player may [cost]. If a player does, [consequence]."
+     * Each player in APNAP order is offered the cost; the first to pay triggers [consequence].
+     * (Prowling Pangolin: "any player may sacrifice two creatures. If a player does, sacrifice this.")
+     */
+    fun AnyPlayerMayPay(cost: PayCost, consequence: Effect): Effect =
+        AnyPlayerMayPayEffect(cost = cost, consequence = consequence)
+
+    /**
+     * "[effect] unless any player pays [cost]." — the inverse reading of [AnyPlayerMayPay].
+     * Each player in APNAP order may pay; if any does, nothing happens. If none pays, [effect] runs.
+     * (Aether Rift: "return it from your graveyard to the battlefield unless any player pays 5 life.")
+     */
+    fun UnlessAnyPlayerPays(cost: PayCost, effect: Effect): Effect =
+        AnyPlayerMayPayEffect(cost = cost, consequence = null, consequenceIfNonePaid = effect)
 
     /**
      * Each player returns a permanent they control to its owner's hand.

@@ -423,6 +423,16 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `PhaseOutEffect(target = Self)` — phase the target permanent out (Rule 702.26); facade `Effects.PhaseOut(target)`. While phased out it's treated as though it doesn't exist (excluded from `getBattlefield`, so from projection, triggers, combat, targeting, and SBAs) and phases back in before its controller's next untap step. Indirect phasing (attached Auras/Equipment) is handled automatically. Used as the `suffer` branch of a pay-or-phase trigger (Vaporous Djinn: "phases out unless you pay {U}{U}" = `PayOrSufferEffect(PayCost.Mana(...), Effects.PhaseOut())`).
 - `MarkExileOnDeathEffect(target)` — replace next "to graveyard" with "to exile".
 - `OptionalCostEffect(cost, effect)` — pay cost to trigger an effect.
+- `Effects.AnyPlayerMayPay(cost, consequence)` / `Effects.UnlessAnyPlayerPays(cost, effect)` —
+  back the single `AnyPlayerMayPayEffect(cost, consequence?, consequenceIfNonePaid?)`, which asks
+  each player in APNAP order whether to pay `cost`. The first to pay runs `consequence` and stops
+  the loop; if no one pays, `consequenceIfNonePaid` runs. `AnyPlayerMayPay` reads the
+  "if a player does, X" direction (Prowling Pangolin); `UnlessAnyPlayerPays` reads the inverse
+  "X unless any player pays" direction (Aether Rift: "return it… unless any player pays 5 life").
+  Supported costs: `PayCost.Sacrifice` (card selection) and `PayCost.PayLife` (yes/no). The
+  surrounding pipeline's stored collections are carried into whichever consequence fires, so the
+  consequence can reference cards gathered earlier in the same resolution (e.g. the discarded card,
+  via `MoveCollection(from = "discarded", …)`).
 - `StoreResultEffect(effect, as)` — stash an effect's result for later reference.
 - `StoreCountEffect(effect, as)` — stash a count for later reference.
 - `RepeatWhileEffect(condition, effect, maxIterations?)` — run effect repeatedly while condition holds.

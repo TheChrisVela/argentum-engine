@@ -136,9 +136,12 @@ data class PayOrSufferChoiceContinuation(
  * @property sourceName Name of the source for display
  * @property controllerId The controller of the source permanent
  * @property cost The cost being offered
- * @property consequence The effect to execute if any player pays
+ * @property consequence The effect to execute if any player pays (null = nothing)
+ * @property consequenceIfNonePaid The effect to execute if no player pays (null = nothing)
  * @property requiredCount Number of items required (for sacrifice costs)
  * @property filter The filter for valid selections (for sacrifice costs)
+ * @property storedCollections Pipeline collections carried into whichever consequence fires, so a
+ *   consequence can reference cards gathered earlier in the same resolution ("…this way").
  */
 @Serializable
 data class AnyPlayerMayPayContinuation(
@@ -149,9 +152,11 @@ data class AnyPlayerMayPayContinuation(
     val sourceName: String,
     val controllerId: EntityId,
     val cost: PayCost,
-    val consequence: Effect,
+    val consequence: Effect? = null,
+    val consequenceIfNonePaid: Effect? = null,
     val requiredCount: Int,
-    val filter: GameObjectFilter
+    val filter: GameObjectFilter,
+    val storedCollections: Map<String, List<EntityId>> = emptyMap()
 ) : ContinuationFrame
 
 /**

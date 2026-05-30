@@ -194,7 +194,10 @@ object CardValidator {
             is MayPayManaEffect -> collectIndicesRecursive(effect.effect, indices)
             is ModalEffect -> effect.modes.forEach { collectIndicesRecursive(it.effect, indices) }
             is PayOrSufferEffect -> collectIndicesRecursive(effect.suffer, indices)
-            is AnyPlayerMayPayEffect -> collectIndicesRecursive(effect.consequence, indices)
+            is AnyPlayerMayPayEffect -> {
+                effect.consequence?.let { collectIndicesRecursive(it, indices) }
+                effect.consequenceIfNonePaid?.let { collectIndicesRecursive(it, indices) }
+            }
             is ForEachInGroupEffect -> collectIndicesRecursive(effect.effect, indices)
             is FlipCoinEffect -> {
                 effect.wonEffect?.let { collectIndicesRecursive(it, indices) }
