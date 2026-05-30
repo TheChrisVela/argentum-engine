@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 241 / 261
+**Implemented:** 242 / 261
 ---
 
 - [x] Adagia, Windswept Bastion
@@ -62,7 +62,7 @@
 - [x] Dual-Sun Adepts
 - [x] Dual-Sun Technique
 - [x] Dubious Delicacy
-- [ ] Dyadrine, Synthesis Amalgam
+- [x] Dyadrine, Synthesis Amalgam
 - [x] Edge Rover
 - [x] Elegy Acolyte
 - [x] Embrace Oblivion
