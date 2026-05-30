@@ -37,8 +37,11 @@ data class ShuffleLibraryEffect(
  *
  * The count is the size of the named gather collection (`"scried"` by default) at
  * resolution time — i.e. the cards `GatherCardsEffect` actually pulled, which equals
- * the scry N parameter unless the library held fewer (CR 701.22a). Per CR 701.22b,
- * a scry-0 (zero cards looked at) emits no event at all.
+ * the scry N parameter unless the library held fewer (CR 701.18a). The count can be
+ * zero when the library was empty; the event still fires, because CR 701.18d triggers
+ * "whenever you scry" abilities "even if some or all of those actions were impossible."
+ * Suppression of a literal "scry 0" (CR 701.18b) is handled by `scry()` omitting this
+ * tail entirely, not here.
  *
  * Card authors should not use this directly; it is wired into the scry primitive.
  */

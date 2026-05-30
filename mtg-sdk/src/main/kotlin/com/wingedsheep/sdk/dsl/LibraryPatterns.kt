@@ -134,7 +134,7 @@ object LibraryPatterns {
     )
 
     fun scry(count: Int): CompositeEffect = CompositeEffect(
-        listOf(
+        listOfNotNull(
             GatherCardsEffect(
                 source = CardSource.TopOfLibrary(DynamicAmount.Fixed(count)),
                 storeAs = "scried"
@@ -156,10 +156,13 @@ object LibraryPatterns {
                 destination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Top),
                 order = CardOrder.ControllerChooses
             ),
-            // Fire "Whenever you scry" triggers (CR 701.22) after the pipeline finishes.
+            // Fire "Whenever you scry" triggers (CR 701.18) after the pipeline finishes.
             // The event count is the actual size of the "scried" gather collection at
-            // resolution time, not the literal N (handles library-smaller-than-N).
-            EmitScriedEventEffect()
+            // resolution time, not the literal N (handles library-smaller-than-N). Per
+            // CR 701.18d the trigger still fires when the library was empty and zero
+            // cards were looked at, so the tail emits unconditionally — it is only
+            // omitted for a literal "scry 0" (CR 701.18b: no scry event occurs).
+            if (count > 0) EmitScriedEventEffect() else null
         )
     )
 

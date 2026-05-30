@@ -10,7 +10,7 @@ Verify status anytime with: `scripts/card-status --set LTR` (and `--list --set L
 
 ## Status
 
-Draft cards at **161/261**. Every card still unchecked in `cards.md` (excluding the five
+Draft cards at **163/261**. Every card still unchecked in `cards.md` (excluding the five
 basic lands, which `basicLandsFallback` covers) needs at least one new engine primitive —
 see the "Engine gaps blocking the remaining cards" section below. Each card is listed under
 the primitive it is waiting on, with the exact blocking clause. Stop and open a dedicated
