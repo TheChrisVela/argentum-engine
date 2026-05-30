@@ -38,9 +38,10 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
 
         var newState = state
         if (collection.isNotEmpty()) {
-            newState = newState.addMayPlayPermission(
+            val (permId, stateWithPerm) = newState.newEntity()
+            newState = stateWithPerm.addMayPlayPermission(
                 MayPlayPermission(
-                    id = EntityId.generate(),
+                    id = permId,
                     cardIds = collection.toSet(),
                     controllerId = controllerId,
                     sourceId = context.sourceId,

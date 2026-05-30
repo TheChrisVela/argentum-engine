@@ -67,7 +67,8 @@ class CreateRoleTokenExecutor(
         }
 
         // Create the Role token entity
-        val tokenId = EntityId.generate()
+        val (tokenId, stateWithId) = newState.newEntity()
+        newState = stateWithId
 
         val tokenComponent = CardComponent(
             cardDefinitionId = effect.roleName,

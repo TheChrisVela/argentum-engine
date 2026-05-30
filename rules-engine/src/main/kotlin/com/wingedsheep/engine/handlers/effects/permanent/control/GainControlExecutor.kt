@@ -6,7 +6,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
-import com.wingedsheep.engine.mechanics.layers.createFloatingEffect
+import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -53,17 +53,15 @@ class GainControlExecutor : EffectExecutor<GainControlEffect> {
               targetId in floating.effect.affectedEntities)
         }
 
-        // Create new floating effect
-        val floatingEffect = state.createFloatingEffect(
-            layer = Layer.CONTROL,
-            modification = SerializableModification.ChangeController(newControllerId),
-            affectedEntities = setOf(targetId),
-            duration = effect.duration,
-            context = context
-        )
-
         // Rule 302.6: new controller hasn't had this permanent since their most recent turn began.
-        val newState = state.copy(floatingEffects = filteredEffects + floatingEffect)
+        val newState = state.copy(floatingEffects = filteredEffects)
+            .addFloatingEffect(
+                layer = Layer.CONTROL,
+                modification = SerializableModification.ChangeController(newControllerId),
+                affectedEntities = setOf(targetId),
+                duration = effect.duration,
+                context = context
+            )
             .updateEntity(targetId) { it.with(SummoningSicknessComponent) }
 
         val events = listOf(

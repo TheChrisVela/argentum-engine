@@ -341,14 +341,14 @@ class StackResolver(
         targetRequirements: List<TargetRequirement> = emptyList()
     ): ExecutionResult {
         // Create a new entity for the ability on the stack
-        val abilityId = EntityId.generate()
+        val (abilityId, stateWithId) = state.newEntity()
 
         var container = ComponentContainer.of(ability)
         if (targets.isNotEmpty()) {
             container = container.with(TargetsComponent(targets, targetRequirements))
         }
 
-        var newState = state.withEntity(abilityId, container)
+        var newState = stateWithId.withEntity(abilityId, container)
         newState = newState.pushToStack(abilityId)
             .copy(priorityPassedBy = emptySet())
 
@@ -420,7 +420,7 @@ class StackResolver(
             ?: return ExecutionResult.error(state, "Source is not a spell on stack: $sourceSpellId")
         val sourceTargets = sourceContainer.get<TargetsComponent>()
 
-        val copyId = EntityId.generate()
+        val (copyId, stateWithId) = state.newEntity()
         val copyController = controllerId ?: sourceSpell.casterId
 
         val effectiveModes = chosenModes ?: sourceSpell.chosenModes
@@ -470,7 +470,7 @@ class StackResolver(
             )
         )
 
-        var newState = state.withEntity(copyId, container)
+        var newState = stateWithId.withEntity(copyId, container)
         newState = newState.pushToStack(copyId).copy(priorityPassedBy = emptySet())
 
         val events = mutableListOf<GameEvent>(
@@ -507,14 +507,14 @@ class StackResolver(
         targets: List<ChosenTarget> = emptyList(),
         targetRequirements: List<TargetRequirement> = emptyList()
     ): ExecutionResult {
-        val abilityId = EntityId.generate()
+        val (abilityId, stateWithId) = state.newEntity()
 
         var container = ComponentContainer.of(ability)
         if (targets.isNotEmpty()) {
             container = container.with(TargetsComponent(targets, targetRequirements))
         }
 
-        var newState = state.withEntity(abilityId, container)
+        var newState = stateWithId.withEntity(abilityId, container)
         newState = newState.pushToStack(abilityId)
             .copy(priorityPassedBy = emptySet())
 
@@ -1324,9 +1324,10 @@ class StackResolver(
 
                 // CR 715.3d — Adventure exiled by its own resolution: re-grant cast-from-exile.
                 if (pausedAdventureFaceExile && pausedDestZone == Zone.EXILE) {
-                    pausedState = pausedState.addMayPlayPermission(
+                    val (permId, stateWithPerm) = pausedState.newEntity()
+                    pausedState = stateWithPerm.addMayPlayPermission(
                         com.wingedsheep.engine.state.permissions.MayPlayPermission(
-                            id = com.wingedsheep.sdk.model.EntityId.generate(),
+                            id = permId,
                             cardIds = setOf(spellId),
                             controllerId = spellComponent.casterId,
                             permanent = true,
@@ -1416,9 +1417,10 @@ class StackResolver(
         // the prior removeMayPlayPermissionsForCard so the cast-from-exile enumerator picks
         // it up on the next priority pass.
         if (adventureFaceExile && destinationZone == Zone.EXILE) {
-            newState = newState.addMayPlayPermission(
+            val (permId, stateWithPerm) = newState.newEntity()
+            newState = stateWithPerm.addMayPlayPermission(
                 com.wingedsheep.engine.state.permissions.MayPlayPermission(
-                    id = com.wingedsheep.sdk.model.EntityId.generate(),
+                    id = permId,
                     cardIds = setOf(spellId),
                     controllerId = spellComponent.casterId,
                     permanent = true,
@@ -1913,9 +1915,10 @@ class StackResolver(
             updated
         }
         if (grantFreeCast) {
-            newState = newState.addMayPlayPermission(
+            val (permId, stateWithPerm) = newState.newEntity()
+            newState = stateWithPerm.addMayPlayPermission(
                 com.wingedsheep.engine.state.permissions.MayPlayPermission(
-                    id = com.wingedsheep.sdk.model.EntityId.generate(),
+                    id = permId,
                     cardIds = setOf(spellId),
                     controllerId = controllerId,
                     permanent = true,

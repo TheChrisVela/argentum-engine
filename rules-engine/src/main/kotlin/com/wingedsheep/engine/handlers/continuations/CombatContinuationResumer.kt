@@ -182,11 +182,14 @@ class CombatContinuationResumer(
         val originalShield = if (shieldIndex >= 0) updatedEffects.removeAt(shieldIndex) else null
 
         val timestamp = originalShield?.timestamp ?: state.timestamp
+        var workingState = state
         for ((sourceId, preventionAmount) in response.distribution) {
             if (preventionAmount <= 0) continue
+            val (effectId, advanced) = workingState.newEntity()
+            workingState = advanced
             updatedEffects.add(
                 ActiveFloatingEffect(
-                    id = EntityId(java.util.UUID.randomUUID().toString()),
+                    id = effectId,
                     effect = FloatingEffectData(
                         layer = Layer.ABILITY,
                         modification = SerializableModification.PreventNextDamage(preventionAmount, onlyFromSource = sourceId),
@@ -201,7 +204,7 @@ class CombatContinuationResumer(
             )
         }
 
-        val newState = state.copy(floatingEffects = updatedEffects)
+        val newState = workingState.copy(floatingEffects = updatedEffects)
 
         return services.combatManager.applyCombatDamage(newState, firstStrike = continuation.firstStrike)
     }
@@ -254,14 +257,19 @@ class CombatContinuationResumer(
         val chosenSourceId = response.selectedCards.firstOrNull()
             ?: return ExecutionResult.error(state, "No source selected")
 
-        val deflectSourceId = continuation.sourceId ?: EntityId.generate()
+        val (effectiveState, deflectSourceId) = if (continuation.sourceId != null) {
+            state to continuation.sourceId
+        } else {
+            val (id, s) = state.newEntity()
+            s to id
+        }
 
         val context = EffectContext(
             sourceId = continuation.sourceId,
             controllerId = continuation.controllerId,
             opponentId = null
         )
-        val newState = state.addFloatingEffect(
+        val newState = effectiveState.addFloatingEffect(
             layer = Layer.ABILITY,
             modification = SerializableModification.DeflectNextDamageFromSource(
                 damageSourceId = chosenSourceId,

@@ -11,7 +11,6 @@ import com.wingedsheep.engine.state.components.identity.PlayWithCostIncreaseComp
 import com.wingedsheep.engine.state.permissions.MayPlayPermission
 import com.wingedsheep.engine.state.permissions.addMayPlayPermission
 import com.wingedsheep.sdk.core.Zone
-import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.ExileAndGrantOwnerPlayPermissionEffect
 import kotlin.reflect.KClass
 
@@ -37,9 +36,10 @@ class ExileAndGrantOwnerPlayPermissionExecutor : EffectExecutor<ExileAndGrantOwn
 
         val transition = ZoneTransitionService.moveToZone(state, targetId, Zone.EXILE)
 
-        var newState = transition.state.addMayPlayPermission(
+        val (permId, stateWithId) = transition.state.newEntity()
+        var newState = stateWithId.addMayPlayPermission(
             MayPlayPermission(
-                id = EntityId.generate(),
+                id = permId,
                 cardIds = setOf(targetId),
                 controllerId = ownerId,
                 sourceId = context.sourceId,

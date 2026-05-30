@@ -107,7 +107,7 @@ class CreateTokenCopyOfChosenPermanentExecutor(
             val chosenCard = chosenContainer.get<CardComponent>()
                 ?: return EffectResult.success(state)
 
-            val tokenId = EntityId.generate()
+            val (tokenId, stateWithId) = state.newEntity()
 
             // Copy the chosen permanent's CardComponent
             val tokenCard = chosenCard.copy(ownerId = controllerId)
@@ -125,7 +125,7 @@ class CreateTokenCopyOfChosenPermanentExecutor(
                 container = staticAbilityHandler.addReplacementEffectComponent(container)
             }
 
-            var newState = state.withEntity(tokenId, container)
+            var newState = stateWithId.withEntity(tokenId, container)
             newState = com.wingedsheep.engine.handlers.effects.BattlefieldEntry
                 .place(newState, controllerId, tokenId)
 

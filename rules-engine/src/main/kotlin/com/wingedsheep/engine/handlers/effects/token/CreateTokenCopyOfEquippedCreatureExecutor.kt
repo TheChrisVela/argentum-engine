@@ -61,8 +61,8 @@ class CreateTokenCopyOfEquippedCreatureExecutor(
 
         val controllerId = context.controllerId
 
-        var newState = state
-        val tokenId = EntityId.generate()
+        val (tokenId, stateWithId) = state.newEntity()
+        var newState = stateWithId
 
         // Copy the equipped creature's CardComponent
         var tokenCard = equippedCard.copy(ownerId = controllerId)

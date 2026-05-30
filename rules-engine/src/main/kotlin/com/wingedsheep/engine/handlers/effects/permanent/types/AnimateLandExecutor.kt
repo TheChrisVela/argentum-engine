@@ -6,8 +6,7 @@ import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.Sublayer
-import com.wingedsheep.engine.mechanics.layers.addFloatingEffects
-import com.wingedsheep.engine.mechanics.layers.createFloatingEffect
+import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.AnimateLandEffect
 import kotlin.reflect.KClass
@@ -40,7 +39,7 @@ class AnimateLandExecutor : EffectExecutor<AnimateLandEffect> {
         val affectedEntities = setOf(targetId)
 
         // Floating effect 1: Add "Creature" type on Layer.TYPE
-        val addTypeEffect = state.createFloatingEffect(
+        var newState = state.addFloatingEffect(
             layer = Layer.TYPE,
             modification = SerializableModification.AddType("CREATURE"),
             affectedEntities = affectedEntities,
@@ -49,7 +48,7 @@ class AnimateLandExecutor : EffectExecutor<AnimateLandEffect> {
         )
 
         // Floating effect 2: Set base P/T on Layer.POWER_TOUGHNESS, Sublayer.SET_VALUES
-        val setPTEffect = state.createFloatingEffect(
+        newState = newState.addFloatingEffect(
             layer = Layer.POWER_TOUGHNESS,
             sublayer = Sublayer.SET_VALUES,
             modification = SerializableModification.SetPowerToughness(effect.power, effect.toughness),
@@ -57,8 +56,6 @@ class AnimateLandExecutor : EffectExecutor<AnimateLandEffect> {
             duration = effect.duration,
             context = context
         )
-
-        val newState = state.addFloatingEffects(listOf(addTypeEffect, setPTEffect))
 
         return EffectResult.success(newState)
     }

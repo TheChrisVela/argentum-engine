@@ -86,7 +86,8 @@ class CreateTokenExecutor(
         val createdTokens = mutableListOf<EntityId>()
 
         repeat(count) {
-            val tokenId = EntityId.generate()
+            val (tokenId, stateWithId) = newState.newEntity()
+            newState = stateWithId
             createdTokens.add(tokenId)
 
             // Create token entity

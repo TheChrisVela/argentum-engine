@@ -221,7 +221,8 @@ object TokenCreationReplacementHelper {
         val events = mutableListOf<com.wingedsheep.engine.core.GameEvent>()
 
         repeat(count) {
-            val tokenId = EntityId.generate()
+            val (tokenId, stateWithId) = newState.newEntity()
+            newState = stateWithId
             val tokenCard = equippedCard.copy(ownerId = controllerId)
 
             val components = mutableListOf<Component>(

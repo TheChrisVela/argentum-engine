@@ -64,7 +64,8 @@ class CreatePredefinedTokenExecutor(
         val createdTokenIds = mutableListOf<EntityId>()
 
         repeat(effect.count) {
-            val tokenId = EntityId.generate()
+            val (tokenId, stateWithId) = newState.newEntity()
+            newState = stateWithId
             createdTokenIds.add(tokenId)
 
             val tokenComponent = CardComponent(

@@ -27,7 +27,9 @@ fun GameState.addFloatingEffect(
     dynamicGroupFilter: GroupFilter? = null,
     timestamp: Long = this.timestamp
 ): GameState {
+    val (effectId, stateWithId) = newEntity()
     val effect = createFloatingEffect(
+        id = effectId,
         layer = layer,
         modification = modification,
         affectedEntities = affectedEntities,
@@ -37,7 +39,7 @@ fun GameState.addFloatingEffect(
         dynamicGroupFilter = dynamicGroupFilter,
         timestamp = timestamp
     )
-    return copy(floatingEffects = floatingEffects + effect)
+    return stateWithId.copy(floatingEffects = stateWithId.floatingEffects + effect)
 }
 
 /**
@@ -57,11 +59,12 @@ fun GameState.createFloatingEffect(
     context: EffectContext,
     sublayer: Sublayer? = null,
     dynamicGroupFilter: GroupFilter? = null,
-    timestamp: Long = this.timestamp
+    timestamp: Long = this.timestamp,
+    id: EntityId
 ): ActiveFloatingEffect {
     val sourceName = context.sourceId?.let { getEntity(it)?.get<CardComponent>()?.name }
     return ActiveFloatingEffect(
-        id = EntityId.generate(),
+        id = id,
         effect = FloatingEffectData(
             layer = layer,
             sublayer = sublayer,

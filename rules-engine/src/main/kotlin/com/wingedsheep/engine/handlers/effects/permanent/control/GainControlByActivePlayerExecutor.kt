@@ -6,7 +6,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
-import com.wingedsheep.engine.mechanics.layers.createFloatingEffect
+import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -58,16 +58,15 @@ class GainControlByActivePlayerExecutor : EffectExecutor<GainControlByActivePlay
 
         // Create new floating effect — use controllerId override since control goes to active player
         val controlContext = context.copy(controllerId = newControllerId)
-        val floatingEffect = state.createFloatingEffect(
-            layer = Layer.CONTROL,
-            modification = SerializableModification.ChangeController(newControllerId),
-            affectedEntities = setOf(targetId),
-            duration = com.wingedsheep.sdk.scripting.Duration.Permanent,
-            context = controlContext
-        )
-
         // Rule 302.6: new controller hasn't had this permanent since their most recent turn began.
-        val newState = state.copy(floatingEffects = filteredEffects + floatingEffect)
+        val newState = state.copy(floatingEffects = filteredEffects)
+            .addFloatingEffect(
+                layer = Layer.CONTROL,
+                modification = SerializableModification.ChangeController(newControllerId),
+                affectedEntities = setOf(targetId),
+                duration = com.wingedsheep.sdk.scripting.Duration.Permanent,
+                context = controlContext
+            )
             .updateEntity(targetId) { it.with(SummoningSicknessComponent) }
 
         val events = listOf(

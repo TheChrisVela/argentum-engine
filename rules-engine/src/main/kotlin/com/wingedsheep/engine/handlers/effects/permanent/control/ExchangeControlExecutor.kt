@@ -6,8 +6,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
-import com.wingedsheep.engine.mechanics.layers.addFloatingEffects
-import com.wingedsheep.engine.mechanics.layers.createFloatingEffect
+import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -61,8 +60,11 @@ class ExchangeControlExecutor : EffectExecutor<ExchangeControlEffect> {
         // If both creatures already have the same controller, no-op
         if (controller1 == controller2) return EffectResult.success(state)
 
+        // Capture the base timestamp before threading state so that +1 is stable
+        val baseTimestamp = state.timestamp
+
         // Create floating effect: target1 gets controller2
-        val floating1 = state.createFloatingEffect(
+        var newState = state.addFloatingEffect(
             layer = Layer.CONTROL,
             modification = SerializableModification.ChangeController(controller2),
             affectedEntities = setOf(target1Id),
@@ -73,18 +75,18 @@ class ExchangeControlExecutor : EffectExecutor<ExchangeControlEffect> {
         // Create floating effect: target2 gets controller1.
         // +1 preserves deterministic ordering between the two effects within Layer.CONTROL
         // (they affect different entities, so this is cosmetic, but matches the prior behavior).
-        val floating2 = state.createFloatingEffect(
+        newState = newState.addFloatingEffect(
             layer = Layer.CONTROL,
             modification = SerializableModification.ChangeController(controller1),
             affectedEntities = setOf(target2Id),
             duration = Duration.Permanent,
             context = context,
-            timestamp = state.timestamp + 1
+            timestamp = baseTimestamp + 1
         )
 
         // Rule 302.6: each creature has a new controller and hasn't been under their
         // control continuously since that player's most recent turn began.
-        val newState = state.addFloatingEffects(listOf(floating1, floating2))
+        newState = newState
             .updateEntity(target1Id) { it.with(SummoningSicknessComponent) }
             .updateEntity(target2Id) { it.with(SummoningSicknessComponent) }
 

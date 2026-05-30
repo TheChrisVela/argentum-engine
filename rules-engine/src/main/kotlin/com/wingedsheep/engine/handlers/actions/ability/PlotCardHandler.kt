@@ -24,7 +24,6 @@ import com.wingedsheep.engine.state.permissions.MayPlayPermission
 import com.wingedsheep.engine.state.permissions.addMayPlayPermission
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Zone
-import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.conditions.SourcePlottedOnPriorTurn
 import kotlin.reflect.KClass
@@ -201,9 +200,10 @@ class PlotCardHandler(
             c.with(PlottedComponent(controllerId = action.playerId, turnPlotted = currentState.turnNumber))
                 .with(PlayWithoutPayingCostComponent(controllerId = action.playerId, permanent = true))
         }
-        currentState = currentState.addMayPlayPermission(
+        val (permId, stateWithPerm) = currentState.newEntity()
+        currentState = stateWithPerm.addMayPlayPermission(
             MayPlayPermission(
-                id = EntityId.generate(),
+                id = permId,
                 cardIds = setOf(action.cardId),
                 controllerId = action.playerId,
                 sourceId = action.cardId,

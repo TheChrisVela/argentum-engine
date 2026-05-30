@@ -168,7 +168,11 @@ class GameInitializer(
 
         // 1. Create player entities
         for (playerConfig in config.players) {
-            val playerId = playerConfig.playerId ?: EntityId.generate()
+            val playerId = playerConfig.playerId ?: run {
+                val (id, s) = state.newEntity()
+                state = s
+                id
+            }
             playerIds.add(playerId)
 
             val startingLife = formatStartingLife ?: playerConfig.startingLife
@@ -219,7 +223,8 @@ class GameInitializer(
 
             if (commanderName != null) {
                 val cardDef = cardRegistry.requireCard(commanderName)
-                val cardId = EntityId.generate()
+                val (cardId, stateWithId) = state.newEntity()
+                state = stateWithId
                 val cardContainer = createCardEntity(cardDef, playerId, playerConfig.deck.commanderPrinting).with(
                     com.wingedsheep.engine.state.components.identity.CommanderComponent(ownerId = playerId)
                 )
@@ -236,7 +241,8 @@ class GameInitializer(
             }
             for (entry in libraryEntries) {
                 val cardDef = cardRegistry.requireCard(entry.name)
-                val cardId = EntityId.generate()
+                val (cardId, stateWithId) = state.newEntity()
+                state = stateWithId
                 val cardContainer = createCardEntity(cardDef, playerId, entry.printing)
                 state = state.withEntity(cardId, cardContainer)
                 state = state.addToZone(ZoneKey(playerId, Zone.LIBRARY), cardId)

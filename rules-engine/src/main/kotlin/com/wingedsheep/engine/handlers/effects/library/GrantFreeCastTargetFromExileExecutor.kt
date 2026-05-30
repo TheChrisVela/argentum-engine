@@ -42,9 +42,10 @@ class GrantFreeCastTargetFromExileExecutor : EffectExecutor<GrantFreeCastTargetF
             updated
         }
 
-        newState = newState.addMayPlayPermission(
+        val (permId, stateWithPerm) = newState.newEntity()
+        newState = stateWithPerm.addMayPlayPermission(
             MayPlayPermission(
-                id = EntityId.generate(),
+                id = permId,
                 cardIds = setOf(targetId),
                 controllerId = controllerId,
                 sourceId = context.sourceId,

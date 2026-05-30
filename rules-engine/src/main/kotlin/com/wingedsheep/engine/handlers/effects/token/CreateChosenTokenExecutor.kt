@@ -16,7 +16,6 @@ import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CreatureStats
-import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.sdk.scripting.effects.CreateChosenTokenEffect
 import kotlin.reflect.KClass
@@ -150,7 +149,7 @@ class CreateChosenTokenExecutor(
         // Look up token art — try each creature type until a match is found
         val tokenImageUri = creatureTypes.firstNotNullOfOrNull { TOKEN_IMAGES[it] }
 
-        val tokenId = EntityId.generate()
+        val (tokenId, stateWithId) = state.newEntity()
         val tokenName = "${creatureTypes.joinToString(" ")} Token"
         val tokenComponent = CardComponent(
             cardDefinitionId = "token:$tokenName",
@@ -170,7 +169,7 @@ class CreateChosenTokenExecutor(
             SummoningSicknessComponent
         )
 
-        var newState = state.withEntity(tokenId, container)
+        var newState = stateWithId.withEntity(tokenId, container)
         newState = com.wingedsheep.engine.handlers.effects.BattlefieldEntry
             .place(newState, context.controllerId, tokenId)
 

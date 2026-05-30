@@ -124,15 +124,21 @@ class CopyTargetSpellExecutor(
                 )
                 return EffectResult.from(ExecutionResult.success(mutated, copyResult.events))
             }
+            val (effectiveState, sourceId) = if (context.sourceId != null) {
+                state to context.sourceId
+            } else {
+                val (id, s) = state.newEntity()
+                s to id
+            }
             val copyAbility = TriggeredAbilityOnStackComponent(
-                sourceId = context.sourceId ?: EntityId.generate(),
+                sourceId = sourceId,
                 sourceName = spellName,
                 controllerId = context.controllerId,
                 effect = spellEffect,
                 description = "Copy of $spellName"
             )
             return EffectResult.from(applyKeywordsToCopy(
-                stackResolver.putTriggeredAbility(state, copyAbility),
+                stackResolver.putTriggeredAbility(effectiveState, copyAbility),
                 effect.keywordsForCopy
             ))
         }

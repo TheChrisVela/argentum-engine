@@ -195,8 +195,14 @@ class ChainSpellContinuationResumer(
         // Targets are re-chosen via the chain target flow, so modeTargetsOrdered
         // is not inherited (the copy controller picks a new target above).
         val sourceSpell = continuation.sourceId?.let { state.getEntity(it)?.get<SpellOnStackComponent>() }
+        val (effectiveState, sourceId) = if (continuation.sourceId != null) {
+            state to continuation.sourceId
+        } else {
+            val (id, s) = state.newEntity()
+            s to id
+        }
         val ability = TriggeredAbilityOnStackComponent(
-            sourceId = continuation.sourceId ?: EntityId.generate(),
+            sourceId = sourceId,
             sourceName = effect.spellName,
             controllerId = continuation.copyControllerId,
             effect = copyEffect,
@@ -208,7 +214,7 @@ class ChainSpellContinuationResumer(
         val targets = listOf(chosenTarget)
         val targetRequirements = listOf(copyTargetReq)
 
-        val putResult = services.stackResolver.putTriggeredAbility(state, ability, targets, targetRequirements)
+        val putResult = services.stackResolver.putTriggeredAbility(effectiveState, ability, targets, targetRequirements)
 
         if (!putResult.isSuccess) {
             return putResult

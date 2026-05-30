@@ -739,9 +739,10 @@ class LibraryAndZoneContinuationResumer(
         var stateWithGrant = afterBottom.updateEntity(continuation.cascadeCardId) { container ->
             container.with(PlayWithoutPayingCostComponent(controllerId = continuation.playerId))
         }
-        stateWithGrant = stateWithGrant.addMayPlayPermission(
+        val (permId, stateWithPerm) = stateWithGrant.newEntity()
+        stateWithGrant = stateWithPerm.addMayPlayPermission(
             MayPlayPermission(
-                id = EntityId.generate(),
+                id = permId,
                 cardIds = setOf(continuation.cascadeCardId),
                 controllerId = continuation.playerId,
                 sourceId = continuation.sourceId,

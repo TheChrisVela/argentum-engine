@@ -60,7 +60,8 @@ class CreateTokenCopyOfSourceExecutor(
         val createdTokens = mutableListOf<EntityId>()
 
         repeat(effect.count) {
-            val tokenId = EntityId.generate()
+            val (tokenId, stateWithId) = newState.newEntity()
+            newState = stateWithId
             createdTokens.add(tokenId)
 
             // Copy the source's CardComponent, setting the token's owner to the controller

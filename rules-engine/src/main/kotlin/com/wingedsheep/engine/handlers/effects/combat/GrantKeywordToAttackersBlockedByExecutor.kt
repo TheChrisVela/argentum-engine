@@ -6,8 +6,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
-import com.wingedsheep.engine.mechanics.layers.addFloatingEffects
-import com.wingedsheep.engine.mechanics.layers.createFloatingEffect
+import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.combat.BlockedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -42,8 +41,9 @@ class GrantKeywordToAttackersBlockedByExecutor : EffectExecutor<GrantKeywordToAt
         }
 
         // Create floating effects granting the keyword to each attacker
-        val floatingEffects = attackerIds.map { attackerId ->
-            state.createFloatingEffect(
+        var newState = state
+        for (attackerId in attackerIds) {
+            newState = newState.addFloatingEffect(
                 layer = Layer.ABILITY,
                 modification = SerializableModification.GrantKeyword(effect.keyword),
                 affectedEntities = setOf(attackerId),
@@ -51,8 +51,6 @@ class GrantKeywordToAttackersBlockedByExecutor : EffectExecutor<GrantKeywordToAt
                 context = context
             )
         }
-
-        val newState = state.addFloatingEffects(floatingEffects)
 
         val sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name } ?: "Unknown"
         val events = attackerIds.mapNotNull { attackerId ->

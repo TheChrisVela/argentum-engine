@@ -26,8 +26,13 @@ class CopyEachSpellCastExecutor : EffectExecutor<CopyEachSpellCastEffect> {
         effect: CopyEachSpellCastEffect,
         context: EffectContext
     ): EffectResult {
-        val sourceId = context.sourceId ?: EntityId.generate()
-        val sourceName = state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Unknown"
+        val (effectiveState, sourceId) = if (context.sourceId != null) {
+            state to context.sourceId
+        } else {
+            val (id, s) = state.newEntity()
+            s to id
+        }
+        val sourceName = effectiveState.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Unknown"
 
         val pending = PendingSpellCopy(
             controllerId = context.controllerId,
@@ -36,7 +41,7 @@ class CopyEachSpellCastExecutor : EffectExecutor<CopyEachSpellCastEffect> {
             sourceName = sourceName,
             persistent = true
         )
-        val newState = state.copy(
+        val newState = effectiveState.copy(
             pendingSpellCopies = state.pendingSpellCopies + pending
         )
         return EffectResult.success(newState)

@@ -73,9 +73,10 @@ class CastFromCollectionWithoutPayingCostExecutor(
         var newState = state.updateEntity(cardId) { container ->
             container.with(PlayWithoutPayingCostComponent(controllerId = controllerId))
         }
-        newState = newState.addMayPlayPermission(
+        val (permId, stateWithPerm) = newState.newEntity()
+        newState = stateWithPerm.addMayPlayPermission(
             MayPlayPermission(
-                id = EntityId.generate(),
+                id = permId,
                 cardIds = setOf(cardId),
                 controllerId = controllerId,
                 sourceId = context.sourceId,

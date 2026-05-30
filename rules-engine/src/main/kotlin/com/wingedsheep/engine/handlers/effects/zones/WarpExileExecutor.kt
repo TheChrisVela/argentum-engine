@@ -10,7 +10,6 @@ import com.wingedsheep.engine.state.components.identity.WarpExiledComponent
 import com.wingedsheep.engine.state.permissions.MayPlayPermission
 import com.wingedsheep.engine.state.permissions.addMayPlayPermission
 import com.wingedsheep.sdk.core.Zone
-import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.WarpExileEffect
 import kotlin.reflect.KClass
 
@@ -60,9 +59,10 @@ class WarpExileExecutor : EffectExecutor<WarpExileEffect> {
             c.with(WarpExiledComponent(controllerId = context.controllerId))
         }
 
-        newState = newState.addMayPlayPermission(
+        val (permId, stateWithPerm) = newState.newEntity()
+        newState = stateWithPerm.addMayPlayPermission(
             MayPlayPermission(
-                id = EntityId.generate(),
+                id = permId,
                 cardIds = setOf(targetId),
                 controllerId = context.controllerId,
                 sourceId = context.sourceId,

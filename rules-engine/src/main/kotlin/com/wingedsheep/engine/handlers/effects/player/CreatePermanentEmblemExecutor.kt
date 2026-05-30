@@ -13,7 +13,6 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ChosenCreatureTypeComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.EmblemSourceComponent
-import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.effects.CreatePermanentEmblemEffect
 import kotlin.reflect.KClass
@@ -61,7 +60,7 @@ class CreatePermanentEmblemExecutor : EffectExecutor<CreatePermanentEmblemEffect
         // filters resolve correctly), the chosen creature type (so chosenSubtypeKey filters
         // find a ChosenCreatureTypeComponent), and an EmblemSourceComponent that lets the
         // client transformer surface a badge on the controller's player effects panel.
-        val emblemId = EntityId.generate()
+        val (emblemId, stateWithId) = state.newEntity()
         var emblemContainer: ComponentContainer = ComponentContainer.EMPTY
             .with(ControllerComponent(controllerId))
             .with(EmblemSourceComponent(sourceName = sourceName, description = resolvedDescription))
@@ -69,7 +68,7 @@ class CreatePermanentEmblemExecutor : EffectExecutor<CreatePermanentEmblemEffect
             emblemContainer = emblemContainer.with(ChosenCreatureTypeComponent(chosenType))
         }
 
-        var newState = state.withEntity(emblemId, emblemContainer)
+        var newState = stateWithId.withEntity(emblemId, emblemContainer)
         val emblemContext = context.copy(sourceId = emblemId)
 
         // Power/toughness modification (Layer 7c).

@@ -71,7 +71,8 @@ class CreateTokenCopyOfTargetExecutor(
         val events = mutableListOf<com.wingedsheep.engine.core.GameEvent>()
 
         repeat(count) {
-            val tokenId = EntityId.generate()
+            val (tokenId, stateWithId) = newState.newEntity()
+            newState = stateWithId
             val op = effect.overridePower
             val ot = effect.overrideToughness
             val overrideStats = if (op != null && ot != null) {
