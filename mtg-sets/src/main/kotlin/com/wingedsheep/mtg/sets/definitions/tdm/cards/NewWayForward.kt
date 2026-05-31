@@ -31,11 +31,13 @@ val NewWayForward = card("New Way Forward") {
         "When damage is prevented this way, New Way Forward deals that much damage to that source's controller and you draw that many cards."
 
     spell {
-        val preventedAmount = DynamicAmounts.preventedDamage()
         effect = Effects.PreventNextDamageFromChosenSource(
             onPrevented = Effects.Composite(
-                Effects.DealDamage(amount = preventedAmount, target = EffectTarget.ControllerOfTriggeringEntity),
-                Effects.DrawCards(count = preventedAmount)
+                Effects.DealDamage(
+                    amount = DynamicAmounts.preventedDamage(),
+                    target = EffectTarget.ControllerOfTriggeringEntity
+                ),
+                Effects.DrawCards(count = DynamicAmounts.preventedDamage())
             )
         )
     }
