@@ -37,7 +37,8 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
  *   2. keep only those whose mana value equals the sacrificed creature's MV + 1
  *      (read from the cost-sacrificed permanent's last-known snapshot via
  *      EntityReference.Sacrificed — Rule 112.7a / 608.2h),
- *   3. choose one (auto-resolves when exactly one qualifies),
+ *   3. choose one (always prompts so the controller confirms the return, even
+ *      with a single candidate; zero candidates resolves silently),
  *   4. return it to the battlefield.
  */
 val SidisiRegentOfTheMire = card("Sidisi, Regent of the Mire") {
@@ -74,10 +75,13 @@ val SidisiRegentOfTheMire = card("Sidisi, Regent of the Mire") {
                     ),
                     storeMatching = "returnable"
                 ),
+                // alwaysPrompt so the controller sees and confirms the returned card even
+                // when only one creature qualifies (zero candidates still resolves silently).
                 SelectFromCollectionEffect(
                     from = "returnable",
                     selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(1)),
-                    storeSelected = "chosen"
+                    storeSelected = "chosen",
+                    alwaysPrompt = true
                 ),
                 MoveCollectionEffect(
                     from = "chosen",

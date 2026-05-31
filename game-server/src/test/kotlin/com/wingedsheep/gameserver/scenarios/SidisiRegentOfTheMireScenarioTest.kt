@@ -59,7 +59,7 @@ class SidisiRegentOfTheMireScenarioTest : ScenarioTestBase() {
 
         context("Sidisi, Regent of the Mire — cost-linked relative mana value return") {
 
-            test("sacrificing a mana value 2 creature returns the only mana value 3 creature") {
+            test("sacrificing a mana value 2 creature prompts for the single mana value 3 creature") {
                 val game = scenario()
                     .withPlayers("Player", "Opponent")
                     .withCardOnBattlefield(1, "Sidisi, Regent of the Mire")
@@ -87,8 +87,13 @@ class SidisiRegentOfTheMireScenarioTest : ScenarioTestBase() {
                     game.isInGraveyard(1, "Mire Fodder") shouldBe true
                 }
 
-                // Exactly one MV-3 candidate exists, so it returns without a selection prompt.
                 game.resolveStack()
+
+                // Even with a single eligible card the controller is prompted to confirm.
+                withClue("A single eligible card still prompts for confirmation") {
+                    game.hasPendingDecision() shouldBe true
+                }
+                game.selectCards(game.findCardsInGraveyard(1, "Mire Revenant"))
 
                 withClue("The mana value 3 creature should be returned to the battlefield") {
                     game.isOnBattlefield("Mire Revenant") shouldBe true
