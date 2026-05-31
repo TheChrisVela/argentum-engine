@@ -1308,6 +1308,20 @@ export const styles: Record<string, React.CSSProperties> = {
     fontWeight: 700,
     zIndex: 5,
   } as React.CSSProperties,
+  reachCounterBadge: {
+    position: 'absolute',
+    top: 88,
+    right: 4,
+    backgroundColor: 'rgba(40, 90, 40, 0.95)',
+    borderRadius: 4,
+    border: '1px solid rgba(120, 200, 110, 0.6)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 2,
+    color: '#a0e090',
+    fontWeight: 700,
+    zIndex: 5,
+  } as React.CSSProperties,
   // Saga lore counter badge (shown in P/T position for sagas)
   sagaLoreBadge: {
     position: 'absolute',

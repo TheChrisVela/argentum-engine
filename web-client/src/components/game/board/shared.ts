@@ -371,6 +371,13 @@ export function getLifelinkCounters(card: ClientCard): number {
 }
 
 /**
+ * Get the number of reach counters on a card.
+ */
+export function getReachCounters(card: ClientCard): number {
+  return card.counters[CounterType.REACH] ?? 0
+}
+
+/**
  * Get the number of blight counters on a card.
  */
 export function getBlightCounters(card: ClientCard): number {

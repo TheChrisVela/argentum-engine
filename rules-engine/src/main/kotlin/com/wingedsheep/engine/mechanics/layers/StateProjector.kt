@@ -53,7 +53,8 @@ private val KEYWORD_COUNTER_MAP = mapOf(
     CounterType.INDESTRUCTIBLE to Keyword.INDESTRUCTIBLE.name,
     CounterType.DEATHTOUCH to Keyword.DEATHTOUCH.name,
     CounterType.TRAMPLE to Keyword.TRAMPLE.name,
-    CounterType.HEXPROOF to Keyword.HEXPROOF.name
+    CounterType.HEXPROOF to Keyword.HEXPROOF.name,
+    CounterType.REACH to Keyword.REACH.name
 )
 
 class StateProjector(

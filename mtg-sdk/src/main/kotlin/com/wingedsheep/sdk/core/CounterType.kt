@@ -31,6 +31,7 @@ enum class CounterType {
     DEATHTOUCH,
     TRAMPLE,
     HEXPROOF,
+    REACH,
     STASH,
     BLIGHT,
     COIN,
@@ -73,6 +74,7 @@ object Counters {
     const val DEATHTOUCH = "deathtouch"
     const val TRAMPLE = "trample"
     const val HEXPROOF = "hexproof"
+    const val REACH = "reach"
     const val STASH = "stash"
     const val BLIGHT = "blight"
     const val COIN = "coin"

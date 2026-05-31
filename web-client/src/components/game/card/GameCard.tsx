@@ -32,6 +32,7 @@ import {
   getFlyingCounters,
   getFirstStrikeCounters,
   getLifelinkCounters,
+  getReachCounters,
   getBlightCounters,
   getFloodCounters,
   getCoinCounters,
@@ -1642,6 +1643,20 @@ function GameCardImpl({
           <i className={`ms ms-${counterManaClass.LIFELINK}`} style={{ fontSize: responsive.badges.counterIconFontSize }} />
           <span style={{ fontWeight: 700 }}>
             {getLifelinkCounters(card)}
+          </span>
+        </div>
+      )}
+
+      {/* Reach counter badge */}
+      {battlefield && getReachCounters(card) > 0 && (
+        <div style={{
+          ...styles.reachCounterBadge,
+          fontSize: responsive.badges.counterTextFontSize,
+          padding: responsive.badges.badgePadding,
+        }}>
+          <i className={`ms ms-${counterManaClass.REACH}`} style={{ fontSize: responsive.badges.counterIconFontSize }} />
+          <span style={{ fontWeight: 700 }}>
+            {getReachCounters(card)}
           </span>
         </div>
       )}

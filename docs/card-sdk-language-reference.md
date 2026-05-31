@@ -2007,9 +2007,10 @@ substitution.
   during its controller's untap step; model the restriction with `GrantKeyword(AbilityFlag.DOESNT_UNTAP.name,
   GroupFilter(... .withCounter(Counters.HOURGLASS)))` so it stays projection-scoped.)
 - **Keyword counters** (Rule 122.1b) — `flying`, `first strike`, `lifelink`, `indestructible`, `deathtouch`,
-  `trample`, `hexproof`. `StateProjector` grants the matching `Keyword` to any permanent carrying one (mapped in
+  `trample`, `hexproof`, `reach`. `StateProjector` grants the matching `Keyword` to any permanent carrying one (mapped in
   `KEYWORD_COUNTER_MAP`, re-applied after Layer 6 so "loses all abilities" can't wipe a counter-granted keyword).
-  Add via `AddCounters(Counters.DEATHTOUCH, ...)` etc.; no static ability needed.
+  Add via `AddCounters(Counters.DEATHTOUCH, ...)` etc.; no static ability needed. (`reach`: Sagu Pummeler's renew
+  payoff puts a reach counter on a creature.)
 
 Counter effects live in §4 (`AddCounters`, `RemoveCounters`, `Proliferate`, `MoveAllLastKnownCounters`, etc.).
 
