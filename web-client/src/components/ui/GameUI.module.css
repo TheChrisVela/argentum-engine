@@ -1052,7 +1052,10 @@
   background-color: var(--bg-panel-light);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-xl);
-  overflow: hidden;
+  /* Stable height: the panel never grows past this — extra rows scroll inside it instead of
+     resizing (and re-centering) the whole lobby as sets/boosters are added. */
+  max-height: min(62vh, 640px);
+  overflow: hidden auto;
 }
 
 .settingsRow {
@@ -1201,6 +1204,9 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  /* Cap the per-set stepper list so picking more sets scrolls here instead of growing the row. */
+  max-height: 216px;
+  overflow-y: auto;
 }
 
 .boosterDistributionRow {
@@ -1279,56 +1285,117 @@
   color: var(--text-muted);
 }
 
-/* Set selection grid — block grouping */
-.setSelectionGrid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  justify-content: flex-end;
-  align-items: flex-start;
-}
-
-.blockGroup {
+/* =========================================================================
+ * Set selection — selected sets as chips in the lobby; full browser is a modal
+ * ========================================================================= */
+.setSelection {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 6px 8px 6px 8px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: var(--radius-md);
+  align-items: flex-end;
+  gap: var(--space-2);
+  max-width: 380px;
 }
 
-.blockLabel {
-  font-size: var(--font-xs);
-  color: var(--text-muted);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  opacity: 0.7;
-  line-height: 1;
-}
-
-.blockSets {
+.setChips {
   display: flex;
-  gap: var(--space-1);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
-.incompleteSetsButton {
+/* Selected-set chip. Orange = sealed-shape pools, blue = draft-shape (matches the format accent). */
+.setChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 3px 3px 10px;
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  color: #fff;
+  background: linear-gradient(180deg, #f0671b 0%, #c84a0e 100%);
+  border: 1px solid rgba(255, 165, 90, 0.55);
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(230, 81, 0, 0.3);
+}
+
+.setChipDraft {
+  background: linear-gradient(180deg, #2f9bf5 0%, #1769c9 100%);
+  border-color: rgba(120, 190, 255, 0.55);
+  box-shadow: 0 1px 4px rgba(33, 150, 243, 0.3);
+}
+
+.setChipPartial {
   border-style: dashed;
-  align-self: flex-start;
 }
 
-.incompleteSetsNote {
-  font-size: var(--font-xs);
+.setChipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setChipRemove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.setChipRemove:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.setSelectionEmpty {
+  font-size: var(--font-sm);
   color: var(--text-disabled);
-  line-height: 1.4;
-  margin: 0 0 var(--space-3);
+  padding: 4px 0;
 }
 
-.incompleteSetsSearch {
+.addSetsButton {
+  align-self: flex-end;
+  padding: 6px var(--space-4);
+  font-size: var(--font-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+
+.addSetsButton:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--color-accent);
+}
+
+/* ── Set picker modal ── */
+.setPickerSelectedCount {
+  margin-left: auto;
+  margin-right: var(--space-3);
+  font-size: var(--font-sm);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.setPickerSearch {
   width: 100%;
   box-sizing: border-box;
   margin-bottom: var(--space-2);
-  padding: 8px 12px;
+  padding: 9px 12px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-md);
@@ -1337,36 +1404,120 @@
   outline: none;
 }
 
-.incompleteSetsSearch:focus {
+.setPickerSearch:focus {
   border-color: var(--color-accent-dark);
 }
 
-.incompleteSetsSearch::placeholder {
+.setPickerSearch::placeholder {
   color: var(--text-disabled);
 }
 
-.incompleteSetsList {
+.setPickerNote {
+  font-size: var(--font-xs);
+  color: var(--text-disabled);
+  line-height: 1.5;
+  margin: 0 0 var(--space-3);
+}
+
+.setPickerList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  max-height: 48vh;
+  gap: var(--space-3);
+  max-height: 52vh;
   overflow-y: auto;
 }
 
-.incompleteSetRow {
+.setPickerGroup {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  width: 100%;
-  text-align: left;
+  flex-direction: column;
+  gap: 3px;
 }
 
-.incompleteSetRow .setButtonCardCount {
+.setPickerGroupLabel {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 4px 2px;
+  font-size: var(--font-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, rgba(20, 20, 30, 0.98), rgba(20, 20, 30, 0.92));
+}
+
+.setPickerRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.setPickerRow:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.setPickerRowActive {
+  background: rgba(47, 155, 245, 0.16);
+  border-color: rgba(47, 155, 245, 0.5);
+  color: var(--text-primary);
+}
+
+.setPickerRow .setButtonCardCount {
   flex-shrink: 0;
 }
 
-.incompleteSetsEmpty {
+.setPickerCheck {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  font-weight: var(--font-weight-bold);
+  color: #fff;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.setPickerRowActive .setPickerCheck {
+  background: var(--color-accent-dark);
+  border-color: var(--color-accent-dark);
+}
+
+.setPickerName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setPartialBadge {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-highlight);
+  background: rgba(251, 191, 36, 0.14);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  border-radius: 999px;
+}
+
+.setPickerEmpty {
   font-size: var(--font-sm);
   color: var(--text-disabled);
   text-align: center;

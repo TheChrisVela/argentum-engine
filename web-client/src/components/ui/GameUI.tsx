@@ -697,8 +697,8 @@ function LobbyOverlay({
   const updateLobbySettings = useGameStore((state) => state.updateLobbySettings)
   const tournamentState = useGameStore((state) => state.tournamentState)
   const [copied, setCopied] = useState(false)
-  const [showIncompleteSets, setShowIncompleteSets] = useState(false)
-  const [incompleteSearch, setIncompleteSearch] = useState('')
+  const [showSetPicker, setShowSetPicker] = useState(false)
+  const [setSearch, setSetSearch] = useState('')
 
   // Show tournament standings when tournament is active
   if (tournamentState) {
@@ -746,25 +746,28 @@ function LobbyOverlay({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Incomplete sets (cards not fully implemented yet) are pulled out of the main grid and offered
-  // behind a separate modal so the default picker stays focused on fully-playable sets.
+  // Unified set picker: every set (complete + incomplete) lives behind one searchable modal.
+  // The lobby itself only shows the *selected* sets as compact chips, so its footprint stays small
+  // and stable no matter how many sets exist in total or how many a host picks.
   type AvailableSet = typeof lobbyState.settings.availableSets[number]
-  const completeSets = lobbyState.settings.availableSets.filter((s) => !s.incomplete)
-  const incompleteSets = lobbyState.settings.availableSets.filter((s) => s.incomplete)
-  const selectedIncompleteCount = incompleteSets.filter((s) => lobbyState.settings.setCodes.includes(s.code)).length
-  // Searchable multi-select inside the modal — match on set name or code, like the deckbuilder picker.
-  const incompleteSearchNeedle = incompleteSearch.trim().toLowerCase()
-  const filteredIncompleteSets = incompleteSearchNeedle
-    ? incompleteSets.filter(
-        (s) =>
-          s.name.toLowerCase().includes(incompleteSearchNeedle) ||
-          s.code.toLowerCase().includes(incompleteSearchNeedle),
-      )
-    : incompleteSets
+  const allSets = lobbyState.settings.availableSets
+  const selectedSets = lobbyState.settings.setCodes
+    .map((code) => allSets.find((s) => s.code === code))
+    .filter((s): s is AvailableSet => s != null)
 
-  const closeIncompleteSets = () => {
-    setShowIncompleteSets(false)
-    setIncompleteSearch('')
+  // Searchable multi-select inside the modal — match on set name or code, like the deckbuilder picker.
+  const setSearchNeedle = setSearch.trim().toLowerCase()
+  const filteredPickerSets = setSearchNeedle
+    ? allSets.filter(
+        (s) =>
+          s.name.toLowerCase().includes(setSearchNeedle) ||
+          s.code.toLowerCase().includes(setSearchNeedle),
+      )
+    : allSets
+
+  const closeSetPicker = () => {
+    setShowSetPicker(false)
+    setSetSearch('')
   }
 
   const toggleSet = (code: string) => {
@@ -775,33 +778,20 @@ function LobbyOverlay({
     updateLobbySettings({ setCodes: newCodes })
   }
 
-  const renderSetButton = (set: AvailableSet) => {
-    const isSelected = lobbyState.settings.setCodes.includes(set.code)
-    return (
-      <button
-        key={set.code}
-        onClick={() => toggleSet(set.code)}
-        className={`${styles.settingsButton} ${isSelected ? (isAnyDraft ? `${styles.settingsButtonActive} ${styles.settingsButtonDraft}` : styles.settingsButtonActive) : ''}`}
-      >
-        <span>{set.name}</span>
-        {set.implementedCount != null && (
-          <span className={styles.setButtonCardCount}>{set.implementedCount} cards</span>
-        )}
-      </button>
-    )
-  }
-
-  // Full-width toggle row used inside the searchable incomplete-sets multi-select.
-  const renderIncompleteSetRow = (set: AvailableSet) => {
+  // One toggle row inside the picker modal. Incomplete sets get a "partial" tag so the host knows
+  // those boosters draw from a reduced pool of implemented cards.
+  const renderSetPickerRow = (set: AvailableSet) => {
     const isSelected = lobbyState.settings.setCodes.includes(set.code)
     return (
       <button
         key={set.code}
         type="button"
         onClick={() => toggleSet(set.code)}
-        className={`${styles.settingsButton} ${styles.incompleteSetRow} ${isSelected ? styles.settingsButtonActive : ''}`}
+        className={`${styles.setPickerRow} ${isSelected ? styles.setPickerRowActive : ''}`}
       >
-        <span>{set.name}</span>
+        <span className={styles.setPickerCheck} aria-hidden>{isSelected ? '✓' : ''}</span>
+        <span className={styles.setPickerName}>{set.name}</span>
+        {set.incomplete && <span className={styles.setPartialBadge}>partial</span>}
         {set.implementedCount != null && (
           <span className={styles.setButtonCardCount}>{set.implementedCount} cards</span>
         )}
@@ -809,8 +799,8 @@ function LobbyOverlay({
     )
   }
 
-  // Group sets: ungrouped first, then per-block groups (preserving first-seen order).
-  const renderGroupedSets = (sets: readonly AvailableSet[]) => {
+  // Group picker rows by block (first-seen order); ungrouped sets fall under an "Other" section.
+  const renderGroupedSetRows = (sets: readonly AvailableSet[]) => {
     const blockOrder: string[] = []
     const blockSets = new Map<string, AvailableSet[]>()
     const ungrouped: AvailableSet[] = []
@@ -825,19 +815,18 @@ function LobbyOverlay({
         ungrouped.push(set)
       }
     }
-    return (
-      <>
-        {ungrouped.map(renderSetButton)}
-        {blockOrder.map((blockName) => (
-          <div key={blockName} className={styles.blockGroup}>
-            <span className={styles.blockLabel}>{blockName} Block</span>
-            <div className={styles.blockSets}>
-              {blockSets.get(blockName)!.map(renderSetButton)}
-            </div>
-          </div>
-        ))}
-      </>
+    const groups: Array<{ key: string; label: string; sets: AvailableSet[] }> = blockOrder.map(
+      (name) => ({ key: name, label: `${name} Block`, sets: blockSets.get(name)! }),
     )
+    if (ungrouped.length > 0) {
+      groups.push({ key: '__other', label: blockOrder.length > 0 ? 'Other sets' : 'All sets', sets: ungrouped })
+    }
+    return groups.map((group) => (
+      <div key={group.key} className={styles.setPickerGroup}>
+        <div className={styles.setPickerGroupLabel}>{group.label}</div>
+        {group.sets.map(renderSetPickerRow)}
+      </div>
+    ))
   }
 
   return (
@@ -1002,24 +991,40 @@ function LobbyOverlay({
                 </div>
               )
             })()}
-            {/* Set selection — grouped by block. Skipped for Premade Decks since no boosters are generated. */}
+            {/* Set selection — selected sets shown as chips; the full searchable browser is a modal.
+                Skipped for Premade Decks since no boosters are generated. */}
             {!isPremade && (
             <div className={styles.settingsRow} style={{ alignItems: 'flex-start' }}>
-              <span className={styles.settingsLabel} style={{ paddingTop: 6 }}>Sets</span>
-              <div className={styles.setSelectionGrid}>
-                {renderGroupedSets(completeSets)}
-                {incompleteSets.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowIncompleteSets(true)}
-                    className={`${styles.settingsButton} ${styles.incompleteSetsButton}`}
-                  >
-                    <span>Incomplete sets…</span>
-                    <span className={styles.setButtonCardCount}>
-                      {selectedIncompleteCount > 0 ? `${selectedIncompleteCount} selected` : `${incompleteSets.length} available`}
-                    </span>
-                  </button>
+              <span className={styles.settingsLabel} style={{ paddingTop: 7 }}>Sets</span>
+              <div className={styles.setSelection}>
+                {selectedSets.length > 0 ? (
+                  <div className={styles.setChips}>
+                    {selectedSets.map((set) => (
+                      <span
+                        key={set.code}
+                        className={`${styles.setChip} ${isAnyDraft ? styles.setChipDraft : ''} ${set.incomplete ? styles.setChipPartial : ''}`}
+                        title={set.incomplete ? `${set.name} — partial (reduced card pool)` : set.name}
+                      >
+                        <span className={styles.setChipName}>{set.name}</span>
+                        <button
+                          type="button"
+                          className={styles.setChipRemove}
+                          aria-label={`Remove ${set.name}`}
+                          onClick={() => toggleSet(set.code)}
+                        >×</button>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className={styles.setSelectionEmpty}>No sets selected yet</span>
                 )}
+                <button
+                  type="button"
+                  onClick={() => setShowSetPicker(true)}
+                  className={styles.addSetsButton}
+                >
+                  + Add sets
+                </button>
               </div>
             </div>
             )}
@@ -1416,35 +1421,36 @@ function LobbyOverlay({
         )}
       </div>
 
-      {showIncompleteSets && (
-        <div className={styles.deckViewerBackdrop} onClick={closeIncompleteSets}>
+      {showSetPicker && (
+        <div className={styles.deckViewerBackdrop} onClick={closeSetPicker}>
           <div className={styles.deckViewerPanel} style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
             <div className={styles.deckViewerHeader}>
-              <h3 className={styles.deckViewerTitle}>Incomplete sets</h3>
-              <button className={styles.deckViewerClose} onClick={closeIncompleteSets}>×</button>
+              <h3 className={styles.deckViewerTitle}>Choose sets</h3>
+              <span className={styles.setPickerSelectedCount}>
+                {selectedSets.length} selected
+              </span>
+              <button className={styles.deckViewerClose} onClick={closeSetPicker}>×</button>
             </div>
             <div className={styles.deckViewerBody}>
-              <p className={styles.incompleteSetsNote}>
-                These sets aren't fully implemented yet — some cards are missing, so boosters draw from a
-                combined pool of the cards that exist. Pick any number to mix into your pool.
-              </p>
               <input
                 type="text"
-                className={styles.incompleteSetsSearch}
+                className={styles.setPickerSearch}
                 placeholder="Search sets by name or code…"
-                value={incompleteSearch}
+                value={setSearch}
                 spellCheck={false}
                 autoComplete="off"
                 autoFocus
-                onChange={(e) => setIncompleteSearch(e.target.value)}
+                onChange={(e) => setSetSearch(e.target.value)}
               />
-              <div className={styles.incompleteSetsList}>
-                {filteredIncompleteSets.length > 0 ? (
-                  filteredIncompleteSets.map(renderIncompleteSetRow)
+              <p className={styles.setPickerNote}>
+                Sets tagged <span className={styles.setPartialBadge}>partial</span> aren't fully
+                implemented — their boosters draw from a reduced pool of the cards that exist.
+              </p>
+              <div className={styles.setPickerList}>
+                {filteredPickerSets.length > 0 ? (
+                  renderGroupedSetRows(filteredPickerSets)
                 ) : (
-                  <div className={styles.incompleteSetsEmpty}>
-                    {incompleteSearchNeedle ? 'No sets match your search.' : 'No incomplete sets available.'}
-                  </div>
+                  <div className={styles.setPickerEmpty}>No sets match your search.</div>
                 )}
               </div>
             </div>
