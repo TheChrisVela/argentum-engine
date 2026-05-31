@@ -1210,6 +1210,16 @@ class CastFromZoneEnumerator : ActionEnumerator {
             val canAfford = context.costUtils.canAffordWithHarmonize(
                 state, playerId, effectiveCost, harmonizeCreatures, precomputedSources = context.availableManaSources
             )
+            // X-cost Harmonize (e.g. Nature's Rhythm {X}{G}{G}{G}{G}): advertise X so the
+            // client prompts for it. maxAffordableX folds in the best single-creature tap
+            // reduction, since {X} is generic mana the tap can reduce (TDM release notes).
+            val hasXCost = effectiveCost.hasX
+            val maxAffordableX: Int? = if (hasXCost) {
+                context.costUtils.maxAffordableXWithHarmonize(
+                    state, playerId, effectiveCost, harmonizeCreatures,
+                    precomputedSources = context.availableManaSources
+                )
+            } else null
 
             if (!canAfford) {
                 result.add(
@@ -1250,6 +1260,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
                             targetDescription = firstReq.description,
                             targetRequirements = if (targetInfos.size > 1) targetInfos else null,
                             manaCostString = costString,
+                            hasXCost = hasXCost,
+                            maxAffordableX = maxAffordableX,
                             hasHarmonize = true,
                             harmonizeCreatures = harmonizeCreatures,
                             sourceZone = "GRAVEYARD"
@@ -1263,6 +1275,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         description = "Cast ${cardComponent.name} (Harmonize)",
                         action = CastSpell(playerId, cardId, useAlternativeCost = true),
                         manaCostString = costString,
+                        hasXCost = hasXCost,
+                        maxAffordableX = maxAffordableX,
                         hasHarmonize = true,
                         harmonizeCreatures = harmonizeCreatures,
                         sourceZone = "GRAVEYARD"

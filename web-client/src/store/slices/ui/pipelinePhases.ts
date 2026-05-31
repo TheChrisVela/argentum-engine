@@ -13,6 +13,7 @@ import type {
   XSelectionState,
   BlightVariableSelectionState,
   ConvokeSelectionState,
+  HarmonizeSelectionState,
   DelveSelectionState,
   CounterDistributionState,
   ManaColorSelectionState,
@@ -27,6 +28,7 @@ export interface PipelineStoreMethods {
   startXSelection: (state: XSelectionState) => void
   startBlightVariableSelection: (state: BlightVariableSelectionState) => void
   startConvokeSelection: (state: ConvokeSelectionState) => void
+  startHarmonizeSelection: (state: HarmonizeSelectionState) => void
   startDelveSelection: (state: DelveSelectionState) => void
   startCounterDistribution: (state: CounterDistributionState) => void
   startManaSelection: (actionInfo: LegalActionInfo) => void
@@ -97,6 +99,18 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
     actionInfo.validConvokeCreatures.length > 0
   ) {
     phases.push({ type: 'convoke' })
+  }
+
+  // 3b. Harmonize creature-tap (cast from graveyard via Harmonize). Optional: the player
+  //     may tap one creature to reduce the generic cost by its power. Runs after xSelection
+  //     so the displayed cost reflects the chosen X (which {X} the tap can reduce).
+  if (
+    actionInfo.action.type === 'CastSpell' &&
+    actionInfo.hasHarmonize &&
+    actionInfo.validHarmonizeCreatures &&
+    actionInfo.validHarmonizeCreatures.length > 0
+  ) {
+    phases.push({ type: 'harmonize' })
   }
 
   // 4. Mana source selection (skipped when auto-tap is enabled, except for delve/convoke
@@ -238,6 +252,20 @@ export function mergeResult(
           alternativePayment: {
             delvedCards: action.alternativePayment?.delvedCards ?? [],
             convokedCreatures: result.convokedCreatures,
+          },
+        }
+      }
+      return action
+    }
+
+    case 'harmonize': {
+      if (action.type === 'CastSpell') {
+        return {
+          ...action,
+          alternativePayment: {
+            delvedCards: action.alternativePayment?.delvedCards ?? [],
+            convokedCreatures: action.alternativePayment?.convokedCreatures ?? {},
+            harmonizeCreature: result.harmonizeCreature,
           },
         }
       }
@@ -466,6 +494,21 @@ export function enterPhase(
         manaCost: actionInfo.manaCostString ?? '',
         selectedCreatures: [],
         validCreatures: actionInfo.validConvokeCreatures!,
+      })
+      break
+    }
+
+    case 'harmonize': {
+      // Expand {X} in the harmonize cost to the chosen X so the HUD shows the real generic
+      // the tap will reduce. xValue is set by the preceding xSelection phase (0 if none).
+      const xValue = action.type === 'CastSpell' ? action.xValue ?? 0 : 0
+      const manaCost = (actionInfo.manaCostString ?? '').replace(/\{X\}/g, `{${xValue}}`)
+      store.startHarmonizeSelection({
+        actionInfo,
+        cardName: actionInfo.description.replace('Cast ', '').replace(' (Harmonize)', ''),
+        manaCost,
+        selectedCreature: null,
+        validCreatures: actionInfo.validHarmonizeCreatures!,
       })
       break
     }

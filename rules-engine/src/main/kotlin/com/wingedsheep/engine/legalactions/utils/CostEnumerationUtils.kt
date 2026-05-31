@@ -293,6 +293,41 @@ class CostEnumerationUtils(
         return false
     }
 
+    /**
+     * Optimistic maximum X for an X-cost Harmonize spell, considering the best single
+     * creature the player could tap. Tapping reduces generic mana by the creature's power,
+     * and {X} is generic (TDM release notes), so a tap raises the affordable X. The best of
+     * {no tap, each creature} is returned — consistent with [canAffordWithHarmonize]'s
+     * affordability (which also assumes the tap). Count-based like the other `maxAffordableX`
+     * computations: it doesn't verify color feasibility, so it may slightly over-estimate;
+     * the harmonize-creature phase, mana selection, and server validation gate the real cast.
+     */
+    fun maxAffordableXWithHarmonize(
+        state: GameState,
+        playerId: EntityId,
+        manaCost: ManaCost,
+        harmonizeCreatures: List<HarmonizeCreatureData>,
+        precomputedSources: List<ManaSource>? = null
+    ): Int {
+        if (!manaCost.hasX) return 0
+        val xCount = manaCost.xCount.coerceAtLeast(1)
+        val fixedCost = manaCost.cmc // colored + printed generic; {X} contributes 0
+        val sources = precomputedSources ?: manaSolver.findAvailableManaSources(state, playerId)
+
+        fun maxXFor(reduction: Int, excludeId: EntityId?): Int {
+            val usable = if (excludeId == null) sources else sources.filter { it.entityId != excludeId }
+            val available = manaSolver.getAvailableManaCount(state, playerId, usable)
+            return ((available - fixedCost + reduction) / xCount).coerceAtLeast(0)
+        }
+
+        var best = maxXFor(0, null)
+        for (creature in harmonizeCreatures) {
+            if (creature.power <= 0) continue
+            best = maxOf(best, maxXFor(creature.power, creature.entityId))
+        }
+        return best
+    }
+
     // --- Delve ---
 
     fun findDelveCards(state: GameState, playerId: EntityId): List<DelveCardData> {

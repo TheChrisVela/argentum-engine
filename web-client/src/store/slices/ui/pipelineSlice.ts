@@ -158,6 +158,13 @@ export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
       }
     }
 
+    // Note: a harmonize creature-tap reduces the generic the player owes, but we don't
+    // rewrite manaCostString here. With auto-tap (default) the manaSource phase is skipped
+    // and the server auto-pays the reduced cost (CastSpellHandler applies the tap + the
+    // X-mana reduction). In manual-tap mode the manaSource pre-selection may over-pick by
+    // the tap's power, which is harmless — the server re-solves on submit and taps only
+    // what's needed. The HarmonizeSelector HUD shows the player the reduced cost.
+
     // Pop current phase
     let nextPhases = remainingPhases.slice(1)
 
@@ -230,6 +237,7 @@ export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
       xSelectionState: null,
       blightVariableSelectionState: null,
       convokeSelectionState: null,
+      harmonizeSelectionState: null,
       delveSelectionState: null,
       manaSelectionState: null,
       manaColorSelectionState: null,
@@ -245,6 +253,7 @@ function getStoreMethods(get: () => import('../types').GameStore): PipelineStore
     startXSelection: state.startXSelection,
     startBlightVariableSelection: state.startBlightVariableSelection,
     startConvokeSelection: state.startConvokeSelection,
+    startHarmonizeSelection: state.startHarmonizeSelection,
     startDelveSelection: state.startDelveSelection,
     startCounterDistribution: state.startCounterDistribution,
     startManaSelection: state.startManaSelection,

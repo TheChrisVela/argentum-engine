@@ -11,6 +11,7 @@ import type {
   ConvokeCreatureInfo,
   CrewCreatureInfo,
   DelveCardInfo,
+  HarmonizeCreatureInfo,
 
   GameOverReason,
   ErrorCode,
@@ -318,6 +319,23 @@ export interface ConvokeSelectionState {
 }
 
 /**
+ * Harmonize creature-tap selection state when casting a spell from the graveyard via
+ * Harmonize. The player may tap at most one creature to reduce the generic portion of the
+ * harmonize cost by its power (and {X} is generic, so it reduces the X mana paid). Tapping
+ * is optional — the player can confirm with no creature selected to pay the full cost.
+ */
+export interface HarmonizeSelectionState {
+  actionInfo: LegalActionInfo
+  cardName: string
+  /** Harmonize cost with {X} already expanded to the chosen X (e.g. "{3}{G}{G}{G}{G}"). */
+  manaCost: string
+  /** The single creature chosen to tap, or null when none is selected yet. */
+  selectedCreature: EntityId | null
+  /** All untapped creatures that can be tapped, with the power each would reduce by. */
+  validCreatures: readonly HarmonizeCreatureInfo[]
+}
+
+/**
  * Crew selection state when crewing a Vehicle.
  */
 export interface CrewSelectionState {
@@ -587,6 +605,7 @@ export type PipelinePhase =
   | { type: 'xSelection' }
   | { type: 'delve' }
   | { type: 'convoke' }
+  | { type: 'harmonize' }
   | { type: 'manaSource' }
   | { type: 'costPayment' }
   | { type: 'blightVariable' }
@@ -607,6 +626,7 @@ export type PhaseResult =
   | { type: 'xSelection'; xValue: number; isRepeatCount?: boolean }
   | { type: 'delve'; delvedCards: EntityId[]; modifiedManaCost: string }
   | { type: 'convoke'; convokedCreatures: Record<string, { color: string | null }> }
+  | { type: 'harmonize'; harmonizeCreature: EntityId | null; reduction: number }
   | { type: 'manaSource'; selectedSources: EntityId[] }
   | { type: 'costPayment'; costType: string; selectedTargets: EntityId[] }
   | { type: 'blightVariable'; blightAmount: number }
@@ -870,6 +890,11 @@ export type GameStore = {
   toggleConvokeCreature: (entityId: EntityId, name: string, payingColor: string | null) => void
   cancelConvokeSelection: () => void
   confirmConvokeSelection: () => void
+  harmonizeSelectionState: HarmonizeSelectionState | null
+  startHarmonizeSelection: (state: HarmonizeSelectionState) => void
+  toggleHarmonizeCreature: (entityId: EntityId) => void
+  cancelHarmonizeSelection: () => void
+  confirmHarmonizeSelection: () => void
   startCrewSelection: (state: CrewSelectionState) => void
   toggleCrewCreature: (entityId: EntityId) => void
   cancelCrewSelection: () => void

@@ -8,6 +8,7 @@ import type {
   XSelectionState,
   BlightVariableSelectionState,
   ConvokeSelectionState,
+  HarmonizeSelectionState,
   CrewSelectionState,
   DelveSelectionState,
   ManaColorSelectionState,
@@ -31,6 +32,7 @@ export interface SelectionSliceState {
   xSelectionState: XSelectionState | null
   blightVariableSelectionState: BlightVariableSelectionState | null
   convokeSelectionState: ConvokeSelectionState | null
+  harmonizeSelectionState: HarmonizeSelectionState | null
   crewSelectionState: CrewSelectionState | null
   delveSelectionState: DelveSelectionState | null
   manaColorSelectionState: ManaColorSelectionState | null
@@ -51,6 +53,10 @@ export interface SelectionSliceActions {
   toggleConvokeCreature: (entityId: EntityId, name: string, payingColor: string | null) => void
   cancelConvokeSelection: () => void
   confirmConvokeSelection: () => void
+  startHarmonizeSelection: (state: HarmonizeSelectionState) => void
+  toggleHarmonizeCreature: (entityId: EntityId) => void
+  cancelHarmonizeSelection: () => void
+  confirmHarmonizeSelection: () => void
   startCrewSelection: (state: CrewSelectionState) => void
   toggleCrewCreature: (entityId: EntityId) => void
   cancelCrewSelection: () => void
@@ -78,6 +84,7 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
   xSelectionState: null,
   blightVariableSelectionState: null,
   convokeSelectionState: null,
+  harmonizeSelectionState: null,
   crewSelectionState: null,
   delveSelectionState: null,
   manaColorSelectionState: null,
@@ -198,6 +205,43 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
 
     set({ convokeSelectionState: null })
     get().advancePipeline({ type: 'convoke', convokedCreatures })
+  },
+
+  // Harmonize creature-tap selection actions (cast from graveyard via Harmonize). At most
+  // one creature may be tapped; clicking the selected creature again clears it. Confirming
+  // with none selected pays the full harmonize cost.
+  startHarmonizeSelection: (harmonizeSelectionState) => {
+    set({ harmonizeSelectionState })
+  },
+
+  toggleHarmonizeCreature: (creatureEntityId) => {
+    set((state) => {
+      if (!state.harmonizeSelectionState) return state
+      const current = state.harmonizeSelectionState.selectedCreature
+      return {
+        harmonizeSelectionState: {
+          ...state.harmonizeSelectionState,
+          selectedCreature: current === creatureEntityId ? null : creatureEntityId,
+        },
+      }
+    })
+  },
+
+  cancelHarmonizeSelection: () => {
+    const { pipelineState, cancelPipeline } = get()
+    if (pipelineState) { cancelPipeline(); return }
+    set({ harmonizeSelectionState: null })
+  },
+
+  confirmHarmonizeSelection: () => {
+    const { harmonizeSelectionState, pipelineState } = get()
+    if (!harmonizeSelectionState || !pipelineState) return
+    const selected = harmonizeSelectionState.selectedCreature
+    const reduction = selected
+      ? harmonizeSelectionState.validCreatures.find((c) => c.entityId === selected)?.power ?? 0
+      : 0
+    set({ harmonizeSelectionState: null })
+    get().advancePipeline({ type: 'harmonize', harmonizeCreature: selected, reduction })
   },
 
   // Crew selection actions

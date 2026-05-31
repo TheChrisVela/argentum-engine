@@ -7,6 +7,7 @@ import { RevealedCardsUI } from './components/decisions/RevealedCardsUI'
 import { XCostSelector } from './components/ui/XCostSelector'
 import { BlightVariableSelector } from './components/ui/BlightVariableSelector'
 import { ConvokeSelector } from './components/ui/ConvokeSelector'
+import { HarmonizeSelector } from './components/ui/HarmonizeSelector'
 import { CrewSelector } from './components/ui/CrewSelector'
 import { DelveSelector } from './components/ui/DelveSelector'
 import { DamageDistributionModal } from './components/decisions/DamageDistributionModal'
@@ -294,6 +295,9 @@ export default function App() {
 
       {/* Convoke selection overlay (when casting spells with Convoke) */}
       {showGame && <ConvokeSelector />}
+
+      {/* Harmonize creature-tap overlay (when casting from graveyard via Harmonize) */}
+      {showGame && <HarmonizeSelector />}
 
       {/* Crew selection overlay (when crewing Vehicles) */}
       {showGame && <CrewSelector />}

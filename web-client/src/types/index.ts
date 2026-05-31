@@ -156,6 +156,7 @@ export type {
   ConvokeCreatureInfo,
   CrewCreatureInfo,
   DelveCardInfo,
+  HarmonizeCreatureInfo,
   ManaSourceInfo,
   MulliganDecisionMessage,
   ChooseBottomCardsMessage,

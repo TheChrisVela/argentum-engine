@@ -453,8 +453,11 @@ class CastSpellHandler(
             effectiveCost
         }
 
-        // Validate payment
-        val paymentError = validatePayment(state, action, costAfterAltPayment)
+        // Validate payment. For an X-cost Harmonize cast where a creature is tapped, the
+        // creature's power reduces generic mana — and {X} is generic (TDM release notes) —
+        // so the leftover reduction beyond any printed generic comes off the X mana paid.
+        val paymentXValue = harmonizePaymentXValue(state, action, cardDef, effectiveCost)
+        val paymentError = validatePayment(state, action, costAfterAltPayment, paymentXValue)
         if (paymentError != null) {
             return paymentError
         }
@@ -559,8 +562,51 @@ class CastSpellHandler(
         return null
     }
 
-    private fun validatePayment(state: GameState, action: CastSpell, cost: ManaCost): String? {
+    /**
+     * X value used for *mana payment* of a Harmonize cast (≤ `action.xValue`).
+     *
+     * Harmonize lets the player tap one creature to reduce the cost by generic mana equal
+     * to its power; {X} is generic mana (TDM release notes), but colored pips are never
+     * reduced. [AlternativePaymentHandler] already lowers the printed generic via
+     * `reduceGeneric`; the leftover reduction beyond the printed generic must come off the
+     * mana paid for X. The spell's own X value ([CastSpell.xValue], which drives the
+     * "mana value X or less" search) is unchanged — only the mana paid for X drops.
+     *
+     * Returns `action.xValue` unchanged when this isn't an X-cost Harmonize cast with a
+     * validly-tapped creature, mirroring [AlternativePaymentHandler.applyHarmonize]'s guards
+     * so validation, payment, and the actual tap stay consistent.
+     */
+    private fun harmonizePaymentXValue(
+        state: GameState,
+        action: CastSpell,
+        cardDef: com.wingedsheep.sdk.model.CardDefinition?,
+        harmonizeCost: ManaCost,
+    ): Int {
         val xValue = action.xValue ?: 0
+        if (xValue <= 0) return xValue
+        val creatureId = action.alternativePayment?.harmonizeCreature ?: return xValue
+        if (cardDef == null || cardDef.keywordAbilities.none { it is KeywordAbility.Harmonize }) return xValue
+        if (!zoneResolver.hasHarmonizePermission(state, action.playerId, action.cardId)) return xValue
+        // Mirror applyHarmonize's validity gate: a creature that wouldn't actually be tapped
+        // grants no reduction, so payment must not assume one.
+        if (creatureId !in state.getZone(ZoneKey(action.playerId, Zone.BATTLEFIELD))) return xValue
+        val container = state.getEntity(creatureId) ?: return xValue
+        val projected = state.projectedState
+        if (!projected.isCreature(creatureId)) return xValue
+        if (container.has<TappedComponent>()) return xValue
+        if (container.get<ControllerComponent>()?.playerId != action.playerId) return xValue
+        val power = (projected.getPower(creatureId) ?: 0).coerceAtLeast(0)
+        if (power <= 0) return xValue
+        // reduceGeneric eats the printed generic first; whatever power is left reduces the
+        // X mana. xCount > 1 (no current card) floors conservatively so payment never
+        // under-charges.
+        val leftover = (power - harmonizeCost.genericAmount).coerceAtLeast(0)
+        val xCount = harmonizeCost.xCount.coerceAtLeast(1)
+        return ((xValue * xCount - leftover).coerceAtLeast(0)) / xCount
+    }
+
+    private fun validatePayment(state: GameState, action: CastSpell, cost: ManaCost, paymentXValue: Int = action.xValue ?: 0): String? {
+        val xValue = paymentXValue
 
         // Build spell context for conditional mana validation
         val cardComponent = state.getEntity(action.cardId)?.get<CardComponent>()
@@ -1807,7 +1853,14 @@ class CastSpellHandler(
             }
         }
 
-        // Apply alternative payment (Delve/Convoke)
+        // X mana to pay (≤ action.xValue). For an X-cost Harmonize cast with a tapped
+        // creature, the leftover power beyond the printed generic reduces the X mana paid;
+        // computed from the pre-reduction cost so the printed-generic split matches what
+        // AlternativePaymentHandler.reduceGeneric does below. action.xValue (the effect's X)
+        // is untouched.
+        val paymentXValue = harmonizePaymentXValue(currentState, action, cardDef, effectiveCost)
+
+        // Apply alternative payment (Delve/Convoke/Harmonize)
         if (action.alternativePayment != null && !action.alternativePayment.isEmpty && cardDef != null) {
             val altPaymentResult = alternativePaymentHandler.apply(
                 currentState,
@@ -1845,7 +1898,7 @@ class CastSpellHandler(
             ?: cardDef?.script)?.xManaRestriction ?: emptySet()
 
         // Handle mana payment via dedicated processor
-        val paymentResult = paymentProcessor.processPayment(currentState, action, effectiveCost, cardComponent.name, xValue, spellContext, xManaRestriction)
+        val paymentResult = paymentProcessor.processPayment(currentState, action, effectiveCost, cardComponent.name, paymentXValue, spellContext, xManaRestriction)
         if (paymentResult.error != null) {
             return ExecutionResult.error(currentState, paymentResult.error)
         }
