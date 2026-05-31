@@ -731,15 +731,4 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
         override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
     }
 
-    /**
-     * Count other creatures on the battlefield that share a creature type with the referenced entity.
-     * Used for Alpha Status: "+2/+2 for each other creature that shares a creature type with it."
-     */
-    @SerialName("CreaturesSharingTypeWithEntity")
-    @Serializable
-    data class CreaturesSharingTypeWithEntity(val entity: EntityReference) : DynamicAmount {
-        override val description: String = "the number of other creatures that share a creature type with ${entity.description}"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
-
 }

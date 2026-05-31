@@ -57,7 +57,13 @@ User counts are caller _files_ in `mtg-sets/src/main` (worktree copies excluded)
   so card call sites are unchanged. Preserve `CreatePermanentGlobalTriggeredAbilityEffect`'s
   `descriptionOverride` field.
 
-### 3. `DynamicAmount.CreaturesSharingTypeWithEntity` — pure composition
+### 3. `DynamicAmount.CreaturesSharingTypeWithEntity` — pure composition ✅ DONE
+- **Resolution:** Deleted the variant + evaluator branch. Alpha Status now uses
+  `AggregateBattlefield(Player.Each, GameObjectFilter.Creature.sharingCreatureTypeWith(EntityReference.AffectedEntity), excludeSelf = true)`.
+  Two supporting generalizations: `EntityReference.AffectedEntity` now resolves inside predicate
+  filters during projection (threaded through `PredicateContext`), and `AggregateBattlefield`'s
+  `excludeSelf` excludes the affected entity (not just the source) so granted "for each OTHER …"
+  effects exclude the right permanent.
 - **Location:** `scripting/values/DynamicAmount.kt:738`
 - **Standards:** #4, #5 (a `DynamicAmount` variant should only exist when it reads state no node can)
 - **Why:** The SDK already has `CardPredicate.SharesCreatureTypeWith(entity)` (evaluator-backed)

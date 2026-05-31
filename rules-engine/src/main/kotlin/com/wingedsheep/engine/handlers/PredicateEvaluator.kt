@@ -588,7 +588,7 @@ class PredicateEvaluator {
             is EntityReference.Target -> null // Not available in predicate context
             is EntityReference.Sacrificed -> null
             is EntityReference.TappedAsCost -> null
-            is EntityReference.AffectedEntity -> null // Only available during projection
+            is EntityReference.AffectedEntity -> context?.affectedEntityId
             is EntityReference.IterationEntity -> null // Only available during ForEachInGroup iteration
             is EntityReference.FromCostStorage -> null // Cost-pipeline state is not threaded into PredicateContext
             is EntityReference.EnchantedCreature -> null // Attachment lookup needs state, not threaded here
@@ -865,6 +865,13 @@ data class PredicateContext(
     val ownerId: EntityId? = null,
     /** The entity that caused the trigger to fire (for SharesCreatureTypeWithTriggeringEntity) */
     val triggeringEntityId: EntityId? = null,
+    /**
+     * The entity a continuous effect is being applied to during projection (e.g. the creature an
+     * Aura is enchanting). Lets filters resolve [EntityReference.AffectedEntity] — needed by
+     * `AggregateBattlefield(filter = ...sharingCreatureTypeWith(AffectedEntity))` for Alpha Status.
+     * Only set during projection-time evaluation; null otherwise.
+     */
+    val affectedEntityId: EntityId? = null,
     /** Named values chosen by the player during pipeline execution (e.g., creature type, color). */
     val chosenValues: Map<String, String> = emptyMap(),
     /** Named string lists stored by pipeline effects (e.g., chosen creature types). */
@@ -933,6 +940,7 @@ data class PredicateContext(
                 targetPlayerId = chosenPlayerTarget ?: context.opponentId,
                 sourceId = context.sourceId,
                 triggeringEntityId = context.triggeringEntityId,
+                affectedEntityId = context.affectedEntityId,
                 chosenValues = context.pipeline.chosenValues,
                 storedStringLists = context.pipeline.storedStringLists,
                 storedSubtypeGroups = context.pipeline.storedSubtypeGroups,

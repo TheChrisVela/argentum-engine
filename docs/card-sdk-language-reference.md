@@ -690,6 +690,12 @@ Every `TargetRequirement` carries count semantics (defaults shown):
 - `.withChosenColor()` — `CardPredicate.HasChosenColor`: matches the color chosen during the current
   effect's resolution (read from `EffectContext.chosenColor`, set by `Effects.ChooseColorThen`). Use with
   `AggregateBattlefield(Player.Each, …)` for "for each permanent of that color" (Coalition Dragon cycle).
+- `.sharingCreatureTypeWith(entity)` — `CardPredicate.SharesCreatureTypeWith(entity)`: shares ≥1 (projected)
+  creature subtype with a referenced entity. `entity` may be `EntityReference.AffectedEntity`, which resolves
+  to the creature a continuous effect is being applied to during projection — combine with
+  `AggregateBattlefield(Player.Each, GameObjectFilter.Creature.sharingCreatureTypeWith(EntityReference.AffectedEntity), excludeSelf = true)`
+  for "+X/+X for each OTHER creature that shares a creature type with it" (Alpha Status). In a granted
+  context `excludeSelf` excludes the affected (enchanted) creature, not the granting source.
 - `.sharingColorWith(entity)` — `CardPredicate.SharesColorWith(entity)`: shares ≥1 (projected) color with
   a referenced entity (e.g. `EntityReference.Triggering`). Mirror of `.sharingCreatureTypeWith(entity)`.
   Colorless entities share no color (never match). Used by Spreading Plague ("destroy all other creatures

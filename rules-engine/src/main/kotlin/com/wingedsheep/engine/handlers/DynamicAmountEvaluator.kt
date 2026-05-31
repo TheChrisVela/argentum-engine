@@ -326,30 +326,6 @@ class DynamicAmountEvaluator(
                 }
             }
 
-            is DynamicAmount.CreaturesSharingTypeWithEntity -> {
-                val entityId = resolveEntityId(amount.entity, context, state) ?: return 0
-                val projection = resolveProjection(state, projectedState)
-
-                // Projection has no entry off the battlefield — fall back to base CardComponent.
-                val entitySubtypes = projection.getSubtypes(entityId).ifEmpty {
-                    state.getEntity(entityId)?.get<CardComponent>()?.typeLine?.subtypes?.map { it.value }?.toSet()
-                        ?: return 0
-                }
-                if (entitySubtypes.isEmpty()) return 0
-
-                state.getBattlefield().count { otherId ->
-                    if (otherId == entityId) return@count false
-                    val isCreature = projection.getTypes(otherId).contains("CREATURE")
-                        || state.getEntity(otherId)?.get<CardComponent>()?.typeLine?.isCreature == true
-                    if (!isCreature) return@count false
-                    val subtypes = projection.getSubtypes(otherId).ifEmpty {
-                        state.getEntity(otherId)?.get<CardComponent>()?.typeLine?.subtypes?.map { it.value }?.toSet()
-                            ?: emptySet()
-                    }
-                    subtypes.any { it in entitySubtypes }
-                }
-            }
-
         }
     }
 
@@ -466,11 +442,17 @@ class DynamicAmountEvaluator(
         val predicateContext = PredicateContext.fromEffectContext(context)
         val projection = resolveProjection(state, explicitProjection)
 
+        // "Self" is the affected entity when this aggregate is evaluated for a granted effect
+        // (e.g. an Aura's "for each OTHER creature that shares a type with the enchanted creature":
+        // self is the enchanted creature, not the Aura source). For a creature's own CDA there is
+        // no affected entity, so it falls back to the source — the creature itself.
+        val selfId = context.affectedEntityId ?: context.sourceId
+
         val matchingEntities = playerIds.flatMap { playerId ->
             state.getBattlefield()
                 .filter { entityId ->
                     // Exclude self if requested (e.g., "other creatures you control")
-                    if (amount.excludeSelf && entityId == context.sourceId) return@filter false
+                    if (amount.excludeSelf && entityId == selfId) return@filter false
                     controllerOf(state, projection, entityId) == playerId
                 }
                 .filter { entityId ->
