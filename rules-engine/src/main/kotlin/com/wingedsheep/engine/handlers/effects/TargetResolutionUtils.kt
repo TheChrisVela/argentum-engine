@@ -6,6 +6,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
+import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.references.Player
@@ -97,6 +98,20 @@ object TargetResolutionUtils {
     }
 
     /**
+     * Resolve the controller of an entity. For a spell on the stack the controller is the player
+     * who cast it ([SpellOnStackComponent.casterId]) — the stack object's [ControllerComponent]
+     * still reflects the card's owner, which differs from the controller when a player casts a
+     * card they don't own (e.g. casting a spell from an opponent's graveyard). Falls back to the
+     * [ControllerComponent] (battlefield permanents) and finally the owner.
+     */
+    private fun controllerOf(state: GameState, entityId: EntityId): EntityId? {
+        val entity = state.getEntity(entityId) ?: return null
+        return entity.get<SpellOnStackComponent>()?.casterId
+            ?: entity.get<ControllerComponent>()?.playerId
+            ?: entity.get<CardComponent>()?.ownerId
+    }
+
+    /**
      * Resolve a player target with access to game state (for relational references like OwnerOf/ControllerOf).
      */
     fun resolvePlayerTarget(effectTarget: EffectTarget, context: EffectContext, state: GameState): EntityId? {
@@ -106,15 +121,13 @@ object TargetResolutionUtils {
         // Handle TargetController: resolve the first target, then look up its controller
         if (effectTarget is EffectTarget.TargetController) {
             val targetEntity = context.targets.firstOrNull()?.toEntityId() ?: return null
-            return state.getEntity(targetEntity)?.get<ControllerComponent>()?.playerId
-                ?: state.getEntity(targetEntity)?.get<CardComponent>()?.ownerId
+            return controllerOf(state, targetEntity)
         }
 
         // Handle ControllerOfPipelineTarget: look up controller of the pipeline-stored entity
         if (effectTarget is EffectTarget.ControllerOfPipelineTarget) {
             val targetEntityId = context.pipeline.storedCollections[effectTarget.collectionName]?.getOrNull(effectTarget.index) ?: return null
-            return state.getEntity(targetEntityId)?.get<ControllerComponent>()?.playerId
-                ?: state.getEntity(targetEntityId)?.get<CardComponent>()?.ownerId
+            return controllerOf(state, targetEntityId)
         }
 
         // Handle state-dependent relational references
@@ -126,8 +139,7 @@ object TargetResolutionUtils {
                 }
                 is Player.ControllerOf -> {
                     val targetEntity = context.targets.firstOrNull()?.toEntityId() ?: return null
-                    state.getEntity(targetEntity)?.get<ControllerComponent>()?.playerId
-                        ?: state.getEntity(targetEntity)?.get<CardComponent>()?.ownerId
+                    controllerOf(state, targetEntity)
                 }
                 else -> null
             }
