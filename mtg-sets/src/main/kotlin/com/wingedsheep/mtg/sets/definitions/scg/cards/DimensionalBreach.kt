@@ -26,7 +26,7 @@ val DimensionalBreach = card("Dimensional Breach") {
 
     spell {
         effect = Effects.ExileGroupAndLink(GroupFilter(GameObjectFilter.Any))
-            .then(Effects.CreatePermanentGlobalTriggeredAbility(
+            .then(Effects.CreateGlobalTriggeredAbility(
                 TriggeredAbility.create(
                     trigger = Triggers.EachUpkeep.event,
                     binding = Triggers.EachUpkeep.binding,

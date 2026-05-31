@@ -5,8 +5,8 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.TriggeredAbility
-import com.wingedsheep.sdk.scripting.effects.CreateGlobalTriggeredAbilityUntilEndOfTurnEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
@@ -27,7 +27,8 @@ val DeathFrenzy = card("Death Frenzy") {
         effect = CompositeEffect(
             listOf(
                 EffectPatterns.modifyStatsForAll(-2, -2, GroupFilter.AllCreatures),
-                CreateGlobalTriggeredAbilityUntilEndOfTurnEffect(
+                Effects.CreateGlobalTriggeredAbility(
+                    duration = Duration.EndOfTurn,
                     ability = TriggeredAbility.create(
                         trigger = Triggers.AnyCreatureDies.event,
                         binding = Triggers.AnyCreatureDies.binding,

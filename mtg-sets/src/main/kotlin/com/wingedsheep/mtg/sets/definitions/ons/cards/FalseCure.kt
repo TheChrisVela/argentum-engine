@@ -1,8 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.ons.cards
 
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.CreateGlobalTriggeredAbilityUntilEndOfTurnEffect
+import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.values.ContextPropertyKey
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -24,7 +25,8 @@ val FalseCure = card("False Cure") {
     typeLine = "Instant"
 
     spell {
-        effect = CreateGlobalTriggeredAbilityUntilEndOfTurnEffect(
+        effect = Effects.CreateGlobalTriggeredAbility(
+            duration = Duration.EndOfTurn,
             ability = TriggeredAbility.create(
                 trigger = Triggers.AnyPlayerGainsLife.event,
                 binding = Triggers.AnyPlayerGainsLife.binding,

@@ -74,7 +74,7 @@ val SeasonOfTheBold = card("Season of the Bold") {
                 // Season of the Bold deals 2 damage to up to one target creature
                 BudgetMode(
                     cost = 3,
-                    effect = Effects.CreateGlobalTriggeredAbilityWithDuration(
+                    effect = Effects.CreateGlobalTriggeredAbility(
                         ability = TriggeredAbility.create(
                             trigger = SpellCastEvent(player = Player.You),
                             binding = TriggerBinding.ANY,

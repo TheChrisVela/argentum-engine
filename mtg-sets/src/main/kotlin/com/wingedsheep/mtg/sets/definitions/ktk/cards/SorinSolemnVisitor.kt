@@ -10,7 +10,6 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TriggeredAbility
-import com.wingedsheep.sdk.scripting.effects.CreatePermanentGlobalTriggeredAbilityEffect
 import com.wingedsheep.sdk.scripting.effects.ForceSacrificeEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.references.Player
@@ -66,7 +65,7 @@ val SorinSolemnVisitor = card("Sorin, Solemn Visitor") {
 
     // -6: Emblem with "At the beginning of each opponent's upkeep, that player sacrifices a creature."
     loyaltyAbility(-6) {
-        effect = CreatePermanentGlobalTriggeredAbilityEffect(
+        effect = Effects.CreateGlobalTriggeredAbility(
             ability = TriggeredAbility.create(
                 trigger = Triggers.EachOpponentUpkeep.event,
                 binding = Triggers.EachOpponentUpkeep.binding,

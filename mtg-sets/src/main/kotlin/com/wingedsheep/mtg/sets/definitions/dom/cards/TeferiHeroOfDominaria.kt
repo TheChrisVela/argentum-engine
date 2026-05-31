@@ -12,7 +12,6 @@ import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
-import com.wingedsheep.sdk.scripting.effects.CreatePermanentGlobalTriggeredAbilityEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectionMode
@@ -75,7 +74,7 @@ val TeferiHeroOfDominaria = card("Teferi, Hero of Dominaria") {
 
     // −8: You get an emblem with "Whenever you draw a card, exile target permanent an opponent controls."
     loyaltyAbility(-8) {
-        effect = CreatePermanentGlobalTriggeredAbilityEffect(
+        effect = Effects.CreateGlobalTriggeredAbility(
             ability = TriggeredAbility.create(
                 trigger = Triggers.YouDraw.event,
                 binding = Triggers.YouDraw.binding,

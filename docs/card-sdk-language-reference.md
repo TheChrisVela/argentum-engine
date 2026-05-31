@@ -369,8 +369,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 ### Ability granting
 
 - `GrantTriggeredAbilityEffect(ability)` — permanently grant a triggered ability.
-- `CreatePermanentGlobalTriggeredAbility(ability)` — engine-wide triggered ability with no source.
-- `CreateGlobalTriggeredAbilityWithDuration(ability, duration)` — same, but bounded.
+- `CreateGlobalTriggeredAbility(ability, duration = Duration.Permanent, descriptionOverride? = null)` — engine-wide triggered ability with no source permanent. `duration` is a plain parameter, so the one method covers every lifetime: `Duration.EndOfTurn` (False Cure, Death Frenzy), `Duration.UntilYourNextTurn` (Season of the Bold), `Duration.EndOfCombat`, `Duration.Permanent` (Dimensional Breach, planeswalker emblems), etc. `descriptionOverride` sets emblem display text.
 - `GrantSpellKeywordEffect` — grant a keyword to a spell on the stack.
 - `GrantSpellsCantBeCountered(target, filter, duration)` — target's matching spells become uncounterable (Domri shape).
 

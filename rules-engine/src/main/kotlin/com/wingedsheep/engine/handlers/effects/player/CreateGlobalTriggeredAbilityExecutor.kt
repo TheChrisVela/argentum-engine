@@ -6,23 +6,24 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.sdk.scripting.effects.CreateGlobalTriggeredAbilityWithDurationEffect
+import com.wingedsheep.sdk.scripting.effects.CreateGlobalTriggeredAbilityEffect
 import kotlin.reflect.KClass
 
 /**
- * Executor for CreateGlobalTriggeredAbilityWithDurationEffect.
- * Creates a global triggered ability with a specified duration.
- * Used for temporary triggered abilities like "Until the end of your next turn, whenever..."
+ * Executor for CreateGlobalTriggeredAbilityEffect.
+ * Creates a global triggered ability (not attached to any specific permanent) lasting for the
+ * effect's [duration] — until end of turn (False Cure), permanently (Dimensional Breach,
+ * planeswalker emblems), or any other duration (Season of the Bold).
  */
-class CreateGlobalTriggeredAbilityWithDurationExecutor :
-    EffectExecutor<CreateGlobalTriggeredAbilityWithDurationEffect> {
+class CreateGlobalTriggeredAbilityExecutor :
+    EffectExecutor<CreateGlobalTriggeredAbilityEffect> {
 
-    override val effectType: KClass<CreateGlobalTriggeredAbilityWithDurationEffect> =
-        CreateGlobalTriggeredAbilityWithDurationEffect::class
+    override val effectType: KClass<CreateGlobalTriggeredAbilityEffect> =
+        CreateGlobalTriggeredAbilityEffect::class
 
     override fun execute(
         state: GameState,
-        effect: CreateGlobalTriggeredAbilityWithDurationEffect,
+        effect: CreateGlobalTriggeredAbilityEffect,
         context: EffectContext
     ): EffectResult {
         val sourceId = context.sourceId
@@ -35,7 +36,8 @@ class CreateGlobalTriggeredAbilityWithDurationExecutor :
             sourceName = state.getEntity(sourceId)
                 ?.get<CardComponent>()?.name
                 ?: "Unknown",
-            duration = effect.duration
+            duration = effect.duration,
+            descriptionOverride = effect.descriptionOverride
         )
 
         val newState = state.copy(

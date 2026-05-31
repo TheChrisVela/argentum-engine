@@ -10,7 +10,6 @@ import com.wingedsheep.sdk.dsl.EffectPatterns
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.TriggeredAbility
-import com.wingedsheep.sdk.scripting.effects.CreatePermanentGlobalTriggeredAbilityEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
@@ -56,7 +55,7 @@ val SarkhanTheDragonspeaker = card("Sarkhan, the Dragonspeaker") {
     // -6: Emblem with draw step and end step triggered abilities
     loyaltyAbility(-6) {
         effect = Effects.Composite(
-            CreatePermanentGlobalTriggeredAbilityEffect(
+            Effects.CreateGlobalTriggeredAbility(
                 ability = TriggeredAbility.create(
                     trigger = Triggers.YourDrawStep.event,
                     binding = Triggers.YourDrawStep.binding,
@@ -64,7 +63,7 @@ val SarkhanTheDragonspeaker = card("Sarkhan, the Dragonspeaker") {
                 ),
                 descriptionOverride = "At the beginning of your draw step, draw two additional cards."
             ),
-            CreatePermanentGlobalTriggeredAbilityEffect(
+            Effects.CreateGlobalTriggeredAbility(
                 ability = TriggeredAbility.create(
                     trigger = Triggers.YourEndStep.event,
                     binding = Triggers.YourEndStep.binding,

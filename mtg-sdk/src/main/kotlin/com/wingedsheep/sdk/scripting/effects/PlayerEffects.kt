@@ -148,67 +148,33 @@ data class PreventLandPlaysThisTurnEffect(
 }
 
 /**
- * Create a global triggered ability that lasts until end of turn.
- * Used for spells like False Cure that create delayed triggered abilities
- * not attached to any specific permanent.
+ * Create a global triggered ability that is not attached to any specific permanent, lasting for
+ * the given [duration].
  *
- * "Until end of turn, whenever [trigger], [effect]."
+ * This is the single duration-parametric form: pass [Duration.EndOfTurn] for spells like False
+ * Cure ("Until end of turn, whenever..."), [Duration.Permanent] for emblem-style recurring triggers
+ * from non-permanent sources (e.g. Dimensional Breach, planeswalker ultimates), or any other
+ * [Duration] for temporary triggers like "Until your next turn, whenever...".
  *
- * @property ability The triggered ability to create
- */
-@SerialName("CreateGlobalTriggeredAbilityUntilEndOfTurn")
-@Serializable
-data class CreateGlobalTriggeredAbilityUntilEndOfTurnEffect(
-    val ability: TriggeredAbility
-) : Effect {
-    override val description: String =
-        "Until end of turn, ${ability.description.replaceFirstChar { it.lowercase() }}"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect {
-        val newAbility = ability.applyTextReplacement(replacer)
-        return if (newAbility !== ability) copy(ability = newAbility) else this
-    }
-}
-
-/**
- * Create a global triggered ability that lasts permanently.
- * Used for effects that create recurring triggers from non-permanent sources
- * (e.g., Dimensional Breach creating an upkeep trigger from a sorcery).
- *
- * "Whenever [trigger], [effect]." (permanent duration)
- *
- * @property ability The triggered ability to create
- * @property descriptionOverride Optional override for the auto-generated description
- */
-@SerialName("CreatePermanentGlobalTriggeredAbility")
-@Serializable
-data class CreatePermanentGlobalTriggeredAbilityEffect(
-    val ability: TriggeredAbility,
-    val descriptionOverride: String? = null
-) : Effect {
-    override val description: String = descriptionOverride ?: ability.description
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect {
-        val newAbility = ability.applyTextReplacement(replacer)
-        return if (newAbility !== ability) copy(ability = newAbility) else this
-    }
-}
-
-/**
- * Create a global triggered ability with a specified duration.
- * Used for temporary triggered abilities like "Until the end of your next turn, whenever..."
+ * Prefer the [com.wingedsheep.sdk.dsl.Effects.CreateGlobalTriggeredAbility] facade over
+ * constructing this directly.
  *
  * @property ability The triggered ability to create
  * @property duration How long the ability lasts
+ * @property descriptionOverride Optional override for the auto-generated description (for emblem display)
  */
-@SerialName("CreateGlobalTriggeredAbilityWithDuration")
+@SerialName("CreateGlobalTriggeredAbility")
 @Serializable
-data class CreateGlobalTriggeredAbilityWithDurationEffect(
+data class CreateGlobalTriggeredAbilityEffect(
     val ability: TriggeredAbility,
-    val duration: Duration
+    val duration: Duration = Duration.Permanent,
+    val descriptionOverride: String? = null
 ) : Effect {
-    override val description: String =
-        "Until ${duration.description}, ${ability.description.replaceFirstChar { it.lowercase() }}"
+    override val description: String = descriptionOverride ?: when (duration) {
+        Duration.Permanent -> ability.description
+        else -> "${duration.description.replaceFirstChar { it.uppercase() }}, " +
+            ability.description.replaceFirstChar { it.lowercase() }
+    }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect {
         val newAbility = ability.applyTextReplacement(replacer)

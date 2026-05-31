@@ -192,7 +192,7 @@ class DimensionalBreachTest : FunSpec({
 
         // No global ability should be created (nothing was exiled)
         // Note: ExileGroupAndLink still creates the LinkedExileComponent even if empty,
-        // and the CreatePermanentGlobalTriggeredAbility always creates the ability.
+        // and the CreateGlobalTriggeredAbility always creates the ability.
         // The ability will fire at upkeep but find nothing to return and clean itself up.
     }
 

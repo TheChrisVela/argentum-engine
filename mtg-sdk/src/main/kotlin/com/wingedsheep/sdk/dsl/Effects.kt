@@ -97,8 +97,7 @@ import com.wingedsheep.sdk.scripting.effects.ExileLibraryUntilManaValueEffect
 import com.wingedsheep.sdk.scripting.effects.ExileOpponentsGraveyardsEffect
 import com.wingedsheep.sdk.scripting.effects.ExileUntilLeavesEffect
 import com.wingedsheep.sdk.scripting.effects.ExileAndGrantOwnerPlayPermissionEffect
-import com.wingedsheep.sdk.scripting.effects.CreateGlobalTriggeredAbilityWithDurationEffect
-import com.wingedsheep.sdk.scripting.effects.CreatePermanentGlobalTriggeredAbilityEffect
+import com.wingedsheep.sdk.scripting.effects.CreateGlobalTriggeredAbilityEffect
 import com.wingedsheep.sdk.scripting.effects.ReturnCreaturesPutInGraveyardThisTurnEffect
 import com.wingedsheep.sdk.scripting.effects.ReturnOneFromLinkedExileEffect
 import com.wingedsheep.sdk.scripting.effects.ReturnSelfToBattlefieldAttachedEffect
@@ -514,18 +513,19 @@ object Effects {
         ReturnCreaturesPutInGraveyardThisTurnEffect(player)
 
     /**
-     * Create a global triggered ability that lasts permanently.
-     * Used for recurring triggers from non-permanent sources.
+     * Create a global triggered ability that is not attached to any specific permanent, lasting for
+     * the given [duration].
+     *
+     * The duration is a plain parameter, so this one method covers every lifetime:
+     * [Duration.EndOfTurn] (False Cure, Death Frenzy), [Duration.UntilYourNextTurn]
+     * (Season of the Bold), [Duration.EndOfCombat], [Duration.Permanent] (Dimensional Breach,
+     * planeswalker emblems), etc. Pass [descriptionOverride] to set emblem display text.
      */
-    fun CreatePermanentGlobalTriggeredAbility(ability: TriggeredAbility): Effect =
-        CreatePermanentGlobalTriggeredAbilityEffect(ability)
-
-    /**
-     * Create a global triggered ability with a specified duration.
-     * Used for temporary triggered abilities like "Until the end of your next turn, whenever..."
-     */
-    fun CreateGlobalTriggeredAbilityWithDuration(ability: TriggeredAbility, duration: Duration): Effect =
-        CreateGlobalTriggeredAbilityWithDurationEffect(ability, duration)
+    fun CreateGlobalTriggeredAbility(
+        ability: TriggeredAbility,
+        duration: Duration = Duration.Permanent,
+        descriptionOverride: String? = null
+    ): Effect = CreateGlobalTriggeredAbilityEffect(ability, duration, descriptionOverride)
 
     /**
      * Create a permanent emblem that grants a static modification to permanents matching a filter.
