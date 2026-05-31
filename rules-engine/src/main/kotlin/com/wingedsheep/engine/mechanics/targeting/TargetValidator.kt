@@ -119,6 +119,18 @@ class TargetValidator {
                     return "Targets must be controlled by the same player"
                 }
             }
+
+            // "... from a single graveyard" — every chosen card target for this requirement
+            // must share an owner (CR uses the graveyard's owner). No-op for single-target
+            // requirements and for non-card targets.
+            if (requirement is TargetObject && requirement.sameOwner && targetsForReq.size > 1) {
+                val owners = targetsForReq.mapNotNull { target ->
+                    (target as? ChosenTarget.Card)?.ownerId
+                }
+                if (owners.toSet().size > 1) {
+                    return "Targets must be from a single graveyard"
+                }
+            }
         }
 
         return null

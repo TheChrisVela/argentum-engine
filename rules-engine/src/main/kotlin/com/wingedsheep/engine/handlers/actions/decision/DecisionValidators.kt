@@ -37,6 +37,8 @@ import com.wingedsheep.engine.core.SplitPilesDecision
 import com.wingedsheep.engine.core.TargetsResponse
 import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.core.YesNoResponse
+import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.sdk.model.EntityId
 
 /**
@@ -54,9 +56,9 @@ object DecisionValidators {
      * @param response The player's response
      * @return An error message if invalid, null if valid
      */
-    fun validate(decision: PendingDecision, response: DecisionResponse): String? {
+    fun validate(decision: PendingDecision, response: DecisionResponse, state: GameState? = null): String? {
         return when (decision) {
-            is ChooseTargetsDecision -> validateTargets(decision, response)
+            is ChooseTargetsDecision -> validateTargets(decision, response, state)
             is SelectCardsDecision -> validateSelectCards(decision, response)
             is YesNoDecision -> validateYesNo(response)
             is ChooseModeDecision -> validateModes(decision, response)
@@ -163,7 +165,11 @@ object DecisionValidators {
         return null
     }
 
-    private fun validateTargets(decision: ChooseTargetsDecision, response: DecisionResponse): String? {
+    private fun validateTargets(
+        decision: ChooseTargetsDecision,
+        response: DecisionResponse,
+        state: GameState? = null
+    ): String? {
         if (response is CancelDecisionResponse) {
             return if (decision.canCancel) null else "This decision cannot be cancelled"
         }
@@ -186,6 +192,15 @@ object DecisionValidators {
                 }
                 if (selectedIds.size > req.maxTargets) {
                     return "Too many targets for requirement $reqIndex: maximum is ${req.maxTargets}"
+                }
+                // "... from a single graveyard" — every chosen card target must share an owner.
+                if (req.sameOwner && selectedIds.size > 1 && state != null) {
+                    val owners = selectedIds.mapNotNull { id ->
+                        state.getEntity(id)?.get<OwnerComponent>()?.playerId
+                    }
+                    if (owners.toSet().size > 1) {
+                        return "Targets for requirement $reqIndex must be from a single graveyard"
+                    }
                 }
             }
         }

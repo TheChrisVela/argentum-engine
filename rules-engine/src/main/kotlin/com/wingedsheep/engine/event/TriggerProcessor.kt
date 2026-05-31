@@ -397,7 +397,8 @@ class TriggerProcessor(
                 index = index,
                 description = req.description,
                 minTargets = effectiveMinTargets,
-                maxTargets = req.count
+                maxTargets = req.count,
+                sameOwner = (req as? com.wingedsheep.sdk.scripting.targets.TargetObject)?.sameOwner == true
             )
         }
 

@@ -302,7 +302,15 @@ data class TargetObject(
      * the same player"). Enforced cross-target by `TargetValidator` at cast time; a no-op
      * for single-target requirements. Defaults to false.
      */
-    val sameController: Boolean = false
+    val sameController: Boolean = false,
+    /**
+     * When true and more than one target is chosen for this requirement, every chosen
+     * card target must be owned by the same player — i.e. drawn "from a single graveyard"
+     * (Arashin Sunshield: "exile up to two target cards from a single graveyard").
+     * Enforced cross-target by `TargetValidator` against each `ChosenTarget.Card`'s owner;
+     * a no-op for single-target requirements and for non-card targets. Defaults to false.
+     */
+    val sameOwner: Boolean = false
 ) : TargetRequirement {
     override val description: String = run {
         val base = if (id != null) {
@@ -327,7 +335,11 @@ data class TargetObject(
                 }
             }
         }
-        if (sameController) "$base controlled by the same player" else base
+        when {
+            sameController -> "$base controlled by the same player"
+            sameOwner -> "$base from a single graveyard"
+            else -> base
+        }
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): TargetRequirement {

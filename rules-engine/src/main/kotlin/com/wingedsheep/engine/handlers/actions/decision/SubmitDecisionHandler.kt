@@ -39,7 +39,7 @@ class SubmitDecisionHandler(
             return "Decision ID mismatch: expected ${pending.id}, got ${action.response.decisionId}"
         }
 
-        return DecisionValidators.validate(pending, action.response)
+        return DecisionValidators.validate(pending, action.response, state)
     }
 
     override fun execute(state: GameState, action: SubmitDecision): ExecutionResult {

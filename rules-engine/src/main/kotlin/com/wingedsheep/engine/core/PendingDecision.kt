@@ -104,7 +104,13 @@ data class TargetRequirementInfo(
     val index: Int,
     val description: String,
     val minTargets: Int = 1,
-    val maxTargets: Int = 1
+    val maxTargets: Int = 1,
+    /**
+     * When true, every chosen card target for this requirement must be owned by the same
+     * player — "from a single graveyard" (Arashin Sunshield). Enforced against each
+     * selected card's owner in [DecisionValidators.validateTargets].
+     */
+    val sameOwner: Boolean = false
 )
 
 /**

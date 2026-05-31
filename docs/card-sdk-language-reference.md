@@ -656,6 +656,13 @@ Every `TargetRequirement` carries count semantics (defaults shown):
   controlled by the same player**"). Enforced cross-target by `TargetValidator` at cast time using
   projected control; a no-op for single-target requirements. E.g.
   `TargetCreature(count = 2, sameController = true)` (Barrin's Spite).
+- `sameOwner = false` — on `TargetObject`; when `true` and the requirement picks more than one target,
+  every chosen **card** target must share an owner ("**exile up to two target cards from a single
+  graveyard**"). Enforced cross-target both at cast time (`TargetValidator`) and on triggered-ability
+  target decisions (`DecisionValidators` reads each card's `OwnerComponent`); a no-op for single-target
+  requirements and for non-card targets. E.g.
+  `TargetObject(count = 2, optional = true, filter = TargetFilter.CardInGraveyard, sameOwner = true)`
+  (Arashin Sunshield).
 
 ---
 
