@@ -77,9 +77,11 @@ class CastSpellEnumerator : ActionEnumerator {
             // for that face, then fall through so the surrounding code also enumerates the
             // primary (creature) face. The secondary face carries its own mana cost, type line,
             // target requirements, and spell effect; the primary face uses the card's top-level
-            // fields. (MODAL_DFC differs from ADVENTURE only at resolution — no exile-then-recast
-            // linkage — which is handled in StackResolver, not here.)
+            // fields. (MODAL_DFC, ADVENTURE, and OMEN differ only at resolution — exile-then-recast
+            // for Adventure, shuffle-into-library for Omen, plain graveyard for modal DFC — which
+            // is handled in StackResolver, not here.)
             if ((cardDef.layout == com.wingedsheep.sdk.model.CardLayout.ADVENTURE ||
+                    cardDef.layout == com.wingedsheep.sdk.model.CardLayout.OMEN ||
                     cardDef.layout == com.wingedsheep.sdk.model.CardLayout.MODAL_DFC) &&
                 cardDef.cardFaces.isNotEmpty()
             ) {

@@ -80,6 +80,22 @@ enum class CardLayout {
     ADVENTURE,
 
     /**
+     * Omen card (Tarkir: Dragonstorm). Structurally a sibling of [ADVENTURE]: the primary
+     * characteristics describe a permanent (a creature), and [CardDefinition.cardFaces] holds
+     * the single Omen face — an instant or sorcery with its own name, mana cost, type line,
+     * oracle text, target requirements, and spell effect.
+     *
+     * Casting flow is identical to [ADVENTURE]: from hand the owner may cast either the permanent
+     * (primary characteristics) or the Omen (face[0]'s alternative characteristics, signalled by
+     * [CastSpell.faceIndex]). The difference is at resolution — when an Omen resolves, instead of
+     * exiling itself and granting a cast-from-exile permission, the card is **shuffled into its
+     * owner's library** ("then shuffle this card into its owner's library"). From every zone other
+     * than the stack (and on the stack when not cast as the Omen) the card has only the permanent's
+     * characteristics, exactly like an adventurer.
+     */
+    OMEN,
+
+    /**
      * Modal double-faced card (CR 712). The front face is described by the primary
      * [CardDefinition] characteristics; [CardDefinition.cardFaces] holds the single back face
      * (its own name, mana cost, type line, oracle text, and — for a spell back — a `spell { }`
@@ -239,6 +255,7 @@ data class CardDefinition(
     val isDoubleFaced: Boolean get() = backFace != null
     val isSplit: Boolean get() = layout == CardLayout.SPLIT
     val isAdventure: Boolean get() = layout == CardLayout.ADVENTURE
+    val isOmen: Boolean get() = layout == CardLayout.OMEN
 
     /**
      * True if this card is a Room (CR 709.5 + 205.3h). A Room is a split-layout enchantment whose

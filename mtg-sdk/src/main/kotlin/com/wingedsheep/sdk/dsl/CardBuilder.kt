@@ -815,6 +815,22 @@ class CardBuilder(private val name: String) {
     }
 
     /**
+     * Declare the Omen face of an Omen card (Tarkir: Dragonstorm). Sets [layout] to
+     * [CardLayout.OMEN] and registers the named face. Inside the block, declare the Omen's
+     * `manaCost`, `typeLine` (e.g. `"Instant — Omen"`), `oracleText`, and a `spell { … }` block
+     * for its effect / targets.
+     *
+     * Structurally identical to [adventure]: the permanent (creature) face is described by the
+     * surrounding [CardBuilder]'s top-level fields. The difference is at resolution — an Omen
+     * shuffles its card into its owner's library instead of exiling itself with a cast-from-exile
+     * permission.
+     */
+    fun omen(name: String, init: CardFaceBuilder.() -> Unit) {
+        layout = CardLayout.OMEN
+        face(name, init)
+    }
+
+    /**
      * Declare the back face of a modal double-faced card (CR 712). Sets [layout] to
      * [CardLayout.MODAL_DFC] and registers the named back face. The front face is described by
      * the surrounding [CardBuilder]'s top-level fields; the owner casts one face or the other,
@@ -873,6 +889,19 @@ class CardBuilder(private val name: String) {
             val adventureFace = cardFaceList.first()
             require(adventureFace.script.spellEffect != null) {
                 "Adventure face '${adventureFace.name}' must declare a spell { } effect"
+            }
+        }
+
+        // OMEN layout (Tarkir: Dragonstorm): the surrounding CardBuilder fields describe the
+        // permanent face; cardFaces[0] is the Omen spell, which shuffles the card into its
+        // owner's library on resolution rather than exiling like an Adventure.
+        if (layout == CardLayout.OMEN) {
+            require(cardFaceList.size == 1) {
+                "OMEN layout requires exactly one face (the Omen): $name"
+            }
+            val omenFace = cardFaceList.first()
+            require(omenFace.script.spellEffect != null) {
+                "Omen face '${omenFace.name}' must declare a spell { } effect"
             }
         }
 

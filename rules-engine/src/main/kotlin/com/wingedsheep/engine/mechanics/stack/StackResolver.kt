@@ -1313,7 +1313,13 @@ class StackResolver(
                 val pausedExileAfterResolve = pausedExileAfterResolveComp != null
                 val pausedAdventureFaceExile = pausedCardDef?.layout == com.wingedsheep.sdk.model.CardLayout.ADVENTURE &&
                     spellComponent.faceIndex != null
-                val pausedIntended = if (pausedSelfExile || pausedFlashbackExile || pausedExileAfterResolve || pausedAdventureFaceExile) Zone.EXILE else Zone.GRAVEYARD
+                val pausedOmenFaceShuffle = pausedCardDef?.layout == com.wingedsheep.sdk.model.CardLayout.OMEN &&
+                    spellComponent.faceIndex != null
+                val pausedIntended = when {
+                    pausedSelfExile || pausedFlashbackExile || pausedExileAfterResolve || pausedAdventureFaceExile -> Zone.EXILE
+                    pausedOmenFaceShuffle -> Zone.LIBRARY
+                    else -> Zone.GRAVEYARD
+                }
 
                 // Apply RedirectZoneChange replacement effects (e.g., Festival of Embers).
                 val pausedRedirect = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.checkZoneChangeRedirect(
@@ -1345,6 +1351,12 @@ class StackResolver(
                 val pausedCounterEvents = mutableListOf<GameEvent>()
                 if (pausedDestZone == Zone.EXILE && pausedExileAfterResolveComp != null && pausedExileAfterResolveComp.withCounters.isNotEmpty()) {
                     pausedState = applyExileCounters(pausedState, spellId, pausedExileAfterResolveComp.withCounters, pausedCounterEvents)
+                }
+
+                // Omen (Tarkir: Dragonstorm): shuffle the just-added card into its owner's library.
+                if (pausedOmenFaceShuffle && pausedDestZone == Zone.LIBRARY) {
+                    pausedState = shuffleOwnerLibrary(pausedState, ownerId)
+                    pausedCounterEvents.add(LibraryShuffledEvent(ownerId))
                 }
 
                 pausedRedirect.additionalEffect?.let { extra ->
@@ -1404,7 +1416,15 @@ class StackResolver(
         // creature spell while it remains exiled.
         val adventureFaceExile = cardDef?.layout == com.wingedsheep.sdk.model.CardLayout.ADVENTURE &&
             spellComponent.faceIndex != null
-        val intendedDestination = if (selfExile || flashbackExile || exileAfterResolve || adventureFaceExile) Zone.EXILE else Zone.GRAVEYARD
+        // Omen face (Tarkir: Dragonstorm): when an Omen resolves, shuffle it into its owner's
+        // library instead of putting it in the graveyard. No cast-from-exile linkage.
+        val omenFaceShuffle = cardDef?.layout == com.wingedsheep.sdk.model.CardLayout.OMEN &&
+            spellComponent.faceIndex != null
+        val intendedDestination = when {
+            selfExile || flashbackExile || exileAfterResolve || adventureFaceExile -> Zone.EXILE
+            omenFaceShuffle -> Zone.LIBRARY
+            else -> Zone.GRAVEYARD
+        }
 
         // Apply RedirectZoneChange replacement effects (e.g., Festival of Embers
         // exiles cards that would go to your graveyard from anywhere).
@@ -1439,6 +1459,13 @@ class StackResolver(
                     timestamp = state.timestamp,
                 )
             )
+        }
+
+        // Omen (Tarkir: Dragonstorm): the card was just added to the bottom of its owner's
+        // library above — now shuffle that library and announce it.
+        if (omenFaceShuffle && destinationZone == Zone.LIBRARY) {
+            newState = shuffleOwnerLibrary(newState, ownerId)
+            events.add(LibraryShuffledEvent(ownerId))
         }
 
         // Add counters granted by ExileAfterResolveComponent (e.g., Goliath Daydreamer's dream counter).
@@ -1477,6 +1504,21 @@ class StackResolver(
         )
 
         return ExecutionResult.success(newState, events)
+    }
+
+    /**
+     * Shuffle [ownerId]'s library after an Omen spell has been added to it on resolution
+     * (Tarkir: Dragonstorm — "then shuffle this card into its owner's library"). Mirrors
+     * [com.wingedsheep.engine.handlers.effects.library.ShuffleLibraryExecutor]: clears any
+     * known top-of-library positions before shuffling, then advances the deterministic RNG.
+     * The caller is responsible for emitting the [LibraryShuffledEvent].
+     */
+    private fun shuffleOwnerLibrary(state: GameState, ownerId: EntityId): GameState {
+        val libraryZone = ZoneKey(ownerId, Zone.LIBRARY)
+        val cleared = com.wingedsheep.engine.handlers.effects.library.LibraryRevealUtils
+            .clearLibraryReveals(state, ownerId)
+        val (library, advanced) = cleared.nextRandom { shuffle(cleared.getZone(libraryZone)) }
+        return advanced.copy(zones = advanced.zones + (libraryZone to library))
     }
 
     /**

@@ -56,7 +56,7 @@ section; do not let SDK additions land without a corresponding doc update.
 - `loyaltyAbility(±N) { ... }` — planeswalker loyalty abilities.
 - `replacementEffect { ... }` — "instead/if … would" replacement.
 - `keywords(...)` / `keywordAbility(...)` / `keywordAbilities(...)` — add keyword abilities.
-- `spell { ... }` — define the spell payload for instants/sorceries and Adventure faces.
+- `spell { ... }` — define the spell payload for instants/sorceries and Adventure / Omen faces.
 
 ---
 
@@ -72,12 +72,16 @@ section; do not let SDK additions land without a corresponding doc update.
   half (Room) carries triggered/activated/static abilities instead.
 - `ADVENTURE` — primary face is a creature, `cardFaces[0]` is an instant/sorcery Adventure (CR 715). Resolving the
   Adventure exiles the card and grants permission to cast the creature from exile.
+- `OMEN` — primary face is a permanent (creature), `cardFaces[0]` is an instant/sorcery Omen (Tarkir: Dragonstorm).
+  Casts exactly like an Adventure (creature face, or Omen via `CastSpell.faceIndex = 0`), but resolving the Omen
+  **shuffles the card into its owner's library** instead of exiling it — no cast-from-exile linkage. DSL:
+  `card { omen("Name") { spell { … } } }`.
 - `MODAL_DFC` — primary characteristics are the front face, `cardFaces[0]` is the back face (CR 712). Cast **one**
   face from hand (front via primary characteristics, back via `CastSpell.faceIndex = 0`), never both. Unlike
   ADVENTURE there is no exile-then-recast linkage — a spell back resolves as an ordinary spell (graveyard, or exile
   when its script sets `selfExileOnResolve` via `spell { selfExile() }`). DSL: `card { modalBack("Name") { spell { … } } }`.
 
-**`CardFace` (SPLIT / ADVENTURE / MODAL_DFC)**
+**`CardFace` (SPLIT / ADVENTURE / OMEN / MODAL_DFC)**
 
 - `name` — face name.
 - `manaCost` — face mana cost.
@@ -2122,6 +2126,12 @@ Card authors rarely reference these directly; they are created/updated by the ma
   keeps the grant alive across end-of-turn cleanup. Emits `CardPlottedEvent` / `ClientEvent.CardPlotted`.
 - **Adventure (CR 715)** — `layout = ADVENTURE` + `cardFaces[0]` Adventure spell; DSL:
   `card { adventure("Name") { spell { … } } }`.
+- **Omen (Tarkir: Dragonstorm)** — `layout = OMEN` + `cardFaces[0]` Omen spell; DSL:
+  `card { omen("Name") { spell { … } } }`. Reuses the Adventure cast/enumeration path (`enumerateSecondaryFace`,
+  cast via `CastSpell.faceIndex = 0`), but `StackResolver` routes the resolving Omen to `Zone.LIBRARY` and shuffles
+  the owner's library (`shuffleOwnerLibrary` + `LibraryShuffledEvent`) instead of exiling with a `MayPlayPermission`.
+  No new effect/component — the layout enum drives the resolution fork. First user: Dirgur Island Dragon //
+  Skimming Strike.
 - **Modal DFC (CR 712)** — `layout = MODAL_DFC` + `cardFaces[0]` back face; DSL:
   `card { modalBack("Name") { imageUri = …; spell { selfExile(); … } } }`. Cast either face from hand (back via
   `CastSpell.faceIndex = 0`); reuses the Adventure cast/enumeration path (`enumerateSecondaryFace`) but with no
