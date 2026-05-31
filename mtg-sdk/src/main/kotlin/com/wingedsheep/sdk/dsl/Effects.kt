@@ -2165,8 +2165,8 @@ object Effects {
      * Let a creature attack this turn as though it didn't have defender (Krotiq Nestguard).
      * The activated/temporary counterpart to the static [com.wingedsheep.sdk.scripting.CanAttackDespiteDefender].
      */
-    fun CanAttackThisTurn(target: EffectTarget = EffectTarget.Self): Effect =
-        com.wingedsheep.sdk.scripting.effects.CanAttackThisTurnEffect(target)
+    fun CanAttackDespiteDefenderThisTurn(target: EffectTarget = EffectTarget.Self): Effect =
+        com.wingedsheep.sdk.scripting.effects.CanAttackDespiteDefenderThisTurnEffect(target)
 
     /**
      * Grant a creature "can't attack or block unless its controller pays {X} for each [creature type]

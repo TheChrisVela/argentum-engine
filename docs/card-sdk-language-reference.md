@@ -388,7 +388,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `CantBlockGroupEffect(filter, condition?)` — group-scoped can't-block.
 - `Effects.Suspect(target)` — target becomes Suspected (MKM keyword). Composite: `SetSuspectedEffect` (named status, CR 701.60d dedup) + `GrantKeywordEffect(MENACE)` + `CantBlockEffect`.
 - `RemoveFromCombatEffect(target)` — yank target out of combat.
-- `Effects.CanAttackThisTurn(target = Self)` (`CanAttackThisTurnEffect`) — target can attack this
+- `Effects.CanAttackDespiteDefenderThisTurn(target = Self)` (`CanAttackDespiteDefenderThisTurnEffect`) — target can attack this
   turn as though it didn't have defender. Adds a transient `CanAttackDespiteDefenderThisTurnComponent`
   honored by the defender attack-restriction rule and cleaned up at end of turn. The
   activated/temporary counterpart to the static `CanAttackDespiteDefender` ability (Krotiq Nestguard).

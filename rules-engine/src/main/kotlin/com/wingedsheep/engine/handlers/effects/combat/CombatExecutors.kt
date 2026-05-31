@@ -24,7 +24,7 @@ class CombatExecutors(
         CantBlockExecutor(),
         RemoveFromCombatExecutor(),
         MarkMustAttackThisTurnExecutor(),
-        CanAttackThisTurnExecutor(),
+        CanAttackDespiteDefenderThisTurnExecutor(),
         RedirectNextDamageExecutor(),
         RedirectCombatDamageToControllerExecutor(),
         GrantAttackBlockTaxPerCreatureTypeExecutor(),

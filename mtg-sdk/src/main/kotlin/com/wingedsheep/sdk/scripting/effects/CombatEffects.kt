@@ -432,9 +432,9 @@ data class MarkMustAttackThisTurnEffect(
  *
  * @property target The creature gaining the permission (typically EffectTarget.Self).
  */
-@SerialName("CanAttackThisTurn")
+@SerialName("CanAttackDespiteDefenderThisTurn")
 @Serializable
-data class CanAttackThisTurnEffect(
+data class CanAttackDespiteDefenderThisTurnEffect(
     val target: EffectTarget = EffectTarget.Self
 ) : Effect {
     override val description: String =

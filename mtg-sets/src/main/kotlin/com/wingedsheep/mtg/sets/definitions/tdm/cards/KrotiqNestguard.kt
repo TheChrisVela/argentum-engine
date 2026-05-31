@@ -26,7 +26,7 @@ val KrotiqNestguard = card("Krotiq Nestguard") {
 
     activatedAbility {
         cost = Costs.Mana("{2}{G}")
-        effect = Effects.CanAttackThisTurn()
+        effect = Effects.CanAttackDespiteDefenderThisTurn()
         description = "{2}{G}: This creature can attack this turn as though it didn't have defender."
     }
 
