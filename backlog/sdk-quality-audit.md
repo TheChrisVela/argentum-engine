@@ -166,32 +166,59 @@ User counts are caller _files_ in `mtg-sets/src/main` (worktree copies excluded)
 - **Fix:** Add `spellFilter: GameObjectFilter = GameObjectFilter.InstantOrSorcery` to both.
 
 ### 9. Single-card helpers in `EffectPatterns` (should be inlined)
-- **Standard:** #6 (no single-use patterns)
-- **Why:** ~15 helpers are whole-card scripts lifted into `EffectPatterns` / its delegate `*Patterns`
-  objects, each with exactly one caller, none a named MTG mechanic.
+- **Standards:** #6 (no single-use patterns), #4 (each is a `CompositeEffect` 1:1 recipe — pure
+  composition of atoms already in the facade, no new primitive earned).
+- **Why:** 15 helpers are whole-card scripts lifted into the `EffectPatterns` facade and its delegate
+  `*Patterns` objects, each with **exactly one caller** and **none a named MTG mechanic** (verified by
+  grepping `mtg-sets/src/main`, worktree copies excluded). They inflate the shared SDK surface with
+  card-specific scripts that read as reusable building blocks but never get a second user — the exact
+  "name the card, not the mechanic" smell. (Contrast the legitimately-kept compositions in
+  *Explicitly cleared*: scry/surveil/mill/loot/connive/factOrFiction/wheelEffect, each a real keyword
+  or a multi-card shape.)
+- **Two-layer structure (both must go):** Most helpers are a one-line facade entry in
+  `EffectPatterns.kt` that delegates to a body in a `*Patterns` delegate object. Inlining each removes
+  **both** the facade one-liner **and** the delegate body. The exception is
+  `putCreatureFromHandSharingTypeWithTapped`, whose `CompositeEffect` body lives inline in
+  `EffectPatterns.kt:387` (no delegate). The `_count`-style variable references and stored-collection
+  names the bodies use (`opponentHand_count`, `tappedSubtypes`, …) move verbatim into the card.
 
-  | Helper | Defined | Sole caller |
-  |---|---|---|
-  | `headGames` | EffectPatterns.kt:206 | HeadGames |
-  | `patriarchsBidding` | EffectPatterns.kt:368 | PatriarchsBidding |
-  | `putCreatureFromHandSharingTypeWithTapped` | EffectPatterns.kt:387 | CrypticGateway |
-  | `revealUntilNonlandModifyStats` | EffectPatterns.kt:297 | GoblinMachinist |
-  | `revealUntilCreatureTypeToBattlefield` | EffectPatterns.kt:300 | RiptideShapeshifter |
-  | `searchTargetLibraryExile` | EffectPatterns.kt:288 | SupremeInquisitor |
-  | `searchAndExileLinked` | EffectPatterns.kt:426 | ParallelThoughts |
-  | `eachPlayerRevealCreaturesCreateTokens` | EffectPatterns.kt:461 | KamahlsSummons |
-  | `revealAndOpponentChooses` | EffectPatterns.kt:303 | AnimalMagnetism |
-  | `chooseCreatureTypeMustAttack` | EffectPatterns.kt:365 | WalkingDesecration |
-  | `chooseCreatureTypeShuffleGraveyardIntoLibrary` | EffectPatterns.kt:341 | ElvishSoultiller |
-  | `destroyAllExceptStoredSubtypes` | EffectPatterns.kt:371 | HarshMercy |
-  | `searchLibraryNthFromTop` | EffectPatterns.kt:279 | LongTermPlans |
-  | `lookAtTargetLibraryAndDiscard` | EffectPatterns.kt:285 | CruelFate |
-  | `lookAtTopXAndPutOntoBattlefield` | EffectPatterns.kt:324 | FamishedWorldsire |
+  | Helper | Facade (`EffectPatterns.kt`) | Body (delegate) | Sole caller | Composes (inline recipe) |
+  |---|---|---|---|---|
+  | `headGames` | :206 | `HandPatterns.kt:436` | `ons/HeadGames` | Gather opp hand → move to their library top → Gather library → `ChooseUpTo(opponentHand_count)` → to hand → shuffle |
+  | `patriarchsBidding` | :368 | `CreatureTypePatterns.kt:219` | `ons/PatriarchsBidding` | `EachPlayerChoosesCreatureType` → per-player Gather graveyard creatures of chosen type → to battlefield |
+  | `putCreatureFromHandSharingTypeWithTapped` | :387 *(inline)* | — | `ons/CrypticGateway` | Gather `TappedAsCost` → `GatherSubtypes` → Gather hand creatures sharing a tapped subtype → `ChooseUpTo(1)` → to battlefield |
+  | `revealUntilNonlandModifyStats` | :297 | `LibraryPatterns.kt:457` | `ons/GoblinMachinist` | `GatherUntilMatch(nonland)` → reveal → `ModifyStats` → move |
+  | `revealUntilCreatureTypeToBattlefield` | :300 | `LibraryPatterns.kt:481` | `ons/RiptideShapeshifter` | `ChooseCreatureType` → `GatherUntilMatch(type)` → reveal → to battlefield → shuffle |
+  | `searchTargetLibraryExile` | :288 | `LibraryPatterns.kt:388` | `ons/SupremeInquisitor` | Gather target's library → select → exile → shuffle |
+  | `searchAndExileLinked` | :426 | `ExilePatterns.kt:55` | `scg/ParallelThoughts` | Gather library → select → exile (linked to source) → shuffle |
+  | `eachPlayerRevealCreaturesCreateTokens` | :461 | `ExilePatterns.kt:190` | `ons/KamahlsSummons` | per-player Gather hand creatures → select → `CreateTokenEffect` copies |
+  | `revealAndOpponentChooses` | :303 | `LibraryPatterns.kt:557` | `ons/AnimalMagnetism` | Gather top N → `Chooser.Opponent` selects → split move (kept vs rest) |
+  | `chooseCreatureTypeMustAttack` | :365 | `CreatureTypePatterns.kt:203` | `ons/WalkingDesecration` | `ChooseOption(CREATURE_TYPE)` → `ForEachInGroup(MarkMustAttackThisTurn)` |
+  | `chooseCreatureTypeShuffleGraveyardIntoLibrary` | :341 | `CreatureTypePatterns.kt:89` | `lgn/ElvishSoultiller` | `ChooseCreatureType` → Gather graveyard of type → shuffle into library |
+  | `destroyAllExceptStoredSubtypes` | :371 | `CreatureTypePatterns.kt:242` | `ons/HarshMercy` | Gather creatures → `FilterCollection(exclude stored subtypes)` → destroy |
+  | `searchLibraryNthFromTop` | :279 | `LibraryPatterns.kt:305` | `scg/LongTermPlans` | Gather library → select → reorder chosen to Nth-from-top → shuffle/move |
+  | `lookAtTargetLibraryAndDiscard` | :285 | `LibraryPatterns.kt:359` | `por/CruelFate` | Gather top of target's library → select → split move |
+  | `lookAtTopXAndPutOntoBattlefield` | :324 | `LibraryPatterns.kt:627` | `eoe/FamishedWorldsire` | Gather top X → select by filter → to battlefield + rest |
 
-- **Fix:** Inline into each card definition; keep only atomic primitives + real mechanics in the
-  facade. Borderline (lower priority, defensible non-trivial shapes): `searchMultipleZones`,
-  `eachOpponentMayPutFromHand`, `chooseCreatureTypeUntap`, `eachPlayerSearchesLibrary`,
-  `shuffleAndExileTopPlayFree` (Mind's Desire / Storm-era shape).
+- **Users:** 1 each (all single-caller; counts re-verified, no helper has gained a second user).
+- **Fix:** Inline each body into a `private val`/local `CompositeEffect` in its card definition (the
+  recipes above are the exact moves), then delete the facade entry **and** the delegate body. Keep
+  only atomic primitives + real mechanics in the facade. Do this **alongside the LOW dead-facade
+  cleanup** (`readTheRunes`, `destroyAllSharingTypeWithSacrificed`, `takeFromLinkedExile`,
+  `eachPlayerReturnsPermanentToHand`, `chooseCreatureTypeGainControl` — all 0-caller bodies in these
+  same delegate objects): removing both sets empties `CreatureTypePatterns` / `ExilePatterns` of
+  card-specific scripts, after which the surviving entries are only real mechanics. No
+  `card-sdk-language-reference.md` change is needed (these are facade conveniences, not documented SDK
+  building blocks). Spot-check: each card already has a scenario test, so inlining is behavior-neutral
+  and regression is caught by the existing suite.
+- **Borderline — keep for now (single-caller but defensible non-trivial shapes):**
+  `searchMultipleZones` (`LibraryPatterns.kt:259`, `lgn/DarkSupplicant`),
+  `eachOpponentMayPutFromHand` (`HandPatterns.kt:160`, `ons/TemptingWurm`),
+  `chooseCreatureTypeUntap` (`CreatureTypePatterns.kt:142`, `ons/RiptideChronologist`),
+  `eachPlayerSearchesLibrary` (`MiscPatterns.kt:152`, `ons/WeirdHarvest`),
+  `shuffleAndExileTopPlayFree` (`ExilePatterns.kt:134`, `scg/MindsDesire` — the Storm-era
+  "exile top, play free" shape likely to recur). These read as parameterized shapes a second card
+  could plausibly reach; inline only if no second user materializes.
 
 ---
 
