@@ -15,7 +15,7 @@ data class ComponentContainer(
      * Get a component by type, or null if not present.
      */
     inline fun <reified T : Component> get(): T? {
-        return components[T::class.qualifiedName] as? T
+        return components[T::class.java.name] as? T
     }
 
     /**
@@ -31,21 +31,21 @@ data class ComponentContainer(
      * Check if a component type is present.
      */
     inline fun <reified T : Component> has(): Boolean {
-        return components.containsKey(T::class.qualifiedName)
+        return components.containsKey(T::class.java.name)
     }
 
     /**
      * Add or replace a component (returns new container).
      */
     inline fun <reified T : Component> with(component: T): ComponentContainer {
-        return ComponentContainer(components + (T::class.qualifiedName!! to component))
+        return ComponentContainer(components + (T::class.java.name to component))
     }
 
     /**
      * Remove a component type (returns new container).
      */
     inline fun <reified T : Component> without(): ComponentContainer {
-        return ComponentContainer(components - T::class.qualifiedName!!)
+        return ComponentContainer(components - T::class.java.name)
     }
 
     /**
@@ -76,7 +76,7 @@ data class ComponentContainer(
      * Used by the of() factory method.
      */
     fun withComponent(component: Component): ComponentContainer {
-        val key = component::class.qualifiedName!!
+        val key = component::class.java.name
         return ComponentContainer(components + (key to component))
     }
 }
