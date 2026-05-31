@@ -470,8 +470,6 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 - `ModalEffect.chooseOne { mode(...) }` / `ModalEffect.chooseN(n) { ... }` — modal effect block.
 - `ChooseActionEffect(choices)` — player picks from a list of effects.
-- `ChooseColorAndGrantProtectionToTargetEffect(target)` — pick a color, grant protection to target.
-- `ChooseColorAndGrantProtectionToGroupEffect(filter)` — same, for a group.
 - `GrantProtectionFromColor(color, target, duration)` — grant protection from a **fixed** color to a target (no player choice); a thin recipe over `GrantKeyword("PROTECTION_FROM_<COLOR>")`. "{W}: Target creature gains protection from red until end of turn." (Crimson Acolyte).
 - `ChooseColorThenEffect(whenChosen)` — pick a color, then run a function of that color.
 - `Effects.ChooseNumberThen(then, minValue=0, maxValue=16, prompt)` — pick a number in `[minValue, maxValue]`,
@@ -480,6 +478,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   multi-step cards (Void: destroy all artifacts/creatures with that mana value, then a target player reveals their
   hand and discards all nonland cards with that mana value).
 - `GrantHexproofFromChosenColorEffect(target)` — hexproof from chosen color.
+- `GrantProtectionFromChosenColorEffect(target)` — protection from chosen color. Must run inside `ChooseColorThen`; wrap in `ForEachInGroup` for the group case (Akroma's Blessing: "Creatures you control gain protection from the chosen color").
 - `ChooseCreatureTypeEffect(...)` — pause for creature-type pick.
 - `SelectTargetEffect(...)` — have a player pick from a valid set.
 - `SeparatePermanentsIntoPilesEffect(filter, piles)` — divvy into piles (Fact-or-Fiction shape).
@@ -1856,8 +1855,7 @@ staticAbility { ability = GrantLandwalkOfChosenType() }
 
 - `ChooseActionEffect(choices)` — pick one effect from a list.
 - `ChooseColorThenEffect(whenChosen)` — pick a color, then apply a function of the color.
-- `ChooseColorAndGrantProtectionTo{Target,Group}Effect` — color → protection from that color.
-- `GrantHexproofFromChosenColorEffect(target)` — same shape, hexproof.
+- `GrantHexproofFromChosenColorEffect(target)` / `GrantProtectionFromChosenColorEffect(target)` — atoms that run inside `ChooseColorThen` and read the chosen color from context (hexproof / protection from that color). Wrap in `ForEachInGroup` for "creatures you control gain protection from the chosen color" (Akroma's Blessing).
 - `ChooseCreatureTypeEffect(...)` — pause for creature-type selection.
 - `Effects.ChooseCardName(storeAs, prompt?, excludeBasicLandNames?)` — name a card (`ChooseOptionEffect(OptionType.CARD_NAME)`); the chosen name is stored in `chosenValues[storeAs]`. Options are every registry card name (searchable list, not free text); `excludeBasicLandNames` drops the five basics. Match cards by it with `GameObjectFilter.namedFromVariable(storeAs)`. (Desperate Research)
 - `Effects.StoreCardName(from, storeAs)` — capture the name of the first card in collection `from` into `chosenValues[storeAs]`. The "choose a card, then act on cards of that name" counterpart to `ChooseCardName`. (Lobotomy)

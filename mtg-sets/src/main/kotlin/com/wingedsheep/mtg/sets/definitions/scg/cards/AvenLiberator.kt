@@ -31,7 +31,7 @@ val AvenLiberator = card("Aven Liberator") {
     triggeredAbility {
         trigger = Triggers.TurnedFaceUp
         val t = target("target", Targets.CreatureYouControl)
-        effect = Effects.ChooseColorAndGrantProtectionToTarget(t)
+        effect = Effects.ChooseColorThen(Effects.GrantProtectionFromChosenColor(t))
     }
 
     morph = "{3}{W}"

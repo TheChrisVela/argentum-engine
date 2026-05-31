@@ -30,7 +30,7 @@ val JarethLeonineTitan = card("Jareth, Leonine Titan") {
 
     activatedAbility {
         cost = Costs.Mana("{W}")
-        effect = Effects.ChooseColorAndGrantProtectionToTarget(EffectTarget.Self)
+        effect = Effects.ChooseColorThen(Effects.GrantProtectionFromChosenColor(EffectTarget.Self))
     }
 
     metadata {

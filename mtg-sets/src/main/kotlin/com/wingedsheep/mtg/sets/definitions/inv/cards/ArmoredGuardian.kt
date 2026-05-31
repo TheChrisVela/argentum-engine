@@ -30,7 +30,7 @@ val ArmoredGuardian = card("Armored Guardian") {
     activatedAbility {
         cost = Costs.Mana("{1}{W}{W}")
         val t = target("target", Targets.CreatureYouControl)
-        effect = Effects.ChooseColorAndGrantProtectionToTarget(t)
+        effect = Effects.ChooseColorThen(Effects.GrantProtectionFromChosenColor(t))
         description = "{1}{W}{W}: Target creature you control gains protection from the color of your choice until end of turn."
     }
 

@@ -32,11 +32,10 @@ import com.wingedsheep.sdk.scripting.effects.BecomeCreatureEffect
 import com.wingedsheep.sdk.scripting.effects.EachPermanentBecomesCopyOfTargetEffect
 import com.wingedsheep.sdk.scripting.effects.SetBasePowerEffect
 
-import com.wingedsheep.sdk.scripting.effects.ChooseColorAndGrantProtectionToGroupEffect
-import com.wingedsheep.sdk.scripting.effects.ChooseColorAndGrantProtectionToTargetEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseColorThenEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseNumberThenEffect
 import com.wingedsheep.sdk.scripting.effects.GrantHexproofFromChosenColorEffect
+import com.wingedsheep.sdk.scripting.effects.GrantProtectionFromChosenColorEffect
 import com.wingedsheep.sdk.scripting.effects.GrantCantBeBlockedByChosenColorEffect
 import com.wingedsheep.sdk.scripting.effects.GrantToxicEffect
 import com.wingedsheep.sdk.scripting.effects.CantAttackGroupEffect
@@ -1400,24 +1399,6 @@ object Effects {
     // =========================================================================
 
     /**
-     * Choose a color and grant protection from that color to a group of creatures.
-     * "Choose a color. Creatures you control gain protection from the chosen color until end of turn."
-     */
-    fun ChooseColorAndGrantProtection(
-        filter: GroupFilter = GroupFilter(GameObjectFilter.Creature.youControl()),
-        duration: Duration = Duration.EndOfTurn
-    ): Effect = ChooseColorAndGrantProtectionToGroupEffect(filter, duration)
-
-    /**
-     * Choose a color and grant protection from that color to a single target.
-     * "{W}: This creature gains protection from the color of your choice until end of turn."
-     */
-    fun ChooseColorAndGrantProtectionToTarget(
-        target: EffectTarget = EffectTarget.Self,
-        duration: Duration = Duration.EndOfTurn
-    ): Effect = ChooseColorAndGrantProtectionToTargetEffect(target, duration)
-
-    /**
      * Grant protection from a fixed color to a target (no player choice).
      * "{W}: Target creature gains protection from red until end of turn." (Crimson Acolyte)
      *
@@ -1474,6 +1455,17 @@ object Effects {
         target: EffectTarget = EffectTarget.ContextTarget(0),
         duration: Duration = Duration.EndOfTurn
     ): Effect = GrantHexproofFromChosenColorEffect(target, duration)
+
+    /**
+     * Grant "protection from the chosen color" to a target. Must run inside a
+     * [ChooseColorThen] block — reads the chosen color from the effect context.
+     * Pair with [GrantHexproofFromChosenColor] / [GrantCantBeBlockedByChosenColor]
+     * under one [ChooseColorThen] for multi-grant cards.
+     */
+    fun GrantProtectionFromChosenColor(
+        target: EffectTarget = EffectTarget.ContextTarget(0),
+        duration: Duration = Duration.EndOfTurn
+    ): Effect = GrantProtectionFromChosenColorEffect(target, duration)
 
     /**
      * Grant "can't be blocked by creatures of the chosen color" to a target.

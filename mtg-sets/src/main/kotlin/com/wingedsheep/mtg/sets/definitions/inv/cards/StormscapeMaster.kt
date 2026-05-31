@@ -28,7 +28,7 @@ val StormscapeMaster = card("Stormscape Master") {
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{W}{W}"), Costs.Tap)
         val t = target("target", Targets.Creature)
-        effect = Effects.ChooseColorAndGrantProtectionToTarget(t)
+        effect = Effects.ChooseColorThen(Effects.GrantProtectionFromChosenColor(t))
     }
 
     activatedAbility {

@@ -185,8 +185,6 @@ val engineSerializersModule = SerializersModule {
         subclass(CommanderZoneChoiceContinuation::class)
         subclass(PayOrSufferContinuation::class)
         subclass(PayOrSufferChoiceContinuation::class)
-        subclass(ChooseColorProtectionContinuation::class)
-        subclass(ChooseColorProtectionTargetContinuation::class)
         subclass(ChooseColorThenContinuation::class)
         subclass(ChooseNumberThenContinuation::class)
         subclass(ChooseManaColorContinuation::class)

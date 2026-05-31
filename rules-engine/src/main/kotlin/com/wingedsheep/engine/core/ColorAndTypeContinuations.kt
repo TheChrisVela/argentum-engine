@@ -5,53 +5,8 @@ import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.effects.Effect
-import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import kotlinx.serialization.Serializable
-
-/**
- * Resume after player chooses a color for protection granting effects.
- *
- * Used for effects like Akroma's Blessing: "Choose a color. Creatures you control
- * gain protection from the chosen color until end of turn."
- *
- * @property controllerId The player who controls the effect
- * @property sourceId The spell/ability that created this effect
- * @property sourceName Name of the source for event messages
- * @property filter Which creatures are affected
- * @property duration How long the effect lasts
- */
-@Serializable
-data class ChooseColorProtectionContinuation(
-    override val decisionId: String,
-    val controllerId: EntityId,
-    val sourceId: EntityId?,
-    val sourceName: String?,
-    val filter: GroupFilter,
-    val duration: Duration
-) : ContinuationFrame
-
-/**
- * Resume after player chooses a color for single-target protection granting effects.
- *
- * Used for effects like Jareth, Leonine Titan: "{W}: Jareth gains protection
- * from the color of your choice until end of turn."
- *
- * @property controllerId The player who controls the effect
- * @property sourceId The ability source that created this effect
- * @property sourceName Name of the source for event messages
- * @property targetEntityId The specific entity that gains protection
- * @property duration How long the effect lasts
- */
-@Serializable
-data class ChooseColorProtectionTargetContinuation(
-    override val decisionId: String,
-    val controllerId: EntityId,
-    val sourceId: EntityId?,
-    val sourceName: String?,
-    val targetEntityId: EntityId,
-    val duration: Duration
-) : ContinuationFrame
 
 /**
  * Resume after player chooses a color for a [com.wingedsheep.sdk.scripting.effects.ChooseColorThenEffect].

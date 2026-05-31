@@ -25,10 +25,13 @@
                 "id": "ability_6",
                 "trigger": "TurnFaceUpEvent",
                 "effect": {
-                    "type": "ChooseColorAndGrantProtectionToTarget",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "target"
+                    "type": "ChooseColorThen",
+                    "then": {
+                        "type": "GrantProtectionFromChosenColor",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
                     }
                 },
                 "targetRequirement": {

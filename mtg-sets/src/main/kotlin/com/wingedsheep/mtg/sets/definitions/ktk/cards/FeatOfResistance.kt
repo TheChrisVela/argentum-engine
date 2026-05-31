@@ -22,7 +22,7 @@ val FeatOfResistance = card("Feat of Resistance") {
     spell {
         val t = target("target", Targets.CreatureYouControl)
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, t)
-            .then(Effects.ChooseColorAndGrantProtectionToTarget(t))
+            .then(Effects.ChooseColorThen(Effects.GrantProtectionFromChosenColor(t)))
     }
 
     metadata {
