@@ -926,7 +926,7 @@ Named sugar for the common cases; reach for the factories for any other combinat
 
 **Factories** (axes: `damageType` × `recipient` × `sourceFilter` × `binding` for outgoing; `source` × `binding` for incoming):
 
-- `dealsDamage(damageType?, recipient?, sourceFilter?, binding?)` — outgoing-damage trigger. Pick `DamageType.{Any,Combat,NonCombat}`, `RecipientFilter.{Any,AnyPlayer,AnyPlayerOrPlaneswalker,AnyCreature,…}`, an optional source `GameObjectFilter`, and `TriggerBinding.{SELF,ANY,ATTACHED}`. Covers "deals combat damage to a player or planeswalker", "creature you control deals combat damage to a player" (`binding = ANY` + `sourceFilter = Creature.youControl()`), "nontoken creature you control deals…" (`.nontoken()`), and "enchanted creature deals damage" (`binding = ATTACHED`).
+- `dealsDamage(damageType?, recipient?, sourceFilter?, binding?, requireExcess?)` — outgoing-damage trigger. Pick `DamageType.{Any,Combat,NonCombat}`, `RecipientFilter.{Any,AnyPlayer,AnyPlayerOrPlaneswalker,AnyCreature,…}`, an optional source `GameObjectFilter`, and `TriggerBinding.{SELF,ANY,ATTACHED}`. Covers "deals combat damage to a player or planeswalker", "creature you control deals combat damage to a player" (`binding = ANY` + `sourceFilter = Creature.youControl()`), "nontoken creature you control deals…" (`.nontoken()`), and "enchanted creature deals damage" (`binding = ATTACHED`). Pass `requireExcess = true` to fire only when the recipient was dealt damage past lethal (CR 120.4a) — Fall of Cair Andros' "is dealt excess noncombat damage". Read the excess via `DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_EXCESS_DAMAGE_AMOUNT)`. **Combat caveat:** combat-damage state-based actions run *before* trigger detection, so a non-indestructible recipient that dies to the same combat-damage event has already left the battlefield when a `RecipientFilter.CreatureOpponentControls`-style filter reads its `ControllerComponent` — the filter silently fails (no last-known-info path yet). A `requireExcess = true` + `DamageType.Combat` trigger therefore only fires reliably on recipients that survive (indestructible / high toughness). Fall of Cair Andros is unaffected because it gates on `DamageType.NonCombat`, where the trigger is detected from the damage event before the kill SBA.
 - `takesDamage(source?, binding?)` — incoming-damage trigger. Pick `SourceFilter.{Any,Creature,Spell,Combat,NonCombat,HasColor(c),…}` and `TriggerBinding.{SELF,ATTACHED}`. Covers "damaged by a creature/spell" and "enchanted creature is dealt damage" (`binding = ATTACHED`, Aurification / Frozen Solid shape).
 - `becomesTapped(binding?, filter?)` — "becomes tapped" trigger. `BecomesTapped` is the SELF constant; pass `binding = TriggerBinding.ANY` with an optional `filter: GameObjectFilter` for "whenever a [filter] becomes tapped" (e.g. `GameObjectFilter.CreatureOrLand` — Temporal Distortion). The filter is matched against the tapped permanent via projected state.
 
@@ -1166,11 +1166,21 @@ Triggers.youCastSpell(
       upcoming own turn rather than an intervening opponent turn. (Kav Landseeker.)
 - **Event-based delayed triggers** — pass `trigger = <TriggerSpec>` (instead of `step`) and the
   delayed ability fires whenever a matching *event* occurs, staying resident until `expiry`
-  (`DelayedTriggerExpiry.EndOfTurn`) removes it. `watchedTarget` scopes it to one entity (e.g.
-  "when **that** creature deals combat damage / dies this turn" — Long River Lurker, Deflecting
-  Palm). Matching delegates to the same `TriggerMatcher` the battlefield triggers use, so supported
-  events include `DealsDamageEvent`, `ZoneChangeEvent`, the internal `DamagePreventedEvent`, and the
-  attack-declaration events `YouAttackEvent` / `AttackEvent`.
+  (`DelayedTriggerExpiry.EndOfTurn`) removes it. Supported events include `DealsDamageEvent`,
+  `ZoneChangeEvent`, the internal `DamagePreventedEvent`, and the attack-declaration events
+  `YouAttackEvent` / `AttackEvent`. There are two ways to scope which events match:
+  - **Entity-scoped** — set `watchedTarget` to bind the trigger to one concrete entity (resolved at
+    creation time): "when **that** creature deals combat damage / dies this turn" (Long River Lurker,
+    Deflecting Palm). Only `DealsDamageEvent` (scoped on the damage source) and `ZoneChangeEvent`
+    (scoped on the moving entity) use this; the spec's `GameObjectFilter` is *not* applied — the
+    watched entity is the whole scope.
+  - **Filter-scoped** — leave `watchedTarget` null and let the `TriggerSpec`'s `GameObjectFilter` +
+    `TriggerBinding` describe the group, exactly like a battlefield-resident trigger. Use this for
+    "whenever a creature you control enters this turn, …" (Thunder of Unity chapters II/III):
+    `trigger = Triggers.entersBattlefield(GameObjectFilter.Creature.youControl(), binding = ANY)`.
+    Matching delegates to the same `TriggerMatcher` the battlefield triggers use, so the filter's
+    type **and** controller predicates are honored — it fires only for *your* creatures, not every
+    permanent that enters. (`YouAttackEvent` / `AttackEvent` are always filter-scoped this way.)
   - `fireOnce = true` makes it a **one-shot**: it's consumed the first time it fires, then gone —
     "when you **next** [event] this turn". Combine with `trigger = Triggers.YouAttack` for the
     common "when you next attack this turn, …" template (All-Out Assault: untap each creature you
@@ -1549,6 +1559,17 @@ keywordAbilities(KeywordAbility.Protection(Color.BLUE), KeywordAbility.Annihilat
 - `TargetControlsCreature(target)` — target player has a creature.
 - `TargetControlsLand(target)` — target player has a land.
 - `TargetMatchesFilter(filter, targetIndex = 0)` — the context target matches a `GameObjectFilter`.
+- `IfTargetTookExcessDamage(targetIndex = 0)` — true post-damage when the target creature's marked
+  damage strictly exceeds its (projected) toughness. Chain after `Effects.DealDamage` in a composite
+  so the marked-damage update applies before the condition reads it. Used by Orbital Plunge ("If
+  excess damage was dealt this way, create a Lander token"). Semantics caveat: the read is
+  `marked > toughness` regardless of which preceding step dealt the damage — Composite doesn't
+  interleave SBA or fire triggers mid-chain, so for the canonical "deal N, then check" pipeline
+  this is equivalent to "did the preceding step deal excess". A chain that deals damage in
+  multiple steps within the same composite would see cumulative damage; reach for a different
+  condition there. Defensive guards return false for non-creature targets and targets no longer
+  on the battlefield (unreachable under `Targets.Creature` + Composite, retained for future
+  callers).
 - `TargetSharesMostCommonColor(targetIndex = 0)` — the context target shares a color with the
   most common color among all permanents, or a color tied for most common. Tallies each of the
   five colors across every battlefield permanent (multicolored permanents count once per color,
@@ -1784,6 +1805,24 @@ than the source permanent itself — for an Aura, `EntityReference.Source` is th
   battlefield by resolution (e.g. removed in response to the aura's ETB trigger), it falls back to the
   creature's last-known power — captured when the trigger fired — per CR 608.2g, rather than 0.
 
+### Just-amassed Army (`EntityReference.AmassedArmy`)
+
+For composite "Amass [subtype] N. Then [effect using the amassed Army's …]" shapes — Foray of
+Orcs, Surrounded by Orcs, Grishnákh Brash Instigator. Compose `Effects.Amass(...)` with a
+sibling effect that reads `DynamicAmount.EntityProperty(EntityReference.AmassedArmy, …)`:
+
+- `EntityReference.AmassedArmy` — the Army that received the +1/+1 counters from the most
+  recent Amass step in the current resolution pipeline (CR 701.47). Written by `AmassExecutor`
+  into `EffectContext.pipeline.storedCollections[AmassedArmy.STORAGE_KEY]` after Amass
+  resolves; the slot survives the multi-Army choice continuation, so a follow-up sibling
+  reads the chosen Army even when Amass paused for a decision.
+- Pair with `EntityNumericProperty.{Power,Toughness}` for "deals damage equal to the amassed
+  Army's power" (Foray of Orcs) or "mills X cards, where X is the amassed Army's power"
+  (Surrounded by Orcs). Pipeline state is not threaded into predicate contexts, so the
+  reference returns null in target filters — comparison-based targeting like Grishnákh's
+  "with power ≤ the amassed Army's power" needs a separate predicate plumbing that the
+  primitive doesn't yet provide.
+
 ### Context-plumbed
 
 - `ContextProperty(key)` — value plumbed via `EffectContext`. Keys include:
@@ -1801,6 +1840,9 @@ than the source permanent itself — for an Aura, `EntityReference.Source` is th
     the same mode twice reads as `2`.
   - `TRIGGER_SCRY_COUNT` — cards looked at by the scry that fired the trigger (Celeborn the
     Wise, Elrond Master of Healing). Equals the scry N parameter.
+  - `TRIGGER_EXCESS_DAMAGE_AMOUNT` — damage past lethal in the trigger payload (CR 120.4a).
+    Set from `DamageDealtEvent.excessAmount`; non-zero only for `DealsDamageEvent(requireExcess = true)`
+    triggers — Fall of Cair Andros' "amass Orcs X, where X is the excess damage."
 - `AdditionalCostBlightAmount` — X paid via the Blight additional cost.
 - `ChosenNumber` — number a player chose via a Choose action.
 - `VariableReference(name)` — named variable stored earlier by `StoreResult`/`StoreCount`.
@@ -2014,6 +2056,19 @@ replacementEffect {
   the copy ("When you do, exile that card"). `filterByTotalManaSpent` restricts copy targets to mana
   value ≤ total mana spent (Mockingbird). The copy snapshots a `CopyOfComponent` so it reverts to its
   printed identity when it leaves the battlefield (CR 400.7 / 707.2).
+- `ModifyDrawAmount(modifier, restrictions, appliesTo)` — modify the number of cards a draw
+  instruction announces by a fixed amount, optionally gated by extra `restrictions: List<Condition>`
+  evaluated against the drawing player as controller. Applied **once** per draw instruction at the
+  announcement site — `DrawCardsExecutor.execute` for spell/ability draws and
+  `DrawPhaseManager.performDrawStep` for the draw step (CR 121.2a: "An instruction to draw multiple
+  cards can be modified by replacement effects that refer to the number of cards drawn. This
+  modification occurs before considering any of the individual card draws.") — so a paused-and-
+  resumed per-card loop doesn't double-modify. Note that "you" in restriction text reads as the
+  drawing player, not the source's controller; for `DrawEvent(player = Player.You)` they coincide,
+  but `DrawEvent(player = Player.Opponent)` cards needing "you" = source controller would have to
+  use a source-relative condition instead. Use for "if you would draw one or more cards, you draw
+  that many cards plus N instead" (Quantum Riddler:
+  `ModifyDrawAmount(modifier = 1, restrictions = listOf(Conditions.CardsInHandAtMost(1)), appliesTo = DrawEvent(player = Player.You))`).
 - Custom — implement the `ReplacementEffect` interface directly.
 
 Amount-modifying replacements expose **both** `multiplier` (×) and `modifier` (±) on the same type — do not split into
