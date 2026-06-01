@@ -375,6 +375,29 @@ data class CrewVehicle(
 ) : GameAction
 
 // =============================================================================
+// Saddle Actions
+// =============================================================================
+
+/**
+ * Player saddles a Mount (or other permanent with Saddle N) by tapping any number of *other*
+ * untapped creatures they control whose total power >= the saddle requirement (CR 702.171a).
+ * Saddle is an activated ability that goes on the stack; the cost (tapping creatures) is paid
+ * immediately and the effect (the permanent becomes saddled until end of turn) resolves on the
+ * stack. Activated only as a sorcery.
+ *
+ * @property playerId The player saddling the mount
+ * @property mountId The permanent being saddled
+ * @property saddleCreatures Creatures to tap as the saddle cost
+ */
+@Serializable
+@SerialName("SaddleMount")
+data class SaddleMount(
+    override val playerId: EntityId,
+    val mountId: EntityId,
+    val saddleCreatures: List<EntityId>
+) : GameAction
+
+// =============================================================================
 // Morph Actions
 // =============================================================================
 

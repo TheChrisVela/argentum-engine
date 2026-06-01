@@ -211,6 +211,22 @@ sealed interface StatePredicate {
     }
 
     // =============================================================================
+    // Saddle (Entity)
+    // =============================================================================
+
+    /**
+     * Permanent that is currently saddled (CR 702.171b). A marker designation set by a
+     * resolved Saddle ability; lasts until end of turn or until the permanent leaves the
+     * battlefield. Backed by the engine's `SaddledComponent`. Read by Mount payoffs that
+     * gate on "while saddled" / "as long as it's saddled".
+     */
+    @SerialName("IsSaddled")
+    @Serializable
+    data object IsSaddled : Entity {
+        override val description: String = "saddled"
+    }
+
+    // =============================================================================
     // Zone-Specific Markers (Entity)
     // =============================================================================
 

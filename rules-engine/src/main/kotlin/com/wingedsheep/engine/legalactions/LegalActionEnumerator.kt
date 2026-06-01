@@ -40,6 +40,7 @@ class LegalActionEnumerator(
         UnlockRoomDoorEnumerator(),
         ActivatedAbilityEnumerator(),
         CrewEnumerator(),
+        SaddleEnumerator(),
         GraveyardAbilityEnumerator()
     )
 

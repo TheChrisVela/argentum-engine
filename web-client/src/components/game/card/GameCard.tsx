@@ -150,7 +150,7 @@ function GameCardImpl({
   const decrementCounterRemoval = useGameStore((state) => state.decrementCounterRemoval)
   const manaSelectionState = useGameStore((state) => state.manaSelectionState)
   const toggleManaSource = useGameStore((state) => state.toggleManaSource)
-  const toggleCrewCreature = useGameStore((state) => state.toggleCrewCreature)
+  const toggleTapForPowerCreature = useGameStore((state) => state.toggleTapForPowerCreature)
   const toggleConvokeCreature = useGameStore((state) => state.toggleConvokeCreature)
   const toggleHarmonizeCreature = useGameStore((state) => state.toggleHarmonizeCreature)
   const submitYesNoDecision = useGameStore((state) => state.submitYesNoDecision)
@@ -294,11 +294,11 @@ function GameCardImpl({
   const isManaSelected = manaSelectionState?.selectedSources.includes(card.id) ?? false
   const isInManaSelectionMode = manaSelectionState !== null
 
-  // Crew selection checks
-  const crewSelectionState = useGameStore((state) => state.crewSelectionState)
-  const isInCrewMode = crewSelectionState !== null
-  const isValidCrewCreature = crewSelectionState?.validCreatures.some((c) => c.entityId === card.id) ?? false
-  const isSelectedCrewCreature = crewSelectionState?.selectedCreatures.includes(card.id) ?? false
+  // Tap-for-power (Crew / Saddle) selection checks
+  const tapForPowerSelectionState = useGameStore((state) => state.tapForPowerSelectionState)
+  const isInTapForPowerMode = tapForPowerSelectionState !== null
+  const isValidTapForPowerCreature = tapForPowerSelectionState?.validCreatures.some((c) => c.entityId === card.id) ?? false
+  const isSelectedTapForPowerCreature = tapForPowerSelectionState?.selectedCreatures.includes(card.id) ?? false
 
   // Convoke selection checks
   const convokeSelectionState = useGameStore((state) => state.convokeSelectionState)
@@ -738,8 +738,8 @@ function GameCardImpl({
     if (isInManaSelectionMode) return
 
     // Handle crew selection mode - click to toggle creature
-    if (isInCrewMode && isValidCrewCreature) {
-      toggleCrewCreature(card.id)
+    if (isInTapForPowerMode && isValidTapForPowerCreature) {
+      toggleTapForPowerCreature(card.id)
       return
     }
 
@@ -808,7 +808,7 @@ function GameCardImpl({
     }
 
     // Block all other interactions during crew mode
-    if (isInCrewMode) return
+    if (isInTapForPowerMode) return
 
     // Handle inline distribute mode - click to add damage
     if (isDistributeTarget && distributeRemaining > 0 && !distributeAtMax) {
@@ -955,15 +955,15 @@ function GameCardImpl({
     // Blue highlight for valid mana sources
     borderStyle = `2px solid ${TARGET_COLOR}`
     boxShadow = `0 0 12px ${TARGET_GLOW}, 0 0 24px ${TARGET_SHADOW}`
-  } else if (isSelectedCrewCreature) {
+  } else if (isSelectedTapForPowerCreature) {
     // Green highlight for selected crew creatures
     borderStyle = `3px solid ${SELECTED_COLOR}`
     boxShadow = `0 0 20px ${SELECTED_GLOW}, 0 0 40px ${SELECTED_SHADOW}`
-  } else if (isValidCrewCreature && isHovered) {
+  } else if (isValidTapForPowerCreature && isHovered) {
     // Bright blue highlight when hovering over a valid crew creature
     borderStyle = `3px solid ${TARGET_COLOR_BRIGHT}`
     boxShadow = `0 0 20px ${TARGET_GLOW_BRIGHT}, 0 0 40px ${TARGET_GLOW_OUTER}`
-  } else if (isValidCrewCreature) {
+  } else if (isValidTapForPowerCreature) {
     // Blue highlight for valid crew creatures
     borderStyle = `2px solid ${TARGET_COLOR}`
     boxShadow = `0 0 12px ${TARGET_GLOW}, 0 0 24px ${TARGET_SHADOW}`
@@ -1070,7 +1070,7 @@ function GameCardImpl({
   }
 
   // Determine cursor
-  const canInteract = interactive || isValidTarget || isValidDecisionTarget || isValidDecisionSelection || isValidAttacker || isValidBlocker || isAttackingInBlockerMode || isValidPlaneswalkerTarget || canDragToPlay || isDistributeTarget || isManaValidSource || isValidCrewCreature || isValidConvokeCreature || isValidHarmonizeCreature
+  const canInteract = interactive || isValidTarget || isValidDecisionTarget || isValidDecisionSelection || isValidAttacker || isValidBlocker || isAttackingInBlockerMode || isValidPlaneswalkerTarget || canDragToPlay || isDistributeTarget || isManaValidSource || isValidTapForPowerCreature || isValidConvokeCreature || isValidHarmonizeCreature
   const baseCursor = canInteract ? 'pointer' : 'default'
   const cursor = isValidBlocker || isValidAttacker || isSelectedAsAttacker || canDragToPlay ? 'grab' : baseCursor
 

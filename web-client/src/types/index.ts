@@ -154,7 +154,7 @@ export type {
   StateDelta,
   LegalActionInfo,
   ConvokeCreatureInfo,
-  CrewCreatureInfo,
+  TapForPowerCreatureInfo,
   DelveCardInfo,
   HarmonizeCreatureInfo,
   ManaSourceInfo,

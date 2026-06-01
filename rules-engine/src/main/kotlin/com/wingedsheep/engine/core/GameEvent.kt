@@ -560,6 +560,17 @@ data class TappedEvent(
 ) : GameEvent
 
 /**
+ * A permanent became saddled (CR 702.171b) — a Saddle ability resolved. Lets animations and
+ * any future "whenever this becomes saddled" triggers react instead of the state changing silently.
+ */
+@Serializable
+@SerialName("BecameSaddledEvent")
+data class BecameSaddledEvent(
+    val entityId: EntityId,
+    val entityName: String
+) : GameEvent
+
+/**
  * A player tapped a land for mana (a land's mana ability resolved).
  *
  * Drives the "Whenever a player taps a land for mana" trigger family

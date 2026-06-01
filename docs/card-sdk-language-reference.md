@@ -465,6 +465,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `PreventDamageEffect(amount, direction, scope, sourceFilter, onPrevented, gainLifeFromColors, duration)` — prevention shield. `amount = null` prevents all. `sourceFilter` can be `ChosenSource` (player picks any source on resolution) or `ChosenColoredSource` (player picks a source on resolution, but only colored sources are offered — "a source of your choice that shares a color with the mana spent"; a colorless source qualifies for nothing, so it's never offered — Protective Sphere). `onPrevented: Effect?` is an **arbitrary follow-up effect** run when a single-instance `ChosenSource` shield prevents an instance of damage (see below). `gainLifeFromColors: Set<Color>` makes the shield's controller gain that much life whenever it prevents damage from a source of one of those colors (Samite Ministration). Facades: `Effects.PreventNextDamage`, `Effects.PreventNextDamageFromChosenSource(amount, target)`, `Effects.PreventNextDamageFromChosenSource(onPrevented)`, `Effects.PreventAllDamageFromChosenSource(target, gainLifeFromColors)`, `Effects.PreventAllDamageFromChosenColoredSource(target)`, `Effects.DeflectNextDamageFromChosenSource()`.
   - **Prevent-and-react (`onPrevented`)** — instead of a bespoke reaction type, the chosen-source shield runs **any composed effect** when it fires, as a real triggered ability on the stack ("When damage is prevented this way, …", CR-faithful — opponents get priority and can respond). Mechanically: on resolution the shield is created **and** a linked event-based delayed triggered ability (`CreateDelayedTriggerEffect`-style) whose `effect` is `onPrevented`; when the shield prevents an instance it emits an internal `DamagePreventedEvent` that fires only that delayed trigger (matched by id). Inside the trigger the prevented amount is `DynamicAmounts.preventedDamage()` ("that much"/"that many") and the prevented source's controller is `EffectTarget.ControllerOfTriggeringEntity` ("that source's controller") — the same pair Tephraderm uses. So Deflecting Palm's `onPrevented` = `DealDamage(ControllerOfTriggeringEntity, preventedDamage())`; New Way Forward's = `Composite(DealDamage(ControllerOfTriggeringEntity, preventedDamage()), DrawCards(preventedDamage()))`. Because the payoff is a normal stack ability, it may be interactive (targets, replacements) like any other.
 - `BecomeCreatureEffect(target, p, t, subtypes, keywords, duration)` — animate non-creature (lands, artifacts).
+- `BecomeSaddledEffect(target = Self)` (facade `Effects.BecomeSaddled()`) — target permanent becomes saddled until end of turn (CR 702.171b). The resolving half of a Saddle ability: stamps the transient `SaddledComponent` marker (cleared at end of turn / on leaving the battlefield; not copiable) and emits `BecameSaddledEvent`. No P/T or type change — read the marker with `Conditions.SourceIsSaddled` / `.saddled()`.
 - `EachPermanentBecomesCopyOfTargetEffect(target, filter, duration, excludeTarget)` — mass copy (Mirrorform, Naga Fleshcrafter renew). Facade `Effects.EachPermanentBecomesCopyOfTarget(...)`. Copies copiable values only (Rule 707) — counters, tapped state, attached auras/equipment and non-copy modifiers stay put. `duration = Duration.Permanent` (default) bakes the copy into base state for good; `Duration.EndOfTurn` makes a temporary copy reverted by the end-of-turn cleanup (each affected permanent restores its pre-copy `CardComponent` from its `CopyOfComponent` snapshot). `excludeTarget = true` keeps the copy **source** out of the affected set, for "each **other** … becomes a copy of that …" wordings where the target keeps its own identity (and any counter just placed on it).
 - `AnimateLandEffect(target, subtypes, keywords, duration)` — land becomes a creature.
 - `ExploreEffect(target)` — Explore mechanic (reveal top; land → battlefield, else hand + counter).
@@ -751,6 +752,7 @@ Every `TargetRequirement` carries count semantics (defaults shown):
 - `.manaValueIsOdd()` / `.manaValueIsEven()` — mana-value parity (zero is even). Pair with modal
   spells whose modes ask the caster to choose a parity (e.g. *Mutinous Massacre*).
 - `.tapped()` / `.untapped()` — tap state.
+- `.saddled()` — permanent is saddled (CR 702.171b); backed by `StatePredicate.IsSaddled`.
 - `.nontoken()` / `.token()` — token vs printed.
 - `.faceDown()` — face-down state.
 - `.card(filter)` — defer to a card-shape filter for off-battlefield checks.
@@ -1516,6 +1518,15 @@ composite abilities).
   subsystem is involved. Example: `flurry { effect = Effects.DealDamage(1, EffectTarget.PlayerRef(Player.EachOpponent), damageSource = EffectTarget.Self) }`.
 - `Afflict(n)` — defender loses N when this becomes blocked.
 - `Crew(n)` — tap N power worth to animate a Vehicle.
+- `saddle(n)` (`KeywordAbility.saddle(n)`) — Saddle N (CR 702.171). A sorcery-speed activated
+  ability whose cost is tapping any number of *other* untapped creatures you control with total
+  power ≥ N; on resolution this permanent **becomes saddled** until end of turn. Reuses the same
+  "tap creatures with total power N" selection as Crew (surfaced as a `SaddleMount` legal action),
+  but resolves to a marker rather than animating the permanent. Read the saddled state with
+  `Conditions.SourceIsSaddled` / the `saddled()` filter (e.g. `triggerCondition =
+  Conditions.SourceIsSaddled` for "whenever this attacks while saddled"). The marker (engine
+  `SaddledComponent`) is cleared at end of turn or when the permanent leaves the battlefield, and
+  is not a copiable value (CR 702.171b). Mounts that gate on the saddled state use this.
 - `Modular(n)` — ETB with +1/+1 counters, transfer on death.
 - `Fading(n)` — ETB with N fade counters; removes one each upkeep, sacrifice if can't.
 - `Vanishing(n)` — same idea with time counters.
@@ -1693,6 +1704,8 @@ contexts.
 - `SourceIsTapped` — source is tapped.
 - `SourceIsUntapped` — source is untapped.
 - `SourceEnteredThisTurn` — source entered the battlefield this turn.
+- `SourceIsSaddled` — source is saddled (CR 702.171b). Gates Mount payoffs on "while saddled" /
+  "as long as it's saddled"; evaluates identically at resolution and during projection.
 - `SourceAttackedThisTurn` — source was declared as an attacker at least once during the
   current turn (per-creature, derived from the controller's `PlayerAttackersThisTurnComponent`).
   Negate via `Conditions.Not(...)` for Erg Raiders-style "if it didn't attack this turn".

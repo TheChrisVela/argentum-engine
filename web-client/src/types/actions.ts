@@ -15,6 +15,7 @@ export type GameAction =
   | TypecycleCardAction
   | PlotCardAction
   | CrewVehicleAction
+  | SaddleMountAction
   | PlayLandAction
   | TurnFaceUpAction
   | DeclareAttackersAction
@@ -190,6 +191,17 @@ export interface CrewVehicleAction {
 }
 
 // =============================================================================
+// Saddle Actions
+// =============================================================================
+
+export interface SaddleMountAction {
+  readonly type: 'SaddleMount'
+  readonly playerId: EntityId
+  readonly mountId: EntityId
+  readonly saddleCreatures: readonly EntityId[]
+}
+
+// =============================================================================
 // Morph Actions
 // =============================================================================
 
@@ -349,6 +361,8 @@ export function getActionSubject(action: GameAction): EntityId | null {
       return action.sourceId
     case 'CrewVehicle':
       return action.vehicleId
+    case 'SaddleMount':
+      return action.mountId
     case 'UnlockRoomDoor':
       return action.roomId
     default:

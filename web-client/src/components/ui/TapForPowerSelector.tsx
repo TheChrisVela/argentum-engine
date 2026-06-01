@@ -2,35 +2,35 @@ import { useMemo } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
 
 /**
- * Compact floating HUD bar for crew selection.
- * Shows power progress and confirm/cancel buttons while
- * creatures are selected directly on the battlefield.
+ * Compact floating HUD bar for the "tap creatures with total power N" selection,
+ * shared by Crew N (Vehicles) and Saddle N (Mounts). Shows power progress and
+ * confirm/cancel buttons while creatures are selected directly on the battlefield.
  */
-export function CrewSelector() {
-  const crewSelectionState = useGameStore((state) => state.crewSelectionState)
-  const cancelCrewSelection = useGameStore((state) => state.cancelCrewSelection)
-  const confirmCrewSelection = useGameStore((state) => state.confirmCrewSelection)
+export function TapForPowerSelector() {
+  const selection = useGameStore((state) => state.tapForPowerSelectionState)
+  const cancelSelection = useGameStore((state) => state.cancelTapForPowerSelection)
+  const confirmSelection = useGameStore((state) => state.confirmTapForPowerSelection)
 
   const selectedPower = useMemo(() => {
-    if (!crewSelectionState) return 0
-    const { selectedCreatures, validCreatures } = crewSelectionState
+    if (!selection) return 0
+    const { selectedCreatures, validCreatures } = selection
     let total = 0
     for (const id of selectedCreatures) {
       const creature = validCreatures.find((c) => c.entityId === id)
       if (creature) total += creature.power
     }
     return total
-  }, [crewSelectionState])
+  }, [selection])
 
-  if (!crewSelectionState) return null
+  if (!selection) return null
 
-  const { vehicleName, crewPower, selectedCreatures } = crewSelectionState
-  const canConfirm = selectedPower >= crewPower
+  const { verb, sourceName, requiredPower, selectedCreatures } = selection
+  const canConfirm = selectedPower >= requiredPower
 
   return (
     <div style={styles.bar}>
       <span style={styles.label}>
-        Crew <strong>{vehicleName}</strong>
+        {verb} <strong>{sourceName}</strong>
       </span>
       <span style={styles.divider} />
       <span style={styles.powerInfo}>
@@ -38,17 +38,17 @@ export function CrewSelector() {
         <strong style={{ color: canConfirm ? '#4caf50' : '#ff9800' }}>
           {selectedPower}
         </strong>
-        &nbsp;/&nbsp;{crewPower}
+        &nbsp;/&nbsp;{requiredPower}
       </span>
       <span style={styles.count}>
         ({selectedCreatures.length} creature{selectedCreatures.length !== 1 ? 's' : ''})
       </span>
       <span style={styles.divider} />
-      <button onClick={cancelCrewSelection} style={styles.cancelButton}>
+      <button onClick={cancelSelection} style={styles.cancelButton}>
         Cancel
       </button>
       <button
-        onClick={confirmCrewSelection}
+        onClick={confirmSelection}
         disabled={!canConfirm}
         style={{
           ...styles.confirmButton,
@@ -56,7 +56,7 @@ export function CrewSelector() {
           cursor: canConfirm ? 'pointer' : 'not-allowed',
         }}
       >
-        Confirm Crew
+        Confirm {verb}
       </button>
     </div>
   )

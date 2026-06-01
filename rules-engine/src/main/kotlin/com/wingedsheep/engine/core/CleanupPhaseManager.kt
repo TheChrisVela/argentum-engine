@@ -4,6 +4,7 @@ import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AbilityActivatedThisTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.SaddledComponent
 import com.wingedsheep.engine.state.components.battlefield.AbilityResolutionCountThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageDealtByPlayersThisTurnComponent
@@ -441,6 +442,10 @@ class CleanupPhaseManager(
             if (container.has<DamageDealtByPlayersThisTurnComponent>()) {
                 needsUpdate = true
             }
+            // Saddled lasts "until end of turn" (CR 702.171b)
+            if (container.has<SaddledComponent>()) {
+                needsUpdate = true
+            }
             if (needsUpdate) {
                 newState = newState.updateEntity(entityId) { c ->
                     c.without<AbilityActivatedThisTurnComponent>()
@@ -455,6 +460,7 @@ class CleanupPhaseManager(
                         .without<TokenReplacementOfferedThisTurnComponent>()
                         .without<WasDealtDamageThisTurnComponent>()
                         .without<DamageDealtByPlayersThisTurnComponent>()
+                        .without<SaddledComponent>()
                 }
             }
         }

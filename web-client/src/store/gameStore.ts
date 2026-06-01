@@ -32,7 +32,7 @@ export type {
   DamageDistributionState,
   ConvokeCreatureSelection,
   ConvokeSelectionState,
-  CrewSelectionState,
+  TapForPowerSelectionState,
   DelveSelectionState,
   DeckBuildingState,
   DraftState,

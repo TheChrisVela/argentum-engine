@@ -1,25 +1,30 @@
 package com.wingedsheep.engine.legalactions.enumerators
 
-import com.wingedsheep.engine.core.CrewVehicle
+import com.wingedsheep.engine.core.SaddleMount
 import com.wingedsheep.engine.legalactions.ActionEnumerator
-import com.wingedsheep.engine.legalactions.TapForPowerCreatureData
 import com.wingedsheep.engine.legalactions.EnumerationContext
 import com.wingedsheep.engine.legalactions.LegalAction
+import com.wingedsheep.engine.legalactions.TapForPowerCreatureData
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.scripting.KeywordAbility
 
 /**
- * Enumerates crew actions for Vehicle permanents controlled by the player.
+ * Enumerates Saddle actions for permanents with Saddle N controlled by the player (CR 702.171a).
  *
- * A Vehicle can be crewed by tapping any number of untapped creatures whose
- * total power meets or exceeds the crew requirement. Summoning sickness does
- * NOT prevent a creature from crewing.
+ * Saddle reuses the same "tap any number of creatures with total power >= N" selection as Crew,
+ * but with two differences: it taps any number of *other* untapped creatures the player controls
+ * (the mount itself can't saddle itself), and it can be activated **only as a sorcery**. Summoning
+ * sickness does not prevent a creature from saddling (it's not attacking or using a tap ability of
+ * its own — the same reasoning as crewing).
  */
-class CrewEnumerator : ActionEnumerator {
+class SaddleEnumerator : ActionEnumerator {
 
     override fun enumerate(context: EnumerationContext): List<LegalAction> {
+        // "Activate only as a sorcery" (CR 702.171a): your main phase, empty stack, your turn.
+        if (!context.canPlaySorcerySpeed) return emptyList()
+
         val result = mutableListOf<LegalAction>()
         val state = context.state
         val playerId = context.playerId
@@ -30,35 +35,34 @@ class CrewEnumerator : ActionEnumerator {
             val cardComponent = container.get<CardComponent>() ?: continue
             val cardDef = context.cardRegistry.getCard(cardComponent.name) ?: continue
 
-            val crewAbility = cardDef.keywordAbilities
+            val saddleAbility = cardDef.keywordAbilities
                 .filterIsInstance<KeywordAbility.Numeric>()
-                .firstOrNull { it.keyword == Keyword.CREW } ?: continue
+                .firstOrNull { it.keyword == Keyword.SADDLE } ?: continue
 
-            // Find all untapped creatures controlled by the player that can crew
-            val validCrewCreatures = mutableListOf<TapForPowerCreatureData>()
+            // Find all other untapped creatures the player controls that can saddle this mount.
+            val validSaddleCreatures = mutableListOf<TapForPowerCreatureData>()
             var totalAvailablePower = 0
             for (creatureId in context.battlefieldPermanents) {
-                if (creatureId == entityId) continue // Vehicle can't crew itself
+                if (creatureId == entityId) continue // a mount can't saddle itself ("other")
                 if (!projected.isCreature(creatureId)) continue
                 val creatureContainer = state.getEntity(creatureId) ?: continue
                 if (creatureContainer.has<TappedComponent>()) continue
-                // Summoning sickness does NOT prevent crewing
                 val power = projected.getPower(creatureId) ?: 0
                 val creatureName = creatureContainer.get<CardComponent>()?.name ?: "Unknown"
-                validCrewCreatures.add(TapForPowerCreatureData(creatureId, creatureName, power))
+                validSaddleCreatures.add(TapForPowerCreatureData(creatureId, creatureName, power))
                 totalAvailablePower += power
             }
 
-            val canAfford = totalAvailablePower >= crewAbility.n
+            val canAfford = totalAvailablePower >= saddleAbility.n
             result.add(
                 LegalAction(
-                    actionType = "CrewVehicle",
-                    description = "Crew ${cardComponent.name}",
-                    action = CrewVehicle(playerId, entityId, emptyList()),
+                    actionType = "SaddleMount",
+                    description = "Saddle ${cardComponent.name}",
+                    action = SaddleMount(playerId, entityId, emptyList()),
                     affordable = canAfford,
                     tapForPower = true,
-                    tapForPowerRequired = crewAbility.n,
-                    tapForPowerCreatures = validCrewCreatures
+                    tapForPowerRequired = saddleAbility.n,
+                    tapForPowerCreatures = validSaddleCreatures
                 )
             )
         }

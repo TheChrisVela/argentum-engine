@@ -67,8 +67,8 @@ class CrewEnumeratorTest : FunSpec({
 
         crewActions shouldHaveSize 1
         val crew = crewActions.single()
-        crew.hasCrew shouldBe true
-        crew.crewPower shouldBe 3
+        crew.tapForPower shouldBe true
+        crew.tapForPowerRequired shouldBe 3
     }
 
     test("Grizzly Bears (power 2) cannot pay Crew 3 alone — unaffordable") {
@@ -78,7 +78,7 @@ class CrewEnumeratorTest : FunSpec({
             .single { it.actionType == "CrewVehicle" }
 
         crew.affordable shouldBe false
-        crew.crewCreatures!!.map { it.power }.sum() shouldBe 2  // only Bears' 2
+        crew.tapForPowerCreatures!!.map { it.power }.sum() shouldBe 2  // only Bears' 2
     }
 
     test("two Grizzly Bears (combined power 4) can afford Crew 3 — affordable") {
@@ -90,7 +90,7 @@ class CrewEnumeratorTest : FunSpec({
             .single { it.actionType == "CrewVehicle" }
 
         crew.affordable shouldBe true
-        crew.crewCreatures!! shouldHaveSize 2
+        crew.tapForPowerCreatures!! shouldHaveSize 2
     }
 
     test("the Vehicle itself does not appear in its own crew creature list") {
@@ -99,7 +99,7 @@ class CrewEnumeratorTest : FunSpec({
         val crew = driver.enumerateFor(driver.player1)
             .single { it.actionType == "CrewVehicle" }
 
-        crew.crewCreatures!!.map { it.name } shouldBe listOf("Grizzly Bears")
+        crew.tapForPowerCreatures!!.map { it.name } shouldBe listOf("Grizzly Bears")
     }
 
     test("tapped creatures are excluded from the crew list") {
@@ -116,7 +116,7 @@ class CrewEnumeratorTest : FunSpec({
         val crew = driver.enumerateFor(driver.player1)
             .single { it.actionType == "CrewVehicle" }
 
-        crew.crewCreatures!! shouldHaveSize 1  // the untapped one only
+        crew.tapForPowerCreatures!! shouldHaveSize 1  // the untapped one only
     }
 
     test("a battlefield with no Vehicles produces no CrewVehicle actions") {

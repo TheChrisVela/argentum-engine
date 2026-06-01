@@ -435,6 +435,11 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.EnteredThisTurn
     )
 
+    /** Must be saddled (CR 702.171b) */
+    fun saddled() = copy(
+        statePredicates = statePredicates + StatePredicate.IsSaddled
+    )
+
     /** Must be face-down */
     fun faceDown() = copy(
         statePredicates = statePredicates + StatePredicate.IsFaceDown

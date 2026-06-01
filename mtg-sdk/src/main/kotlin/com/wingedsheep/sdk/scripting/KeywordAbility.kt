@@ -772,6 +772,7 @@ sealed interface KeywordAbility {
         fun absorb(n: Int): KeywordAbility = Numeric(Keyword.ABSORB, n)
         fun afflict(n: Int): KeywordAbility = Numeric(Keyword.AFFLICT, n)
         fun crew(n: Int): KeywordAbility = Numeric(Keyword.CREW, n)
+        fun saddle(n: Int): KeywordAbility = Numeric(Keyword.SADDLE, n)
         fun modular(n: Int): KeywordAbility = Numeric(Keyword.MODULAR, n)
         fun fading(n: Int): KeywordAbility = Numeric(Keyword.FADING, n)
         fun vanishing(n: Int): KeywordAbility = Numeric(Keyword.VANISHING, n)

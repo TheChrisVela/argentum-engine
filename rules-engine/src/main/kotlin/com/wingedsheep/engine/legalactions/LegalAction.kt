@@ -98,10 +98,11 @@ data class LegalAction(
     // Source zone
     val sourceZone: String? = null,
 
-    // Crew
-    val hasCrew: Boolean = false,
-    val crewPower: Int? = null,
-    val crewCreatures: List<CrewCreatureData>? = null,
+    // Tap-creatures-for-total-power selection (shared by Crew N and Saddle N: the player taps
+    // any number of eligible creatures whose combined power meets [tapForPowerRequired]).
+    val tapForPower: Boolean = false,
+    val tapForPowerRequired: Int? = null,
+    val tapForPowerCreatures: List<TapForPowerCreatureData>? = null,
 
     // Repetition
     val maxRepeatableActivations: Int? = null,
@@ -221,9 +222,10 @@ data class DelveCardData(
 )
 
 /**
- * Information about a creature that can be tapped to crew a Vehicle.
+ * Information about a creature that can be tapped to pay a "tap creatures with total power N"
+ * cost — shared by Crew N (crewing a Vehicle) and Saddle N (saddling a Mount).
  */
-data class CrewCreatureData(
+data class TapForPowerCreatureData(
     val entityId: EntityId,
     val name: String,
     val power: Int

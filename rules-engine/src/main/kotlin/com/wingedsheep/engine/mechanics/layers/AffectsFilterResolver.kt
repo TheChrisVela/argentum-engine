@@ -346,6 +346,8 @@ internal class AffectsFilterResolver {
             }
         }
         StatePredicate.IsModified -> com.wingedsheep.engine.handlers.predicates.isModified(state, entityId)
+        StatePredicate.IsSaddled ->
+            container.has<com.wingedsheep.engine.state.components.battlefield.SaddledComponent>()
         StatePredicate.IsWarpExiled ->
             container.has<com.wingedsheep.engine.state.components.identity.WarpExiledComponent>()
         StatePredicate.WasCastForWarp ->

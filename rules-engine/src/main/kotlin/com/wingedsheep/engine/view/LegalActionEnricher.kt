@@ -66,9 +66,9 @@ class LegalActionEnricher(
             autoTapPreview = action.autoTapPreview,
             availableManaSources = if (action.autoTapPreview != null || action.hasConvoke || action.hasDelve || action.hasHarmonize) manaSourceInfos else null,
             sourceZone = action.sourceZone,
-            hasCrew = action.hasCrew,
-            crewPower = action.crewPower,
-            validCrewCreatures = action.crewCreatures?.map { it.toDto() },
+            tapForPower = action.tapForPower,
+            tapForPowerRequired = action.tapForPowerRequired,
+            tapForPowerCreatures = action.tapForPowerCreatures?.map { it.toDto() },
             maxRepeatableActivations = action.maxRepeatableActivations,
             modalEnumeration = action.modalEnumeration?.toDto(),
             holdPriority = action.holdPriority
@@ -168,7 +168,7 @@ class LegalActionEnricher(
         power = power
     )
 
-    private fun CrewCreatureData.toDto() = CrewCreatureInfo(
+    private fun TapForPowerCreatureData.toDto() = TapForPowerCreatureInfo(
         entityId = entityId,
         name = name,
         power = power

@@ -490,6 +490,13 @@ object Conditions {
         SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.enteredThisTurn())
 
     /**
+     * If this permanent is saddled (CR 702.171b). Gates Mount payoffs on "while saddled" /
+     * "as long as it's saddled" — evaluates identically at resolution and during projection.
+     */
+    val SourceIsSaddled: ConditionInterface =
+        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.saddled())
+
+    /**
      * If this creature was declared as an attacker at least once during the current turn.
      * Used by intervening-if triggers like Erg Raiders' "if this creature didn't attack this
      * turn, deal 2 damage to you" (negate via [com.wingedsheep.sdk.scripting.conditions.NotCondition]).

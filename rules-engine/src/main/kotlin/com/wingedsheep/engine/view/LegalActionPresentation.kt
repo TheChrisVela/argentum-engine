@@ -98,9 +98,9 @@ data class LegalActionInfo(
     val blockerMaxBlockCounts: Map<EntityId, Int>? = null,
     val mandatoryBlockerAssignments: Map<EntityId, List<EntityId>>? = null,
     val maxRepeatableActivations: Int? = null,
-    val hasCrew: Boolean = false,
-    val crewPower: Int? = null,
-    val validCrewCreatures: List<CrewCreatureInfo>? = null,
+    val tapForPower: Boolean = false,
+    val tapForPowerRequired: Int? = null,
+    val tapForPowerCreatures: List<TapForPowerCreatureInfo>? = null,
     val modalEnumeration: ModalLegalEnumerationInfo? = null,
     val holdPriority: Boolean = false
 )
@@ -152,7 +152,7 @@ data class HarmonizeCreatureInfo(
 )
 
 @Serializable
-data class CrewCreatureInfo(
+data class TapForPowerCreatureInfo(
     val entityId: EntityId,
     val name: String,
     val power: Int

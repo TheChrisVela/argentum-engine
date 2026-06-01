@@ -9,7 +9,7 @@ import type {
   BlightVariableSelectionState,
   ConvokeSelectionState,
   HarmonizeSelectionState,
-  CrewSelectionState,
+  TapForPowerSelectionState,
   DelveSelectionState,
   ManaColorSelectionState,
   DecisionSelectionState,
@@ -26,7 +26,7 @@ import {
   reduceCostByHarmonizeTap,
 } from '@/utils/manaCost'
 
-// Note: getWebSocket/createSubmitActionMessage are still used by confirmCrewSelection
+// Note: getWebSocket/createSubmitActionMessage are still used by confirmTapForPowerSelection
 // and confirmDecisionSelection (which are not part of the pipeline).
 
 export interface SelectionSliceState {
@@ -34,7 +34,7 @@ export interface SelectionSliceState {
   blightVariableSelectionState: BlightVariableSelectionState | null
   convokeSelectionState: ConvokeSelectionState | null
   harmonizeSelectionState: HarmonizeSelectionState | null
-  crewSelectionState: CrewSelectionState | null
+  tapForPowerSelectionState: TapForPowerSelectionState | null
   delveSelectionState: DelveSelectionState | null
   manaColorSelectionState: ManaColorSelectionState | null
   decisionSelectionState: DecisionSelectionState | null
@@ -58,10 +58,10 @@ export interface SelectionSliceActions {
   toggleHarmonizeCreature: (entityId: EntityId) => void
   cancelHarmonizeSelection: () => void
   confirmHarmonizeSelection: () => void
-  startCrewSelection: (state: CrewSelectionState) => void
-  toggleCrewCreature: (entityId: EntityId) => void
-  cancelCrewSelection: () => void
-  confirmCrewSelection: () => void
+  startTapForPowerSelection: (state: TapForPowerSelectionState) => void
+  toggleTapForPowerCreature: (entityId: EntityId) => void
+  cancelTapForPowerSelection: () => void
+  confirmTapForPowerSelection: () => void
   startDelveSelection: (state: DelveSelectionState) => void
   toggleDelveCard: (entityId: EntityId) => void
   cancelDelveSelection: () => void
@@ -86,7 +86,7 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
   blightVariableSelectionState: null,
   convokeSelectionState: null,
   harmonizeSelectionState: null,
-  crewSelectionState: null,
+  tapForPowerSelectionState: null,
   delveSelectionState: null,
   manaColorSelectionState: null,
   decisionSelectionState: null,
@@ -245,15 +245,15 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
     get().advancePipeline({ type: 'harmonize', harmonizeCreature: selected, reduction })
   },
 
-  // Crew selection actions
-  startCrewSelection: (crewSelectionState) => {
-    set({ crewSelectionState })
+  // Tap-creatures-for-power selection actions (Crew N / Saddle N)
+  startTapForPowerSelection: (tapForPowerSelectionState) => {
+    set({ tapForPowerSelectionState })
   },
 
-  toggleCrewCreature: (entityId) => {
+  toggleTapForPowerCreature: (entityId) => {
     set((state) => {
-      if (!state.crewSelectionState) return state
-      const { selectedCreatures } = state.crewSelectionState
+      if (!state.tapForPowerSelectionState) return state
+      const { selectedCreatures } = state.tapForPowerSelectionState
       const exists = selectedCreatures.includes(entityId)
 
       const newSelectedCreatures = exists
@@ -261,33 +261,33 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
         : [...selectedCreatures, entityId]
 
       return {
-        crewSelectionState: {
-          ...state.crewSelectionState,
+        tapForPowerSelectionState: {
+          ...state.tapForPowerSelectionState,
           selectedCreatures: newSelectedCreatures,
         },
       }
     })
   },
 
-  cancelCrewSelection: () => {
-    set({ crewSelectionState: null })
+  cancelTapForPowerSelection: () => {
+    set({ tapForPowerSelectionState: null })
   },
 
-  confirmCrewSelection: () => {
-    const { crewSelectionState, playerId } = get()
-    if (!crewSelectionState || !playerId) return
+  confirmTapForPowerSelection: () => {
+    const { tapForPowerSelectionState, playerId } = get()
+    if (!tapForPowerSelectionState || !playerId) return
 
-    const { actionInfo, selectedCreatures } = crewSelectionState
+    const { actionInfo, selectedCreatures } = tapForPowerSelectionState
+    const action = actionInfo.action
 
-    if (actionInfo.action.type === 'CrewVehicle') {
-      const actionWithCrew = {
-        ...actionInfo.action,
-        crewCreatures: selectedCreatures,
-      }
-      getWebSocket()?.send(createSubmitActionMessage(actionWithCrew))
+    // The tapped-creature list goes into the action's mechanic-specific field.
+    if (action.type === 'CrewVehicle') {
+      getWebSocket()?.send(createSubmitActionMessage({ ...action, crewCreatures: selectedCreatures }))
+    } else if (action.type === 'SaddleMount') {
+      getWebSocket()?.send(createSubmitActionMessage({ ...action, saddleCreatures: selectedCreatures }))
     }
 
-    set({ crewSelectionState: null })
+    set({ tapForPowerSelectionState: null })
   },
 
   // Delve selection actions

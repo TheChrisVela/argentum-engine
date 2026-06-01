@@ -776,18 +776,19 @@ export interface LegalActionInfo {
   readonly mandatoryBlockerAssignments?: Readonly<Record<EntityId, readonly EntityId[]>>
   /** Maximum times this ability can be activated in a batch (for repeat-eligible self-targeting abilities) */
   readonly maxRepeatableActivations?: number
-  /** Whether this action is a Crew ability requiring creature selection */
-  readonly hasCrew?: boolean
-  /** The crew power requirement (N in "Crew N") */
-  readonly crewPower?: number
-  /** Creatures that can be tapped to crew this vehicle */
-  readonly validCrewCreatures?: readonly CrewCreatureInfo[]
+  /** Whether this action requires a "tap creatures with total power N" selection (Crew N / Saddle N) */
+  readonly tapForPower?: boolean
+  /** The total power requirement (N in "Crew N" / "Saddle N") */
+  readonly tapForPowerRequired?: number
+  /** Creatures that can be tapped to pay this requirement */
+  readonly tapForPowerCreatures?: readonly TapForPowerCreatureInfo[]
 }
 
 /**
- * Information about a creature that can be tapped to crew a Vehicle.
+ * Information about a creature that can be tapped to pay a "tap creatures with total power N"
+ * cost — shared by Crew N (Vehicles) and Saddle N (Mounts).
  */
-export interface CrewCreatureInfo {
+export interface TapForPowerCreatureInfo {
   readonly entityId: EntityId
   readonly name: string
   /** Projected power of this creature */

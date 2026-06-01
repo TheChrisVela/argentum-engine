@@ -14,7 +14,7 @@ export type CardClickResult =
   | { type: 'requiresTargeting'; action: GameAction; requiredTargets: number }
   | { type: 'requiresXSelection'; actionInfo: LegalActionInfo }
   | { type: 'requiresConvokeSelection'; actionInfo: LegalActionInfo }
-  | { type: 'requiresCrewSelection'; actionInfo: LegalActionInfo }
+  | { type: 'requiresTapForPowerSelection'; actionInfo: LegalActionInfo }
   | { type: 'requiresDelveSelection'; actionInfo: LegalActionInfo }
 
 /**
@@ -30,14 +30,14 @@ export function useInteraction() {
   const selectCard = useGameStore((state) => state.selectCard)
   const selectedCardId = useGameStore((state) => state.selectedCardId)
   const legalActions = useGameStore((state) => state.legalActions)
-  const startCrewSelection = useGameStore((state) => state.startCrewSelection)
+  const startTapForPowerSelection = useGameStore((state) => state.startTapForPowerSelection)
   const startPipeline = useGameStore((state) => state.startPipeline)
 
   const actionContext: ActionContext = useMemo(() => ({
     selectCard,
-    startCrewSelection,
+    startTapForPowerSelection,
     startPipeline,
-  }), [selectCard, startCrewSelection, startPipeline])
+  }), [selectCard, startTapForPowerSelection, startPipeline])
 
   /**
    * Get legal actions for a card.
@@ -61,6 +61,8 @@ export function useInteraction() {
             return a.sourceId === cardId
           case 'CrewVehicle':
             return a.vehicleId === cardId
+          case 'SaddleMount':
+            return a.mountId === cardId
           case 'UnlockRoomDoor':
             return a.roomId === cardId
           default:

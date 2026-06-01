@@ -29,6 +29,7 @@ import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.AnimateLandEffect
 import com.wingedsheep.sdk.scripting.effects.ExploreEffect
 import com.wingedsheep.sdk.scripting.effects.BecomeCreatureEffect
+import com.wingedsheep.sdk.scripting.effects.BecomeSaddledEffect
 import com.wingedsheep.sdk.scripting.effects.EachPermanentBecomesCopyOfTargetEffect
 import com.wingedsheep.sdk.scripting.effects.SetBasePowerEffect
 
@@ -2356,6 +2357,13 @@ object Effects {
         colors: Set<String>? = null,
         duration: Duration = Duration.EndOfTurn
     ): Effect = BecomeCreatureEffect(target, power, toughness, keywords, creatureTypes, removeTypes, colors, duration)
+
+    /**
+     * Target permanent becomes saddled until end of turn (CR 702.171b) — the resolving effect of
+     * a Saddle ability. Defaults to the source, since Saddle always saddles its own permanent.
+     */
+    fun BecomeSaddled(target: EffectTarget = EffectTarget.Self): Effect =
+        BecomeSaddledEffect(target)
 
     /**
      * Each permanent matching [filter] becomes a copy of [target].

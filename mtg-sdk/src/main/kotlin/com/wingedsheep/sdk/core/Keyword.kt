@@ -192,6 +192,7 @@ enum class Keyword(val displayName: String) {
     ABSORB("Absorb"),
     AFFLICT("Afflict"),
     CREW("Crew"),
+    SADDLE("Saddle"),
     MODULAR("Modular"),
     FADING("Fading"),
     VANISHING("Vanishing"),

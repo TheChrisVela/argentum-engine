@@ -88,6 +88,27 @@ data class BecomeCreatureEffect(
 }
 
 /**
+ * Target permanent becomes saddled until end of turn (CR 702.171b). This is the resolving
+ * effect of a Saddle ability: it stamps a transient "saddled" marker on the permanent (the
+ * engine's `SaddledComponent`), which Mount payoffs read via `Conditions.SourceIsSaddled` /
+ * `StatePredicate.IsSaddled`. The marker is engine state, not a copiable value, and is cleared
+ * at end-of-turn cleanup or when the permanent leaves the battlefield.
+ *
+ * Defaults to [EffectTarget.Self] because a Saddle ability always saddles its own source.
+ *
+ * @property target The permanent to mark as saddled
+ */
+@SerialName("BecomeSaddled")
+@Serializable
+data class BecomeSaddledEffect(
+    val target: EffectTarget = EffectTarget.Self
+) : Effect {
+    override val description: String = "${target.description} becomes saddled until end of turn"
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}
+
+/**
  * Turn target creature face down.
  * "Turn target creature with a morph ability face down."
  * Used for Backslide and similar effects.

@@ -91,6 +91,19 @@ data object WarpedComponent : Component
 data object EvokedComponent : Component
 
 /**
+ * Marks a permanent as saddled (CR 702.171b). Added when a Saddle ability resolves.
+ * "Saddled" is a marker designation with no inherent rules meaning — Mount payoffs read it
+ * via [com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsSaddled] to gate "while
+ * saddled" triggers and "as long as it's saddled" statics.
+ *
+ * Transient: stays until end of turn (cleared in [CleanupPhaseManager.cleanupEndOfTurn]) or
+ * until the permanent leaves the battlefield (a fresh entity has no battlefield components).
+ * It is engine state, not a copiable value, so copy effects don't carry it.
+ */
+@Serializable
+data object SaddledComponent : Component
+
+/**
  * Marks a permanent as having been cast for its impending cost (CR 702.176a).
  * The "isn't a creature" static and the end-step time-counter trigger both gate on
  * impending-cost-paid AND has-time-counter, so this marker survives for as long as

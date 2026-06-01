@@ -9,7 +9,7 @@ import type {
   GameAction,
   LegalActionInfo,
   ConvokeCreatureInfo,
-  CrewCreatureInfo,
+  TapForPowerCreatureInfo,
   DelveCardInfo,
   HarmonizeCreatureInfo,
 
@@ -342,17 +342,21 @@ export interface HarmonizeSelectionState {
 }
 
 /**
- * Crew selection state when crewing a Vehicle.
+ * "Tap creatures with total power N" selection state — shared by Crew N (Vehicles) and
+ * Saddle N (Mounts). The action type on [actionInfo] determines which is being paid.
  */
-export interface CrewSelectionState {
+export interface TapForPowerSelectionState {
   actionInfo: LegalActionInfo
-  vehicleName: string
-  /** Power requirement for crew (N in "Crew N") */
-  crewPower: number
-  /** Creatures selected to tap for crewing */
+  /** The source permanent's name (Vehicle or Mount). */
+  sourceName: string
+  /** The verb shown to the player: "Crew" or "Saddle". */
+  verb: string
+  /** Total power requirement (N in "Crew N" / "Saddle N"). */
+  requiredPower: number
+  /** Creatures selected to tap. */
   selectedCreatures: EntityId[]
-  /** All valid creatures that can be tapped to crew */
-  validCreatures: readonly CrewCreatureInfo[]
+  /** All valid creatures that can be tapped. */
+  validCreatures: readonly TapForPowerCreatureInfo[]
 }
 
 /**
@@ -805,7 +809,7 @@ export type GameStore = {
   combatState: CombatState | null
   xSelectionState: XSelectionState | null
   convokeSelectionState: ConvokeSelectionState | null
-  crewSelectionState: CrewSelectionState | null
+  tapForPowerSelectionState: TapForPowerSelectionState | null
   delveSelectionState: DelveSelectionState | null
   manaColorSelectionState: ManaColorSelectionState | null
   decisionSelectionState: DecisionSelectionState | null
@@ -901,10 +905,10 @@ export type GameStore = {
   toggleHarmonizeCreature: (entityId: EntityId) => void
   cancelHarmonizeSelection: () => void
   confirmHarmonizeSelection: () => void
-  startCrewSelection: (state: CrewSelectionState) => void
-  toggleCrewCreature: (entityId: EntityId) => void
-  cancelCrewSelection: () => void
-  confirmCrewSelection: () => void
+  startTapForPowerSelection: (state: TapForPowerSelectionState) => void
+  toggleTapForPowerCreature: (entityId: EntityId) => void
+  cancelTapForPowerSelection: () => void
+  confirmTapForPowerSelection: () => void
   startDelveSelection: (state: DelveSelectionState) => void
   toggleDelveCard: (entityId: EntityId) => void
   cancelDelveSelection: () => void

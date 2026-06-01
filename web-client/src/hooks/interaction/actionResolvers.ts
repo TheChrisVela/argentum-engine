@@ -1,18 +1,18 @@
 /**
  * Action resolver pipeline for useInteraction.
  *
- * Crew is a standalone single-phase flow handled directly here.
- * Everything else goes through the pipeline coordinator (pipelineSlice)
- * which computes the full phase sequence and advances through it.
+ * The "tap creatures with total power N" selection (Crew N / Saddle N) is a standalone
+ * single-phase flow handled directly here. Everything else goes through the pipeline
+ * coordinator (pipelineSlice) which computes the full phase sequence and advances through it.
  */
 import type { EntityId, LegalActionInfo } from '@/types'
-import type { CrewSelectionState } from '@/store/slices/types'
+import type { TapForPowerSelectionState } from '@/store/slices/types'
 import { computePhases } from '@/store/slices/ui/pipelinePhases'
 import { useGameStore } from '@/store/gameStore'
 
 export interface ActionContext {
   selectCard: (id: EntityId | null) => void
-  startCrewSelection: (state: CrewSelectionState) => void
+  startTapForPowerSelection: (state: TapForPowerSelectionState) => void
   startPipeline: (actionInfo: LegalActionInfo) => void
 }
 
@@ -20,22 +20,25 @@ export interface ActionContext {
 // Standalone resolvers (not part of the pipeline)
 // ---------------------------------------------------------------------------
 
-function isCrewAction(info: LegalActionInfo): boolean {
+/** Crew N (Vehicles) and Saddle N (Mounts) share the tap-for-power selection. */
+function isTapForPowerAction(info: LegalActionInfo): boolean {
   return (
-    info.action.type === 'CrewVehicle' &&
-    !!info.hasCrew &&
-    !!info.validCrewCreatures &&
-    info.validCrewCreatures.length > 0
+    (info.action.type === 'CrewVehicle' || info.action.type === 'SaddleMount') &&
+    !!info.tapForPower &&
+    !!info.tapForPowerCreatures &&
+    info.tapForPowerCreatures.length > 0
   )
 }
 
-function resolveCrew(info: LegalActionInfo, ctx: ActionContext): void {
-  ctx.startCrewSelection({
+function resolveTapForPower(info: LegalActionInfo, ctx: ActionContext): void {
+  const verb = info.action.type === 'SaddleMount' ? 'Saddle' : 'Crew'
+  ctx.startTapForPowerSelection({
     actionInfo: info,
-    vehicleName: info.description.replace('Crew ', ''),
-    crewPower: info.crewPower ?? 0,
+    verb,
+    sourceName: info.description.replace(`${verb} `, ''),
+    requiredPower: info.tapForPowerRequired ?? 0,
     selectedCreatures: [],
-    validCreatures: info.validCrewCreatures!,
+    validCreatures: info.tapForPowerCreatures!,
   })
   ctx.selectCard(null)
 }
@@ -49,9 +52,9 @@ function resolveCrew(info: LegalActionInfo, ctx: ActionContext): void {
  * was handled (caller should not submit directly).
  */
 export function resolveAction(actionInfo: LegalActionInfo, ctx: ActionContext): boolean {
-  // Crew is standalone — not part of the pipeline
-  if (isCrewAction(actionInfo)) {
-    resolveCrew(actionInfo, ctx)
+  // Tap-for-power (Crew / Saddle) is standalone — not part of the pipeline
+  if (isTapForPowerAction(actionInfo)) {
+    resolveTapForPower(actionInfo, ctx)
     return true
   }
   // Everything else goes through the pipeline coordinator.
@@ -66,7 +69,7 @@ export function resolveAction(actionInfo: LegalActionInfo, ctx: ActionContext): 
  * be submitted. Used by canAutoExecute / handleDoubleClick.
  */
 export function needsInteraction(actionInfo: LegalActionInfo): boolean {
-  if (isCrewAction(actionInfo)) return true
+  if (isTapForPowerAction(actionInfo)) return true
   const { autoTapEnabled } = useGameStore.getState()
   return computePhases(actionInfo, { autoTapEnabled }).length > 0
 }

@@ -8,6 +8,7 @@ import com.wingedsheep.engine.state.components.battlefield.HasDealtCombatDamageT
 import com.wingedsheep.engine.state.components.battlefield.HasDealtDamageComponent
 import com.wingedsheep.engine.state.components.battlefield.WasDealtDamageThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
+import com.wingedsheep.engine.state.components.battlefield.SaddledComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.combat.BlockingComponent
 import com.wingedsheep.engine.state.components.combat.PlayerAttackersThisTurnComponent
@@ -715,6 +716,10 @@ class PredicateEvaluator {
             }
 
             StatePredicate.IsModified -> com.wingedsheep.engine.handlers.predicates.isModified(state, entityId)
+
+            // Saddled marker — set by BecomeSaddledExecutor when a Saddle ability resolves
+            // (CR 702.171b). Cleared at end-of-turn cleanup or when the permanent leaves play.
+            StatePredicate.IsSaddled -> container.has<SaddledComponent>()
 
             // Zone-specific marker — set by WarpExileExecutor when a warped
             // permanent is exiled at end of turn (CR 702.185b).
