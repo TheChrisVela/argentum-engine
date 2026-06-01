@@ -11,6 +11,7 @@ import com.wingedsheep.engine.legalactions.TargetInfo
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.sdk.core.Keyword
@@ -1618,6 +1619,14 @@ class CastSpellEnumerator : ActionEnumerator {
                                 projected.hasSubtype(permId, com.wingedsheep.sdk.core.Subtype.FOOD.value)
                         }
                         if (graveyardSize < 3 && !hasFood) canPayAdditionalCosts = false
+                    }
+                    is AdditionalCost.PayLife -> {
+                        // Per CR 119.4 you can't pay life unless you have that much. Mode-level
+                        // affordability gate so "discard a card or pay 3 life" modes don't
+                        // surface a Pay-3-Life action when the caster has fewer than 3 life
+                        // (Bitter Triumph). Validation in CastSpellHandler still backstops.
+                        val life = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 0
+                        if (life < cost.amount) canPayAdditionalCosts = false
                     }
                     else -> {}
                 }
