@@ -87,6 +87,7 @@ import com.wingedsheep.sdk.scripting.conditions.PermanentTypeEnteredBattlefieldT
 import com.wingedsheep.sdk.scripting.conditions.PlayerCastSpellsThisTurn
 import com.wingedsheep.sdk.scripting.conditions.PlayerHasCitysBlessing
 import com.wingedsheep.sdk.scripting.conditions.CreatureDiedThisTurnCondition
+import com.wingedsheep.sdk.scripting.conditions.ControlledCreatureDiedThisTurnCondition
 import com.wingedsheep.sdk.scripting.conditions.SourcePlottedOnPriorTurn
 import com.wingedsheep.engine.handlers.triggers.CreatureDiedThisTurnConditionEvaluator
 import com.wingedsheep.engine.state.components.identity.PlottedComponent
@@ -214,8 +215,12 @@ class ConditionEvaluator(
             is WasKicked -> ifResolution { evaluateWasKicked(state, it) }
             is BlightWasPaid -> ifResolution { it.wasBlightPaid }
             is ManaSpentToCastIncludes -> ifResolution { evaluateManaSpentToCastIncludes(state, condition, it) }
-            is SourceChosenModeIs -> ifResolution {
-                val sourceId = it.sourceId
+            is SourceChosenModeIs -> {
+                // Dual-mode: the chosen mode is a stable component on the source permanent,
+                // readable both at resolution (gating triggered abilities) and during
+                // projection (gating mode-dependent continuous static abilities, e.g.
+                // Frostcliff/Windcrag Sieges' lord and static modes).
+                val sourceId = ctx.sourceId
                 sourceId != null &&
                     state.getEntity(sourceId)?.get<ChosenModeComponent>()?.modeId == condition.modeId
             }
@@ -245,6 +250,8 @@ class ConditionEvaluator(
             is CollectionContainsMatch -> ifResolution { evaluateCollectionContainsMatch(state, condition, it) }
             is CreatureDiedThisTurnCondition ->
                 ifResolution { CreatureDiedThisTurnConditionEvaluator().evaluate(state, condition, it) }
+            is ControlledCreatureDiedThisTurnCondition ->
+                ifResolution { CreatureDiedThisTurnConditionEvaluator().evaluateControlled(state, it) }
         }
     }
 

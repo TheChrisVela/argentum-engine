@@ -14,6 +14,7 @@ import com.wingedsheep.engine.core.SpellCastEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 import com.wingedsheep.engine.handlers.ConditionEvaluator
+import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.registry.CardRegistry
@@ -249,6 +250,10 @@ class TriggerDetector(
         // When a creature matching the filter ETBs, triggered abilities on the controller's
         // permanents that fired from that event trigger an additional time per copy.
         duplicateETBTriggers(state, events, triggers)
+
+        // Duplicate triggers caused by a creature being declared as an attacker (Windcrag Siege's
+        // Mardu mode). The attack-cause analogue of duplicateETBTriggers.
+        duplicateAttackTriggers(state, events, triggers)
 
         // Duplicate triggers for "all triggers from a filtered source trigger again" static
         // abilities (e.g., Twinflame Travelers). For each pending trigger whose source matches
@@ -1908,6 +1913,104 @@ class TriggerDetector(
                     val triggerEvent = trigger.ability.trigger
                     if (triggerEvent !is GameEvent.ZoneChangeEvent) continue
                     if (triggerEvent.to != Zone.BATTLEFIELD) continue
+
+                    duplicates.add(trigger)
+                }
+            }
+        }
+
+        triggers.addAll(duplicates)
+    }
+
+    /**
+     * Duplicate triggers caused by a creature being declared as an attacker for
+     * [AdditionalAttackTriggers] static abilities (Windcrag Siege's Mardu mode).
+     *
+     * The attack-cause analogue of [duplicateETBTriggers]: for each [AttackersDeclaredEvent], if a
+     * permanent the doubler controls has an attack-related triggered ability ("whenever a creature
+     * attacks" / "whenever you attack") that fired from that event, that trigger fires an additional
+     * time per copy. Only the declared attackers matching [AdditionalAttackTriggers.attackerFilter]
+     * count as the cause; if the trigger names a specific attacker (per-attacker AttackEvent), that
+     * attacker must match.
+     *
+     * Multiple copies are additive: N copies add N extra firings of each affected trigger.
+     */
+    private fun duplicateAttackTriggers(
+        state: GameState,
+        events: List<EngineGameEvent>,
+        triggers: MutableList<PendingTrigger>
+    ) {
+        val attackEvents = events.filterIsInstance<AttackersDeclaredEvent>()
+        if (attackEvents.isEmpty() || triggers.isEmpty()) return
+
+        val registry = cardRegistry
+        val projected = state.projectedState
+
+        data class AttackDoubler(
+            val controllerId: EntityId,
+            val filter: GameObjectFilter,
+            val sourceId: EntityId,
+        )
+        val doublers = mutableListOf<AttackDoubler>()
+
+        for (permanentId in state.getBattlefield()) {
+            val container = state.getEntity(permanentId) ?: continue
+            val card = container.get<CardComponent>() ?: continue
+            if (container.has<FaceDownComponent>()) continue
+            val controllerId = projected.getController(permanentId) ?: continue
+            val cardDef = registry.getCard(card.cardDefinitionId) ?: continue
+            val classLevel = container.get<ClassLevelComponent>()?.currentLevel
+            for (ability in cardDef.script.effectiveStaticAbilities(classLevel)) {
+                // Unwrap mode/condition-gated abilities (e.g. Windcrag Siege's Mardu mode) and
+                // honor the gate against this source permanent.
+                val unwrapped: AdditionalAttackTriggers? = when (ability) {
+                    is AdditionalAttackTriggers -> ability
+                    is ConditionalStaticAbility ->
+                        (ability.ability as? AdditionalAttackTriggers)?.takeIf {
+                            val opponentId = state.turnOrder.firstOrNull { it != controllerId }
+                            conditionEvaluator.evaluate(
+                                state, ability.condition,
+                                EffectContext(sourceId = permanentId, controllerId = controllerId, opponentId = opponentId)
+                            )
+                        }
+                    else -> null
+                }
+                if (unwrapped != null) {
+                    doublers.add(AttackDoubler(controllerId, unwrapped.attackerFilter, permanentId))
+                }
+            }
+        }
+
+        if (doublers.isEmpty()) return
+
+        val duplicates = mutableListOf<PendingTrigger>()
+
+        for (attackEvent in attackEvents) {
+            for (doubler in doublers) {
+                // Which declared attackers satisfy this doubler's filter (the "cause").
+                val matchingAttackers = attackEvent.attackers.filter { attackerId ->
+                    doubler.filter == GameObjectFilter.Any ||
+                        predicateEvaluator.matches(
+                            state, projected, attackerId, doubler.filter,
+                            PredicateContext(controllerId = doubler.controllerId, sourceId = doubler.sourceId)
+                        )
+                }
+                if (matchingAttackers.isEmpty()) continue
+
+                for (trigger in triggers) {
+                    if (trigger.controllerId != doubler.controllerId) continue
+
+                    // Only attack-caused triggers: "whenever a creature attacks" / "whenever you attack".
+                    val triggerEvent = trigger.ability.trigger
+                    val isAttackTrigger = triggerEvent is GameEvent.AttackEvent ||
+                        triggerEvent is GameEvent.YouAttackEvent
+                    if (!isAttackTrigger) continue
+
+                    // If the trigger names a specific attacker (per-attacker AttackEvent), that
+                    // attacker must be one of the cause attackers. Triggers without a specific
+                    // attacker (e.g. "whenever you attack") are caused by the attack as a whole.
+                    val triggeringAttacker = trigger.triggerContext.triggeringEntityId
+                    if (triggeringAttacker != null && triggeringAttacker !in matchingAttackers) continue
 
                     duplicates.add(trigger)
                 }

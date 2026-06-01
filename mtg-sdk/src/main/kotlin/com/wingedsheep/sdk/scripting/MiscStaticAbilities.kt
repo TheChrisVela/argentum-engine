@@ -585,6 +585,39 @@ data class AdditionalSourceTriggers(
 }
 
 /**
+ * If a creature matching [attackerFilter] attacking causes a triggered ability of a permanent
+ * you control to trigger, that ability triggers an additional time.
+ *
+ * This is the "attack-cause" analogue of [AdditionalETBTriggers]: instead of doubling triggers
+ * caused by a permanent entering the battlefield, it doubles triggers caused by a creature being
+ * declared as an attacker (the attackers-declared event). Models Windcrag Siege's Mardu mode:
+ * "If a creature attacking causes a triggered ability of a permanent you control to trigger, that
+ * ability triggers an additional time."
+ *
+ * Only triggers belonging to permanents controlled by this ability's controller are doubled, and
+ * only triggers that fired from the same attackers-declared event (their triggering entity is one
+ * of the declared attackers matching [attackerFilter]). The duplicated trigger inherits the
+ * original's source, controller, and triggering attacker, so players choose new targets
+ * independently for each copy.
+ *
+ * [attackerFilter] restricts which attacking creatures cause the doubling. Defaults to
+ * [GameObjectFilter.Any] — any creature attacking, matching Windcrag Siege's unrestricted wording.
+ *
+ * Multiple copies are additive: N copies add N extra firings of each affected trigger.
+ */
+@SerialName("AdditionalAttackTriggers")
+@Serializable
+data class AdditionalAttackTriggers(
+    val attackerFilter: GameObjectFilter = GameObjectFilter.Any,
+    override val description: String = "If a creature attacking causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time"
+) : StaticAbility {
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = attackerFilter.applyTextReplacement(replacer)
+        return if (newFilter !== attackerFilter) copy(attackerFilter = newFilter) else this
+    }
+}
+
+/**
  * You may play additional lands on each of your turns.
  * Used for permanents like Hugs, Grisly Guardian and Oracle of Mul Daya.
  *

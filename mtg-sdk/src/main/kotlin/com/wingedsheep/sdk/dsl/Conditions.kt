@@ -717,6 +717,13 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.CreatureDiedThisTurnCondition
 
     /**
+     * Intervening-if: "if a creature died under your control this turn" (scoped to the
+     * source's controller). Used for Barrensteppe Siege (Mardu).
+     */
+    val ControlledCreatureDiedThisTurn: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.ControlledCreatureDiedThisTurnCondition
+
+    /**
      * If this is the Nth time this ability has resolved this turn.
      * Used for cards like Harvestrite Host.
      */

@@ -1301,6 +1301,17 @@ staticAbility {
   enforced as a whole-declaration check in `AttackPhaseManager`/`BlockPhaseManager` rather than a
   per-creature rule. While any permanent with the ability is on the battlefield, declaring more
   than the smallest cap is rejected. (`BlockerCountLimit` counts distinct blocking creatures.)
+- `AdditionalETBTriggers(enteringFilter, enteringMustBeYouControl = true)` — Panharmonicon / Naban
+  "for a subtype": when a permanent matching `enteringFilter` enters, triggered abilities of
+  permanents you control that fired from that ETB trigger an additional time. `TriggerDetector.duplicateETBTriggers`.
+- `AdditionalSourceTriggers(sourceFilter, excludeSelf = true)` — Twinflame Travelers: all triggered
+  abilities of permanents matching `sourceFilter` you control trigger an additional time (not just ETB).
+  `TriggerDetector.duplicateSourceTriggers`.
+- `AdditionalAttackTriggers(attackerFilter = GameObjectFilter.Any)` — Windcrag Siege (Mardu): the
+  attack-cause analogue of `AdditionalETBTriggers`. If a creature matching `attackerFilter` being
+  declared as an attacker causes an attack-related triggered ability ("whenever a creature
+  attacks" / "whenever you attack") of a permanent you control to trigger, that ability triggers an
+  additional time. `TriggerDetector.duplicateAttackTriggers`; additive across copies.
 
 **Spell cost statics — `ModifySpellCost`**
 
@@ -1749,6 +1760,11 @@ default to "you" so card authors don't need to pass it explicitly.
   `PlayerDescendedThisTurnComponent`, incremented in `ZoneTransitionService` whenever a
   permanent (nontoken) card lands in a player's graveyard, and cleared by
   `CleanupPhaseManager` at end of turn.
+- `CreatureDiedThisTurn` — intervening-if "if a creature died this turn", **global** (any player's
+  control; sums every player's `CreaturesDiedThisTurnComponent`).
+- `ControlledCreatureDiedThisTurn` — intervening-if "if a creature died **under your control** this
+  turn", scoped to the source's controller (reads only that player's `CreaturesDiedThisTurnComponent`).
+  Used by Barrensteppe Siege (Mardu). Dual-mode.
 
 ### Composition
 

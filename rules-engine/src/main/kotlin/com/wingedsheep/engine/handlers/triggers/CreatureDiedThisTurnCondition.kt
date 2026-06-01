@@ -25,4 +25,16 @@ class CreatureDiedThisTurnConditionEvaluator {
             (state.getEntity(playerId)?.get<CreaturesDiedThisTurnComponent>()?.count ?: 0) > 0
         }
     }
+
+    /**
+     * Evaluator for ControlledCreatureDiedThisTurnCondition.
+     * Intervening-if: "if a creature died under your control this turn" — scoped to the
+     * source's controller. Reads only that player's CreaturesDiedThisTurnComponent.
+     */
+    fun evaluateControlled(
+        state: GameState,
+        context: EffectContext
+    ): Boolean {
+        return (state.getEntity(context.controllerId)?.get<CreaturesDiedThisTurnComponent>()?.count ?: 0) > 0
+    }
 }

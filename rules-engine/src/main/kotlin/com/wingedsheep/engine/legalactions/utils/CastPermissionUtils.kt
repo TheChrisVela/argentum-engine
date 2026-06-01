@@ -443,11 +443,27 @@ class CastPermissionUtils(
                     return true
                 }
             }
-            // Crucible of Worlds style: unlimited land plays from graveyard (land-drop is the limit)
-            if (typeName == com.wingedsheep.sdk.core.CardType.LAND.name &&
-                cardDef.script.staticAbilities.any { it is MayPlayLandsFromGraveyard }
-            ) {
-                return true
+            // Crucible of Worlds style: unlimited land plays from graveyard (land-drop is the limit).
+            // Unwrap mode/condition-gated abilities (e.g. Glacierwood Siege's Sultai mode) and honor
+            // the gate against this source permanent.
+            if (typeName == com.wingedsheep.sdk.core.CardType.LAND.name) {
+                val classLevel = state.getEntity(entityId)
+                    ?.get<com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent>()?.currentLevel
+                for (ability in cardDef.script.effectiveStaticAbilities(classLevel)) {
+                    if (ability is com.wingedsheep.sdk.scripting.ConditionalStaticAbility) {
+                        if (ability.ability is MayPlayLandsFromGraveyard) {
+                            val opponentId = state.turnOrder.firstOrNull { it != playerId }
+                            val context = com.wingedsheep.engine.handlers.EffectContext(
+                                sourceId = entityId,
+                                controllerId = playerId,
+                                opponentId = opponentId
+                            )
+                            if (conditionEvaluator.evaluate(state, ability.condition, context)) return true
+                        }
+                    } else if (ability is MayPlayLandsFromGraveyard) {
+                        return true
+                    }
+                }
             }
         }
         return false

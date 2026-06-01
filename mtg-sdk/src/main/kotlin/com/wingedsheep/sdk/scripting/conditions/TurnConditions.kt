@@ -252,6 +252,19 @@ data object CreatureDiedThisTurnCondition : Condition {
     override fun applyTextReplacement(replacer: TextReplacer): Condition = this
 }
 
+/**
+ * Intervening-if condition (Rule 603.4): "if a creature died under your control this turn".
+ * True when the source's controller's CreaturesDiedThisTurnComponent has count > 0.
+ * Unlike [CreatureDiedThisTurnCondition] (which counts creatures dying under any player's
+ * control), this is scoped to the source's controller. Used by Barrensteppe Siege (Mardu).
+ */
+@SerialName("ControlledCreatureDiedThisTurn")
+@Serializable
+data object ControlledCreatureDiedThisTurnCondition : Condition {
+    override val description: String = "if a creature died under your control this turn"
+    override fun applyTextReplacement(replacer: TextReplacer): Condition = this
+}
+
 // =============================================================================
 // Plot (CR 718, Outlaws of Thunder Junction)
 // =============================================================================

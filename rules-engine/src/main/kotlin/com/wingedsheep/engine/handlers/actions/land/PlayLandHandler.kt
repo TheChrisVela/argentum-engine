@@ -25,7 +25,9 @@ import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.OnEnterRunEffect
+import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
 import com.wingedsheep.sdk.scripting.MayPlayLandsFromGraveyard
+import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
 import com.wingedsheep.sdk.scripting.MayPlayPermanentsFromGraveyard
 import com.wingedsheep.engine.legalactions.utils.LandDropUtils
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
@@ -524,9 +526,42 @@ class PlayLandHandler(
         for (entityId in state.getBattlefield(playerId)) {
             val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            if (cardDef.script.staticAbilities.any { it is MayPlayLandsFromGraveyard }) return true
+            val classLevel = state.getEntity(entityId)?.get<ClassLevelComponent>()?.currentLevel
+            for (ability in cardDef.script.effectiveStaticAbilities(classLevel)) {
+                // Unwrap mode/condition-gated abilities (e.g. Glacierwood Siege's Sultai mode)
+                // and honor the gate against this source permanent.
+                if (ability is ConditionalStaticAbility) {
+                    if (ability.ability is MayPlayLandsFromGraveyard &&
+                        evaluateStaticGate(state, ability.condition, entityId, playerId)
+                    ) {
+                        return true
+                    }
+                } else if (ability is MayPlayLandsFromGraveyard) {
+                    return true
+                }
+            }
         }
         return false
+    }
+
+    /**
+     * Evaluate a [ConditionalStaticAbility] gating condition against a specific source
+     * permanent. Used so a mode/condition-gated graveyard-play permission only applies
+     * while its gate holds (e.g. Glacierwood Siege only when "Sultai" is the chosen mode).
+     */
+    private fun evaluateStaticGate(
+        state: GameState,
+        condition: com.wingedsheep.sdk.scripting.conditions.Condition,
+        sourceId: EntityId,
+        controllerId: EntityId
+    ): Boolean {
+        val opponentId = state.turnOrder.firstOrNull { it != controllerId }
+        val context = EffectContext(
+            sourceId = sourceId,
+            controllerId = controllerId,
+            opponentId = opponentId
+        )
+        return conditionEvaluator.evaluate(state, condition, context)
     }
 
     /**

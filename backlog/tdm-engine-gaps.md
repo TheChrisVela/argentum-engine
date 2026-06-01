@@ -28,6 +28,12 @@ work. Once the Tier-1 keywords land, the large majority of remaining cards are b
 - **Sieges** (5 cards) — `EntersWithChoice(ChoiceType.MODE)` gating two ability sets ("As this
   enters, choose [clan A] or [clan B]"). Proven by Outpost Siege. (Barrensteppe / Frostcliff /
   Glacierwood / Hollowmurk / Windcrag / Cori Mountain Monastery siege-style enchantments.)
+  **DONE** (Barrensteppe / Frostcliff / Glacierwood / Hollowmurk / Windcrag). Required making
+  `SourceChosenModeIs` dual-mode so it can gate *continuous static* modes during projection
+  (Frostcliff Temur lord, Glacierwood Sultai play-lands-from-graveyard, Windcrag Mardu), plus a
+  new `ControlledCreatureDiedThisTurn` condition (Barrensteppe Mardu) and a new
+  `AdditionalAttackTriggers` static ability + `TriggerDetector.duplicateAttackTriggers` pass
+  (Windcrag Mardu). Cori Mountain Monastery remains unimplemented.
 - **Planeswalkers** — loyalty framework fully supported (many existing PWs incl. a Sarkhan).
   **Ugin, Eye of the Storms**, **Elspeth, Storm Slayer**, **Sarkhan, Dragon Ascendant** need only
   their specific abilities, not new framework.
