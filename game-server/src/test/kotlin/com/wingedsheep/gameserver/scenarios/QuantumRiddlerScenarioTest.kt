@@ -104,7 +104,7 @@ class QuantumRiddlerScenarioTest : ScenarioTestBase() {
 
             test("cycling's 'Draw a card' is modified when the hand-size restriction holds") {
                 // Regression for the third announcement site wired into the modifier:
-                // CycleCardHandler. Cycling is "Discard this, Draw a card" (CR 702.32a), so
+                // CycleCardHandler. Cycling is "Discard this, Draw a card" (CR 702.29a), so
                 // its draw is its own announcement site — Quantum Riddler must add +1 when
                 // its restriction holds. Hundroog ({6}{G}, cycling {3}) is registered via
                 // LegionsSet; with only Hundroog in hand, the post-discard hand is empty and

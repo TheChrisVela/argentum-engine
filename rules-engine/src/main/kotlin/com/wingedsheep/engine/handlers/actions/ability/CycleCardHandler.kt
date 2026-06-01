@@ -236,7 +236,7 @@ class CycleCardHandler(
         }
 
         // Draw a card using DrawCardsExecutor (checks replacement shields and promptOnDraw).
-        // Cycling is "Discard this card: Draw a card" (CR 702.32a), so its draw is an
+        // Cycling is "Discard this card: Draw a card" (CR 702.29a), so its draw is an
         // announcement site for ModifyDrawAmount (CR 121.2a) — e.g. Quantum Riddler's +1
         // applies to a cycle draw while its hand-size restriction holds.
         val drawExecutor = DrawCardsExecutor(cardRegistry = cardRegistry)
