@@ -502,6 +502,12 @@ class DynamicAmountEvaluator(
                         ?: emptySet()
                 }.intersect(BASIC_LAND_SUBTYPES)
             }.size
+            // Counters are physically stored on the permanent (base state, not layered), so read
+            // CountersComponent directly. The map only holds kinds with a positive count
+            // (CountersComponent.withRemoved drops the key at zero), so every key is a present kind.
+            Aggregation.DISTINCT_COUNTER_TYPES -> matchingEntities.flatMapTo(mutableSetOf()) { entityId ->
+                state.getEntity(entityId)?.get<CountersComponent>()?.counters?.keys ?: emptySet()
+            }.size
         }
     }
 
@@ -564,6 +570,11 @@ class DynamicAmountEvaluator(
                     val subtypes: Set<String> = state.getEntity(entityId)?.get<CardComponent>()?.typeLine?.subtypes?.map { it.value }?.toSet()
                         ?: emptySet()
                     subtypes.intersect(BASIC_LAND_SUBTYPES)
+                }.size
+            }
+            Aggregation.DISTINCT_COUNTER_TYPES -> {
+                matchingEntities.flatMapTo(mutableSetOf()) { entityId ->
+                    state.getEntity(entityId)?.get<CountersComponent>()?.counters?.keys ?: emptySet()
                 }.size
             }
         }

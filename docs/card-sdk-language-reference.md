@@ -1581,6 +1581,13 @@ keywordAbilities(KeywordAbility.Protection(Color.BLUE), KeywordAbility.Annihilat
 - `OpponentControlsMoreCreatures` — an opponent outpaces you.
 - `OpponentControlsMoreLands` — an opponent has more lands.
 - `OpponentControlsLandType(type)` — opponent controls land of a type.
+- `DifferentCounterKindsAtLeast(count, filter = Creature)` — true when `count` or more *different
+  kinds* of counters are among permanents you control matching `filter` (default: creatures). A
+  +1/+1 and a finality counter is two kinds; the same kind on several permanents counts once.
+  Board-derived only, so it gates a `ConditionalStaticAbility` (evaluates identically in resolution
+  and projection). Desugars to `Compare(AggregateBattlefield(You, filter, DISTINCT_COUNTER_TYPES),
+  GTE, count)`. Used by Hundred-Battle Veteran ("three or more different kinds of counters among
+  creatures you control").
 - `TargetControlsCreature(target)` — target player has a creature.
 - `TargetControlsLand(target)` — target player has a land.
 - `TargetMatchesFilter(filter, targetIndex = 0)` — the context target matches a `GameObjectFilter`.
@@ -1636,7 +1643,11 @@ keywordAbilities(KeywordAbility.Protection(Color.BLUE), KeywordAbility.Annihilat
 
 - `WasCast` — source was cast (not put onto the stack).
 - `WasCastFromHand` — cast specifically from hand.
-- `WasCastFromZone(zone)` — cast from a specific zone.
+- `WasCastFromZone(zone)` — cast from a specific zone. For resolving spells it reads the spell's
+  cast-origin; for a permanent already on the battlefield it falls back to the cast-origin marker
+  stamped as it entered (`HAND` → `CastFromHandComponent`, `GRAVEYARD` → `CastFromGraveyardComponent`),
+  so it can gate an entering permanent's own replacement effect (Hundred-Battle Veteran: "enters with
+  a finality counter if cast from your graveyard").
 - `WasKicked` — cast with kicker / multikicker / offspring (i.e. an `OptionalAdditionalCost` with `branchesEffect = true` whose extra cost was paid). FlashKicker payments are intentionally invisible to this condition.
 - `BlightWasPaid(amount)` — the Blight X additional cost was paid.
 
@@ -1775,7 +1786,12 @@ Numbers computed at resolution time.
 
 ### Battlefield aggregation
 
-- `AggregateBattlefield(player, filter)` — count matching permanents.
+- `AggregateBattlefield(player, filter, aggregation?, property?)` — aggregate over matching
+  permanents. `aggregation` defaults to `COUNT`; other modes: `MAX`/`MIN`/`SUM` over a
+  `property` (`POWER`/`TOUGHNESS`/`MANA_VALUE`), and the distinct-set counters
+  `DISTINCT_TYPES`, `DISTINCT_COLORS`, `DISTINCT_NAMES`, `DISTINCT_BASIC_LAND_SUBTYPES`
+  (Domain), and `DISTINCT_COUNTER_TYPES` (the number of different kinds of counters present
+  across the group — same kind on several permanents counts once).
 - `AggregateZone(player, zone, filter?, aggregation?)` — count cards in a zone.
 - `CountPermanentsOfType(player, subtype)` — count by creature type.
 - `CountCreaturesYouControl` — shorthand for "your creatures".

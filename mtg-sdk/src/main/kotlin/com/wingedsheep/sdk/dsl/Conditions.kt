@@ -29,6 +29,7 @@ import com.wingedsheep.sdk.scripting.conditions.PlayerAttackedWithCreaturesThisT
 import com.wingedsheep.sdk.scripting.conditions.PlayerCastSpellsThisTurn
 import com.wingedsheep.sdk.scripting.conditions.PlayerHasCitysBlessing
 import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.values.Aggregation
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
 import com.wingedsheep.sdk.scripting.values.EntityReference
@@ -175,6 +176,23 @@ object Conditions {
     fun ControlCreaturesAtLeast(count: Int): ConditionInterface =
         Compare(
             DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature),
+            ComparisonOperator.GTE,
+            DynamicAmount.Fixed(count)
+        )
+
+    /**
+     * If [count] or more different kinds of counters are among permanents you control matching
+     * [filter] (default: creatures). Counts distinct counter kinds across the whole group — a
+     * +1/+1 and a finality counter on two creatures is two kinds; the same kind on several
+     * permanents counts once. Used for Hundred-Battle Veteran ("three or more different kinds of
+     * counters among creatures you control").
+     */
+    fun DifferentCounterKindsAtLeast(
+        count: Int,
+        filter: GameObjectFilter = GameObjectFilter.Creature
+    ): ConditionInterface =
+        Compare(
+            DynamicAmount.AggregateBattlefield(Player.You, filter, Aggregation.DISTINCT_COUNTER_TYPES),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(count)
         )

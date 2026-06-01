@@ -32,5 +32,13 @@ enum class Aggregation {
      * Bounded by 5; nonbasic lands with basic subtypes (e.g., Tundra → Plains+Island)
      * contribute each of their basic subtypes.
      */
-    DISTINCT_BASIC_LAND_SUBTYPES
+    DISTINCT_BASIC_LAND_SUBTYPES,
+    /**
+     * Count distinct kinds of counters across all matched entities — i.e. the number of
+     * different [com.wingedsheep.sdk.core.CounterType]s present on at least one matched
+     * permanent. A permanent with both +1/+1 and finality counters contributes two kinds;
+     * the same kind on several permanents still counts once. Used for "different kinds of
+     * counters among <group>" (e.g. Hundred-Battle Veteran).
+     */
+    DISTINCT_COUNTER_TYPES
 }

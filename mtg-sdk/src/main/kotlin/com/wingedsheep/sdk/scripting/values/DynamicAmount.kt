@@ -587,6 +587,11 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
                     if (excludeSelf) append("other ")
                     append(pluralize(filter.description))
                 }
+                Aggregation.DISTINCT_COUNTER_TYPES -> {
+                    append("the number of different kinds of counters among ")
+                    if (excludeSelf) append("other ")
+                    append(pluralize(filter.description))
+                }
             }
             append(" ")
             when (player) {
@@ -667,6 +672,10 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
                 }
                 Aggregation.DISTINCT_BASIC_LAND_SUBTYPES -> {
                     append("the number of basic land types among ")
+                    append(pluralize(filter.description))
+                }
+                Aggregation.DISTINCT_COUNTER_TYPES -> {
+                    append("the number of different kinds of counters among ")
                     append(pluralize(filter.description))
                 }
             }

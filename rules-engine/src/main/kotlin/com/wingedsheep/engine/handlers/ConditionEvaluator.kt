@@ -543,12 +543,16 @@ class ConditionEvaluator(
     private fun evaluateWasCastFromZone(state: GameState, condition: WasCastFromZone, context: EffectContext): Boolean {
         // For spells resolving, check context.castFromZone (set from SpellOnStackComponent)
         if (context.castFromZone == condition.zone) return true
-        // For permanents (triggered abilities), fall back to battlefield components
+        // For permanents (e.g. an entering creature's own "enters with a counter if cast from
+        // graveyard" replacement, or a triggered ability), fall back to the cast-origin marker
+        // component stamped on the permanent as it resolved onto the battlefield.
         val sourceId = context.sourceId ?: return false
-        if (condition.zone == Zone.HAND) {
-            return state.getEntity(sourceId)?.has<CastFromHandComponent>() == true
+        val entity = state.getEntity(sourceId) ?: return false
+        return when (condition.zone) {
+            Zone.HAND -> entity.has<CastFromHandComponent>()
+            Zone.GRAVEYARD -> entity.has<CastFromGraveyardComponent>()
+            else -> false
         }
-        return false
     }
 
     private fun evaluateWasKicked(state: GameState, context: EffectContext): Boolean {
