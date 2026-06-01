@@ -235,9 +235,11 @@ data class CreateTokenCopyOfSourceEffect(
      * Extra card types to union onto the token's type line on top of the source's types.
      * Use the [com.wingedsheep.sdk.core.CardType] `name` (e.g. `"ARTIFACT"`).
      *
-     * Used by Vaultborn Tyrant's death trigger ("create a token that's a copy of it,
-     * except it's an artifact in addition to its other types") — the token has every
-     * type the source had, plus the listed types.
+     * Models the "except it's a [type] in addition to its other types" copy clause —
+     * the token has every type the source had, plus the listed types. First used for
+     * Vaultborn Tyrant's death trigger ("create a token that's a copy of it, except
+     * it's an artifact in addition to its other types"); any future copy-token effect
+     * with the same shape can reuse the same field.
      */
     val addCardTypes: Set<String> = emptySet()
 ) : Effect {
