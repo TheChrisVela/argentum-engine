@@ -28,6 +28,14 @@ data class DealDamageEffect(
     val amount: DynamicAmount,
     val target: EffectTarget,
     val cantBePrevented: Boolean = false,
+    /**
+     * Optional override for the damage source. When null the engine attributes the damage to the
+     * resolving spell/ability's source (the trigger's source for triggered abilities, the spell
+     * itself for instants/sorceries). For LTB triggers on tokens, the source has already been
+     * SBA-swept (CR 704.5d) by the time the trigger resolves — the engine reads it via
+     * last-known-information, so leaving this null on a token's LTB damage clause works
+     * (e.g. Munitions' "When this token leaves the battlefield, it deals 2 damage to any target").
+     */
     val damageSource: EffectTarget? = null
 ) : Effect {
     /** Convenience constructor for fixed amounts */

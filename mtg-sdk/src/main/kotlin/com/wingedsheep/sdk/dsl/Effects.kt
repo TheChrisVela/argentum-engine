@@ -1394,6 +1394,15 @@ object Effects {
     fun CreateDroneToken(count: Int = 1): Effect =
         CreatePredefinedTokenEffect("Drone", count)
 
+    /**
+     * Create Munitions artifact tokens (noncreature). Created by Weapons Manufacturing.
+     * "When this token leaves the battlefield, it deals 2 damage to any target."
+     *
+     * @param count Number of tokens to create
+     */
+    fun CreateMunitionsToken(count: Int = 1): Effect =
+        CreatePredefinedTokenEffect("Munitions", count)
+
     // =========================================================================
     // Protection Effects
     // =========================================================================

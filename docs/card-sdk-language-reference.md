@@ -362,12 +362,16 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Tokens & emblems
 
-- `CreateToken(name, p, t, colors?, subtypes?, keywords?, count?, tapped?)` — make N tokens. `count` accepts an
-  `Int` or a `DynamicAmount` (the latter for "create X tokens" wording — e.g. Verdeloth the Ancient passes
-  `count = DynamicAmount.XValue` to make X Saprolings when kicked). Publishes the created token entity IDs to the
-  `CREATED_TOKENS` pipeline collection, so a sibling effect in a `CompositeEffect` can address each token via
-  `EffectTarget.PipelineTarget(CREATED_TOKENS, index)` — e.g. Mardu Monument grants menace and haste until end of
-  turn to each of its three freshly-created Warriors with one `GrantKeyword` per token.
+- `CreateToken(name, p, t, colors?, subtypes?, keywords?, count?, tapped?)` — make N creature tokens.
+  `count` accepts an `Int` or a `DynamicAmount` (the latter for "create X tokens" wording — e.g. Verdeloth the
+  Ancient passes `count = DynamicAmount.XValue` to make X Saprolings when kicked). Publishes the created token
+  entity IDs to the `CREATED_TOKENS` pipeline collection, so a sibling effect in a `CompositeEffect` can address
+  each token via `EffectTarget.PipelineTarget(CREATED_TOKENS, index)` — e.g. Mardu Monument grants menace and haste
+  until end of turn to each of its three freshly-created Warriors with one `GrantKeyword` per token. For a *named*
+  token (creature or otherwise) with its own abilities — Treasure, Munitions, Cragflame — add a `CardDefinition`
+  to `PredefinedTokens.kt` and expose an `Effects.Create<Name>Token()` facade that wraps
+  `CreatePredefinedTokenEffect("<Name>", count)`. The predefined-token registry already supports noncreature type
+  lines (e.g. Munitions' `typeLine = "Artifact"`) and embedded triggered abilities.
 - `CreateDynamicToken(dynamicPower, dynamicToughness, colors?, creatureTypes, keywords?, count?, controller?, imageUri?)` —
   tokens whose P/T is computed at resolution (e.g. Pure Reflection's X/X Reflection where X = the cast spell's mana
   value, via `DynamicAmounts.triggeringManaValue()`). `controller` directs who gets the token (e.g.
@@ -385,6 +389,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `CreateRoleToken(roleName, target)` — attach a Role aura token.
 - `CreateMapToken(count?)` — Map artifact tokens.
 - `CreateDroneToken(count?)` — Drone tokens.
+- `CreateMunitionsToken(count?)` — Munitions noncreature artifact tokens (Weapons Manufacturing); the LTB damage
+  trigger lives on the predefined `Munitions` `CardDefinition` and is picked up automatically by the engine's
+  `TriggerAbilityResolver`.
 - `CreatePermanentEmblem(name, abilities)` — planeswalker emblem with static abilities.
 
 ### Ability granting

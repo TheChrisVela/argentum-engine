@@ -329,6 +329,25 @@ object PredefinedTokens {
     }
 
     /**
+     * Munitions — a colorless artifact token created by Weapons Manufacturing with:
+     * "When this token leaves the battlefield, it deals 2 damage to any target."
+     */
+    val Munitions = card("Munitions") {
+        typeLine = "Artifact"
+
+        triggeredAbility {
+            trigger = Triggers.LeavesBattlefield
+            target = Targets.Any
+            effect = Effects.DealDamage(2, EffectTarget.ContextTarget(0))
+            description = "When this token leaves the battlefield, it deals 2 damage to any target."
+        }
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/a/1/a16f931a-9fa3-45b1-8d54-04b6b5bf7b71.jpg?1756281096"
+        }
+    }
+
+    /**
      * All predefined token definitions.
      * Register these in the CardRegistry so token abilities are resolved.
      */
@@ -343,6 +362,7 @@ object PredefinedTokens {
         Mutavault,
         SorcererRole,
         Incubator,
-        Drone
+        Drone,
+        Munitions
     )
 }

@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 247 / 261
+**Implemented:** 248 / 261
 ---
 
 - [x] Adagia, Windswept Bastion
@@ -256,7 +256,7 @@
 - [x] Vote Out
 - [x] Warmaker Gunship
 - [x] Watery Grave
-- [ ] Weapons Manufacturing
+- [x] Weapons Manufacturing
 - [x] Wedgelight Rammer
 - [x] Weftblade Enhancer
 - [x] Weftstalker Ardent

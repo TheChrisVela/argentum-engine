@@ -3,9 +3,9 @@ https://api.scryfall.com/cards/named?exact=Beyond%20the%20Quiet&set=eoe
 
 # Problem Cards
 
-## Status: cards still blocked on engine work (14)
+## Status: cards still blocked on engine work (13)
 
-The booster set is at **247 / 261**. The cards below are the only unimplemented ones; each is
+The booster set is at **248 / 261**. The cards below are the only unimplemented ones; each is
 blocked on a missing engine/SDK feature. The blocking clause and the engine change needed are
 summarized here and detailed in [`missing-effects.md`](missing-effects.md) (section numbers in
 parentheses).
@@ -15,7 +15,6 @@ parentheses).
 | Bioengineered Future | "Each creature you control enters with an additional +1/+1 counter ... for each land that entered ... this turn" | Continuous extra-ETB-counters + lands-entered-this-turn tracker (§5) |
 | Territorial Bruntar | "exile cards from the top ... until you exile a nonland card. You may cast that card this turn" | Impulse-until-nonland effect (§9) |
 | Zero Point Ballad | "Destroy all creatures with toughness X or less" + reanimate one destroyed this way | Dynamic-toughness mass destroy + reanimate-from-batch (§10) |
-| Weapons Manufacturing | create the noncreature "Munitions" artifact token with a leaves-battlefield damage trigger | Noncreature tokens with embedded triggers (§11) |
 | Lightstall Inquisitor | "each opponent exiles a card from their hand and may play that card ..." (+cost/tapped) | Opponent exile-from-hand-may-play with modifiers (§12) |
 | Moonlit Meditation | "instead create that many tokens that are copies of enchanted permanent" (once/turn) | Token-creation replacement → copies (§13) |
 | Tannuk, Steadfast Second | "Artifact cards and red creature cards in your hand have warp {2}{R}" | Grant Warp to hand cards (§15) |

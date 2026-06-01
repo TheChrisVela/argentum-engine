@@ -4,7 +4,7 @@ Engine features required to implement the remaining EOE cards. Each section list
 unblocks, the exact oracle clause that can't be expressed with current primitives, and a sketch of
 the engine/SDK work needed.
 
-As of the latest pass, **247 / 261** booster cards are implemented. The cards below remain
+As of the latest pass, **248 / 261** booster cards are implemented. The cards below remain
 blocked on the engine features listed here. Cards whose every clause maps to an existing primitive
 have already been implemented and are not listed.
 
@@ -142,19 +142,16 @@ X ≥ 6. "Lose X life" is already expressible.
 
 ---
 
-## 11. Noncreature artifact tokens with custom names + embedded triggered abilities
+## 11. Noncreature artifact tokens with custom names + embedded triggered abilities — RESOLVED
 
 **Cards:** Weapons Manufacturing.
 
-**Clause:** "create a colorless artifact token named Munitions with 'When this token leaves the
-battlefield, it deals 2 damage to any target.'"
-
-**Plan:** `CreateTokenExecutor` hardcodes "Creature" into every token's type line, so it can only make
-creature tokens. Either (a) add a predefined "Munitions" token CardDefinition (noncreature artifact
-with the leaves-battlefield damage trigger) to `PredefinedTokens.kt` and create it via
-`CreatePredefinedTokenEffect`, or (b) generalize token creation to allow a noncreature type line +
-embedded triggered abilities. The "whenever a nontoken artifact you control enters" trigger is
-already expressible.
+**Resolution:** Added `Munitions` to `PredefinedTokens.kt` (typeLine `"Artifact"`, with the
+leaves-battlefield damage trigger as a `triggeredAbility { }` block) and exposed
+`Effects.CreateMunitionsToken(count)` as the facade. The predefined-token path automatically
+picks up the LTB trigger via `cardRegistry.getCard("Munitions")` in `TriggerAbilityResolver`,
+so no token-creation change was needed — the predefined-token registry already supports
+noncreature type lines and embedded abilities.
 
 ---
 
