@@ -201,6 +201,12 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
     if (manaSelectionState.xValue > 0) {
       genericCount += manaSelectionState.xValue
     }
+    // A Harmonize creature-tap reduces the generic mana to pay by its power
+    // (printed {N} first, then the generic {X}); reflect it so the HUD shows the
+    // real owed cost rather than the pre-tap {X} amount.
+    if (manaSelectionState.harmonizeReduction > 0) {
+      genericCount = Math.max(0, genericCount - manaSelectionState.harmonizeReduction)
+    }
     const total = coloredReqs.length + genericCount
 
     // Build source list: each source has the set of colors it can pay

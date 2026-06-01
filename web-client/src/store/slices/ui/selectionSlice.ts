@@ -23,6 +23,7 @@ import {
   parseManaCost as parseManaCostUtil,
   getRemainingCostSymbols,
   computeAutoTapPreview,
+  reduceCostByHarmonizeTap,
 } from '@/utils/manaCost'
 
 // Note: getWebSocket/createSubmitActionMessage are still used by confirmCrewSelection
@@ -449,10 +450,45 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
     // The server's autoTapPreview only covers the fixed cost (X is unknown
     // server-side), so we extend the pre-selection with enough additional
     // sources to also cover xValue * (number of {X} symbols).
-    const action = actionInfo.action as { xValue?: number }
+    const action = actionInfo.action as {
+      xValue?: number
+      alternativePayment?: { harmonizeCreature?: EntityId | null }
+    }
     const xValue = action.xValue ?? 0
     const manaCost = actionInfo.manaCostString ?? ''
     const xSymbolCount = Math.max(1, (manaCost.match(/\{X\}/g)?.length ?? 0))
+
+    // Harmonize creature-tap (chosen in the prior `harmonize` phase) reduces the
+    // generic mana to pay by the tapped creature's power. The server can't know
+    // which creature the player picked, so neither autoTapPreview nor the X
+    // extension below account for it — apply it here.
+    const harmonizeCreatureId = action.alternativePayment?.harmonizeCreature
+    const harmonizeReduction = harmonizeCreatureId
+      ? actionInfo.validHarmonizeCreatures?.find((c) => c.entityId === harmonizeCreatureId)?.power ?? 0
+      : 0
+
+    // When a creature was tapped, recompute the whole pre-selection from the
+    // reduced cost (colored pips + generic remaining after the tap) so we don't
+    // over-tap lands for generic the tap already covered.
+    if (harmonizeReduction > 0) {
+      const reduced = reduceCostByHarmonizeTap(manaCost, xValue, harmonizeReduction)
+      set({
+        selectedCardId: null,
+        manaSelectionState: {
+          action: actionInfo.action,
+          actionInfo,
+          validSources: sources.map((s) => s.entityId),
+          selectedSources: computeAutoTapPreview(sources, reduced),
+          manaCost,
+          xValue,
+          harmonizeReduction,
+          sourceColors,
+          sourceManaAmounts,
+        },
+      })
+      return
+    }
+
     const xManaNeeded = xValue * xSymbolCount
 
     // The server only computes [autoTapPreview] when the spell is affordable
@@ -493,6 +529,7 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
         selectedSources: preSelectedIds,
         manaCost,
         xValue,
+        harmonizeReduction: 0,
         sourceColors,
         sourceManaAmounts,
       },

@@ -95,6 +95,27 @@ export function getRemainingCostSymbols(originalSymbols: string[], delveCount: n
 }
 
 /**
+ * Apply a Harmonize creature-tap to a mana cost. The tap reduces the *generic*
+ * mana the player must still pay by the chosen creature's power — printed {N}
+ * first, then the generic {X} (the {X} is generic per the TDM release notes,
+ * mirrored server-side by `CastSpellHandler.harmonizePaymentXValue`). Colored
+ * pips are untouched, and the effect's chosen X (sent as `action.xValue`) is
+ * unchanged — only the mana *paid* shrinks.
+ *
+ * Expands {X} to [xValue] first, then removes [reduction] generic in array order
+ * (which, for land pre-selection, has the same total as the printed-first engine
+ * rule — lands don't distinguish printed generic from the generic {X}).
+ */
+export function reduceCostByHarmonizeTap(
+  manaCost: string,
+  xValue: number,
+  reduction: number,
+): string[] {
+  const expanded = parseManaCost(manaCost).map((s) => (s === 'X' ? String(xValue) : s))
+  return getRemainingCostSymbols(expanded, reduction)
+}
+
+/**
  * Build the remaining mana cost symbols after applying convoke creatures.
  * Each creature pays for one colored symbol (exact or matching half of a hybrid,
  * per CR 107.4e / 702.51a) or one generic mana.

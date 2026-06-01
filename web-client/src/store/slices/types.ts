@@ -191,6 +191,12 @@ export interface ManaSelectionState {
   manaCost: string
   /** X value if spell has X cost */
   xValue: number
+  /**
+   * Generic mana the Harmonize creature-tap removes from the cost (the tapped
+   * creature's power), or 0 when none is tapped / not a Harmonize cast. Reduces
+   * both the pre-selected sources and the generic shown in the confirmation HUD.
+   */
+  harmonizeReduction: number
   /** Color production per source: entityId -> list of color symbols (W/U/B/R/G) */
   sourceColors: Readonly<Record<EntityId, readonly string[]>>
   /** Mana amount per source: entityId -> amount (e.g., 3 for Gilded Lotus) */
