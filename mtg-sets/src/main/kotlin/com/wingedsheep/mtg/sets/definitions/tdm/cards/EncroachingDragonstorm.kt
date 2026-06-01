@@ -58,5 +58,6 @@ val EncroachingDragonstorm = card("Encroaching Dragonstorm") {
         rarity = Rarity.UNCOMMON
         collectorNumber = "142"
         artist = "Marco Gorlei"
+        imageUri = "https://cards.scryfall.io/normal/front/4/d/4ddd4477-f8c9-4d05-9177-f8344ba8f40b.jpg?1743204535"
     }
 }

@@ -53,5 +53,6 @@ val CorrodingDragonstorm = card("Corroding Dragonstorm") {
         rarity = Rarity.UNCOMMON
         collectorNumber = "75"
         artist = "Sergey Glushakov"
+        imageUri = "https://cards.scryfall.io/normal/front/e/2/e2a2d395-26d6-4eb2-9e8c-ed7dbbd3a8f5.jpg?1743204259"
     }
 }

@@ -46,5 +46,6 @@ val RoilingDragonstorm = card("Roiling Dragonstorm") {
         rarity = Rarity.UNCOMMON
         collectorNumber = "55"
         artist = "Gaboleps"
+        imageUri = "https://cards.scryfall.io/normal/front/4/5/455f4c96-684b-4b14-bd21-6799da2e1fa7.jpg?1743204180"
     }
 }

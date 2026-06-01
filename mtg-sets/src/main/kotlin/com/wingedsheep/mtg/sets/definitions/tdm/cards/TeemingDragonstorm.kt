@@ -52,5 +52,6 @@ val TeemingDragonstorm = card("Teeming Dragonstorm") {
         rarity = Rarity.UNCOMMON
         collectorNumber = "30"
         artist = "Leon Tukker"
+        imageUri = "https://cards.scryfall.io/normal/front/3/b/3b9d771f-24dc-4ed6-8051-62df576a2ba5.jpg?1743204080"
     }
 }
