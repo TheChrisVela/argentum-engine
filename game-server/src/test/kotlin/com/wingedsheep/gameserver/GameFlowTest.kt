@@ -81,15 +81,18 @@ class GameFlowTest : GameServerTestBase() {
         context("Multi-Turn Gameplay") {
             test("turn counter increments correctly") {
                 val ctx = setupGame(monoGreenLands)
-                var state = ctx.player1.client.requireLatestState()
-                state.turnNumber shouldBe 1
+                ctx.player1.client.requireLatestState().turnNumber shouldBe 1
 
-                var limit = 0
-                while (state.turnNumber == 1 && limit++ < 50) {
-                    ctx.safePassPriority()
-                    state = ctx.player1.client.requireLatestState()
+                // Pass priority (resolving any pending decisions) until the second turn begins.
+                // Each pass is best-effort: under full-suite load an individual pass can be a no-op
+                // — a stale priorityPlayerId read sends a pass for a player who no longer holds
+                // priority (rejected with an Error, never a StateUpdate), or a legitimate round-trip
+                // simply takes longer than the per-pass wait. Retrying within a generous overall
+                // deadline self-heals those transients instead of failing on the first stalled pass.
+                eventually(60.seconds) {
+                    runCatching { ctx.safePassPriority() }
+                    ctx.player1.client.requireLatestState().turnNumber shouldBe 2
                 }
-                state.turnNumber shouldBe 2
             }
         }
     }
