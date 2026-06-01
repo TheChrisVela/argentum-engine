@@ -41,7 +41,12 @@ object LifeGainModifiers {
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue
             val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
-            val sourceControllerId = container.get<ControllerComponent>()?.playerId ?: continue
+            // Projected controller so a control-changing effect (e.g. Confiscate stealing a
+            // Leyline of Hope) routes the "you" filter to the current controller, not the
+            // owner baked into the base ControllerComponent. Falls back to base for entities
+            // the projector hasn't assigned a controller to.
+            val sourceControllerId = state.projectedState.getController(entityId)
+                ?: container.get<ControllerComponent>()?.playerId ?: continue
 
             for (effect in replacementComponent.replacementEffects) {
                 if (effect !is ModifyLifeGain) continue
@@ -60,6 +65,10 @@ object LifeGainModifiers {
 
                 // Multiple Leylines of Hope: each adds 1, so stack the modifiers additively.
                 // Multiple Archives stack multiplicatively (×2 × ×2 = ×4).
+                // Note: with mixed shapes (Archive ×2 + Leyline +1) this always applies
+                // multiply-then-add (2X+1). CR 616.1 lets the affected player choose
+                // replacement order, but same-shape stacks are order-independent and the
+                // mixed case is currently unreachable (Alhammarret's Archive isn't implemented).
                 multiplier *= effect.multiplier
                 modifier += effect.modifier
             }

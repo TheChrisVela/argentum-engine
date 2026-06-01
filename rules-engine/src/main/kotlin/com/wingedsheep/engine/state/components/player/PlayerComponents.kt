@@ -175,7 +175,7 @@ data class MulliganStateComponent(
      * the engine populates [pendingLeylineCardIds] with the leyline cards currently in this
      * player's opening hand and walks each one through a yes/no decision. Setting this flag
      * prevents the phase from being re-initiated if the player draws another leyline card
-     * into hand later (per CR 103.5, the opening-hand window closes once the first turn begins).
+     * into hand later (per CR 103.6, the opening-hand window closes once the first turn begins).
      */
     val leylinePhaseStarted: Boolean = false,
     /**

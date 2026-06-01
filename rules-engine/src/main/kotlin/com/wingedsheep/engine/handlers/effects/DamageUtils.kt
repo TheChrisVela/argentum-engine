@@ -271,8 +271,8 @@ object DamageUtils {
         events.add(DamageDealtEvent(sourceId, targetId, effectiveAmount, false, sourceName = sourceName, targetName = targetName, targetIsPlayer = targetIsPlayer, targetWasFaceDown = targetIsFaceDown, excessAmount = creatureExcessDamage))
 
         // Lifelink: if the source has lifelink, its controller gains life equal to the damage dealt (Rule 702.15).
-        // Per CR 119.9 the lifelink life-gain is a separate event; ModifyLifeGain (Alhammarret's
-        // Archive, Leyline of Hope) replaces the actual amount gained.
+        // Per CR 119.3 / 702.15b the lifelink damage causes a life-gain event; ModifyLifeGain
+        // (Alhammarret's Archive, Leyline of Hope) replaces the actual amount gained.
         if (sourceId != null) {
             val projected = newState.projectedState
             if (projected.hasKeyword(sourceId, Keyword.LIFELINK.name)) {
