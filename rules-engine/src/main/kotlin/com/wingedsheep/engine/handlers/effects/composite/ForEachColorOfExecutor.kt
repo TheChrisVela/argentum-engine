@@ -1,83 +1,63 @@
-package com.wingedsheep.engine.handlers.effects.permanent.protection
+package com.wingedsheep.engine.handlers.effects.composite
 
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.GameEvent
-import com.wingedsheep.engine.core.KeywordGrantedEvent
 import com.wingedsheep.engine.handlers.EffectContext
-import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.mechanics.layers.Layer
-import com.wingedsheep.engine.mechanics.layers.SerializableModification
-import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.model.EntityId
-import com.wingedsheep.sdk.scripting.effects.GrantProtectionFromColorsOfEntityEffect
+import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.sdk.scripting.effects.ForEachColorOfEffect
 import com.wingedsheep.sdk.scripting.values.EntityReference
 import kotlin.reflect.KClass
 
 /**
- * Executor for [GrantProtectionFromColorsOfEntityEffect].
+ * Executor for [ForEachColorOfEffect] — the non-interactive sibling of `ChooseColorThen`.
  *
- * Resolves the source entity from the [EntityReference] in context, reads its projected
- * colors, then adds one `PROTECTION_FROM_<COLOR>` floating effect per color for the
- * snapshot of permanents matching the filter. Source colors are read from projected state
- * when the source is still on the battlefield, otherwise falling back to base colors on
- * the [CardComponent] (last-known-information, CR 113.7a — the source is normally still on
- * the battlefield when this resolves because Éowyn-style cards run the grant before the
- * paired exile/destroy step).
+ * Resolves the source entity from its [EntityReference], reads its colors, then runs the inner
+ * effect once per color with that color placed in [EffectContext.chosenColor] (the same channel
+ * `ChooseColorThen` feeds), so per-color atoms like `GrantProtectionFromChosenColor` compose
+ * inside it. Iterates in canonical WUBRG order for deterministic events.
  *
- * Colorless source → no grants (colorless is not a color, CR 105.2). One-shot at resolution:
- * recipients are captured now, so permanents entering [filter] later in [duration] don't
- * gain the grant (CR 611.1).
+ * Source colors are read from projected state while the source is on the battlefield (so Layer-5
+ * "becomes colorless"/Devoid and color-adding effects are honored, including an authoritative
+ * empty set), otherwise from its base printed colors as last-known information (CR 113.7a). A
+ * colorless source runs the inner effect zero times (colorless is not a color, CR 105.2).
  */
-class GrantProtectionFromColorsOfEntityExecutor : EffectExecutor<GrantProtectionFromColorsOfEntityEffect> {
+class ForEachColorOfExecutor(
+    private val effectExecutor: (GameState, Effect, EffectContext) -> EffectResult
+) : EffectExecutor<ForEachColorOfEffect> {
 
-    override val effectType: KClass<GrantProtectionFromColorsOfEntityEffect> =
-        GrantProtectionFromColorsOfEntityEffect::class
+    override val effectType: KClass<ForEachColorOfEffect> = ForEachColorOfEffect::class
 
     override fun execute(
         state: GameState,
-        effect: GrantProtectionFromColorsOfEntityEffect,
+        effect: ForEachColorOfEffect,
         context: EffectContext
     ): EffectResult {
         val sourceId = resolveEntityId(effect.source, context, state)
             ?: return EffectResult.success(state)
 
-        val colors = readSourceColors(state, sourceId)
+        val colorNames = readSourceColors(state, sourceId)
+        // Canonical WUBRG order for deterministic event sequencing; skips colors not present.
+        val colors = Color.entries.filter { it.name in colorNames }
         if (colors.isEmpty()) return EffectResult.success(state)
 
-        val matchingIds = BattlefieldFilterUtils.findMatchingOnBattlefield(
-            state, effect.filter.baseFilter, context,
-            excludeSelfId = if (effect.filter.excludeSelf) context.sourceId else null,
-        )
-        if (matchingIds.isEmpty()) return EffectResult.success(state)
-
-        val affected = matchingIds.toSet()
-        var newState = state
+        var currentState = state
         val events = mutableListOf<GameEvent>()
-        val ownerName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name } ?: "Unknown"
-
         for (color in colors) {
-            newState = newState.addFloatingEffect(
-                layer = Layer.ABILITY,
-                modification = SerializableModification.GrantProtectionFromColor(color),
-                affectedEntities = affected,
-                duration = effect.duration,
-                context = context,
-            )
-            for (id in matchingIds) {
-                val name = state.getEntity(id)?.get<CardComponent>()?.name ?: continue
-                events += KeywordGrantedEvent(
-                    targetId = id,
-                    targetName = name,
-                    keyword = "Protection from ${color.lowercase()}",
-                    sourceName = ownerName,
-                )
+            val innerContext = context.copy(chosenColor = color)
+            val result = effectExecutor(currentState, effect.effect, innerContext)
+            if (result.isPaused) {
+                return EffectResult.paused(result.state, result.pendingDecision!!, events + result.events)
             }
+            currentState = result.newState
+            events.addAll(result.events)
         }
-        return EffectResult.success(newState, events)
+        return EffectResult.success(currentState, events)
     }
 
     private fun resolveEntityId(ref: EntityReference, context: EffectContext, state: GameState): EntityId? =
@@ -86,8 +66,7 @@ class GrantProtectionFromColorsOfEntityExecutor : EffectExecutor<GrantProtection
             is EntityReference.EnchantedCreature ->
                 context.sourceId?.let { state.getEntity(it)?.get<AttachedToComponent>()?.targetId }
             is EntityReference.Target -> {
-                val target = context.targets.getOrNull(ref.index)
-                when (target) {
+                when (val target = context.targets.getOrNull(ref.index)) {
                     is com.wingedsheep.engine.state.components.stack.ChosenTarget.Permanent -> target.entityId
                     is com.wingedsheep.engine.state.components.stack.ChosenTarget.Card -> target.cardId
                     is com.wingedsheep.engine.state.components.stack.ChosenTarget.Spell -> target.spellEntityId

@@ -2155,13 +2155,16 @@ staticAbility { ability = GrantLandwalkOfChosenType() }
 - `ChooseActionEffect(choices)` — pick one effect from a list.
 - `ChooseColorThenEffect(whenChosen)` — pick a color, then apply a function of the color.
 - `GrantHexproofFromChosenColorEffect(target)` / `GrantProtectionFromChosenColorEffect(target)` — atoms that run inside `ChooseColorThen` and read the chosen color from context (hexproof / protection from that color). Wrap in `ForEachInGroup` for "creatures you control gain protection from the chosen color" (Akroma's Blessing).
-- `Effects.GrantProtectionFromColorsOfEntity(filter, source, duration?)` — read the projected colors
-  of the entity referenced by `source` and add one `PROTECTION_FROM_<COLOR>` floating effect per color
-  for the snapshot of permanents matching `filter`. One-shot at resolution; colorless source grants
-  nothing. Source colors come from projected state when the source is still on the battlefield, else
-  fall back to its base `CardComponent.colors` (LKI). Compose with `Composite(GrantProtection…,
-  Exile(…))` so the projected colors are read while the source is still on the battlefield, as Éowyn,
-  Fearless Knight does.
+- `Effects.ForEachColorOf(source, effect)` — the **non-interactive sibling of `ChooseColorThen`**:
+  runs `effect` once per color of the entity referenced by `source`, with that color set as the
+  context's chosen color, so the same per-color atoms (`GrantProtectionFromChosenColor`,
+  `GrantHexproofFromChosenColor`, `GrantCantBeBlockedByChosenColor`, …) compose inside it. Source
+  colors come from projected state while the source is on the battlefield (Layer-5 / Devoid honored),
+  else its base `CardComponent.colors` (LKI); a colorless source runs zero times (CR 105.2). For
+  "[group] gain protection from each of `source`'s colors", wrap a group iteration in it —
+  `Effects.ForEachColorOf(source, ForEachInGroupEffect(group, GrantProtectionFromChosenColor(Self)))`
+  — and, when `source` is the about-to-leave permanent, place it before the exile/destroy step
+  (`Composite(ForEachColorOf(…), Exile(…))`) so its colors are still readable (Éowyn, Fearless Knight).
 - `ChooseCreatureTypeEffect(...)` — pause for creature-type selection.
 - `Effects.ChooseCardName(storeAs, prompt?, excludeBasicLandNames?)` — name a card (`ChooseOptionEffect(OptionType.CARD_NAME)`); the chosen name is stored in `chosenValues[storeAs]`. Options are every registry card name (searchable list, not free text); `excludeBasicLandNames` drops the five basics. Match cards by it with `GameObjectFilter.namedFromVariable(storeAs)`. (Desperate Research)
 - `Effects.StoreCardName(from, storeAs)` — capture the name of the first card in collection `from` into `chosenValues[storeAs]`. The "choose a card, then act on cards of that name" counterpart to `ChooseCardName`. (Lobotomy)

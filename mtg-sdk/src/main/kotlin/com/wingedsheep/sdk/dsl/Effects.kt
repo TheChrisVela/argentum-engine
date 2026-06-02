@@ -38,7 +38,7 @@ import com.wingedsheep.sdk.scripting.effects.ChooseColorThenEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseNumberThenEffect
 import com.wingedsheep.sdk.scripting.effects.GrantHexproofFromChosenColorEffect
 import com.wingedsheep.sdk.scripting.effects.GrantProtectionFromChosenColorEffect
-import com.wingedsheep.sdk.scripting.effects.GrantProtectionFromColorsOfEntityEffect
+import com.wingedsheep.sdk.scripting.effects.ForEachColorOfEffect
 import com.wingedsheep.sdk.scripting.effects.GrantCantBeBlockedByChosenColorEffect
 import com.wingedsheep.sdk.scripting.effects.GrantHarmonizeEffect
 import com.wingedsheep.sdk.scripting.effects.GrantToxicEffect
@@ -1503,21 +1503,26 @@ object Effects {
     ): Effect = GrantProtectionFromChosenColorEffect(target, duration)
 
     /**
-     * Grant "protection from each of [source]'s colors" to every battlefield permanent
-     * matching [filter], for [duration]. Reads the projected colors of the referenced
-     * entity at execution time and adds one floating `PROTECTION_FROM_<COLOR>` per color
-     * for the snapshot of matching entities (colorless source grants nothing). One-shot
-     * at resolution — permanents that enter [filter] later don't gain the grant.
+     * Run [effect] once per color of [source], with that color set as the context's chosen
+     * color — the non-interactive sibling of [ChooseColorThen]. Compose with any per-color
+     * atom that reads the chosen color (e.g. [GrantProtectionFromChosenColor]).
      *
-     * Compose with an exile/destroy step **first** when the source is the about-to-leave
-     * permanent (e.g. Éowyn, Fearless Knight) so the projected colors are read while the
-     * source is still on the battlefield.
+     * "[group] gain protection from each of [source]'s colors" (Éowyn, Fearless Knight) is:
+     *
+     *     Effects.ForEachColorOf(
+     *         source = EntityReference.Target(0),
+     *         effect = ForEachInGroupEffect(group, Effects.GrantProtectionFromChosenColor(EffectTarget.Self)),
+     *     )
+     *
+     * Colors are read from projected state on the battlefield (Layer-5 / Devoid honored),
+     * else from printed colors (last-known information); a colorless source runs zero times.
+     * When [source] is an about-to-leave permanent, run [ForEachColorOf] **before** the
+     * exile/destroy step so its projected colors are still readable.
      */
-    fun GrantProtectionFromColorsOfEntity(
-        filter: GroupFilter,
+    fun ForEachColorOf(
         source: EntityReference,
-        duration: Duration = Duration.EndOfTurn
-    ): Effect = GrantProtectionFromColorsOfEntityEffect(filter, source, duration)
+        effect: Effect
+    ): Effect = ForEachColorOfEffect(source, effect)
 
     /**
      * Grant "can't be blocked by creatures of the chosen color" to a target.

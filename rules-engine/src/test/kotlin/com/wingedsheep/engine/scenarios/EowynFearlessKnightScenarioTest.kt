@@ -27,8 +27,9 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 /**
  * Éowyn, Fearless Knight (LTR #201) — covers two engine additions:
  *   • [CardPredicate.PowerGreaterThanEntity] — source-relative power target filter.
- *   • [GrantProtectionFromColorsOfEntityEffect] — dynamic per-color protection grant
- *     keyed on the just-exiled creature.
+ *   • [ForEachColorOfEffect] — color-iteration combinator that feeds each of the exiled
+ *     creature's colors into a per-color protection grant (composed with ForEachInGroup +
+ *     GrantProtectionFromChosenColor).
  *
  * Oracle:
  *   Haste

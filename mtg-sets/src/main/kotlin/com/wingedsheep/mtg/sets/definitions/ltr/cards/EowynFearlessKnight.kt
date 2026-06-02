@@ -6,6 +6,7 @@ import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.effects.ForEachInGroupEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -51,10 +52,16 @@ val EowynFearlessKnight = card("Éowyn, Fearless Knight") {
                 )
             )
         )
+        // Grant before exile so the target's projected colors are read while it's still on the
+        // battlefield. ForEachColorOf runs the inner grant once per color of the exiled creature,
+        // feeding each color to GrantProtectionFromChosenColor via the chosen-color context.
         effect = Effects.Composite(
-            Effects.GrantProtectionFromColorsOfEntity(
-                filter = GroupFilter(GameObjectFilter.Creature.legendary().youControl()),
-                source = EntityReference.Target(0)
+            Effects.ForEachColorOf(
+                source = EntityReference.Target(0),
+                effect = ForEachInGroupEffect(
+                    GroupFilter(GameObjectFilter.Creature.legendary().youControl()),
+                    Effects.GrantProtectionFromChosenColor(EffectTarget.Self)
+                )
             ),
             Effects.Exile(victim)
         )
