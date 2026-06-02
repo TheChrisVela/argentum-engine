@@ -140,6 +140,7 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
       'ChooseEntity',
       'Blight',
       'Conspire',
+      'Craft',
     ]
 
     if (costTypesNeedingSelection.includes(costType)) {
@@ -337,7 +338,7 @@ export function mergeResult(
               ? { discardedCards: selectedTargets }
               : costType === 'BouncePermanent'
                 ? { bouncedPermanents: selectedTargets }
-                : costType === 'ExileFromGraveyard'
+                : costType === 'ExileFromGraveyard' || costType === 'Craft'
                   ? { exiledCards: selectedTargets }
                   : costType === 'Blight'
                     ? { blightTargets: selectedTargets }
@@ -614,6 +615,18 @@ export function enterPhase(
             costType === 'BlightVariable'
               ? `Choose a creature to receive ${(action as { additionalCostPayment?: { blightAmount?: number } }).additionalCostPayment?.blightAmount ?? 0} -1/-1 counter(s)`
               : costInfo.description
+          break
+        case 'Craft':
+          // Craft materials span both battlefield and graveyard (CR 702.167a-b). Route to the
+          // dedicated cross-zone overlay rather than the single-zone targeting flow.
+          validTargets = [...(costInfo.validCraftMaterials ?? [])]
+          minTargets = costInfo.craftMinCount ?? 1
+          maxTargets = validTargets.length
+          flags.isCraftMaterialSelection = true
+          flags.targetDescription = costInfo.description
+          flags.sourceCardName = actionInfo.description
+            .replace(/^Cast /, '')
+            .replace(/^Activate /, '')
           break
         default:
           return

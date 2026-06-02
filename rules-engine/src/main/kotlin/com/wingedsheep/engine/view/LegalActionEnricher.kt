@@ -147,7 +147,9 @@ class LegalActionEnricher(
         validBlightTargets = validBlightTargets,
         blightAmount = blightAmount,
         blightVariableMaxX = blightVariableMaxX,
-        distributedCounterRemovalTotal = distributedCounterRemovalTotal
+        distributedCounterRemovalTotal = distributedCounterRemovalTotal,
+        validCraftMaterials = validCraftMaterials,
+        craftMinCount = craftMinCount
     )
 
     private fun ConvokeCreatureData.toDto() = ConvokeCreatureInfo(

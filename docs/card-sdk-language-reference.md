@@ -136,6 +136,18 @@ the `CardDefinition`.
   "Discard two cards at random").
 - `Costs.DiscardHand` — discard your entire hand.
 - `Costs.DiscardSelf` — discard this card (cycling-style).
+- `Costs.ExileSelf` — exile this permanent (or graveyard card, for graveyard-activated abilities).
+- `Costs.ExileFromGraveyard(count, filter)` — exile N matching cards from your graveyard.
+- `Costs.ExileXFromGraveyard(filter)` — exile X cards from your graveyard (X = the ability's
+  chosen X value).
+- `Costs.Craft(filter, minCount = 1)` — Craft material cost (CR 702.167a): exile this permanent
+  **and** exile at least `minCount` cards matching `filter` selected from the combined pool of
+  permanents you control and cards in your graveyard. Atomic because CR 702.167a pairs the
+  self-exile with the materials-exile in one clause. Records the chosen materials on the source's
+  `CraftedFromExiledComponent` so the back face's CDA can read them after the source returns
+  transformed. Always combined with `Mana(...)` and used with the
+  `Effects.ReturnSelfFromExileTransformed` resolution effect (the `card { craft(filter, cost) }`
+  helper wires the whole pattern).
 - `Costs.Composite(c1, c2, ...)` — multiple costs paid together.
 
 **Spell-level alternatives**
@@ -254,6 +266,10 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `PutOntoBattlefieldUnderYourControl(target)` — under controller's control.
 - `PutOntoBattlefieldFaceDown(count, target?)` — enter face-down (2/2 morph shape).
 - `ReturnSelfToBattlefieldAttached(target)` — return source attached to target (Aura recursion).
+- `ReturnSelfFromExileTransformed` — Craft resolution (CR 702.167a). Returns the source from exile to the
+  battlefield as its back face, under its owner's control, and re-attaches the source's
+  `CraftedFromExiledComponent` recording the exiled materials. Pair with `AbilityCost.Craft`; see the `Craft`
+  keyword helper in the keyword catalog.
 - `ReturnCreaturesPutInGraveyardThisTurn(player)` — Patriarch's Bidding shape.
 
 ### Hand reveal
@@ -1585,6 +1601,25 @@ composite abilities).
     off the stack with a zone-move); a printed `suspend N—[cost]` exiles from hand as its cast cost.
   - **Taigam, Master Opportunist** is the first user: `Composite(CopyTargetSpell(TriggeringEntity),
     CounterEffect(TriggeringEntity → Exile), Suspend(TriggeringEntity, 4))`.
+- `Craft(filter, cost)` — `card { craft(filter, cost) }` builder helper (CR 702.167, The Lost Caverns of
+  Ixalan). On the front face of a transforming DFC: "Craft with [filter] [cost] ([cost], Exile this permanent,
+  Exile [filter] you control and/or [filter] cards from your graveyard: Return this card to the battlefield
+  transformed under its owner's control. Activate only as a sorcery.)" Composes entirely from existing primitives
+  — `AbilityCost.Composite(Mana(cost), AbilityCost.Craft(filter))` (the atomic `Craft` sub-cost handles both the
+  self-exile and the materials-exile because CR 702.167a defines them as one paired clause), plus
+  `Effects.ReturnSelfFromExileTransformed` as the resolution effect, and `timing = TimingRule.SorcerySpeed`.
+  Records the exiled materials on the source's `CraftedFromExiledComponent` so the back face's CDA
+  ("Mastercraft Raptor's power is equal to the total power of the exiled cards used to craft it", CR 702.167c)
+  can read them via `DynamicAmount.CraftedMaterialsTotalPower`. Declares `Keyword.CRAFT` for display.
+
+  Material selection: the engine surfaces the combined BF + GY candidate pool on each Craft activation as
+  `AdditionalCostData.validCraftMaterials` / `craftMinCount`. The web client renders both zones side-by-side
+  via the dedicated `CraftMaterialOverlay` (routed by the `Craft` cost-type branch in `pipelinePhases`) and
+  submits the picked IDs back as `ActivateAbility.costPayment.exiledCards`. Headless / game-server callers can
+  supply the chosen IDs directly. The cost handler validates that every chosen entity is either a permanent
+  the activator controls or a card in their graveyard matching `filter`, and rejects activation when no
+  choices are supplied (no silent auto-pick).
+
 - `Renew(cost)` — `card { renew(cost) { effect = … } }` builder helper (Tarkir: Dragonstorm, Sultai clan keyword).
   A graveyard-activated ability: "Renew — [cost], Exile this card from your graveyard: [effect]. Activate only as a
   sorcery." The helper composes it entirely from existing primitives — `AbilityCost.Composite(Mana(cost), ExileSelf)`,
@@ -1868,6 +1903,10 @@ Numbers computed at resolution time.
     `SpellsCastThisTurn(Player.TriggeringPlayer, GameObjectFilter.Noncreature)`.
   - Pairs with the `YouCastSpellsThisTurn` **condition** (§ conditions) — that gates a yes/no
     threshold, this yields the count.
+- `CraftedMaterialsTotalPower` — total printed power of the cards exiled to craft the source
+  permanent (CR 702.167c). Reads the source's `CraftedFromExiledComponent`. Used for the
+  `*`-power CDA on Mastercraft Raptor (Saheeli's Lattice back face). Evaluates to 0 when the
+  source has no recorded materials.
 
 ### Counters
 

@@ -358,6 +358,7 @@ val engineSerializersModule = SerializersModule {
         subclass(GraveyardPlayPermissionUsedComponent::class)
         subclass(ExileEntryTurnComponent::class)
         subclass(LinkedExileComponent::class)
+        subclass(CraftedFromExiledComponent::class)
         subclass(MayCastFromLinkedExileUsedThisTurnComponent::class)
         subclass(ReplacementEffectSourceComponent::class)
         subclass(SagaComponent::class)

@@ -7,6 +7,7 @@ import { getCardImageUrl } from '@/utils/cardImages.ts'
 import { useResponsiveContext, handleImageError } from '../board/shared'
 import { styles } from '../board/styles'
 import { TARGET_COLOR, TARGET_COLOR_BRIGHT } from '@/styles/targetingColors.ts'
+import { CraftMaterialOverlay } from '@/components/decisions/CraftMaterialOverlay'
 
 /**
  * Graveyard targeting overlay - shows when targeting mode requires selecting cards from graveyards.
@@ -451,6 +452,12 @@ export function TargetingOverlay() {
 
   // Only show when in targeting mode
   if (!targetingState) return null
+
+  // Craft material selection (CR 702.167) spans BF + GY simultaneously — route to the
+  // dedicated cross-zone overlay rather than the single-zone targeting flows below.
+  if (targetingState.isCraftMaterialSelection) {
+    return <CraftMaterialOverlay responsive={responsive} />
+  }
 
   const selectedCount = targetingState.selectedTargets.length
   const minTargets = targetingState.minTargets

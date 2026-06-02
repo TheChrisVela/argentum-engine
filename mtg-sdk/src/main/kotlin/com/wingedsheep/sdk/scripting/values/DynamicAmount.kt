@@ -807,4 +807,24 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
         }
     }
 
+    /**
+     * Total printed power of the cards exiled to craft the source permanent (CR 702.167c).
+     *
+     * Reads the source's
+     * `com.wingedsheep.engine.state.components.battlefield.CraftedFromExiledComponent` —
+     * attached on battlefield entry by
+     * [com.wingedsheep.sdk.scripting.effects.ReturnSelfFromExileTransformedEffect] when the
+     * Craft activated ability resolves — and sums the printed power of those exiled cards.
+     * Used by the Mastercraft Raptor back face of Saheeli's Lattice.
+     *
+     * Evaluates to zero when the source was not crafted (no component) — the back face has
+     * no other way of legitimately existing, but a benign zero keeps the projector total order.
+     */
+    @SerialName("CraftedMaterialsTotalPower")
+    @Serializable
+    data object CraftedMaterialsTotalPower : DynamicAmount {
+        override val description: String = "the total power of the exiled cards used to craft it"
+        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
+    }
+
 }

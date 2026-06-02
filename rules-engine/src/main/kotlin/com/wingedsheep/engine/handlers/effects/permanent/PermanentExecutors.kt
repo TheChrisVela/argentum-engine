@@ -64,6 +64,7 @@ import com.wingedsheep.engine.handlers.effects.permanent.types.EachPermanentBeco
 import com.wingedsheep.engine.handlers.effects.permanent.types.SetCreatureSubtypesExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.types.SetGroupCreatureSubtypesExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.types.SetLandTypeExecutor
+import com.wingedsheep.engine.handlers.effects.permanent.types.ReturnSelfFromExileTransformedExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.types.TransformEffectExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.types.TurnFaceDownExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.types.TurnFaceUpExecutor
@@ -130,6 +131,7 @@ class PermanentExecutors(
         SetCreatureSubtypesExecutor(),
         SetGroupCreatureSubtypesExecutor(),
         TransformEffectExecutor(cardRegistry),
+        ReturnSelfFromExileTransformedExecutor(cardRegistry),
         TurnFaceDownExecutor(),
         TurnFaceUpExecutor(cardRegistry),
         // attachments

@@ -854,6 +854,15 @@ export interface AdditionalCostInfo {
    * `RemoveCountersFromYourCreatures` costs (e.g. Dawnhand Dissident's cast cost).
    */
   readonly distributedCounterRemovalTotal?: number
+  /**
+   * Combined battlefield + graveyard candidate pool for an `AbilityCost.Craft` sub-cost
+   * (CR 702.167a-b). The activator picks `craftMinCount`+ of these to exile alongside the
+   * source. Battlefield candidates are permanents the activator controls matching the
+   * Craft filter; graveyard candidates are cards in their graveyard matching the same
+   * filter. Chosen IDs are submitted as `ActivateAbility.costPayment.exiledCards`.
+   */
+  readonly validCraftMaterials?: readonly EntityId[]
+  readonly craftMinCount?: number
 }
 
 export interface CounterRemovalCreatureInfo {

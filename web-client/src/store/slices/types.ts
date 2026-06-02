@@ -79,6 +79,13 @@ export interface TargetingState {
   isBounceSelection?: boolean
   /** If set, this targeting phase is for beholding (choosing from battlefield or hand) */
   isBeholdSelection?: boolean
+  /**
+   * If set, this targeting phase is for selecting Craft materials across the activator's
+   * battlefield and graveyard (CR 702.167a-b). Materials live in both zones simultaneously
+   * — render with a dedicated overlay rather than the single-zone battlefield/graveyard
+   * targeting flows.
+   */
+  isCraftMaterialSelection?: boolean
   /** The original action info, used to chain sacrifice -> spell targeting -> damage distribution */
   pendingActionInfo?: LegalActionInfo
   /** Current target requirement index for multi-target spells (0-indexed) */

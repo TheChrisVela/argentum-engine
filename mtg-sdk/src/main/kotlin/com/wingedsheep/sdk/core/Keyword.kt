@@ -83,6 +83,22 @@ enum class Keyword(val displayName: String) {
      */
     DEVOUR("Devour"),
 
+    /**
+     * Craft (CR 702.167, The Lost Caverns of Ixalan). On a transforming
+     * double-faced permanent. "Craft with [filter] [cost] ([cost], Exile this
+     * permanent, Exile [filter] you control and/or [filter] cards from your
+     * graveyard: Return this card transformed under its owner's control.
+     * Craft only as a sorcery.)"
+     *
+     * Display tag — the full mechanic is composed in the DSL via
+     * [com.wingedsheep.sdk.dsl.CardBuilder.craft], which pairs
+     * [com.wingedsheep.sdk.scripting.AbilityCost.Craft] with
+     * [com.wingedsheep.sdk.scripting.effects.ReturnSelfFromExileTransformedEffect].
+     * The back face's "exiled cards used to craft it" CDA (CR 702.167c) reads
+     * [com.wingedsheep.sdk.scripting.values.DynamicAmount.CraftedMaterialsTotalPower].
+     */
+    CRAFT("Craft"),
+
     // ── Cost reduction ───────────────────────────────────────
     CONVOKE("Convoke"),
     DELVE("Delve"),

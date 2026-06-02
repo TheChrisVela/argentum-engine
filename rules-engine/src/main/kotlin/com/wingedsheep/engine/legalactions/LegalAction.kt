@@ -263,7 +263,18 @@ data class AdditionalCostData(
      * For [AdditionalCost.RemoveCountersFromYourCreatures]: total counters to remove
      * across all creatures you control (any counter types qualify).
      */
-    val distributedCounterRemovalTotal: Int = 0
+    val distributedCounterRemovalTotal: Int = 0,
+
+    /**
+     * Combined battlefield + graveyard candidate pool for an [AbilityCost.Craft] sub-cost
+     * (CR 702.167a-b). The activator selects [craftMinCount]+ of these to exile alongside
+     * the source. Battlefield candidates are permanents the activator controls matching the
+     * Craft filter; graveyard candidates are cards in their graveyard matching the same filter.
+     * The client renders both side-by-side and submits chosen IDs as
+     * `ActivateAbility.costPayment.exiledCards`.
+     */
+    val validCraftMaterials: List<EntityId> = emptyList(),
+    val craftMinCount: Int = 1
 )
 
 /**

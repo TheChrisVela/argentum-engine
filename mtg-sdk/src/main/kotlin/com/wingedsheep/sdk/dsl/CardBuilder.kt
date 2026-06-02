@@ -670,6 +670,51 @@ class CardBuilder(private val name: String) {
     }
 
     /**
+     * Craft with [filter] — [cost] (CR 702.167, The Lost Caverns of Ixalan).
+     *
+     * "[Cost], Exile this permanent, Exile [filter] from among permanents you control and/or
+     * [filter] cards from your graveyard: Return this card to the battlefield transformed under
+     * its owner's control. Activate only as a sorcery."
+     *
+     * Composed from existing primitives — no special handling at the DSL layer:
+     *  - cost = [AbilityCost.Mana] ⊕ [AbilityCost.Craft] (the latter handles both the self-exile
+     *    and the materials-exile in one atomic cost shape, recording the exiled materials on
+     *    the source so the back face's CDA can read them).
+     *  - effect = [com.wingedsheep.sdk.scripting.effects.ReturnSelfFromExileTransformedEffect].
+     *  - `timing = TimingRule.SorcerySpeed` enforces "Activate only as a sorcery".
+     *
+     * Marks the front face with the [Keyword.CRAFT] tag for client display.
+     *
+     * ```kotlin
+     * craft(filter = Filters.Dinosaur, cost = "{4}{R}")
+     * ```
+     *
+     * @param filter The material filter (the [filter] in "Craft with [filter]").
+     * @param cost The mana portion of the craft cost.
+     * @param materialDescription Optional override for the filter's name in the rendered cost
+     *   description — e.g. "one or more Dinosaurs". Defaults to the filter's own description.
+     */
+    fun craft(
+        filter: com.wingedsheep.sdk.scripting.GameObjectFilter,
+        cost: String,
+        materialDescription: String? = null
+    ) {
+        val materials = materialDescription ?: "one or more ${filter.description}s"
+        activatedAbilities.add(
+            ActivatedAbility(
+                cost = AbilityCost.Composite(
+                    listOf(AbilityCost.Mana(ManaCost.parse(cost)), AbilityCost.Craft(filter))
+                ),
+                effect = com.wingedsheep.sdk.scripting.effects.ReturnSelfFromExileTransformedEffect,
+                targetRequirements = emptyList(),
+                timing = TimingRule.SorcerySpeed,
+                descriptionOverride = "Craft with $materials — $cost"
+            )
+        )
+        keywordSet.add(Keyword.CRAFT)
+    }
+
+    /**
      * Add a parameterized keyword ability.
      * Examples: ward {2}, protection from blue, annihilator 2
      */

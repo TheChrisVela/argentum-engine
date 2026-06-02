@@ -516,4 +516,57 @@ sealed interface AbilityCost : TextReplaceable<AbilityCost> {
             return if (newFilter !== filter) copy(filter = newFilter) else this
         }
     }
+
+    /**
+     * Craft materials (CR 702.167a). The combined "Exile this permanent, Exile [filter] from
+     * among permanents you control and/or [filter] cards from your graveyard" portion of the
+     * Craft activated ability.
+     *
+     * Atomic because the self-exile and the materials-exile are a single named cost shape in
+     * the Comprehensive Rules — pulling them apart would let a card pay one half without the
+     * other. The mana portion stays as a separate [Mana] sub-cost combined via [Composite].
+     *
+     * Payment selects [minCount]+ materials from a **single combined pool** spanning the
+     * activator's controlled battlefield permanents and graveyard cards matching [filter]
+     * (CR 702.167b). The exiled materials are recorded on the source's
+     * [com.wingedsheep.engine.state.components.battlefield.CraftedFromExiledComponent] so the
+     * back face's CDA (Mastercraft Raptor's "power = total power of the exiled cards") can read
+     * them after the source returns to the battlefield transformed.
+     *
+     * Pair with [com.wingedsheep.sdk.scripting.effects.ReturnSelfFromExileTransformedEffect]
+     * as the ability effect and `timing = TimingRule.SorcerySpeed`.
+     *
+     * **Composition note.** The legal-action enumerator surfaces a Craft sub-cost as the sole
+     * payload on [com.wingedsheep.engine.legalactions.AdditionalCostData]: any sibling
+     * AdditionalCost-bearing sub-cost inside the same `Composite` (tap, sacrifice, discard,
+     * counter-removal, …) will be dropped from the legal-action DTO. In practice the
+     * `card { craft(...) }` helper only pairs Craft with `Mana`, which travels through the
+     * separate mana-payment channel, so this is exhaustive. If you ever compose Craft with a
+     * second AdditionalCost-bearing sub-cost, generalize `ActivatedAbilityEnumerator.buildAdditionalCostData`
+     * to merge both payloads first.
+     *
+     * @property filter Material filter (typically the same one used in the Craft display text,
+     *   e.g. `Filters.Dinosaur` for Saheeli's Lattice).
+     * @property minCount Minimum number of materials to exile (1 for "one or more").
+     */
+    @SerialName("CostCraft")
+    @Serializable
+    data class Craft(
+        val filter: GameObjectFilter,
+        val minCount: Int = 1,
+    ) : AbilityCost {
+        override val description: String = buildString {
+            append("Exile this permanent, Exile ")
+            if (minCount == 1) append("one or more ") else append("$minCount or more ")
+            append(filter.description)
+            append("s you control and/or ")
+            append(filter.description)
+            append(" cards from your graveyard")
+        }
+
+        override fun applyTextReplacement(replacer: TextReplacer): AbilityCost {
+            val newFilter = filter.applyTextReplacement(replacer)
+            return if (newFilter !== filter) copy(filter = newFilter) else this
+        }
+    }
 }

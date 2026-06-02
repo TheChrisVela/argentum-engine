@@ -345,6 +345,21 @@ class DynamicAmountEvaluator(
                 }
             }
 
+            is DynamicAmount.CraftedMaterialsTotalPower -> {
+                val sourceId = context.sourceId
+                if (sourceId == null) 0 else {
+                    val materials = state.getEntity(sourceId)
+                        ?.get<com.wingedsheep.engine.state.components.battlefield.CraftedFromExiledComponent>()
+                    if (materials == null) 0 else {
+                        var total = 0
+                        for (exiledId in materials.exiledIds) {
+                            total += basePowerOfPrintedCard(state, exiledId)
+                        }
+                        total
+                    }
+                }
+            }
+
         }
     }
 
@@ -854,6 +869,24 @@ class DynamicAmountEvaluator(
             is CharacteristicValue.Fixed -> value.value
             is CharacteristicValue.Dynamic -> evaluate(state, value.source, context)
             is CharacteristicValue.DynamicWithOffset -> evaluate(state, value.source, context) + value.offset
+            null -> 0
+        }
+    }
+
+    /**
+     * Read the printed base power of a card. Used by
+     * [DynamicAmount.CraftedMaterialsTotalPower] to sum the power of cards in exile (CR 712.8a:
+     * a card outside the battlefield/stack shows only its front-face characteristics, which is
+     * the printed face for non-DFCs). Dynamic CDA values on the printed card are evaluated with
+     * a fresh context targeting that card, falling back to 0 if anything is unset.
+     */
+    private fun basePowerOfPrintedCard(state: GameState, entityId: EntityId): Int {
+        val card = state.getEntity(entityId)?.get<CardComponent>() ?: return 0
+        val ctx = EffectContext(sourceId = entityId, controllerId = card.ownerId ?: return 0, opponentId = null)
+        return when (val p = card.baseStats?.power) {
+            is CharacteristicValue.Fixed -> p.value
+            is CharacteristicValue.Dynamic -> evaluate(state, p.source, ctx)
+            is CharacteristicValue.DynamicWithOffset -> evaluate(state, p.source, ctx) + p.offset
             null -> 0
         }
     }

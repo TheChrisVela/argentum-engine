@@ -181,7 +181,16 @@ data class AdditionalCostInfo(
     /** For BlightVariable: cap on X (greatest toughness among creatures you control). */
     val blightVariableMaxX: Int = 0,
     /** Total counters to remove across creatures you control (RemoveCountersFromYourCreatures cost). */
-    val distributedCounterRemovalTotal: Int = 0
+    val distributedCounterRemovalTotal: Int = 0,
+
+    /**
+     * Combined battlefield + graveyard candidate pool for an `AbilityCost.Craft` sub-cost
+     * (CR 702.167a-b). The activator picks [craftMinCount]+ of these to exile alongside the
+     * source. The client renders both zones side-by-side; chosen IDs are submitted as
+     * `ActivateAbility.costPayment.exiledCards`.
+     */
+    val validCraftMaterials: List<EntityId> = emptyList(),
+    val craftMinCount: Int = 1
 )
 
 @Serializable

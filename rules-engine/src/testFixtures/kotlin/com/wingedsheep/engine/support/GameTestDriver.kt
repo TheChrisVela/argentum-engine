@@ -796,6 +796,18 @@ class GameTestDriver {
         if (cardDef.script.cantBeCountered) {
             container = container.with(com.wingedsheep.engine.state.components.identity.CantBeCounteredComponent)
         }
+        // Attach DoubleFacedComponent so transforms work (Rule 712) — mirrors the DFC wiring
+        // in putCreatureOnBattlefield so non-creature DFC artifacts (Saheeli's Lattice etc.)
+        // can also be exercised in scenario tests.
+        if (cardDef.isDoubleFaced) {
+            container = container.with(
+                com.wingedsheep.engine.state.components.identity.DoubleFacedComponent(
+                    frontCardDefinitionId = cardDef.name,
+                    backCardDefinitionId = cardDef.backFace!!.name,
+                    currentFace = com.wingedsheep.engine.state.components.identity.DoubleFacedComponent.Face.FRONT
+                )
+            )
+        }
 
         // Add continuous effects and replacement effects from static abilities
         val staticAbilityHandler = com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler(cardRegistry)

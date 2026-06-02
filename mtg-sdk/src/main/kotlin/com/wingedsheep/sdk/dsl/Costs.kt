@@ -268,4 +268,16 @@ object Costs {
      * Used as part of an activated ability cost (e.g., "{T}, Blight 1: ...").
      */
     fun Blight(amount: Int): AbilityCost = AbilityCost.Blight(amount)
+
+    /**
+     * Craft (CR 702.167a) — the "Exile this permanent, Exile [filter] from among permanents
+     * you control and/or [filter] cards from your graveyard" portion of the Craft activated
+     * ability. Combine with [Mana] inside [Composite] to express the full cost shape:
+     *
+     * ```kotlin
+     * Costs.Composite(Costs.Mana("{4}{R}"), Costs.Craft(Filters.Dinosaur))
+     * ```
+     */
+    fun Craft(filter: GameObjectFilter, minCount: Int = 1): AbilityCost =
+        AbilityCost.Craft(filter, minCount)
 }

@@ -101,6 +101,7 @@ import com.wingedsheep.sdk.scripting.effects.ExileAndGrantOwnerPlayPermissionEff
 import com.wingedsheep.sdk.scripting.effects.CreateGlobalTriggeredAbilityEffect
 import com.wingedsheep.sdk.scripting.effects.ReturnCreaturesPutInGraveyardThisTurnEffect
 import com.wingedsheep.sdk.scripting.effects.ReturnOneFromLinkedExileEffect
+import com.wingedsheep.sdk.scripting.effects.ReturnSelfFromExileTransformedEffect
 import com.wingedsheep.sdk.scripting.effects.ReturnSelfToBattlefieldAttachedEffect
 import com.wingedsheep.sdk.scripting.effects.DrawUpToEffect
 import com.wingedsheep.sdk.scripting.effects.RemoveFromCombatEffect
@@ -505,6 +506,13 @@ object Effects {
      * The active player chooses one of their owned exiled cards.
      */
     fun ReturnOneFromLinkedExile(): Effect = ReturnOneFromLinkedExileEffect
+
+    /**
+     * Craft resolution effect — return the source from exile to the battlefield transformed
+     * under its owner's control. Paired with [com.wingedsheep.sdk.scripting.AbilityCost.Craft]
+     * as the activated ability's effect; see CR 702.167a.
+     */
+    val ReturnSelfFromExileTransformed: Effect = ReturnSelfFromExileTransformedEffect
 
     /**
      * Return to hand all creature cards in a player's graveyard that were put there this turn.

@@ -206,6 +206,12 @@ class CostHandler(
             is AbilityCost.RemoveCountersFromAmongFilteredPermanents ->
                 com.wingedsheep.engine.handlers.costs.RemoveCountersFromAmongFilteredPermanentsCostHandler
                     .canPay(state, cost, controllerId)
+            is AbilityCost.Craft -> {
+                // Source on battlefield + enough materials in the unified BF+GY pool (CR 702.167a-b).
+                val battlefieldZone = ZoneKey(controllerId, Zone.BATTLEFIELD)
+                if (!state.getZone(battlefieldZone).contains(sourceId)) return false
+                findCraftMaterialCandidates(state, controllerId, cost.filter, sourceId).size >= cost.minCount
+            }
             is AbilityCost.Composite -> {
                 cost.costs.all { canPayAbilityCost(state, it, sourceId, controllerId, manaPool, abilityContext) }
             }
@@ -657,6 +663,7 @@ class CostHandler(
             is AbilityCost.RemoveCountersFromAmongFilteredPermanents ->
                 com.wingedsheep.engine.handlers.costs.RemoveCountersFromAmongFilteredPermanentsCostHandler
                     .pay(state, cost, controllerId, manaPool, choices.counterRemovalChoices)
+            is AbilityCost.Craft -> payCraftCost(state, cost, sourceId, controllerId, manaPool, choices)
             is AbilityCost.Composite -> {
                 var currentState = state
                 var currentPool = manaPool
@@ -1030,6 +1037,90 @@ class CostHandler(
             }
         }
         return CostPaymentResult.success(newState, manaPool)
+    }
+
+    /**
+     * Find the combined BF+GY pool of legal Craft materials (CR 702.167a-b):
+     * permanents the activator controls **and** cards in their graveyard that match [filter].
+     * The source permanent itself is never a valid material — it's exiled separately by the
+     * paired self-exile clause.
+     */
+    private fun findCraftMaterialCandidates(
+        state: GameState,
+        controllerId: EntityId,
+        filter: GameObjectFilter,
+        sourceId: EntityId
+    ): List<EntityId> {
+        val battlefield = findMatchingPermanentsUnified(state, controllerId, filter)
+            .filter { it != sourceId }
+        val graveyardCards = findMatchingCardsUnified(
+            state, state.getZone(ZoneKey(controllerId, Zone.GRAVEYARD)), filter, controllerId
+        )
+        return battlefield + graveyardCards
+    }
+
+    private fun payCraftCost(
+        state: GameState,
+        cost: AbilityCost.Craft,
+        sourceId: EntityId,
+        controllerId: EntityId,
+        manaPool: ManaPool,
+        choices: CostPaymentChoices
+    ): CostPaymentResult {
+        val candidates = findCraftMaterialCandidates(state, controllerId, cost.filter, sourceId).toSet()
+        // Materials are a player choice (CR 702.167a-b): the activator picks which permanents
+        // and/or graveyard cards to exile. No silent auto-pick — callers must supply the
+        // chosen IDs via CostPaymentChoices.exileChoices (web client routes them through the
+        // CraftMaterialOverlay; game-server callers populate the field directly).
+        val chosen = choices.exileChoices
+        if (chosen.isEmpty()) {
+            return CostPaymentResult.failure(
+                "Craft requires the activator to choose at least ${cost.minCount} " +
+                    "${cost.filter.description}(s) to exile via costPayment.exiledCards"
+            )
+        }
+        if (chosen.size < cost.minCount) {
+            return CostPaymentResult.failure(
+                "Craft requires at least ${cost.minCount} ${cost.filter.description}(s) to exile"
+            )
+        }
+        if (chosen.any { it !in candidates }) {
+            return CostPaymentResult.failure("Craft material is not a legal candidate")
+        }
+        if (chosen.contains(sourceId)) {
+            return CostPaymentResult.failure("Craft material cannot include the source permanent")
+        }
+
+        var newState = state
+        val events = mutableListOf<GameEvent>()
+
+        // 1. Exile each chosen material from its zone via the standard zone-transition pipeline
+        //    (LTB triggers, attachment cleanup, last-known info — all handled there).
+        for (materialId in chosen) {
+            val transition = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                newState, materialId, Zone.EXILE
+            )
+            newState = transition.state
+            events.addAll(transition.events)
+        }
+
+        // 2. Exile the source itself. The Craft resolution effect will lift it back to the
+        //    battlefield as its back face; the materials remain in exile so the back face's
+        //    CDA can keep reading their power.
+        val selfTransition = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+            newState, sourceId, Zone.EXILE
+        )
+        newState = selfTransition.state
+        events.addAll(selfTransition.events)
+
+        // 3. Record the materials on the source's CraftedFromExiledComponent so the resolution
+        //    effect can re-attach the component on battlefield re-entry (it's stripped on
+        //    every battlefield entry by applyBattlefieldEntry per Rule 400.7).
+        newState = newState.updateEntity(sourceId) { c ->
+            c.with(com.wingedsheep.engine.state.components.battlefield.CraftedFromExiledComponent(chosen))
+        }
+
+        return CostPaymentResult.success(newState, manaPool, events)
     }
 
     // Helper functions
