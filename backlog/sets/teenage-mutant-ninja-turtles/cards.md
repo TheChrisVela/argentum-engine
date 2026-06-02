@@ -2,7 +2,7 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 14 / 190
+**Implemented:** 15 / 190
 ---
 
 - [ ] Action News Crew
@@ -106,7 +106,7 @@
 - [ ] Mouser Mark III
 - [ ] Mutagen Man, Living Ooze
 - [ ] Mutant Chain Reaction
-- [ ] Mutant Town
+- [x] Mutant Town
 - [ ] Mutant Town Musicians
 - [ ] Negate
 - [ ] New Generation's Technique
