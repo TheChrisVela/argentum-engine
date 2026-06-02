@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 250 / 261
+**Implemented:** 251 / 261
 ---
 
 - [x] Adagia, Windswept Bastion
@@ -165,7 +165,7 @@
 - [x] Pinnacle Starcage
 - [x] Plasma Bolt
 - [x] Possibility Technician
-- [ ] Pull Through the Weft
+- [x] Pull Through the Weft
 - [x] Pulsar Squadron Ace
 - [x] Quantum Riddler
 - [x] Radiant Strike

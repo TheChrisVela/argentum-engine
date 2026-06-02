@@ -167,17 +167,18 @@ addition to its other types and has no abilities."
 
 ---
 
-## 23. Multi-group graveyard return with split destinations
+## 23. Multi-group graveyard return with split destinations — RESOLVED
 
 **Cards:** Pull Through the Weft.
 
-**Clause:** "Return up to two target nonland permanent cards from your graveyard to your hand, then
-return up to two target land cards from your graveyard to the battlefield tapped."
-
-**Plan:** A single spell with two independent "up to two target" graveyard selections that route to
-*different* zones (hand vs. battlefield-tapped). Single-group graveyard return to one zone exists
-(e.g. Scout for Survivors); the dual-group/dual-destination shape needs verification or a new
-multi-target pattern.
+**Resolution:** No new SDK types were needed. Two independent cast-time `targets("…",
+optional = true)` calls register both prompts with their own legal-target lists. At
+resolution, `GatherCardsEffect(CardSource.ChosenTargets)` collects every selected target
+into one pipeline collection, and `FilterCollectionEffect(MatchesFilter(Land))` partitions
+the pile into `chosenLands` and `chosenNonlands`. Each subset is then routed to its own
+destination via `MoveCollectionEffect` (hand vs. battlefield-tapped). Partitioning by type
+sidesteps the `buildNamedTargets` flattening so per-requirement chosen counts don't have to
+align with the `count` maximums.
 
 ---
 
