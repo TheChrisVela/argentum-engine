@@ -56,6 +56,7 @@ class EngineServices(
     )
     val combatManager = CombatManager(cardRegistry, manaAbilitySideEffectExecutor)
     val triggerDetector = TriggerDetector(cardRegistry)
+    val stateTriggerPoller = com.wingedsheep.engine.event.StateTriggerPoller(cardRegistry)
     val stackResolver = StackResolver(
         effectHandler = EffectHandler(cardRegistry = cardRegistry),
         cardRegistry = cardRegistry

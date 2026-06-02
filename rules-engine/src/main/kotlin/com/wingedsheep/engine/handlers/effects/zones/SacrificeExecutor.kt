@@ -9,6 +9,7 @@ import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.stack.capturePermanentSnapshots
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.SacrificeEffect
@@ -149,6 +150,17 @@ class SacrificeExecutor(
         var newState = state
         val events = mutableListOf<GameEvent>()
 
+        // Capture P/T/subtype snapshots BEFORE the zone change (CR 608.2h / 113.7a — last
+        // known information) so a follow-up sibling effect — e.g. Serendib Djinn's "if you
+        // sacrifice an Island this way, ~ deals 3 damage to you" — can read the sacrificed
+        // permanent's subtypes via
+        // [Conditions.SacrificedHadSubtype] or [DynamicAmount.EntityProperty(Sacrificed, ...)].
+        val snapshots = if (permanentIds.isNotEmpty()) {
+            capturePermanentSnapshots(permanentIds, newState.projectedState)
+        } else {
+            emptyList()
+        }
+
         if (permanentIds.isNotEmpty()) {
             val permanentNames = permanentIds.map { id ->
                 newState.getEntity(id)?.get<CardComponent>()?.name ?: "Unknown"
@@ -166,5 +178,6 @@ class SacrificeExecutor(
         }
 
         return EffectResult.success(newState, events)
+            .copy(updatedSacrificedPermanents = snapshots)
     }
 }

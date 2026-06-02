@@ -116,8 +116,8 @@ object Conditions {
      * (e.g. `GameObjectFilter.Creature.copy(statePredicates = listOf(StatePredicate.HasAnyCounter))`
      * for "a creature with a counter on it").
      */
-    fun YouControl(filter: GameObjectFilter): ConditionInterface =
-        Exists(Player.You, Zone.BATTLEFIELD, filter)
+    fun YouControl(filter: GameObjectFilter, negate: Boolean = false): ConditionInterface =
+        Exists(Player.You, Zone.BATTLEFIELD, filter, negate = negate)
 
     /**
      * If you control an enchantment.

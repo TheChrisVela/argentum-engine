@@ -519,6 +519,39 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
     }
 
     /**
+     * Synthetic "trigger" event used to wrap a [StateTriggeredAbility]'s effect into a
+     * [TriggeredAbility] when the engine enqueues a state trigger onto the stack
+     * (CR 603.8). This event is never matched against real game events — the engine
+     * detects state-trigger transitions via the [com.wingedsheep.engine.event.StateTriggerPoller]
+     * and produces a [com.wingedsheep.engine.event.PendingTrigger] directly.
+     */
+    @SerialName("StateConditionMetEvent")
+    @Serializable
+    data object StateConditionMetEvent : GameEvent {
+        override val description: String = "the state condition is met"
+        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
+    }
+
+    /**
+     * When this attacking creature reaches the end of the Declare Blockers step with
+     * no blockers assigned to it (CR 509.3g — "attacks and isn't blocked").
+     *
+     * SELF only — "when this creature attacks and isn't blocked". An ANY-binding
+     * filtered variant ("whenever a [filter] attacks and isn't blocked") is not yet
+     * wired in [com.wingedsheep.engine.event.TriggerMatcher]; add the matcher/detector
+     * branches and a filter field together when a card needs it.
+     *
+     * Mirrors [BecomesBlockedEvent]. Detected (not emitted) once per unblocked attacker
+     * after blocker declaration is finalized for the current combat.
+     */
+    @SerialName("BecomesUnblockedEvent")
+    @Serializable
+    data object BecomesUnblockedEvent : GameEvent {
+        override val description: String = "a creature attacks and isn't blocked"
+        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
+    }
+
+    /**
      * When this creature blocks or becomes blocked by a creature matching [partnerFilter].
      * Binding SELF = "when this creature blocks or becomes blocked by [filter]".
      *

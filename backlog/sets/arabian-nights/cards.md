@@ -2,7 +2,7 @@
 
 **Set Size:** 78 cards
 **Release Date:** December 17, 1993
-**Implemented:** 53 / 78
+**Implemented:** 56 / 78
 | Color | Count |
 |-------|-------|
 | White | 11 |
@@ -26,12 +26,12 @@
 - [x] Repentant Blacksmith
 - [ ] Shahrazad
 - [x] War Elephant
-- [ ] Dandân
+- [x] Dandân
 - [x] Fishliver Oil
 - [x] Flying Men
 - [x] Giant Tortoise
-- [ ] Island Fish Jasconius
-- [ ] Merchant Ship
+- [x] Island Fish Jasconius
+- [x] Merchant Ship
 - [ ] Old Man of the Sea
 - [ ] Serendib Djinn
 - [x] Serendib Efreet

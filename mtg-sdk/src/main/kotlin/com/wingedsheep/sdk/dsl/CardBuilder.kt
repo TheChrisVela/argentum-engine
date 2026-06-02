@@ -305,6 +305,7 @@ class CardBuilder(private val name: String) {
     private var keywordAbilityList: MutableList<KeywordAbility> = mutableListOf()
     private var spellBuilder: SpellBuilder? = null
     private val triggeredAbilities: MutableList<TriggeredAbility> = mutableListOf()
+    private val stateTriggeredAbilities: MutableList<StateTriggeredAbility> = mutableListOf()
     private val activatedAbilities: MutableList<ActivatedAbility> = mutableListOf()
     private val staticAbilities: MutableList<StaticAbility> = mutableListOf()
     private val additionalCosts: MutableList<AdditionalCost> = mutableListOf()
@@ -755,6 +756,26 @@ class CardBuilder(private val name: String) {
         triggeredAbilities.add(builder.build())
     }
 
+    /**
+     * Add a state-triggered ability (CR 603.8). The [condition] is polled at priority
+     * passes; when it transitions from false to true the [effect] is enqueued on the
+     * stack. The engine latches the ability per (entityId, abilityId) so it does not
+     * re-fire while the condition stays true.
+     *
+     * Example — Dandân ("When you control no Islands, sacrifice this creature"):
+     * ```
+     * stateTriggeredAbility {
+     *     condition = Conditions.YouControl(GameObjectFilter.Land.withSubtype("Island"), negate = true)
+     *     effect = Effects.SacrificeTarget(EffectTarget.Self)
+     * }
+     * ```
+     */
+    fun stateTriggeredAbility(init: StateTriggeredAbilityBuilder.() -> Unit) {
+        val builder = StateTriggeredAbilityBuilder()
+        builder.init()
+        stateTriggeredAbilities.add(builder.build())
+    }
+
     // =========================================================================
     // Activated Abilities
     // =========================================================================
@@ -1043,6 +1064,7 @@ class CardBuilder(private val name: String) {
             spellEffect = spellEffect,
             targetRequirements = spellBuilder?.targetRequirements ?: emptyList(),
             triggeredAbilities = triggeredAbilities.toList(),
+            stateTriggeredAbilities = stateTriggeredAbilities.toList(),
             activatedAbilities = activatedAbilities.toList(),
             staticAbilities = staticAbilities.toList(),
             replacementEffects = replacementEffects.toList(),
@@ -1412,6 +1434,31 @@ class TriggeredAbilityBuilder {
             triggerCondition = triggerCondition,
             controlledByTriggeringEntityController = controlledByTriggeringEntityController,
             oncePerTurn = oncePerTurn,
+            descriptionOverride = description
+        )
+    }
+}
+
+// =============================================================================
+// State-Triggered Ability Builder (CR 603.8)
+// =============================================================================
+
+@CardDsl
+class StateTriggeredAbilityBuilder {
+    /** The state predicate. Evaluated against the source permanent's context. */
+    var condition: Condition? = null
+    var effect: Effect? = null
+    var activeZone: Zone = Zone.BATTLEFIELD
+    /** Optional human-readable description that overrides the auto-generated one. */
+    var description: String? = null
+
+    fun build(): StateTriggeredAbility {
+        val cond = requireNotNull(condition) { "State-triggered ability must have a condition" }
+        val eff = requireNotNull(effect) { "State-triggered ability must have an effect" }
+        return StateTriggeredAbility.create(
+            condition = cond,
+            effect = eff,
+            activeZone = activeZone,
             descriptionOverride = description
         )
     }

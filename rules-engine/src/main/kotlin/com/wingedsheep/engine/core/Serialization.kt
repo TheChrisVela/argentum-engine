@@ -365,6 +365,7 @@ val engineSerializersModule = SerializersModule {
         subclass(TargetedByControllerThisTurnComponent::class)
         subclass(ReceivedCountersThisTurnComponent::class)
         subclass(TriggeredAbilityFiredThisTurnComponent::class)
+        subclass(StateTriggerLatchesComponent::class)
         subclass(WarpedComponent::class)
         subclass(WasKickedComponent::class)
         subclass(EvokedComponent::class)

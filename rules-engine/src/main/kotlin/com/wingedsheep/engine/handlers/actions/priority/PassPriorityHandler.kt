@@ -8,6 +8,7 @@ import com.wingedsheep.engine.core.PriorityChangedEvent
 import com.wingedsheep.engine.core.StepChangedEvent
 import com.wingedsheep.engine.core.TurnManager
 import com.wingedsheep.engine.core.ZoneChangeEvent
+import com.wingedsheep.engine.event.StateTriggerPoller
 import com.wingedsheep.engine.event.TriggerDetector
 import com.wingedsheep.engine.event.TriggerProcessor
 import com.wingedsheep.engine.core.EngineServices
@@ -40,7 +41,8 @@ class PassPriorityHandler(
     private val stackResolver: StackResolver,
     private val sbaChecker: StateBasedActionChecker,
     private val triggerDetector: TriggerDetector,
-    private val triggerProcessor: TriggerProcessor
+    private val triggerProcessor: TriggerProcessor,
+    private val stateTriggerPoller: StateTriggerPoller
 ) : ActionHandler<PassPriority> {
     override val actionType: KClass<PassPriority> = PassPriority::class
 
@@ -107,6 +109,12 @@ class PassPriorityHandler(
                         triggers.addAll(phaseStepTriggers)
                     }
                 }
+
+                // CR 603.8: poll state-triggered abilities. The poll updates per-permanent
+                // latch components and yields any false-to-true transitions as triggers.
+                val stateTriggerResult = stateTriggerPoller.poll(currentState)
+                currentState = stateTriggerResult.newState
+                triggers.addAll(stateTriggerResult.pendingTriggers)
 
                 if (triggers.isNotEmpty()) {
                     val triggerResult = triggerProcessor.processTriggers(currentState, triggers)
@@ -227,9 +235,16 @@ class PassPriorityHandler(
 
         // Detect triggers from SBA events (e.g., death triggers) on post-SBA state
         val sbaTriggers = triggerDetector.detectTriggers(sbaTrackedState, sbaResult.events)
-        val triggers = preSbaTriggers + sbaTriggers
+
+        // CR 603.8: state-trigger poll happens at every priority check (here, after stack
+        // resolution + SBA), once events have settled. Polls battlefield permanents'
+        // state-triggered abilities and emits triggers for false→true transitions; updates
+        // per-entity latch components on the returned state.
+        val statePollResult = stateTriggerPoller.poll(sbaTrackedState)
+        val postPollState = statePollResult.newState
+        val triggers = preSbaTriggers + sbaTriggers + statePollResult.pendingTriggers
         if (triggers.isNotEmpty()) {
-            val triggerResult = triggerProcessor.processTriggers(sbaTrackedState, triggers)
+            val triggerResult = triggerProcessor.processTriggers(postPollState, triggers)
 
             if (triggerResult.isPaused) {
                 return ExecutionResult.paused(
@@ -247,7 +262,7 @@ class PassPriorityHandler(
         }
 
         return ExecutionResult.success(
-            sbaTrackedState.withPriority(stackItemController),
+            postPollState.withPriority(stackItemController),
             combinedEvents
         )
     }
@@ -273,7 +288,8 @@ class PassPriorityHandler(
                 services.stackResolver,
                 services.sbaChecker,
                 services.triggerDetector,
-                services.triggerProcessor
+                services.triggerProcessor,
+                services.stateTriggerPoller
             )
         }
     }

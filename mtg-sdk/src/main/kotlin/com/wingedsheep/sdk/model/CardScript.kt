@@ -104,6 +104,15 @@ data class CardScript(
     val triggeredAbilities: List<TriggeredAbility> = emptyList(),
 
     /**
+     * State-triggered abilities (CR 603.8) that fire when a game-state condition
+     * becomes true (rather than in response to an event). The engine polls these at
+     * priority pass points and latches per (entityId, abilityId) to prevent re-firing
+     * while the condition stays true. Examples: "When you control no Islands,
+     * sacrifice this creature."
+     */
+    val stateTriggeredAbilities: List<StateTriggeredAbility> = emptyList(),
+
+    /**
      * Activated abilities that can be activated by paying costs.
      * Examples: Tap abilities, loyalty abilities, equip.
      */
@@ -248,6 +257,7 @@ data class CardScript(
         get() = spellEffect != null ||
                 targetRequirements.isNotEmpty() ||
                 triggeredAbilities.isNotEmpty() ||
+                stateTriggeredAbilities.isNotEmpty() ||
                 activatedAbilities.isNotEmpty() ||
                 staticAbilities.isNotEmpty() ||
                 replacementEffects.isNotEmpty() ||
@@ -285,7 +295,7 @@ data class CardScript(
      * All abilities (triggered + activated + static + replacement) for iteration.
      */
     val allAbilities: List<Any>
-        get() = triggeredAbilities + activatedAbilities + staticAbilities + replacementEffects
+        get() = triggeredAbilities + stateTriggeredAbilities + activatedAbilities + staticAbilities + replacementEffects
 
     /**
      * Whether this card has replacement effects.
