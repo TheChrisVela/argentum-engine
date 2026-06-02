@@ -4,14 +4,13 @@ import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.ForEachColorOfEffect
-import com.wingedsheep.sdk.scripting.values.EntityReference
 import kotlin.reflect.KClass
 
 /**
@@ -38,7 +37,7 @@ class ForEachColorOfExecutor(
         effect: ForEachColorOfEffect,
         context: EffectContext
     ): EffectResult {
-        val sourceId = resolveEntityId(effect.source, context, state)
+        val sourceId = TargetResolutionUtils.resolveEntityReference(effect.source, context, state)
             ?: return EffectResult.success(state)
 
         val colorNames = readSourceColors(state, sourceId)
@@ -59,30 +58,6 @@ class ForEachColorOfExecutor(
         }
         return EffectResult.success(currentState, events)
     }
-
-    private fun resolveEntityId(ref: EntityReference, context: EffectContext, state: GameState): EntityId? =
-        when (ref) {
-            is EntityReference.Source -> context.sourceId
-            is EntityReference.EnchantedCreature ->
-                context.sourceId?.let { state.getEntity(it)?.get<AttachedToComponent>()?.targetId }
-            is EntityReference.Target -> {
-                when (val target = context.targets.getOrNull(ref.index)) {
-                    is com.wingedsheep.engine.state.components.stack.ChosenTarget.Permanent -> target.entityId
-                    is com.wingedsheep.engine.state.components.stack.ChosenTarget.Card -> target.cardId
-                    is com.wingedsheep.engine.state.components.stack.ChosenTarget.Spell -> target.spellEntityId
-                    else -> null
-                }
-            }
-            is EntityReference.Sacrificed -> context.sacrificedPermanents.getOrNull(ref.index)?.entityId
-            is EntityReference.TappedAsCost -> context.tappedPermanents.getOrNull(ref.index)
-            is EntityReference.Triggering -> context.triggeringEntityId
-            is EntityReference.AffectedEntity -> context.affectedEntityId
-            is EntityReference.IterationEntity -> context.pipeline.iterationTarget
-            is EntityReference.FromCostStorage ->
-                context.pipeline.storedCollections[ref.collectionName]?.getOrNull(ref.index)
-            is EntityReference.AmassedArmy ->
-                context.pipeline.storedCollections[EntityReference.AmassedArmy.STORAGE_KEY]?.firstOrNull()
-        }
 
     private fun readSourceColors(state: GameState, entityId: EntityId): Set<String> {
         // On battlefield → projection is authoritative, including an empty set (the source is
