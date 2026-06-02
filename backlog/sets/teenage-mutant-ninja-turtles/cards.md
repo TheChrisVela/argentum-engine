@@ -2,7 +2,7 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 11 / 190
+**Implemented:** 12 / 190
 ---
 
 - [ ] Action News Crew
@@ -29,7 +29,7 @@
 - [ ] Crustacean Commando
 - [ ] Dark Leo & Shredder
 - [x] Death in the Family
-- [ ] Dimension X
+- [x] Dimension X
 - [ ] Dimensional Exile
 - [ ] Does Machines
 - [ ] Don & Leo, Problem Solvers
