@@ -2,7 +2,7 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 34 / 190
+**Implemented:** 35 / 190
 ---
 
 - [ ] Action News Crew
@@ -86,7 +86,7 @@
 - [ ] Lita, Little Orphan Amphibian
 - [ ] Lord Dregg, Insect Invader
 - [ ] Madame Null, Power Broker
-- [ ] Make Your Move
+- [x] Make Your Move
 - [ ] Manhole Missile
 - [ ] Mechanized Ninja Cavalry
 - [ ] Metalhead
