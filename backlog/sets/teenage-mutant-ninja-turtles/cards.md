@@ -2,7 +2,7 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 48 / 190
+**Implemented:** 49 / 190
 ---
 
 - [ ] Action News Crew
@@ -152,7 +152,7 @@
 - [ ] Sewer-veillance Cam
 - [ ] Shark Shredder, Killer Clone
 - [ ] Shredder's Armor
-- [ ] Shredder's Revenge
+- [x] Shredder's Revenge
 - [ ] Shredder's Technique
 - [ ] Shredder, Unrelenting
 - [ ] Skateboard
