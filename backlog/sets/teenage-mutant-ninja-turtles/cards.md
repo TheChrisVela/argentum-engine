@@ -2,7 +2,7 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 6 / 190
+**Implemented:** 7 / 190
 ---
 
 - [ ] Action News Crew
@@ -16,7 +16,7 @@
 - [ ] Bebop & Rocksteady
 - [ ] Bebop, Warthog Warrior
 - [x] Bespoke Bō
-- [ ] Bot Bashing Time
+- [x] Bot Bashing Time
 - [ ] Brilliance Unleashed
 - [ ] Broadcast Takeover
 - [ ] Buzz Bots
