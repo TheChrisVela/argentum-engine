@@ -31,10 +31,12 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *   enchantment. Gated on `Conditions.SourceHasCounter(HOPE)`, which is equivalent
  *   to checking that the removal will succeed (there are no replacement effects on
  *   counter removal in standard LTR scope).
- * - The "Then if this enchantment has no hope counters" clause is a *resolution-time*
- *   re-check (CR 605.3a / 700.1-style "then if"), evaluated after the remove step,
- *   so it correctly fires after removing the last counter and also when the
- *   enchantment entered with zero counters.
+ * - The "Then if this enchantment has no hope counters" clause is a sequential
+ *   instruction carried out during resolution (CR 608.2c), re-evaluating the
+ *   counter count *after* the remove step — not an intervening-"if" (CR 603.4
+ *   covers only the "if" immediately following a trigger condition). So it
+ *   correctly fires after removing the last counter and also when the enchantment
+ *   entered with zero counters.
  */
 val DawnOfANewAge = card("Dawn of a New Age") {
     manaCost = "{1}{W}"

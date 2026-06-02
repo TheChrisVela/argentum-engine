@@ -1251,68 +1251,6 @@ export const styles: Record<string, React.CSSProperties> = {
     zIndex: 5,
     textShadow: '0 0 4px rgba(160, 140, 240, 0.8)',
   } as React.CSSProperties,
-  // Hope counter badge (LTR — Dawn of a New Age)
-  hopeCounterBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: 'rgba(80, 70, 20, 0.95)',
-    borderRadius: 4,
-    border: '1px solid rgba(240, 220, 120, 0.7)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    color: '#f0e090',
-    fontWeight: 700,
-    zIndex: 5,
-    textShadow: '0 0 4px rgba(240, 220, 120, 0.6)',
-  } as React.CSSProperties,
-  // Verse counter badge (LTR — Lost Isle Calling)
-  verseCounterBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: 'rgba(20, 50, 90, 0.95)',
-    borderRadius: 4,
-    border: '1px solid rgba(120, 180, 230, 0.6)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    color: '#a0c8e8',
-    fontWeight: 700,
-    zIndex: 5,
-  } as React.CSSProperties,
-  // Influence counter badge (LTR — Palantír of Orthanc)
-  influenceCounterBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: 'rgba(40, 20, 60, 0.95)',
-    borderRadius: 4,
-    border: '1px solid rgba(180, 130, 220, 0.6)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    color: '#c898e0',
-    fontWeight: 700,
-    zIndex: 5,
-  } as React.CSSProperties,
-  // Burden counter badge (LTR — The One Ring)
-  burdenCounterBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: 'rgba(60, 25, 15, 0.95)',
-    borderRadius: 4,
-    border: '1px solid rgba(220, 160, 60, 0.7)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    color: '#e8b860',
-    fontWeight: 700,
-    zIndex: 5,
-    textShadow: '0 0 4px rgba(220, 160, 60, 0.6)',
-  } as React.CSSProperties,
   // Blight counter badge (for Rottenmouth Viper etc.)
   blightCounterBadge: {
     position: 'absolute',
@@ -1602,6 +1540,45 @@ export const styles: Record<string, React.CSSProperties> = {
     pointerEvents: 'none',
     zIndex: 6,
   } as React.CSSProperties,
+}
+
+/**
+ * Color palette for the LTR passive-counter badges (hope/verse/influence/burden).
+ * The badge geometry is shared; only the colors differ per counter type, so the
+ * per-type styles are generated from this map rather than copy-pasted.
+ */
+interface CounterBadgePalette { bg: string; border: string; color: string; glow?: string }
+
+const passiveCounterPalette: Record<string, CounterBadgePalette> = {
+  HOPE: { bg: 'rgba(80, 70, 20, 0.95)', border: 'rgba(240, 220, 120, 0.7)', color: '#f0e090', glow: 'rgba(240, 220, 120, 0.6)' },
+  VERSE: { bg: 'rgba(20, 50, 90, 0.95)', border: 'rgba(120, 180, 230, 0.6)', color: '#a0c8e8' },
+  INFLUENCE: { bg: 'rgba(40, 20, 60, 0.95)', border: 'rgba(180, 130, 220, 0.6)', color: '#c898e0' },
+  BURDEN: { bg: 'rgba(60, 25, 15, 0.95)', border: 'rgba(220, 160, 60, 0.7)', color: '#e8b860', glow: 'rgba(220, 160, 60, 0.6)' },
+}
+
+const fallbackCounterPalette: CounterBadgePalette = { bg: 'rgba(40, 40, 40, 0.95)', border: 'rgba(180, 180, 180, 0.6)', color: '#e0e0e0' }
+
+/**
+ * Build the badge style for an LTR passive counter from its palette. These counters
+ * never co-occur on one permanent, so they all render in the same top-right corner.
+ */
+export function passiveCounterBadgeStyle(type: string): React.CSSProperties {
+  const p = passiveCounterPalette[type] ?? fallbackCounterPalette
+  return {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: p.bg,
+    borderRadius: 4,
+    border: `1px solid ${p.border}`,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 2,
+    color: p.color,
+    fontWeight: 700,
+    zIndex: 5,
+    ...(p.glow ? { textShadow: `0 0 4px ${p.glow}` } : {}),
+  }
 }
 
 /**

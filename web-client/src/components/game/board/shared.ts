@@ -496,32 +496,24 @@ export function getDecayedCounters(card: ClientCard): number {
 }
 
 /**
- * Get the number of hope counters on a card (LTR — Dawn of a New Age).
+ * Get the number of counters of a given type on a card.
  */
-export function getHopeCounters(card: ClientCard): number {
-  return card.counters[CounterType.HOPE] ?? 0
+export function getCounterCount(card: ClientCard, type: CounterType): number {
+  return card.counters[type] ?? 0
 }
 
 /**
- * Get the number of verse counters on a card (LTR — Lost Isle Calling).
+ * LTR passive counters (hope/verse/influence/burden) — pure marker counters whose only
+ * UI is a colored badge with a count. They have no inherent rule and never co-occur on
+ * one permanent. Rendered data-driven in GameCard; per-type palette lives in
+ * styles.passiveCounterBadgeStyle and icon in counterManaClass.
  */
-export function getVerseCounters(card: ClientCard): number {
-  return card.counters[CounterType.VERSE] ?? 0
-}
-
-/**
- * Get the number of influence counters on a card (LTR — Palantír of Orthanc).
- */
-export function getInfluenceCounters(card: ClientCard): number {
-  return card.counters[CounterType.INFLUENCE] ?? 0
-}
-
-/**
- * Get the number of burden counters on a card (LTR — The One Ring).
- */
-export function getBurdenCounters(card: ClientCard): number {
-  return card.counters[CounterType.BURDEN] ?? 0
-}
+export const PASSIVE_COUNTER_TYPES: readonly CounterType[] = [
+  CounterType.HOPE,
+  CounterType.VERSE,
+  CounterType.INFLUENCE,
+  CounterType.BURDEN,
+]
 
 /**
  * Get an emoji or icon for an effect based on its icon identifier.

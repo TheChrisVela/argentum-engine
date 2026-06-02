@@ -44,12 +44,10 @@ import {
   getGrowthCounters,
   getFeatherCounters,
   getTimeCounters,
-  getHopeCounters,
-  getVerseCounters,
-  getInfluenceCounters,
-  getBurdenCounters,
+  getCounterCount,
+  PASSIVE_COUNTER_TYPES,
 } from '../board/shared'
-import { styles, bandColorFor } from '../board/styles'
+import { styles, bandColorFor, passiveCounterBadgeStyle } from '../board/styles'
 import {
   TARGET_COLOR, TARGET_COLOR_BRIGHT, TARGET_GLOW, TARGET_GLOW_BRIGHT, TARGET_GLOW_OUTER, TARGET_SHADOW,
   SELECTED_COLOR, SELECTED_GLOW, SELECTED_SHADOW,
@@ -1522,61 +1520,23 @@ function GameCardImpl({
         </div>
       )}
 
-      {/* Hope counter badge (LTR — Dawn of a New Age) */}
-      {battlefield && getHopeCounters(card) > 0 && (
-        <div style={{
-          ...styles.hopeCounterBadge,
-          fontSize: responsive.badges.counterTextFontSize,
-          padding: responsive.badges.badgePadding,
-        }}>
-          <i className={`ms ms-${counterManaClass.HOPE}`} style={{ fontSize: responsive.badges.counterIconFontSize }} />
-          <span style={{ fontWeight: 700 }}>
-            {getHopeCounters(card)}
-          </span>
-        </div>
-      )}
-
-      {/* Verse counter badge (LTR — Lost Isle Calling) */}
-      {battlefield && getVerseCounters(card) > 0 && (
-        <div style={{
-          ...styles.verseCounterBadge,
-          fontSize: responsive.badges.counterTextFontSize,
-          padding: responsive.badges.badgePadding,
-        }}>
-          <i className={`ms ms-${counterManaClass.VERSE}`} style={{ fontSize: responsive.badges.counterIconFontSize }} />
-          <span style={{ fontWeight: 700 }}>
-            {getVerseCounters(card)}
-          </span>
-        </div>
-      )}
-
-      {/* Influence counter badge (LTR — Palantír of Orthanc) */}
-      {battlefield && getInfluenceCounters(card) > 0 && (
-        <div style={{
-          ...styles.influenceCounterBadge,
-          fontSize: responsive.badges.counterTextFontSize,
-          padding: responsive.badges.badgePadding,
-        }}>
-          <i className={`ms ms-${counterManaClass.INFLUENCE}`} style={{ fontSize: responsive.badges.counterIconFontSize }} />
-          <span style={{ fontWeight: 700 }}>
-            {getInfluenceCounters(card)}
-          </span>
-        </div>
-      )}
-
-      {/* Burden counter badge (LTR — The One Ring) */}
-      {battlefield && getBurdenCounters(card) > 0 && (
-        <div style={{
-          ...styles.burdenCounterBadge,
-          fontSize: responsive.badges.counterTextFontSize,
-          padding: responsive.badges.badgePadding,
-        }}>
-          <i className={`ms ms-${counterManaClass.BURDEN}`} style={{ fontSize: responsive.badges.counterIconFontSize }} />
-          <span style={{ fontWeight: 700 }}>
-            {getBurdenCounters(card)}
-          </span>
-        </div>
-      )}
+      {/* LTR passive-counter badges (hope/verse/influence/burden) */}
+      {battlefield && PASSIVE_COUNTER_TYPES.map((type) => {
+        const count = getCounterCount(card, type)
+        if (count <= 0) return null
+        return (
+          <div key={type} style={{
+            ...passiveCounterBadgeStyle(type),
+            fontSize: responsive.badges.counterTextFontSize,
+            padding: responsive.badges.badgePadding,
+          }}>
+            <i className={`ms ms-${counterManaClass[type]}`} style={{ fontSize: responsive.badges.counterIconFontSize }} />
+            <span style={{ fontWeight: 700 }}>
+              {count}
+            </span>
+          </div>
+        )
+      })}
 
       {/* Flood counter badge */}
       {battlefield && getFloodCounters(card) > 0 && (
