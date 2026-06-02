@@ -2,7 +2,7 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 39 / 190
+**Implemented:** 40 / 190
 ---
 
 - [ ] Action News Crew
@@ -108,7 +108,7 @@
 - [ ] Mutant Chain Reaction
 - [x] Mutant Town
 - [ ] Mutant Town Musicians
-- [ ] Negate
+- [x] Negate
 - [ ] New Generation's Technique
 - [ ] Ninja Teen
 - [ ] Nobody
