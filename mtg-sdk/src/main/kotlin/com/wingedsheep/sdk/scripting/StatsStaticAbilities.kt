@@ -97,5 +97,4 @@ data class SetBasePowerToughnessStatic(
     val filter: GroupFilter = GroupFilter.attachedCreature()
 ) : StaticAbility {
     override val description: String = "has base power and toughness $power/$toughness"
-    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }

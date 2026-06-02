@@ -44,7 +44,6 @@ data class IsAllCreatureTypes(
     val filter: GroupFilter = GroupFilter.attachedCreature()
 ) : StaticAbility {
     override val description: String = "is all creature types"
-    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }
 
 /**
@@ -65,7 +64,6 @@ data class GrantCardType(
     override val description: String = "is also ${
         if (cardType.first().lowercaseChar() in "aeiou") "an" else "a"
     } ${cardType.lowercase()}"
-    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }
 
 /**
@@ -88,7 +86,6 @@ data class RemoveCardType(
     override val description: String = "isn't ${
         if (cardType.first().lowercaseChar() in "aeiou") "an" else "a"
     } ${cardType.lowercase()}"
-    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }
 
 /**
@@ -107,7 +104,6 @@ data class GrantSupertype(
     val filter: GroupFilter = GroupFilter.attachedCreature()
 ) : StaticAbility {
     override val description: String = "is ${supertype.lowercase()}"
-    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }
 
 /**
@@ -126,7 +122,6 @@ data class GrantColor(
     val filter: GroupFilter = GroupFilter.attachedCreature()
 ) : StaticAbility {
     override val description: String = "is ${color.name.lowercase()} in addition to its other colors"
-    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }
 
 /**
@@ -146,7 +141,6 @@ data class GrantChosenColor(
     val filter: GroupFilter = GroupFilter.attachedCreature()
 ) : StaticAbility {
     override val description: String = "is the chosen color"
-    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }
 
 /**
@@ -190,7 +184,6 @@ data class AddLandTypeByCounter(
         "Each land with a $counterType counter on it is ${
             if (landType.first().lowercaseChar() in "aeiou") "an" else "a"
         } $landType in addition to its other types"
-    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }
 
 /**
@@ -209,7 +202,6 @@ data class LoseAllAbilities(
     val filter: GroupFilter = GroupFilter.attachedCreature()
 ) : StaticAbility {
     override val description: String = "loses all abilities"
-    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }
 
 /**
@@ -227,7 +219,6 @@ data class SetEnchantedLandType(
     override val description: String = "Enchanted land is ${
         if (landType.first().lowercaseChar() in "aeiou") "an" else "a"
     } $landType"
-    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }
 
 /**
@@ -242,7 +233,6 @@ data class SetEnchantedLandType(
 @Serializable
 data object SetEnchantedLandTypeFromChosen : StaticAbility {
     override val description: String = "Enchanted land is the chosen type"
-    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }
 
 /**
@@ -350,5 +340,4 @@ data class TransformPermanent(
             append(setCardTypes.joinToString(" ") { it.lowercase() })
         }
     }
-    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }

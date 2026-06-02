@@ -78,8 +78,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
                 append(source.description)
             }
         }
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     // =========================================================================
@@ -163,8 +161,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
             append("counters would be placed on ")
             append(recipient.description)
         }
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     // =========================================================================
@@ -221,8 +217,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.You
     ) : GameEvent {
         override val description: String = "${player.description} would draw a card"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     // =========================================================================
@@ -238,8 +232,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.You
     ) : GameEvent {
         override val description: String = "${player.description} would gain life"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -251,8 +243,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.You
     ) : GameEvent {
         override val description: String = "${player.description} would lose life"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -265,8 +255,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.You
     ) : GameEvent {
         override val description: String = "${player.description} would gain or lose life"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -280,8 +268,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.You
     ) : GameEvent {
         override val description: String = "the Ring tempts ${player.description}"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -297,8 +283,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.You
     ) : GameEvent {
         override val description: String = "${player.description} scries"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     // =========================================================================
@@ -315,8 +299,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.Each
     ) : GameEvent {
         override val description: String = "${player.description} would take an extra turn"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     // =========================================================================
@@ -362,8 +344,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.You
     ) : GameEvent {
         override val description: String = "${player.description} would search a library"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     // =========================================================================
@@ -437,8 +417,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
                 append("creatures")
             }
         }
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -460,8 +438,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         } else {
             "$minAttackers or more creatures attack you"
         }
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -614,8 +590,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
                 append(source.description)
             }
         }
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -629,7 +603,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
     @Serializable
     data object CreatureDealtDamageBySourceDiesEvent : GameEvent {
         override val description: String = "whenever a creature dealt damage by this creature this turn dies"
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -642,7 +615,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
     @Serializable
     data object DamagePreventedEvent : GameEvent {
         override val description: String = "when damage is prevented this way"
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     // ---- Phase/Step Triggers ----
@@ -668,8 +640,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
             }
             append(step.displayName)
         }
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     // ---- Spell/Card Triggers ----
@@ -722,8 +692,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
                 .filter { it !is SpellCastPredicate.WasKicked && it !is SpellCastPredicate.IsModal }
                 .forEach { append(" ").append(it.description) }
         }
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -752,8 +720,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
             })
             append(" spell each turn")
         }
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -772,8 +738,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
     @Serializable
     data object CastThisSpellEvent : GameEvent {
         override val description: String = "you cast this spell"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -792,8 +756,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.You
     ) : GameEvent {
         override val description: String = "${player.description} expends $threshold"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -812,8 +774,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.You
     ) : GameEvent {
         override val description: String = "${player.description} commit a crime"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -831,8 +791,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.Each
     ) : GameEvent {
         override val description: String = "${player.description} chooses one or more targets"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -844,8 +802,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.You
     ) : GameEvent {
         override val description: String = "${player.description} cycles a card"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     // ---- Gift Triggers ----
@@ -860,8 +816,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.You
     ) : GameEvent {
         override val description: String = "${player.description} gives a gift"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     // ---- Room Triggers (DSK) ----
@@ -881,8 +835,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.You
     ) : GameEvent {
         override val description: String = "${player.description} fully unlock a Room"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -899,8 +851,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val player: Player = Player.You
     ) : GameEvent {
         override val description: String = "${player.description} unlock a door"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     // ---- Targeting Triggers ----
@@ -1001,7 +951,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
     @Serializable
     data object UntapEvent : GameEvent {
         override val description: String = "this permanent becomes untapped"
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -1012,7 +961,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
     @Serializable
     data object TurnFaceUpEvent : GameEvent {
         override val description: String = "this is turned face up"
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -1033,7 +981,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
             }
             append("is turned face up")
         }
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -1053,8 +1000,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
                 null -> {}
             }
         }
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -1065,7 +1010,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
     @Serializable
     data object ControlChangeEvent : GameEvent {
         override val description: String = "control of this permanent changes"
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     // ---- Counter Triggers ----
@@ -1100,8 +1044,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
             append(describeObjectForEvent(filter))
             if (firstTimeEachTurn) append(" for the first time this turn")
         }
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     // ---- Draw/Reveal Triggers ----
@@ -1117,7 +1059,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
     @Serializable
     data object SpellOrAbilityOnStackEvent : GameEvent {
         override val description: String = "a spell or ability is put onto the stack"
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
@@ -1139,8 +1080,6 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
     ) : GameEvent {
         override val description: String =
             "${player.description} activates an ability that isn't a mana ability"
-
-        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
     /**
