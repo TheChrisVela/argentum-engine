@@ -321,6 +321,13 @@ class CostCalculator(
                 val spellsCast = state.playerSpellsCastThisTurn[casterId] ?: 0
                 addGenericIncrease(spellsCast * modification.amountPerSpell)
             }
+            is CostModification.IncreaseGenericIfAnyTargetMatches -> {
+                if (chosenTargets.isNotEmpty() &&
+                    anyTargetMatchesFilter(state, casterId, chosenTargets, modification.filter)
+                ) {
+                    addGenericIncrease(modification.amount)
+                }
+            }
             is CostModification.IncreaseLife -> {
                 // Life is not part of the mana cost — collected separately via
                 // [calculateAdditionalLifeCost] and paid alongside mana in CastSpellHandler.

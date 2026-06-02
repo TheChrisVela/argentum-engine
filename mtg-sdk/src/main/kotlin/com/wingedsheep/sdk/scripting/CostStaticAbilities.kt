@@ -54,6 +54,8 @@ data class ModifySpellCost(
             is CostModification.IncreaseColored -> "cost ${modification.symbols} more to cast"
             is CostModification.IncreaseGenericPerOtherSpellThisTurn ->
                 "cost {${modification.amountPerSpell}} more to cast for each other spell that player has cast this turn"
+            is CostModification.IncreaseGenericIfAnyTargetMatches ->
+                "cost {${modification.amount}} more to cast if it targets ${modification.filter.description}"
             is CostModification.IncreaseLife -> "cost an additional ${modification.amount} life to cast"
         }
         val perTurn = if (nthGating != null) " each turn" else ""
@@ -232,6 +234,29 @@ sealed interface CostModification {
     data class IncreaseGenericPerOtherSpellThisTurn(
         val amountPerSpell: Int = 1,
     ) : CostModification
+
+    /**
+     * Increase generic mana by a fixed amount if the spell targets any object matching
+     * the filter. The increase analogue of
+     * [CostReductionSource.FixedIfAnyTargetMatches]; used for cards like Dragon's Prey
+     * ("This spell costs {2} more to cast if it targets a Dragon").
+     *
+     * At cast resolution, the increase applies if any of the spell's chosen targets match.
+     * For affordability enumeration (before targets are chosen) the increase is treated as
+     * NOT applying, since the minimum possible cost is achieved by targeting something the
+     * filter doesn't match.
+     */
+    @SerialName("IncreaseGenericIfAnyTargetMatches")
+    @Serializable
+    data class IncreaseGenericIfAnyTargetMatches(
+        val amount: Int,
+        val filter: GameObjectFilter,
+    ) : CostModification {
+        override fun applyTextReplacement(replacer: TextReplacer): CostModification {
+            val newFilter = filter.applyTextReplacement(replacer)
+            return if (newFilter !== filter) copy(filter = newFilter) else this
+        }
+    }
 
     /**
      * Pay [amount] additional life as part of the casting cost (CR 601.2f).

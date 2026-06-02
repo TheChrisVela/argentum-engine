@@ -1354,7 +1354,10 @@ staticAbility {
   `ReduceColored(symbols)`, `ReduceColoredPerUnit(symbols, source)`, `IncreaseGeneric(amount)`,
   `IncreaseColored(symbols)` (colored tax — adds colored pips, e.g. the Invasion Leeches'
   "White spells you cast cost {W} more"), `IncreaseGenericPerOtherSpellThisTurn(amountPerSpell)`,
-  `IncreaseLife(amount)`.
+  `IncreaseGenericIfAnyTargetMatches(amount, filter)` (target-gated tax — "{N} more if it targets
+  a Dragon", Dragon's Prey; the increase analogue of the `FixedIfAnyTargetMatches` reduction;
+  applies only once a matching target is chosen, so affordability enumeration treats it as not
+  applying), `IncreaseLife(amount)`.
   Reduction `source: CostReductionSource` covers fixed amounts, counts of permanents/cards in
   zones, target gates, and a few mechanic-specific shapes — e.g. `Fixed`, `CreaturesYouControl`,
   `ArtifactsYouControl`, `PermanentsYouControlMatching(filter)` (the filtered "you control" count —
