@@ -2,7 +2,7 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 63 / 190
+**Implemented:** 64 / 190
 ---
 
 - [ ] Action News Crew
@@ -188,7 +188,7 @@
 - [ ] Turtles Forever
 - [ ] Turtles in Time
 - [x] Uneasy Alliance
-- [ ] Utrom Scientists
+- [x] Utrom Scientists
 - [ ] Venus, Torn Between Worlds
 - [ ] Weather Maker
 - [ ] West Wind Avatar
