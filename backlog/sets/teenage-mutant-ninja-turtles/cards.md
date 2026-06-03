@@ -2,7 +2,7 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 68 / 190
+**Implemented:** 69 / 190
 ---
 
 - [ ] Action News Crew
@@ -99,7 +99,7 @@
 - [ ] Mikey & Don, Party Planners
 - [ ] Mikey & Leo, Chaos & Order
 - [ ] Mind Transfer Protocol
-- [ ] Mona Lisa, Science Geek
+- [x] Mona Lisa, Science Geek
 - [ ] Mondo Gecko
 - [x] Mouser Attack!
 - [x] Mouser Foundry
