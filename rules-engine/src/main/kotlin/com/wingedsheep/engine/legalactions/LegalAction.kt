@@ -36,6 +36,13 @@ data class LegalAction(
      */
     val xConstrainsTargetManaValue: Boolean = false,
     /**
+     * True when the (single) target requirement filters by "toughness X or less"
+     * (i.e. the requirement's filter contains [CardPredicate.ToughnessAtMostX]).
+     * Parallel to [xConstrainsTargetManaValue] — same re-filter rationale, but the
+     * client compares against each target's toughness instead of its mana value.
+     */
+    val xConstrainsTargetToughness: Boolean = false,
+    /**
      * True when the (single) target requirement's max-count is dynamically driven by the
      * chosen X (i.e. [TargetObject.dynamicMaxCount] is [DynamicAmount.XValue]).
      *
@@ -185,6 +192,12 @@ data class TargetInfo(
      * The client re-filters [validTargets] by the chosen X after X selection.
      */
     val xConstrainsManaValue: Boolean = false,
+    /**
+     * True when this requirement's filter contains [CardPredicate.ToughnessAtMostX].
+     * Parallel to [xConstrainsManaValue] — the client re-filters by toughness rather
+     * than mana value.
+     */
+    val xConstrainsToughness: Boolean = false,
     /**
      * True when this requirement's max-count is dynamically driven by the chosen X
      * (`TargetObject.dynamicMaxCount == DynamicAmount.XValue`). The client should

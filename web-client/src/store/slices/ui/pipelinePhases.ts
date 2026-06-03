@@ -655,15 +655,26 @@ export function enterPhase(
         }
         return null
       })()
-      const filterByX = (
+      const filterByXAttribute = (
         ids: readonly EntityId[],
         constrained: boolean | undefined,
+        attribute: 'manaValue' | 'toughness',
       ): EntityId[] => {
         if (!constrained || chosenX == null || gameState == null) return [...ids]
         return ids.filter((id) => {
-          const mv = gameState.cards[id]?.manaValue
-          return typeof mv === 'number' && mv <= chosenX
+          const value = gameState.cards[id]?.[attribute]
+          return typeof value === 'number' && value <= chosenX
         })
+      }
+      const applyXFilters = (
+        ids: readonly EntityId[],
+        constrainsManaValue: boolean | undefined,
+        constrainsToughness: boolean | undefined,
+      ): EntityId[] => {
+        let filtered: readonly EntityId[] = ids
+        filtered = filterByXAttribute(filtered, constrainsManaValue, 'manaValue')
+        filtered = filterByXAttribute(filtered, constrainsToughness, 'toughness')
+        return [...filtered]
       }
 
       // When a requirement's max-count is X-driven (TargetObject.dynamicMaxCount =
@@ -681,7 +692,11 @@ export function enterPhase(
         const maxTargets = resolveMaxByX(firstReq.maxTargets, firstReq.xConstrainsCount)
         store.startTargeting({
           action,
-          validTargets: filterByX(firstReq.validTargets, firstReq.xConstrainsManaValue),
+          validTargets: applyXFilters(
+            firstReq.validTargets,
+            firstReq.xConstrainsManaValue,
+            firstReq.xConstrainsToughness,
+          ),
           selectedTargets: [],
           minTargets: Math.min(firstReq.minTargets, maxTargets),
           maxTargets,
@@ -699,7 +714,11 @@ export function enterPhase(
         const rawMin = actionInfo.minTargets ?? rawMax
         store.startTargeting({
           action,
-          validTargets: filterByX(actionInfo.validTargets ?? [], actionInfo.xConstrainsTargetManaValue),
+          validTargets: applyXFilters(
+            actionInfo.validTargets ?? [],
+            actionInfo.xConstrainsTargetManaValue,
+            actionInfo.xConstrainsTargetToughness,
+          ),
           selectedTargets: [],
           minTargets: Math.min(rawMin, maxTargets),
           maxTargets,
