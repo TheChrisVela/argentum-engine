@@ -10,11 +10,11 @@ Verify status anytime with: `scripts/card-status --set TMT` (and `--list --set T
 
 ## Status
 
-95 / 190 implemented (basics excluded — handled by `basicLandsFallback`). See
+96 / 190 implemented (basics excluded — handled by `basicLandsFallback`). See
 `cards.md` for the full checklist; the per-card commits on `tmt-scaffolding`
 all carry `flavorText` in metadata.
 
-The remaining 95 cards mostly cluster on a handful of unresolved gaps:
+The remaining 94 cards mostly cluster on a handful of unresolved gaps:
 - **Sneak** — 26 cards (Gap A — unresolved)
 - **Disappear** — 9 cards (Gap B — unresolved)
 - **Alliance** — 4 cards left (Gap C — partly cleared; 6 shipped composably,
@@ -24,9 +24,11 @@ The remaining 95 cards mostly cluster on a handful of unresolved gaps:
   Neutrinos` listed once). Pure Alliance is no longer a blocker on its own.
 - **Class** — 3 cards (Gap U — unresolved)
 - **Mutagen token consumers** — ~5 cards (Gap W — unresolved)
-- **Vehicles / Crew** — 2 cards (Gap J)
+- **Vehicles / Crew** — 1 card left (Gap J — partly cleared; `Turtle Blimp`
+  shipped composably, `Turtle Van` still waits on Gap LL "creature that
+  crewed this vehicle this turn" tracking)
 - **Sagas** — 2 cards (Gap K)
-- Plus various one-offs from Gaps M and N–KK
+- Plus various one-offs from Gaps M and N–LL
 
 Gaps **resolved across the runs so far**:
 - **Gap C — Alliance (partly cleared)**: 6 of the 10 Alliance cards (`East
@@ -95,6 +97,16 @@ Gaps **resolved across the runs so far**:
   turn"* intervening-if approximated by `oncePerTurn = true`. The
   approximation is documented in the file's docstring; swap for
   `Conditions.IsFirstCombatPhase` when that primitive lands.
+- **Gap I — double the number of +1/+1 counters — RESOLVED at the primitive
+  level**: `Effects.DoubleCounters(Counters.PLUS_ONE_PLUS_ONE, target)`
+  already exists (Sage of the Fang shape). Turtle Van's "double the
+  counters" rider composes today; the only outstanding piece is Gap LL
+  below (crewed-this-turn filter).
+- **Gap J — Crew / Vehicle — partly cleared**: `Turtle Blimp` shipped via
+  `typeLine = "Artifact — Vehicle"` + `KeywordAbility.Numeric(Keyword.CREW,
+  N)` — same shape DOM Weatherlight / BLC Rolling Hamsphere. The Vehicle
+  pipeline (artifact-becomes-artifact-creature-UEOT + Crew activation) is
+  fully wired. `Turtle Van` waits on Gap LL, not on Vehicle itself.
 
 ## Data sources — do NOT hit the network
 
@@ -261,18 +273,21 @@ hooks skip.
 **Engine change:** none — the existing `KeywordAbility.Affinity(CardType.ARTIFACT)`
 already works. Shipped as `Krang, Master Mind`.
 
-### Gap I — "double the number of +1/+1 counters" — 1 card
-**Engine change:** an effect that doubles the count of a chosen counter kind on a
-target permanent (CR 121.3 — places that many additional counters).
-- **Turtle Van** — "double the number of +1/+1 counters on it" if the buffed creature
-  is Mutant/Ninja/Turtle. Composes with the existing `put +1/+1 counter` effect.
+### Gap I — "double the number of +1/+1 counters" — RESOLVED at the primitive level
+**Engine change:** none — `Effects.DoubleCounters(counterType = Counters
+.PLUS_ONE_PLUS_ONE, target)` already exists (Sage of the Fang shape). The
+only card that needed this in TMT was `Turtle Van`, whose ship still waits
+on the separate Gap LL "crewed-this-turn" filter (see below).
 
-### Gap J — Crew / Vehicle — 2 cards
-**Engine change:** Vehicle card type + Crew N (tap any combination of creatures with total
-power ≥ N to turn the artifact into an artifact-creature until end of turn). `Keyword.CREW`
-exists, but the artifact-becomes-artifact-creature behavior and the Vehicle card type need
-to be wired. (Coordinates with LTR Gap 31.)
-- **Turtle Blimp**, **Turtle Van**
+### Gap J — Crew / Vehicle — partly RESOLVED
+**Engine change:** none for the baseline mechanic. `typeLine = "Artifact —
+Vehicle"` + `keywordAbility(KeywordAbility.Numeric(Keyword.CREW, N))` already
+wires the full pipeline (artifact-becomes-artifact-creature-UEOT, Crew
+activation tapping a combined-power-N pile of creatures). Same shape DOM
+Weatherlight and BLC Rolling Hamsphere ship.
+- **Turtle Blimp** — shipped composably.
+- **Turtle Van** — still blocked, but on Gap LL ("creature that crewed this
+  Vehicle this turn" filter), *not* on Vehicle itself.
 
 ### Gap K — Sagas — 2 cards
 **Engine change:** Sagas with chapter abilities. Earlier sets (Dominaria, LTR) already
@@ -507,6 +522,23 @@ variant that permits *any* activated ability (not just artifact-source).
 - **Purple Dragon Punks** — "{T}: Add {R}. Spend this mana only to cast an
   artifact spell or to activate an ability."
 
+### Gap LL — "creature that crewed this Vehicle this turn" filter
+**Engine change:** per-Vehicle tracking of which creatures tapped to crew it
+each turn, plus a `TargetFilter` (or `GameObjectFilter` predicate) that reads
+the tracking. Today's `Keyword.CREW` pipeline taps the chosen creatures and
+flips the Vehicle to an artifact-creature, but it doesn't surface "the list
+of creatures that crewed it this turn" anywhere; without that, "target
+creature that crewed it this turn" can't be expressed. The natural shape is
+a `CrewersThisTurnComponent` on the Vehicle (cleared at cleanup with the
+existing per-turn flags), plus a `TargetFilter.CreatureThatCrewedSelfThisTurn`
+helper.
+- **Turtle Van** — "Whenever this Vehicle attacks, put a +1/+1 counter on
+  target creature that crewed it this turn. Then if that creature is a
+  Mutant, Ninja, or Turtle, double the number of +1/+1 counters on it."
+  (The "double the counters" rider already composes via `Effects.DoubleCounters`
+  paired with a `ConditionalEffect` on a subtype filter — only the crewers-
+  this-turn target is missing.)
+
 ---
 
 ## Composable — deferred for time
@@ -618,9 +650,8 @@ the top of the Status section for what closed those.
 | The Ooze                              | Gap W (Mutagen) + dies-with-counter trigger |
 | Tokka & Rahzar, Terrible Twos         | "Can't be countered" + mana-spent-less-than-MV trigger — bespoke |
 | Turncoat Kunoichi                     | Gap A (Sneak) + sneak-was-paid ETB rider    |
-| Turtle Blimp                          | Gap J (Crew / Vehicle)                      |
 | Turtle Lair                           | Gap JJ (multi-subtype mana restriction)     |
-| Turtle Van                            | Gap J (Crew / Vehicle) + Gap I (double counters) |
+| Turtle Van                            | Gap LL (crewed-this-turn filter)            |
 | Turtles Forever                       | Wishboard tutor (outside-the-game search)   |
 | Turtles in Time                       | Mass bounce + shuffle-hand+gy-and-draw-7 + exile-self |
 | Venus, Torn Between Worlds            | "Damage dealt + survives" trigger condition + counter-bearer combat trigger |

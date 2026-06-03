@@ -6,7 +6,7 @@
 Counts below are cards in the set that use the mechanic. A card may appear under
 multiple entries (e.g. a creature with Flying + Sneak).
 
-**Implementation progress (95 / 190).** Mechanics now exercised end-to-end on
+**Implementation progress (96 / 190).** Mechanics now exercised end-to-end on
 `tmt-scaffolding`:
 
 Evergreen keywords — Flying, Vigilance, Trample, Haste, Flash, Deathtouch,
@@ -124,12 +124,24 @@ Cross-card combinators landed since the previous progress note:
   original card wasn't already an artifact creature card, faithful to
   the printed wording. Closes Gap Q. Mirrors EOE Xu-Ifit's reanimate-with-
   permanent-rider shape.
+- **Vehicle / Crew** — `typeLine = "Artifact — Vehicle"` +
+  `keywordAbility(KeywordAbility.Numeric(Keyword.CREW, N))` already gives
+  the full Vehicle pipeline (artifact-becomes-artifact-creature-UEOT, the
+  Crew activation tapping a combined-power ≥ N pile of creatures you
+  control). Ships `Turtle Blimp` — same shape DOM Weatherlight and BLC
+  Rolling Hamsphere use. `Turtle Van` still waits on Gap LL ("creature
+  that crewed this Vehicle this turn" filter), not on Vehicle itself.
+- **Counter-doubling rider** — `Effects.DoubleCounters(counterType, target)`
+  (Sage of the Fang shape) is the primitive that closes Gap I; the only
+  card needing it in TMT is `Turtle Van`, which currently can't ship
+  for a separate Gap LL reason. Gap I is closed at the SDK level even
+  though no TMT card exercises it yet.
 
 **Still not exercised** — the three new TMT mechanics' canonical pieces still
 missing (Sneak alt-cost pipeline, Disappear's per-controller permanent-left
 tracking, the display markers for Alliance / Channel / Disappear), Class
-enchantments, Vehicles / Crew, Sagas, the Mutagen token, and the remaining
-bespoke Gap M / N–KK shapes catalogued in `TODO.md`.
+enchantments, Sagas, the Mutagen token, and the remaining bespoke Gap M /
+N–LL shapes catalogued in `TODO.md`.
 
 ---
 
