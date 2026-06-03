@@ -2,7 +2,7 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 74 / 190
+**Implemented:** 75 / 190
 ---
 
 - [ ] Action News Crew
@@ -141,7 +141,7 @@
 - [ ] Rat King, Verminister
 - [x] Ravenous Robots
 - [ ] Ray Fillet, Man Ray
-- [ ] Renet, Temporal Apprentice
+- [x] Renet, Temporal Apprentice
 - [ ] Retro-Mutation
 - [ ] Return to the Sewers
 - [x] Rock Soldiers
