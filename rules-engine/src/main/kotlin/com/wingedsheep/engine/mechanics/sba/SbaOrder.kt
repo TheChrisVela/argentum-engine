@@ -8,6 +8,7 @@ object SbaOrder {
     const val PLAYER_LIFE_LOSS = 100        // 704.5a
     const val COMMANDER_DAMAGE_LOSS = 150   // 704.5c (Commander format)
     const val POISON_LOSS = 200             // 704.5b
+    const val CONTROL_CHANGED_COMBAT = 250  // 506.4 (controller change removes from combat)
     const val ZERO_TOUGHNESS = 300          // 704.5f
     const val LETHAL_DAMAGE = 400           // 704.5g/h
     const val PLANESWALKER_LOYALTY = 500    // 704.5i

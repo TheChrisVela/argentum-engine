@@ -446,7 +446,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Control & combat
 
-- `GainControlEffect(target, duration)` — gain control until end of turn (default).
+- `GainControlEffect(target, duration)` — gain control until end of turn (default). Pair with
+  `Duration.WhileSourceTapped` (Callous Oppressor) or
+  `Duration.WhileSourceTappedAndAffectedPowerAtMostSource` (Old Man of the Sea) for the classic
+  "for as long as this creature remains tapped [and the stolen creature's power stays ≤ source's
+  power]" steal pattern; both durations are gated per-frame by `StateProjector` and cleaned up
+  at the next untap step.
 - `ExchangeControlEffect(target1, target2)` — swap control of two permanents.
 - `GainControlByMostEffect(metric, target?)` — the player with strictly the most of a `PlayerRankMetric` takes it (tie = no change). Metrics: `PlayerRankMetric.LifeTotal` (Ghazbán Ogre), `PlayerRankMetric.CreaturesOfSubtype(subtype)` (Thoughtbound Primoc). Facades: `Effects.GainControlByMostLife()`, `Effects.GainControlByMostOfSubtype(subtype)`.
 - `GiftGivenEffect(target)` — "gift" temporary control.
@@ -789,6 +794,9 @@ Every `TargetRequirement` carries count semantics (defaults shown):
 - `.powerGreaterThanEntity(ref)` — power strictly greater than a referenced entity's projected power. Used by
   Éowyn, Fearless Knight ("exile target creature an opponent controls with greater power") — combine
   with `EntityReference.Source` to express "greater power than the ability's source".
+- `.powerAtMostEntity(ref)` — power ≤ a referenced entity's projected power. Inverse of
+  `.powerGreaterThanEntity`; used by Old Man of the Sea ("target creature with power less than or equal
+  to this creature's power") with `EntityReference.Source`.
 - `.manaValueAtMostEntityManaSpent(ref)` — mana value ≤ the mana **actually spent** to cast a referenced
   entity. Reads the live `SpellOnStackComponent` buckets while the entity is still a spell, or the
   `CastRecordComponent` snapshot once it has resolved onto the battlefield (0 if it was never cast).

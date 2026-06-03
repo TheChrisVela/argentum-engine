@@ -3,18 +3,16 @@ package com.wingedsheep.engine.handlers.effects.combat
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.mechanics.combat.CombatRemovalHelper
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.components.combat.*
 import com.wingedsheep.sdk.scripting.effects.RemoveFromCombatEffect
 import kotlin.reflect.KClass
 
 /**
- * Executor for RemoveFromCombatEffect.
- * "Remove [target] from combat."
+ * Executor for RemoveFromCombatEffect ("Remove [target] from combat.").
  *
- * Removes all combat-related components from the target creature.
- * Also cleans up any blockers that were blocking the removed attacker
- * by removing its ID from their BlockingComponent.
+ * Cleanup is delegated to [CombatRemovalHelper] so the CR 506.4 state-based check shares
+ * the same logic.
  */
 class RemoveFromCombatExecutor : EffectExecutor<RemoveFromCombatEffect> {
 
@@ -27,70 +25,6 @@ class RemoveFromCombatExecutor : EffectExecutor<RemoveFromCombatEffect> {
     ): EffectResult {
         val targetId = context.resolveTarget(effect.target)
             ?: return EffectResult.success(state)
-
-        val entity = state.getEntity(targetId)
-            ?: return EffectResult.success(state)
-
-        // Check if this creature is actually in combat
-        val isAttacking = entity.has<AttackingComponent>()
-        val isBlocking = entity.has<BlockingComponent>()
-        if (!isAttacking && !isBlocking) {
-            return EffectResult.success(state)
-        }
-
-        // Remove combat components from the target
-        var newState = state.updateEntity(targetId) { container ->
-            container
-                .without<AttackingComponent>()
-                .without<BlockingComponent>()
-                .without<BlockedComponent>()
-                .without<DamageAssignmentComponent>()
-                .without<DamageAssignmentOrderComponent>()
-                .without<AttackerOrderComponent>()
-                .without<RequiresManualDamageAssignmentComponent>()
-        }
-
-        // If the removed creature was an attacker, clean up blockers that were blocking it
-        if (isAttacking) {
-            for ((entityId, components) in newState.entities) {
-                val blockingComponent = components.get<BlockingComponent>() ?: continue
-                if (targetId in blockingComponent.blockedAttackerIds) {
-                    val updatedIds = blockingComponent.blockedAttackerIds - targetId
-                    newState = if (updatedIds.isEmpty()) {
-                        newState.updateEntity(entityId) { container ->
-                            container.without<BlockingComponent>().without<AttackerOrderComponent>()
-                        }
-                    } else {
-                        newState.updateEntity(entityId) { container ->
-                            var updated = container.with(BlockingComponent(updatedIds))
-                            val attackerOrder = updated.get<AttackerOrderComponent>()
-                            if (attackerOrder != null) {
-                                updated = updated.with(AttackerOrderComponent(
-                                    attackerOrder.orderedAttackers.filter { it != targetId }
-                                ))
-                            }
-                            updated
-                        }
-                    }
-                }
-            }
-        }
-
-        // If the removed creature was a blocker, clean up the attacker's BlockedComponent.
-        // Keep BlockedComponent even if empty — a blocked creature stays blocked per MTG rules
-        // (it just deals no combat damage without trample).
-        if (isBlocking) {
-            val blockedAttackerIds = entity.get<BlockingComponent>()?.blockedAttackerIds ?: emptyList()
-            for (attackerId in blockedAttackerIds) {
-                val attackerEntity = newState.getEntity(attackerId) ?: continue
-                val blockedComponent = attackerEntity.get<BlockedComponent>() ?: continue
-                val updatedBlockerIds = blockedComponent.blockerIds - targetId
-                newState = newState.updateEntity(attackerId) { container ->
-                    container.with(BlockedComponent(updatedBlockerIds))
-                }
-            }
-        }
-
-        return EffectResult.success(newState)
+        return EffectResult.success(CombatRemovalHelper.removeFromCombat(state, targetId))
     }
 }

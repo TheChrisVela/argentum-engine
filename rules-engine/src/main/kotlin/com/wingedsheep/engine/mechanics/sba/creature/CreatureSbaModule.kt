@@ -5,6 +5,7 @@ import com.wingedsheep.engine.mechanics.sba.StateBasedActionModule
 
 class CreatureSbaModule : StateBasedActionModule {
     override fun checks(): List<StateBasedActionCheck> = listOf(
+        ControlChangedRemovesFromCombatCheck(),
         ZeroToughnessCheck(),
         LethalDamageCheck()
     )

@@ -445,6 +445,23 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
         override fun applyTextReplacement(replacer: TextReplacer): CardPredicate = this
     }
 
+    /**
+     * Power less than or equal to the projected power of a referenced entity. Mirror of
+     * [PowerGreaterThanEntity]; the entity is looked up via [PredicateContext]
+     * (Source / Triggering / AffectedEntity) and the comparison reads its
+     * [com.wingedsheep.sdk.model.CardComponent] power (projected when available).
+     *
+     * Used by Old Man of the Sea: "target creature with power less than or equal to this
+     * creature's power" — the candidate's power is compared against the Old Man's
+     * ([EntityReference.Source]) at target choice and at resolution-time legality re-check.
+     */
+    @SerialName("PowerAtMostEntity")
+    @Serializable
+    data class PowerAtMostEntity(val reference: EntityReference) : CardPredicate {
+        override val description: String = "with power less than or equal to ${reference.description}"
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate = this
+    }
+
     // =============================================================================
     // Context-relative Predicates (Pipeline Variable References)
     // =============================================================================

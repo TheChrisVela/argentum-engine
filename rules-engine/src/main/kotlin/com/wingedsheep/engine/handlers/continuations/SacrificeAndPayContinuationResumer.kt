@@ -768,15 +768,19 @@ class SacrificeAndPayContinuationResumer(
             if (event != null) events.add(event)
         }
 
-        // Remove WhileSourceTapped floating effects whose source is no longer tapped
+        // Remove WhileSourceTapped (and the power-gated variant) floating effects whose
+        // source is no longer tapped. The power-comparison half of the variant duration is
+        // gated per-frame by StateProjector; cleanup only enforces the tapped condition.
         newState = newState.copy(
             floatingEffects = newState.floatingEffects.filter { floatingEffect ->
-                if (floatingEffect.duration is Duration.WhileSourceTapped) {
-                    val sourceId = floatingEffect.sourceId
-                    sourceId != null && newState.getBattlefield().contains(sourceId) &&
-                        newState.getEntity(sourceId)?.has<TappedComponent>() == true
-                } else {
-                    true
+                when (floatingEffect.duration) {
+                    is Duration.WhileSourceTapped,
+                    is Duration.WhileSourceTappedAndAffectedPowerAtMostSource -> {
+                        val sourceId = floatingEffect.sourceId
+                        sourceId != null && newState.getBattlefield().contains(sourceId) &&
+                            newState.getEntity(sourceId)?.has<TappedComponent>() == true
+                    }
+                    else -> true
                 }
             }
         )

@@ -204,15 +204,21 @@ class CleanupPhaseManager(
     /**
      * Remove WhileSourceTapped floating effects whose source is no longer tapped.
      * Called during untap step to prevent stale effects from accumulating.
+     *
+     * Also handles [Duration.WhileSourceTappedAndAffectedPowerAtMostSource] (Old Man of
+     * the Sea); the power-comparison half is gated per-frame by [StateProjector], so
+     * cleanup here only enforces the source-tapped half — same rule as [Duration.WhileSourceTapped].
      */
     fun cleanupWhileSourceTappedEffects(state: GameState): GameState {
         val remaining = state.floatingEffects.filter { floatingEffect ->
-            if (floatingEffect.duration is Duration.WhileSourceTapped) {
-                val sourceId = floatingEffect.sourceId
-                sourceId != null && state.getBattlefield().contains(sourceId) &&
-                    state.getEntity(sourceId)?.has<TappedComponent>() == true
-            } else {
-                true
+            when (floatingEffect.duration) {
+                is Duration.WhileSourceTapped,
+                is Duration.WhileSourceTappedAndAffectedPowerAtMostSource -> {
+                    val sourceId = floatingEffect.sourceId
+                    sourceId != null && state.getBattlefield().contains(sourceId) &&
+                        state.getEntity(sourceId)?.has<TappedComponent>() == true
+                }
+                else -> true
             }
         }
         return if (remaining.size != state.floatingEffects.size) {
@@ -279,8 +285,11 @@ class CleanupPhaseManager(
                     val sourceId = floatingEffect.sourceId
                     sourceId != null && newState.getBattlefield().contains(sourceId)
                 }
-                is Duration.WhileSourceTapped -> {
-                    // Keep if source is still on battlefield AND tapped
+                is Duration.WhileSourceTapped,
+                is Duration.WhileSourceTappedAndAffectedPowerAtMostSource -> {
+                    // Keep if source is still on battlefield AND tapped. The power-comparison
+                    // half of WhileSourceTappedAndAffectedPowerAtMostSource is gated per-frame
+                    // by StateProjector, so cleanup only enforces the source-tapped condition.
                     val sourceId = floatingEffect.sourceId
                     sourceId != null && newState.getBattlefield().contains(sourceId) &&
                         newState.getEntity(sourceId)?.has<TappedComponent>() == true

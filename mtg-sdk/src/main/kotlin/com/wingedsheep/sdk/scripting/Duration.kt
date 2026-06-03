@@ -133,6 +133,30 @@ sealed interface Duration {
     }
 
     /**
+     * Effect lasts while the source permanent remains tapped AND each affected entity's
+     * projected power stays less than or equal to the source's projected power. Gated
+     * per-frame by `StateProjector`: the source-tapped half is enforced when the floating
+     * effect is collected; the affected-power half is a post-Layer-7 fix-up that compares
+     * each affected entity's final projected power to the source's final projected power
+     * and reverts the controller for any entity that's stronger. The fix-up runs after
+     * Layer 7, so it picks up every pump source — base printed power, +1/+1 / -1/-1
+     * counters, Layer-7 floating pumps (Giant Growth, Aggressive Urge), and lord-style
+     * anthems. The floating effect entry is physically removed at the next untap-step
+     * cleanup, mirroring [WhileSourceTapped].
+     *
+     * Example: Old Man of the Sea — "for as long as Old Man of the Sea remains tapped
+     * and that creature's power remains less than or equal to Old Man of the Sea's power".
+     */
+    @SerialName("WhileSourceTappedAndAffectedPowerAtMostSource")
+    @Serializable
+    data class WhileSourceTappedAndAffectedPowerAtMostSource(
+        val sourceDescription: String = "this creature"
+    ) : Duration {
+        override val description =
+            "for as long as $sourceDescription remains tapped and that creature's power remains less than or equal to $sourceDescription's power"
+    }
+
+    /**
      * Effect lasts for as long as the effect's controller controls the affected object —
      * it ends the moment that object's controller becomes a different player ("for as long
      * as you control it"). Evaluated against the *projected* controller, so it responds to

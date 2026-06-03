@@ -893,6 +893,7 @@ class CostCalculator(
             is CardPredicate.ManaValueAtMostEntity -> false
             is CardPredicate.ManaValueAtMostEntityManaSpent -> false
             is CardPredicate.PowerGreaterThanEntity -> false
+            is CardPredicate.PowerAtMostEntity -> false
             CardPredicate.ManaValueIsEven -> cardDef.manaCost.cmc % 2 == 0
             CardPredicate.ManaValueIsOdd -> cardDef.manaCost.cmc % 2 != 0
 

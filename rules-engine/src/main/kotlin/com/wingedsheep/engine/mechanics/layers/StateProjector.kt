@@ -281,6 +281,16 @@ class StateProjector(
         // Must happen after all P/T layers so projected power/toughness is final.
         applyGrantCantBeBlockedToSmallCreatures(state, projectedValues)
 
+        // Post-layer pass: enforce the affected-power half of
+        // [Duration.WhileSourceTappedAndAffectedPowerAtMostSource] (Old Man of the Sea).
+        // We could only apply the source-tapped half during Layer 2 collection because Layer 7
+        // hadn't projected power yet. Now that final projected power is known, walk the floating
+        // effects with this Duration and revert the controller change for any affected entity
+        // whose projected power exceeds the source's projected power. This catches every pump
+        // source — base printed power, +1/+1 / -1/-1 counters, Layer-7 floating pumps (Giant
+        // Growth, Aggressive Urge), and lord-style anthems alike.
+        applyAffectedPowerAtMostSourceGate(state, projectedValues)
+
         // Convert to immutable
         val finalValues = projectedValues.mapValues { (_, v) ->
             ProjectedValues(
@@ -452,6 +462,13 @@ class StateProjector(
                     continue
                 }
             }
+            if (floating.duration is Duration.WhileSourceTappedAndAffectedPowerAtMostSource) {
+                val sourceId = floating.sourceId
+                if (sourceId == null || !state.getBattlefield().contains(sourceId) ||
+                    state.getEntity(sourceId)?.has<TappedComponent>() != true) {
+                    continue
+                }
+            }
             if (floating.duration is Duration.WhileSourceOnBattlefield) {
                 val sourceId = floating.sourceId
                 if (sourceId == null || !state.getBattlefield().contains(sourceId)) {
@@ -459,7 +476,7 @@ class StateProjector(
                 }
             }
 
-            val validAffectedEntities = if (floating.effect.dynamicGroupFilter != null) {
+            var validAffectedEntities = if (floating.effect.dynamicGroupFilter != null) {
                 // Rule 611.2c: re-evaluate filter dynamically to include entities that entered later
                 filterResolver.resolveAffectedEntities(
                     state,
@@ -476,6 +493,13 @@ class StateProjector(
                     state.getBattlefield().contains(entityId) || state.stack.contains(entityId)
                 }.toSet()
             }
+
+            // The per-affected-entity power gate for
+            // [Duration.WhileSourceTappedAndAffectedPowerAtMostSource] is deferred to a
+            // post-Layer-7 fix-up in [project] — we can't compare projected power here
+            // because Layer 7 hasn't run yet (and reading `state.projectedState` would
+            // recurse). Include the effect now; the fix-up reverts control for any affected
+            // entity whose final projected power exceeds the source's final projected power.
 
             if (validAffectedEntities.isNotEmpty()) {
                 effects.add(
@@ -498,6 +522,41 @@ class StateProjector(
         }
 
         return effects
+    }
+
+    /**
+     * Post-Layer-7 gate for [Duration.WhileSourceTappedAndAffectedPowerAtMostSource]:
+     * walk the floating effects with this duration, compare each affected entity's
+     * final projected power to the source's final projected power, and revert the
+     * controller to the entity's base [ControllerComponent] if the affected entity is
+     * now stronger. Reverting to the base controller (rather than the previously-projected
+     * controller) is correct for the single-control-changer case Old Man of the Sea covers;
+     * if another control effect targets the same entity simultaneously, this gate hides it,
+     * which is acceptable for the current SDK surface.
+     */
+    private fun applyAffectedPowerAtMostSourceGate(
+        state: GameState,
+        projectedValues: MutableMap<EntityId, MutableProjectedValues>
+    ) {
+        for (floating in state.floatingEffects) {
+            if (floating.duration !is Duration.WhileSourceTappedAndAffectedPowerAtMostSource) continue
+            val sourceId = floating.sourceId ?: continue
+            if (!state.getBattlefield().contains(sourceId)) continue
+            if (state.getEntity(sourceId)?.has<TappedComponent>() != true) continue
+
+            val sourcePower = projectedValues[sourceId]?.power ?: continue
+
+            for (affectedId in floating.effect.affectedEntities) {
+                if (!state.getBattlefield().contains(affectedId)) continue
+                val affectedPower = projectedValues[affectedId]?.power ?: continue
+                if (affectedPower > sourcePower) {
+                    val baseController = state.getEntity(affectedId)
+                        ?.get<ControllerComponent>()
+                        ?.playerId
+                    projectedValues[affectedId]?.controllerId = baseController
+                }
+            }
+        }
     }
 
     private fun resolveCDAs(
