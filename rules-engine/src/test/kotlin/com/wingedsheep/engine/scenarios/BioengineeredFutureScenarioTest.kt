@@ -1,8 +1,10 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.PlayLand
+import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.player.LandDropsComponent
 import com.wingedsheep.engine.state.components.player.LandsEnteredUnderControlThisTurnComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.CounterType
@@ -14,6 +16,7 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
  * Scenario tests for Bioengineered Future (EOE #172) — {1}{G}{G} Enchantment.
@@ -41,6 +44,12 @@ class BioengineeredFutureScenarioTest : ScenarioTestBase() {
         game.state.getHand(playerId).first {
             game.state.getEntity(it)?.get<CardComponent>()?.name == "Forest"
         }
+
+    // LANDS_PLAYED (the older tracker the new one diverges from) counts only from-hand land
+    // drops; it equals maxPerTurn minus the remaining drops on LandDropsComponent.
+    private fun landDropsUsed(game: TestGame, playerId: EntityId): Int =
+        game.state.getEntity(playerId)?.get<LandDropsComponent>()
+            ?.let { it.maxPerTurn - it.remaining } ?: 0
 
     init {
         // A trivially-cheap creature so the test can cast multiple in a turn without
@@ -77,6 +86,49 @@ class BioengineeredFutureScenarioTest : ScenarioTestBase() {
 
                 val beast = game.findPermanent("Test Beast")!!
                 withClue("creature enters with +1/+1 counter for the one land that entered this turn") {
+                    plusOneCounters(game, beast) shouldBe 1
+                }
+            }
+
+            test("a land that enters without a land drop still counts (diverges from LANDS_PLAYED)") {
+                // The whole reason this tracker exists: a Rampant Growth / Lander-style land
+                // ETB is NOT a land drop, so LANDS_PLAYED stays 0 while
+                // LANDS_ENTERED_UNDER_CONTROL must bump. This exercises the
+                // ZoneTransitionService entry path (search -> battlefield), not the PlayLand
+                // path the other tests cover.
+                val game = scenario()
+                    .withPlayers("Player1", "Player2")
+                    .withCardOnBattlefield(1, "Bioengineered Future")
+                    .withCardInHand(1, "Rampant Growth")
+                    .withCardInHand(1, "Test Beast")
+                    .withCardInLibrary(1, "Forest")
+                    .withLandsOnBattlefield(1, "Forest", 5) // mana for Rampant Growth + Beast
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val player = game.player1Id
+                game.castSpell(1, "Rampant Growth").error shouldBe null
+                game.resolveStack()
+
+                // Fetch the basic land onto the battlefield (no land drop consumed).
+                val decision = game.getPendingDecision()
+                decision.shouldBeInstanceOf<SelectCardsDecision>()
+                game.selectCards(listOf(decision.options.first()))
+                game.resolveStack()
+
+                withClue("the searched land entered without being played as a land drop") {
+                    landDropsUsed(game, player) shouldBe 0
+                }
+                withClue("yet the land-entered tracker counts it") {
+                    landsEntered(game, player) shouldBe 1
+                }
+
+                game.castSpell(1, "Test Beast").error shouldBe null
+                game.resolveStack()
+
+                val beast = game.findPermanent("Test Beast")!!
+                withClue("creature gets the +1/+1 counter from the non-drop land ETB") {
                     plusOneCounters(game, beast) shouldBe 1
                 }
             }
