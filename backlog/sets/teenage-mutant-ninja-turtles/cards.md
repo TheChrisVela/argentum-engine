@@ -2,7 +2,7 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 88 / 190
+**Implemented:** 89 / 190
 ---
 
 - [ ] Action News Crew
@@ -42,7 +42,7 @@
 - [x] Dream Beavers
 - [x] East Wind Avatar
 - [x] EPF Point Squad
-- [ ] Escape Tunnel
+- [x] Escape Tunnel
 - [ ] Everything Pizza
 - [x] Featherbrained Filcher
 - [x] Foot Elite
