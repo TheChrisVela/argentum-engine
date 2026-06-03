@@ -2,10 +2,10 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 89 / 190
+**Implemented:** 90 / 190
 ---
 
-- [ ] Action News Crew
+- [x] Action News Crew
 - [x] Agent Bishop, Man in Black
 - [x] Anchovy & Banana Pizza
 - [ ] April O'Neil, Hacktivist
