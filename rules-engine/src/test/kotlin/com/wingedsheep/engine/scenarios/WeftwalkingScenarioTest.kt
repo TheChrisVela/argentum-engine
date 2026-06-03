@@ -2,6 +2,8 @@ package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.PaymentStrategy
+import com.wingedsheep.engine.legalactions.EnumerationMode
+import com.wingedsheep.engine.legalactions.LegalActionEnumerator
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.support.GameTestDriver
@@ -12,6 +14,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Weftwalking — Edge of Eternities mythic enchantment, {4}{U}{U}.
@@ -124,6 +127,25 @@ class WeftwalkingScenarioTest : FunSpec({
         driver.submit(
             CastSpell(player, second, useAlternativeCost = true, paymentStrategy = PaymentStrategy.FromPool)
         ).isSuccess shouldBe false
+    }
+
+    test("legal-action label for the free-cast variant reads 'Cast X' (no empty parens) with manaCostString '{0}'") {
+        val driver = createDriver()
+        val player = driver.activePlayer!!
+
+        driver.putPermanentOnBattlefield(player, "Weftwalking")
+        val bears = driver.putCardInHand(player, "Grizzly Bears")
+
+        val enumerator = LegalActionEnumerator.create(driver.cardRegistry)
+        val actions = enumerator.enumerate(driver.state, player, EnumerationMode.FULL)
+
+        val freeCast = actions.firstOrNull { la ->
+            la.actionType == "CastWithAlternativeCost" &&
+                (la.action as? CastSpell)?.cardId == bears
+        }
+        freeCast shouldNotBe null
+        freeCast!!.description shouldBe "Cast Grizzly Bears"
+        freeCast.manaCostString shouldBe "{0}"
     }
 
     test("free-cast variant is not offered on opponent's turn (gate keys on active player)") {

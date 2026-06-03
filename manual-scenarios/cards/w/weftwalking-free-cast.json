@@ -6,18 +6,27 @@
     "hand": [
       "Serra Angel",
       "Wrath of God",
-      "Counterspell"
+      "End-Blaze Epiphany",
+      "Academy Drake",
+      "Unravel"
     ],
     "battlefield": [
       {"name": "Weftwalking"},
+      {"name": "Grizzly Bears"},
+      {"name": "Island", "tapped": false},
+      {"name": "Island", "tapped": false},
+      {"name": "Island", "tapped": false},
+      {"name": "Island", "tapped": false},
+      {"name": "Island", "tapped": false},
+      {"name": "Island", "tapped": false},
       {"name": "Island", "tapped": false},
       {"name": "Island", "tapped": false}
     ],
     "graveyard": [],
     "library": [
       "Opt",
-      "Counterspell",
-      "Lightning Bolt",
+      "Unravel",
+      "Shock",
       "Island",
       "Plains"
     ]
@@ -26,9 +35,12 @@
     "lifeTotal": 20,
     "hand": [
       "Grizzly Bears",
-      "Sengir Vampire"
+      "Shock",
+      "Smother",
+      "Serra Angel"
     ],
     "battlefield": [
+      {"name": "Grizzly Bears"},
       {"name": "Mountain", "tapped": false},
       {"name": "Swamp", "tapped": false}
     ],

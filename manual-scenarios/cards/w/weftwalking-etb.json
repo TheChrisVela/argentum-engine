@@ -5,8 +5,8 @@
     "lifeTotal": 20,
     "hand": [
       "Weftwalking",
-      "Lightning Bolt",
-      "Counterspell",
+      "Shock",
+      "Unravel",
       "Grizzly Bears"
     ],
     "battlefield": [
@@ -19,32 +19,34 @@
     ],
     "graveyard": [
       "Opt",
-      "Counterspell",
-      "Doom Blade",
+      "Unravel",
+      "Smother",
       "Wrath of God"
     ],
     "library": [
       "Serra Angel",
-      "Lightning Bolt",
-      "Doom Blade",
-      "Counterspell",
+      "Shock",
+      "Smother",
+      "Unravel",
       "Opt",
       "Plains",
       "Island",
       "Forest",
       "Grizzly Bears",
-      "Sengir Vampire"
+      "Serra Angel"
     ]
   },
   "player2": {
     "lifeTotal": 20,
-    "hand": [],
+    "hand": ["Glamer Gifter"],
     "battlefield": [
       {"name": "Mountain", "tapped": false},
       {"name": "Mountain", "tapped": false}
     ],
     "graveyard": [],
     "library": [
+      "Serra Angel",
+      "Grizzly Bears",
       "Mountain",
       "Mountain",
       "Mountain",

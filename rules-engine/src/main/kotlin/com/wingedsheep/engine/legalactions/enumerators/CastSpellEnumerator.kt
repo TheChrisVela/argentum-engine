@@ -504,8 +504,21 @@ class CastSpellEnumerator : ActionEnumerator {
                     context.manaSolver.solve(state, playerId, altEffective, precomputedSources = cachedSources)
                         ?.sources?.map { it.entityId }
                 }
-                Triple(altEffective.toString(), altPreview, context.manaSolver.canPay(state, playerId, altEffective, precomputedSources = cachedSources))
+                // Render an empty mana cost (e.g. Weftwalking's first-spell-of-turn free cast)
+                // as "{0}" — `ManaCost.ZERO.toString()` is "" by default, which leaves the UI
+                // showing "Cast X () {1}{G}" (empty parens + the spell's printed cost).
+                val altCostDisplay = if (altEffective.symbols.isEmpty()) "{0}" else altEffective.toString()
+                Triple(altCostDisplay, altPreview, context.manaSolver.canPay(state, playerId, altEffective, precomputedSources = cachedSources))
             } else null
+
+            // Cast-button label for the alternative-cost variant. For a non-zero alt (Jodah's
+            // {W}{U}{B}{R}{G}, etc.) we keep the cost-in-parens hint so the player can tell
+            // the variant apart from the normal cast. For a zero alt (Weftwalking's free cast)
+            // the parens collapse and the cost icon ("{0}") carries the meaning by itself —
+            // otherwise the label reads "Cast Grizzly Bears ({0})", awkward in the UI.
+            val altCastLabel: String? = altCostInfo?.let {
+                if (it.first == "{0}") "Cast ${cardComponent.name}" else "Cast ${cardComponent.name} (${it.first})"
+            }
 
             // Compute self-alternative cost info (e.g., Zahid)
             val selfAltCostResult = if (canAffordSelfAlternative && selfAltCost != null) {
@@ -807,7 +820,7 @@ class CastSpellEnumerator : ActionEnumerator {
                         if (altCostInfo?.third == true) {
                             result.add(LegalAction(
                                 actionType = "CastWithAlternativeCost",
-                                description = "Cast ${cardComponent.name} (${altCostInfo.first})",
+                                description = altCastLabel!!,
                                 action = CastSpell(playerId, cardId, targets = listOf(autoSelectedTarget), useAlternativeCost = true),
                                 manaCostString = altCostInfo.first,
                                 requiresDamageDistribution = requiresDamageDistribution,
@@ -905,7 +918,7 @@ class CastSpellEnumerator : ActionEnumerator {
                         if (altCostInfo?.third == true) {
                             result.add(LegalAction(
                                 actionType = "CastWithAlternativeCost",
-                                description = "Cast ${cardComponent.name} (${altCostInfo.first})",
+                                description = altCastLabel!!,
                                 action = CastSpell(playerId, cardId, useAlternativeCost = true),
                                 validTargets = firstReqInfo.validTargets,
                                 requiresTargets = true,
@@ -1043,7 +1056,7 @@ class CastSpellEnumerator : ActionEnumerator {
                 if (altCostInfo?.third == true) {
                     result.add(LegalAction(
                         actionType = "CastWithAlternativeCost",
-                        description = "Cast ${cardComponent.name} (${altCostInfo.first})",
+                        description = altCastLabel!!,
                         action = CastSpell(playerId, cardId, useAlternativeCost = true),
                         manaCostString = altCostInfo.first,
                         autoTapPreview = altCostInfo.second
