@@ -2,7 +2,7 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 92 / 190
+**Implemented:** 93 / 190
 ---
 
 - [x] Action News Crew
@@ -116,7 +116,7 @@
 - [ ] Northampton Farm
 - [ ] Novel Nunchaku
 - [x] Null Group Biological Assets
-- [ ] Old Hob, Alleycat Blues
+- [x] Old Hob, Alleycat Blues
 - [x] Omni-Cheese Pizza
 - [ ] Ooze Spill
 - [ ] Oroku Saki, Shredder Rising
