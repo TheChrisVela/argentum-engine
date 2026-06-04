@@ -1047,6 +1047,12 @@ in the repo today):
 ### Cards & draws
 
 - `YouDraw` — when you draw a card.
+- `NthCardDrawn(n, player?)` — fires when the drawing player draws their Nth card each turn
+  (CR 121.2). Draw analogue of `NthSpellCast`; backed by `CardsDrawnThisTurnComponent` (reset
+  per turn). Fires exactly once per crossing — a single multi-card draw that spans the
+  threshold triggers it once, not N times. Putting cards into hand without "draw" (CR 121.5)
+  does not advance the count. Used by Knights of Dol Amroth, Prince Imrahil the Fair,
+  Stalwarts of Osgiliath ("Whenever you draw your second card each turn, …").
 - `RevealCreatureFromDraw` — Hatching Plans-style top-card reveal.
 - `RevealCardFromDraw` — generic reveal-from-draw trigger.
 - `CardsPutIntoYourGraveyard(filter?)` — when matching cards enter your yard.

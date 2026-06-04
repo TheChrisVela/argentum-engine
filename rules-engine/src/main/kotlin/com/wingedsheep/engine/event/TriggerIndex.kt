@@ -154,6 +154,7 @@ class TriggerIndex(
             return when (trigger) {
                 is SdkGameEvent.ZoneChangeEvent -> listOf(TriggerCategory.ZONE_CHANGE)
                 is SdkGameEvent.DrawEvent -> listOf(TriggerCategory.DRAW)
+                is SdkGameEvent.NthCardDrawnEvent -> listOf(TriggerCategory.DRAW)
                 is SdkGameEvent.CardRevealedFromDrawEvent -> listOf(TriggerCategory.CARD_REVEALED)
                 is SdkGameEvent.AttackEvent -> listOf(TriggerCategory.ATTACKERS_DECLARED)
                 is SdkGameEvent.YouAttackEvent -> listOf(TriggerCategory.ATTACKERS_DECLARED)

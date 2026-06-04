@@ -16,6 +16,7 @@ import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
 import com.wingedsheep.engine.core.LifeChangedEvent
 import com.wingedsheep.engine.core.SpellCastEvent
+import com.wingedsheep.engine.state.components.player.CardsDrawnThisTurnComponent
 import com.wingedsheep.engine.state.components.player.ManaSpentOnSpellsThisTurnComponent
 import com.wingedsheep.engine.core.LandTappedForManaEvent
 import com.wingedsheep.engine.core.TappedEvent
@@ -74,6 +75,20 @@ class TriggerMatcher(
             is EventPattern.ZoneChangeEvent -> matchesZoneChangeTrigger(trigger, binding, event, sourceId, controllerId, state)
             is EventPattern.DrawEvent -> {
                 event is CardsDrawnEvent && matchesPlayer(trigger.player, event.playerId, controllerId)
+            }
+            is EventPattern.NthCardDrawnEvent -> {
+                // Fires on CardsDrawnEvent when the drawing player's per-turn draw count
+                // crosses the threshold inside this batch. The component is incremented
+                // per individual draw in DrawCardPrimitive, so after the aggregate event
+                // we have countAfter = CardsDrawnThisTurnComponent.count and
+                // countBefore = countAfter - event.count.
+                if (event !is CardsDrawnEvent) return false
+                if (!matchesPlayer(trigger.player, event.playerId, controllerId)) return false
+                val countAfter = state.getEntity(event.playerId)
+                    ?.get<CardsDrawnThisTurnComponent>()
+                    ?.count ?: 0
+                val countBefore = countAfter - event.count
+                countBefore < trigger.nthCard && trigger.nthCard <= countAfter
             }
             is EventPattern.CardRevealedFromDrawEvent -> {
                 if (event !is CardRevealedFromDrawEvent) return false

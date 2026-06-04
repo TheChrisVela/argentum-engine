@@ -2,7 +2,7 @@
 
 **Set Size:** 291 cards (261 Draft / 30 Extra)
 **Release Date:** June 23, 2023
-**Implemented:** 191 / 291
+**Implemented:** 194 / 291
 Run `scripts/card-status --set LTR` (and `--list --set LTR`) to verify status at any time.
 The split below mirrors that script: **Draft** = Scryfall `booster: true`; **Extra** =
 starter-deck/special cards and basic lands.
@@ -57,7 +57,7 @@ starter-deck/special cards and basic lands.
 - [x] Shire Shirriff
 - [ ] Slip On the Ring
 - [x] Soldier of the Grey Host
-- [ ] Stalwarts of Osgiliath
+- [x] Stalwarts of Osgiliath
 - [x] Tale of Tinúviel
 - [x] Took Reaper
 - [x] War of the Last Alliance
@@ -86,7 +86,7 @@ starter-deck/special cards and basic lands.
 - [x] Ioreth of the Healing House
 - [x] Isolation at Orthanc
 - [x] Ithilien Kingfisher
-- [ ] Knights of Dol Amroth
+- [x] Knights of Dol Amroth
 - [x] Lórien Revealed
 - [ ] Lost Isle Calling
 - [x] Meneldor, Swift Savior
@@ -258,7 +258,7 @@ starter-deck/special cards and basic lands.
 - [x] The Mouth of Sauron
 - [x] Old Man Willow
 - [ ] Pippin, Guard of the Citadel
-- [ ] Prince Imrahil the Fair
+- [x] Prince Imrahil the Fair
 - [ ] Ringsight
 - [ ] Rise of the Witch-king
 - [x] Samwise Gamgee

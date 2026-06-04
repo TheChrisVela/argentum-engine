@@ -675,6 +675,25 @@ object Triggers {
         binding = TriggerBinding.ANY
     )
 
+    /**
+     * Whenever a player draws their Nth card each turn (CR 121.2).
+     *
+     * The draw analogue of [NthSpellCast]: tracks per-player draw count via
+     * `CardsDrawnThisTurnComponent` and fires exactly once when the Nth card
+     * is drawn — including when a single multi-card draw crosses the threshold.
+     * Putting a card into a player's hand without the word "draw" (CR 121.5)
+     * does not advance the count.
+     *
+     * Example: "Whenever you draw your second card each turn" → `NthCardDrawn(2)`.
+     *
+     * @param n The card number (e.g., 2 for "second card")
+     * @param player Which player's draw count to track (default: you)
+     */
+    fun NthCardDrawn(n: Int, player: Player = Player.You): TriggerSpec = TriggerSpec(
+        event = NthCardDrawnEvent(nthCard = n, player = player),
+        binding = TriggerBinding.ANY
+    )
+
     // =========================================================================
     // Spell Triggers
     // =========================================================================

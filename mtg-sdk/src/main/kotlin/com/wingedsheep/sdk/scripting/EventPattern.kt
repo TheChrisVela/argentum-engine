@@ -219,6 +219,41 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
         override val description: String = "${player.description} would draw a card"
     }
 
+    /**
+     * Fires on a `CardsDrawnEvent` when the drawing player's per-turn draw count
+     * crosses the specified threshold (CR 121.2 — each card drawn is an individual
+     * draw, so a single multi-card draw fires at most once when the Nth card lands
+     * inside that batch). Per-player count is tracked by
+     * `CardsDrawnThisTurnComponent` and reset by `TurnManager` at the start of each turn.
+     *
+     * Used by cards like Knights of Dol Amroth: "Whenever you draw your second card
+     * each turn, …".
+     *
+     * @param nthCard The card number that triggers this (e.g., 2 for "second card")
+     * @param player Which player's draw count to track
+     */
+    @SerialName("NthCardDrawnEvent")
+    @Serializable
+    data class NthCardDrawnEvent(
+        val nthCard: Int,
+        val player: Player = Player.You
+    ) : EventPattern {
+        override val description: String = buildString {
+            append(player.description)
+            append(" draws ")
+            append(when (player) {
+                Player.You -> "your "
+                else -> "their "
+            })
+            append(when (nthCard) {
+                2 -> "second"
+                3 -> "third"
+                else -> "${nthCard}th"
+            })
+            append(" card each turn")
+        }
+    }
+
     // =========================================================================
     // Life Events
     // =========================================================================
