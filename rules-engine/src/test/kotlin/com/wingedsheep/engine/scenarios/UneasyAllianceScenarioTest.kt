@@ -1,6 +1,8 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.core.ActivateAbility
+import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Phase
@@ -106,9 +108,9 @@ class UneasyAllianceScenarioTest : ScenarioTestBase() {
                 withClue("A 1/1 black Ninja creature token is created under Player1's control") {
                     val tokens = game.state.getBattlefield(game.player1Id).mapNotNull { id ->
                         val entity = game.state.getEntity(id) ?: return@mapNotNull null
-                        val card = entity.get<com.wingedsheep.engine.state.components.identity.CardComponent>()
+                        val card = entity.get<CardComponent>()
                             ?: return@mapNotNull null
-                        val isToken = entity.get<com.wingedsheep.engine.state.components.identity.TokenComponent>() != null
+                        val isToken = entity.get<TokenComponent>() != null
                         if (isToken && card.typeLine.hasSubtype(Subtype("Ninja"))) card else null
                     }
                     tokens.size shouldBe 1
