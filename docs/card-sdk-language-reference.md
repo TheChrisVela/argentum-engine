@@ -265,6 +265,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 ### Destruction & exile
 
 - `Destroy(target)` — destroy target (respects indestructible).
+- `RegenerateEffect(target)` (raw — no facade) — drop a regeneration shield on `target`, lasting until end
+  of turn. The next time `target` would be destroyed this turn, instead tap it, remove all damage marked on
+  it, and remove it from combat. Consumed by the first destruction it intercepts.
+- `RemoveDamageShieldEffect(target)` (raw — no facade) — Pyramids' second mode. Same shape as regeneration:
+  a one-shot destruction shield lasting until end of turn that replaces "destroyed" with "remove all damage
+  marked on it". Differs from regeneration in *not* tapping the target and *not* removing it from combat —
+  only the marked damage is cleared. The shield isn't a regeneration ability, so a "can't be regenerated"
+  marker on the target doesn't disable it. Consumed by the first destruction it intercepts; expires at end
+  of turn.
 - `DestroyAll(filter, noRegenerate?, storeDestroyedAs?, excludeTriggering?)` — destroy all matching; optionally
   save the ID list for follow-up. `excludeTriggering = true` spares the triggering entity, for "destroy all
   *other* … with it" triggers (Spreading Plague).
@@ -869,6 +878,12 @@ work for abilities-on-stack (which carry no `CardComponent`).
   untap, and trigger-gating contexts.
 - `IsFaceDown` — currently face-down.
 - `HasCounter(type)` — has at least one counter of `type`.
+- `AttachedToCardType(cardType)` — Aura/Equipment whose `AttachedToComponent` points to a
+  permanent that currently has the given top-level [`CardType`] in its **projected** type
+  set. Used by filters like "Aura attached to a land" (Pyramids) or "Equipment attached
+  to a creature". Reads the attached-to permanent's projected types, so a land animated
+  into a creature still matches `LAND` and additionally matches `CREATURE`. False for
+  entities with no `AttachedToComponent`.
 - `IsWarpExiled` (filter builder `warpExiled()`) — card in exile via warp's
   end-of-turn delayed trigger (CR 702.185b).
 - `WasCastForWarp` (filter builder `castForWarp()`) — battlefield permanent that
