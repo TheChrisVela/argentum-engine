@@ -75,6 +75,20 @@ class TriggerMatcher(
             is EventPattern.DrawEvent -> {
                 event is CardsDrawnEvent && matchesPlayer(trigger.player, event.playerId, controllerId)
             }
+            is EventPattern.NthCardDrawnEvent -> {
+                // Fires on CardsDrawnEvent when the drawing player's per-turn draw count
+                // crosses the threshold inside this batch. The component is incremented
+                // per individual draw in DrawCardPrimitive, so after the aggregate event
+                // we have countAfter = CardsDrawnThisTurnComponent.count and
+                // countBefore = countAfter - event.count.
+                if (event !is CardsDrawnEvent) return false
+                if (!matchesPlayer(trigger.player, event.playerId, controllerId)) return false
+                val countAfter = state.getEntity(event.playerId)
+                    ?.get<com.wingedsheep.engine.state.components.player.CardsDrawnThisTurnComponent>()
+                    ?.count ?: 0
+                val countBefore = countAfter - event.count
+                countBefore < trigger.nthCard && trigger.nthCard <= countAfter
+            }
             is EventPattern.CardRevealedFromDrawEvent -> {
                 if (event !is CardRevealedFromDrawEvent) return false
                 if (event.playerId != controllerId) return false
