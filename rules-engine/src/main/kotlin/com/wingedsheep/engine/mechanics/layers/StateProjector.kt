@@ -533,6 +533,12 @@ class StateProjector(
      * controller) is correct for the single-control-changer case Old Man of the Sea covers;
      * if another control effect targets the same entity simultaneously, this gate hides it,
      * which is acceptable for the current SDK surface.
+     *
+     * This gate is the *instantaneous* view only — it hides the effect while the condition is
+     * false but would re-apply it if power dropped back. The one-way half of CR 611.2b is
+     * supplied by [com.wingedsheep.engine.mechanics.sba.permanent.EndedDurationExpiryCheck],
+     * which physically removes the floating effect the moment the gate fails so it can never
+     * restart.
      */
     private fun applyAffectedPowerAtMostSourceGate(
         state: GameState,

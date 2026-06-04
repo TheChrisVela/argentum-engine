@@ -235,6 +235,67 @@ class OldManOfTheSeaScenarioTest : FunSpec({
         projector.project(driver.state).getController(target) shouldBe opponent
     }
 
+    test("CR 611.2b — control does NOT return after a temporary pump wears off (one-way latch)") {
+        // The reversible projection gate alone would re-steal the creature once its power drops
+        // back to ≤ Old Man's. CR 611.2b: a "for as long as" duration ends permanently once its
+        // condition fails. EndedDurationExpiryCheck physically removes the control effect the
+        // moment power is exceeded, so the pump wearing off must NOT bring control back.
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Island" to 40), startingLife = 20)
+
+        val activePlayer = driver.activePlayer!!
+        val opponent = driver.getOpponent(activePlayer)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val oldMan = driver.putCreatureOnBattlefield(activePlayer, "Old Man of the Sea")
+        driver.removeSummoningSickness(oldMan)
+        val target = driver.putCreatureOnBattlefield(opponent, "Elvish Warrior")  // 2/3
+
+        driver.submit(
+            ActivateAbility(
+                playerId = activePlayer,
+                sourceId = oldMan,
+                abilityId = abilityId,
+                targets = listOf(ChosenTarget.Permanent(target))
+            )
+        )
+        driver.bothPass()
+        projector.project(driver.state).getController(target) shouldBe activePlayer
+
+        val sbaChecker = com.wingedsheep.engine.mechanics.StateBasedActionChecker(
+            cardRegistry = driver.cardRegistry
+        )
+
+        // Temporary +2/+0 pump: power 2 → 4 > Old Man's 2. SBAs latch the steal off for good.
+        val ctx = EffectContext(sourceId = oldMan, controllerId = opponent, opponentId = activePlayer)
+        driver.replaceState(
+            driver.state.addFloatingEffect(
+                layer = Layer.POWER_TOUGHNESS,
+                modification = SerializableModification.ModifyPowerToughness(powerMod = 2, toughnessMod = 0),
+                affectedEntities = setOf(target),
+                duration = Duration.EndOfTurn,
+                context = ctx,
+            )
+        )
+        driver.replaceState(sbaChecker.checkAndApply(driver.state).newState)
+        projector.project(driver.state).getController(target) shouldBe opponent
+
+        // The control effect must be gone — not merely hidden by the power gate.
+        driver.state.floatingEffects.none {
+            it.duration is Duration.WhileSourceTappedAndAffectedPowerAtMostSource
+        } shouldBe true
+
+        // The pump wears off (remove the EndOfTurn effect); Old Man is still tapped and the
+        // Warrior is back to power 2 ≤ 2 — but control must stay with its owner.
+        driver.replaceState(
+            driver.state.copy(
+                floatingEffects = driver.state.floatingEffects.filterNot { it.duration == Duration.EndOfTurn }
+            )
+        )
+        driver.replaceState(sbaChecker.checkAndApply(driver.state).newState)
+        projector.project(driver.state).getController(target) shouldBe opponent
+    }
+
     test("CR 506.4 — stolen attacker is removed from combat when control reverts mid-attack") {
         // Alice steals Bob's Elvish Warrior with Old Man and attacks Bob with it. Bob plays
         // an Aggressive-Urge-style pump on the Warrior, pushing its power past Old Man's.

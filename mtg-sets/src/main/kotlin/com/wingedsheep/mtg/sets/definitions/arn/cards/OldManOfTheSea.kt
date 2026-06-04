@@ -21,12 +21,14 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
  * power for as long as this creature remains tapped and that creature's power remains
  * less than or equal to this creature's power.
  *
- * Both halves of the duration are gated by [com.wingedsheep.engine.mechanics.layers.StateProjector]:
- * the projector skips the floating control effect when the source isn't tapped, and reverts
- * the target's controller in a post-Layer-7 fix-up the moment its projected power exceeds the
- * Old Man's projected power (counters, +X/+Y floating effects, lord-style anthems). The cleanup
- * pass at the next untap step physically removes the floating effect entry when the source is
- * no longer tapped, mirroring [Duration.WhileSourceTapped].
+ * Both halves of the duration are gated by [com.wingedsheep.engine.mechanics.layers.StateProjector]
+ * for the instantaneous view: the projector skips the floating control effect when the source
+ * isn't tapped, and reverts the target's controller in a post-Layer-7 fix-up the moment its
+ * projected power exceeds the Old Man's projected power (counters, +X/+Y floating effects,
+ * lord-style anthems). Per CR 611.2b the duration is one-way: once either half fails,
+ * [com.wingedsheep.engine.mechanics.sba.permanent.EndedDurationExpiryCheck] physically removes
+ * the floating effect, so a pump that later wears off — or a re-tap — does not re-steal the
+ * creature.
  */
 val OldManOfTheSea = card("Old Man of the Sea") {
     manaCost = "{1}{U}{U}"

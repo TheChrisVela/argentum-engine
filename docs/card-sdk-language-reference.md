@@ -450,8 +450,10 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `Duration.WhileSourceTapped` (Callous Oppressor) or
   `Duration.WhileSourceTappedAndAffectedPowerAtMostSource` (Old Man of the Sea) for the classic
   "for as long as this creature remains tapped [and the stolen creature's power stays ≤ source's
-  power]" steal pattern; both durations are gated per-frame by `StateProjector` and cleaned up
-  at the next untap step.
+  power]" steal pattern. `StateProjector` gates these per-frame for the instantaneous view; the
+  one-way half of CR 611.2b ("for as long as" durations don't restart) is enforced by the
+  `EndedDurationExpiryCheck` state-based action, which physically removes the effect the moment
+  the condition fails — so a pump that wears off (or a re-tap) never re-grabs the creature.
 - `ExchangeControlEffect(target1, target2)` — swap control of two permanents.
 - `GainControlByMostEffect(metric, target?)` — the player with strictly the most of a `PlayerRankMetric` takes it (tie = no change). Metrics: `PlayerRankMetric.LifeTotal` (Ghazbán Ogre), `PlayerRankMetric.CreaturesOfSubtype(subtype)` (Thoughtbound Primoc). Facades: `Effects.GainControlByMostLife()`, `Effects.GainControlByMostOfSubtype(subtype)`.
 - `GiftGivenEffect(target)` — "gift" temporary control.
