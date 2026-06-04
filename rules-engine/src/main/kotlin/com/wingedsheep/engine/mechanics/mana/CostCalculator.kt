@@ -21,7 +21,7 @@ import com.wingedsheep.sdk.scripting.CostModification
 import com.wingedsheep.sdk.scripting.CostReductionSource
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantAlternativeCastingCost
-import com.wingedsheep.sdk.scripting.MayCastFirstSpellOfTurnWithoutPayingMana
+import com.wingedsheep.sdk.scripting.MayCastWithoutPayingManaCost
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.ModifySpellCost
 import com.wingedsheep.sdk.scripting.SpellCostTarget
@@ -1070,34 +1070,35 @@ class CostCalculator(
     }
 
     /**
-     * Whether any battlefield permanent is currently granting [casterId] permission to cast
-     * their first spell of this turn without paying its mana cost
-     * ([MayCastFirstSpellOfTurnWithoutPayingMana], e.g. Weftwalking).
+     * Whether any battlefield permanent is currently granting [casterId] a
+     * [MayCastWithoutPayingManaCost] permission whose gates are all open
+     * (e.g. Weftwalking's `firstSpellOfTurnOnly = true`).
      *
-     * Gating rules:
-     *  - It must currently be [casterId]'s turn — the static keys off "each of their own turns",
-     *    so casting on an opponent's turn (e.g. via flash) does not qualify.
-     *  - [casterId] must have cast no spells yet this turn.
-     *  - When `controllerOnly` is set on the source ability, the source's controller must be
-     *    [casterId]. The default (`false`) is the Weftwalking wording — every player on each of
-     *    their own turns, regardless of who controls the source.
+     * Gates honored per source:
+     *  - `controllerOnly` — when true, the source's controller (read from projected state) must
+     *    be [casterId].
+     *  - `firstSpellOfTurnOnly` — when true, [casterId] must be the active player and must have
+     *    cast no spells yet this turn.
      *
-     * Scans every battlefield zone (not just the caster's) so that an opponent's Weftwalking can
-     * still grant the caster their free first-spell-of-the-turn cast.
+     * Scans every battlefield zone (not just the caster's) so that an opponent's source can
+     * still grant the caster their free cast when the source's wording doesn't require
+     * controller-only.
      */
-    fun hasFirstSpellOfTurnFreeCast(state: GameState, casterId: EntityId): Boolean {
-        if (state.activePlayerId != casterId) return false
-        if ((state.playerSpellsCastThisTurn[casterId] ?: 0) > 0) return false
+    fun hasFreeCastPermission(state: GameState, casterId: EntityId): Boolean {
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue
             val card = container.get<CardComponent>() ?: continue
             val permanentDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
             val classLevel = container.get<ClassLevelComponent>()?.currentLevel
             for (ability in permanentDef.script.effectiveStaticAbilities(classLevel)) {
-                if (ability !is MayCastFirstSpellOfTurnWithoutPayingMana) continue
+                if (ability !is MayCastWithoutPayingManaCost) continue
                 if (ability.controllerOnly) {
                     val controllerId = state.projectedState.getController(entityId) ?: continue
                     if (controllerId != casterId) continue
+                }
+                if (ability.firstSpellOfTurnOnly) {
+                    if (state.activePlayerId != casterId) continue
+                    if ((state.playerSpellsCastThisTurn[casterId] ?: 0) > 0) continue
                 }
                 return true
             }

@@ -285,39 +285,53 @@ data object CantCastSpellsSharingColorWithLastCast : StaticAbility {
  * @property condition Optional timing/state gate, evaluated in the controller's context; null = always.
  */
 /**
- * The first spell each player casts during each of their own turns may be cast without paying
- * its mana cost. Used by Weftwalking ({4}{U}{U} Enchantment, Edge of Eternities): "The first
- * spell each player casts during each of their turns may be cast without paying its mana cost."
+ * Generic "may cast a spell without paying its mana cost" battlefield permission. The static is
+ * read at cast-legality time on every permanent on the battlefield; when its gates are open it
+ * surfaces a `CastWithoutPayingManaCost` [com.wingedsheep.engine.legalactions.LegalAction]
+ * variant routing through `CastSpell.useWithoutPayingManaCost`.
  *
- * Per Rule 117.9 / 118.9b, "without paying its mana cost" means:
- *  - the spell's mana cost is not paid (X = 0 for X spells),
- *  - other mandatory additional costs still apply (kicker, behold, blight, etc.),
- *  - alternative costs cannot be combined (so this can't be chained with flashback, etc.).
+ * Per CR 118.9, "without paying its mana cost" is itself an alternative cost; mandatory
+ * additional costs (kicker, blight, behold, etc.) still apply, and per CR 107.3b X is treated
+ * as 0 for X-cost spells cast this way. Per CR 118.9a only one alternative cost can apply to
+ * a given cast, so the variant is **mutually exclusive** with `useAlternativeCost`
+ * (validated in `CastSpellHandler`).
  *
- * The free-cast permission is **optional** ("may"), surfaced to the player as an alternative cost
- * variant during cast-action enumeration. Gating, applied at cast time:
- *  - it must currently be the casting player's turn (the spell is being cast on one of *their*
- *    own turns, not on an opponent's turn via flash),
- *  - the casting player must have cast no spells yet this turn (the "first spell" clause —
- *    `GameState.spellsCastThisTurnByPlayer[caster]` is null or empty),
- *  - when [controllerOnly] is true, only the source permanent's controller benefits.
+ * The variant is emitted **alongside** Jodah-style [GrantAlternativeCastingCost], flashback,
+ * harmonize, warp, evoke, impending, and `selfAlternativeCost` variants so the player picks
+ * one explicitly — CR 118.9a leaves the choice to the player, not handler priority.
  *
- * Modelled as a static ability on a permanent so that the permission tracks the permanent's
- * presence on the battlefield — removing the permanent in response to the cast offer
- * immediately revokes it.
+ * Composable gates:
+ *  - [controllerOnly] — if true, only the source permanent's controller benefits ("you cast"
+ *    wording). Default false = any player benefits ("each player casts" wording).
+ *  - [firstSpellOfTurnOnly] — if true, the caster must be the active player and must have cast
+ *    no spells yet this turn. Default false = no first-spell gate.
  *
- * @property controllerOnly If true, only the source permanent's controller benefits (default:
- *           false = each player on each of their own turns, the Weftwalking wording).
+ * Composes for Weftwalking ({4}{U}{U}, EOE: "The first spell each player casts during each of
+ * their turns may be cast without paying its mana cost.") via
+ * `MayCastWithoutPayingManaCost(firstSpellOfTurnOnly = true)`. A future "you may cast the first
+ * spell you cast each turn without paying its mana cost" composes via
+ * `MayCastWithoutPayingManaCost(controllerOnly = true, firstSpellOfTurnOnly = true)`. An
+ * always-on Omniscience-style static would set both gates false (though Omniscience itself is
+ * modelled via `PlayWithoutPayingCostComponent` on the spell rather than this static).
+ *
+ * Modelled as a static ability on a permanent so the permission tracks the permanent's
+ * presence on the battlefield — removing the source in response to the cast offer immediately
+ * revokes it.
  */
-@SerialName("MayCastFirstSpellOfTurnWithoutPayingMana")
+@SerialName("MayCastWithoutPayingManaCost")
 @Serializable
-data class MayCastFirstSpellOfTurnWithoutPayingMana(
-    val controllerOnly: Boolean = false
+data class MayCastWithoutPayingManaCost(
+    val controllerOnly: Boolean = false,
+    val firstSpellOfTurnOnly: Boolean = false
 ) : StaticAbility {
-    override val description: String = if (controllerOnly) {
-        "The first spell you cast each turn may be cast without paying its mana cost"
-    } else {
-        "The first spell each player casts during each of their turns may be cast without paying its mana cost"
+    override val description: String = buildString {
+        if (firstSpellOfTurnOnly) {
+            if (controllerOnly) append("The first spell you cast each turn may be cast without paying its mana cost")
+            else append("The first spell each player casts during each of their turns may be cast without paying its mana cost")
+        } else {
+            if (controllerOnly) append("You may cast spells without paying their mana costs")
+            else append("Each player may cast spells without paying their mana costs")
+        }
     }
 }
 

@@ -1527,18 +1527,23 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   Yawgmoth's Agenda (`MayCastFromGraveyard(Nonland)`); `lifeCost = 1, duringYourTurnOnly = true` for
   Festival of Embers. Pair with `MayPlayLandsFromGraveyard` for "play lands and cast spells from
   your graveyard". Lands are *played*, not cast, so they need the lands permission separately.
-- `MayCastFirstSpellOfTurnWithoutPayingMana(controllerOnly = false)` — the first spell each
-  player casts during each of their **own** turns may be cast without paying its mana cost
-  (Weftwalking). Gated at cast time by `CostCalculator.hasFirstSpellOfTurnFreeCast`: requires the
-  active player to be the caster, requires the caster to have cast zero spells this turn, and
-  requires a battlefield source with this static (the source's controller may be anyone unless
-  `controllerOnly = true`). Surfaces as an alt-cost entry (`{0}`) in
-  `EnumerationContext.alternativeCastingCosts`; `CastSpellHandler.isFirstSpellOfTurnFreeCastChosen`
-  resolves the priority chain so the static only wins when no keyword alt (flashback / harmonize /
-  warp / evoke / impending), no `selfAlternativeCost`, and no Jodah-style `GrantAlternativeCastingCost`
-  applies — when it does win the cast is treated as `playForFree` (cost zeroed, kicker / blight /
-  behold / runtime tax skipped, matching the existing `PlayWithoutPayingCostComponent` flow used
-  by Cascade and Omniscience).
+- `MayCastWithoutPayingManaCost(controllerOnly = false, firstSpellOfTurnOnly = false)` — a
+  battlefield permission to cast a spell without paying its mana cost (CR 118.9). Composable
+  gates: `controllerOnly = true` restricts the benefit to the source's controller ("you" wording);
+  `firstSpellOfTurnOnly = true` requires the caster to be the active player and to have cast
+  zero spells this turn. Weftwalking is `MayCastWithoutPayingManaCost(firstSpellOfTurnOnly = true)`;
+  a future "you may cast the first spell you cast each turn …" composes via both gates true.
+  Cast-legality is checked by `CostCalculator.hasFreeCastPermission`. Surfaced as a dedicated
+  `CastWithoutPayingManaCost` `LegalAction` variant routed through
+  `CastSpell.useWithoutPayingManaCost = true` — emitted **alongside** Jodah-style
+  `GrantAlternativeCastingCost`, flashback, harmonize, warp, evoke, impending, and
+  `selfAlternativeCost` variants so the player explicitly picks one (CR 118.9a — only one
+  alternative cost may apply to a cast, and which one is the player's choice, not handler
+  priority). `CastSpellHandler.validate` rejects combining the flag with `useAlternativeCost`.
+  When chosen, the cast is treated as `playForFree` (cost zeroed, X = 0 per CR 107.3b, kicker
+  / blight / behold / runtime tax skipped; mandatory additional costs like Embrace Oblivion's
+  sacrifice are still enforced), matching the existing `PlayWithoutPayingCostComponent` flow
+  used by Cascade and Omniscience.
 
 **Top-of-library reveal & play** (reveal the top card of a library, optionally with permission to
 play it from there). Visibility (public reveal to all players) and play permission are separate

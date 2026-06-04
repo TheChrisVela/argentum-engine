@@ -6,12 +6,14 @@ import com.wingedsheep.engine.legalactions.EnumerationMode
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
+import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -30,9 +32,9 @@ import io.kotest.matchers.shouldNotBe
  *    cast, not when it enters via another path (verified by checking the cast path triggers the
  *    library reshuffle and a 7-card draw).
  *
- * 2. **First-spell-of-turn free-cast static** ([MayCastFirstSpellOfTurnWithoutPayingMana]) — the
- *    caster's first spell during each of their own turns gets a `{0}` alternative cost; once the
- *    caster has cast a spell this turn the gate closes.
+ * 2. **Free-cast static** ([MayCastWithoutPayingManaCost] with `firstSpellOfTurnOnly = true`) —
+ *    the caster's first spell during each of their own turns gets a `{0}` alternative cost; once
+ *    the caster has cast a spell this turn the gate closes.
  */
 class WeftwalkingScenarioTest : FunSpec({
 
@@ -83,7 +85,7 @@ class WeftwalkingScenarioTest : FunSpec({
         libraryAfter shouldBe libraryBefore + (handBefore - 1) + graveyardBefore - 7
     }
 
-    test("with Weftwalking on the battlefield, first spell may be cast for free via useAlternativeCost") {
+    test("with Weftwalking on the battlefield, first spell may be cast for free via useWithoutPayingManaCost") {
         val driver = createDriver()
         val player = driver.activePlayer!!
 
@@ -93,19 +95,19 @@ class WeftwalkingScenarioTest : FunSpec({
         // this turn — the cost calculator should expose the {0} free-cast alternative.
         (driver.state.playerSpellsCastThisTurn[player] ?: 0) shouldBe 0
         val costCalculator = CostCalculator(driver.cardRegistry)
-        costCalculator.hasFirstSpellOfTurnFreeCast(driver.state, player) shouldBe true
+        costCalculator.hasFreeCastPermission(driver.state, player) shouldBe true
 
-        // Cast Grizzly Bears using the alternative cost — pool is empty, paid nothing.
+        // Cast Grizzly Bears for free via the dedicated flag — pool is empty, paid nothing.
         val bears = driver.putCardInHand(player, "Grizzly Bears")
         driver.submit(
-            CastSpell(player, bears, useAlternativeCost = true, paymentStrategy = PaymentStrategy.FromPool)
+            CastSpell(player, bears, useWithoutPayingManaCost = true, paymentStrategy = PaymentStrategy.FromPool)
         ).isSuccess shouldBe true
         driver.bothPass()
 
         driver.state.getZone(ZoneKey(player, Zone.BATTLEFIELD)).contains(bears) shouldBe true
     }
 
-    test("the free-cast gate closes after the first spell — second spell can't useAlternativeCost") {
+    test("the free-cast gate closes after the first spell — useWithoutPayingManaCost fails on the second cast") {
         val driver = createDriver()
         val player = driver.activePlayer!!
 
@@ -113,23 +115,23 @@ class WeftwalkingScenarioTest : FunSpec({
 
         val first = driver.putCardInHand(player, "Grizzly Bears")
         driver.submit(
-            CastSpell(player, first, useAlternativeCost = true, paymentStrategy = PaymentStrategy.FromPool)
+            CastSpell(player, first, useWithoutPayingManaCost = true, paymentStrategy = PaymentStrategy.FromPool)
         ).isSuccess shouldBe true
         driver.bothPass()
 
         // After one spell has resolved this turn, the gate is shut.
         ((driver.state.playerSpellsCastThisTurn[player] ?: 0) >= 1) shouldBe true
         val costCalculator = CostCalculator(driver.cardRegistry)
-        costCalculator.hasFirstSpellOfTurnFreeCast(driver.state, player) shouldBe false
+        costCalculator.hasFreeCastPermission(driver.state, player) shouldBe false
 
-        // A second cast attempt with useAlternativeCost = true fails — no alternative is available.
+        // A second free-cast attempt fails — the gate is closed.
         val second = driver.putCardInHand(player, "Grizzly Bears")
         driver.submit(
-            CastSpell(player, second, useAlternativeCost = true, paymentStrategy = PaymentStrategy.FromPool)
+            CastSpell(player, second, useWithoutPayingManaCost = true, paymentStrategy = PaymentStrategy.FromPool)
         ).isSuccess shouldBe false
     }
 
-    test("legal-action label for the free-cast variant reads 'Cast X' (no empty parens) with manaCostString '{0}'") {
+    test("legal-action label for the free-cast variant reads 'Cast X' with actionType 'CastWithoutPayingManaCost' and manaCostString '{0}'") {
         val driver = createDriver()
         val player = driver.activePlayer!!
 
@@ -140,12 +142,13 @@ class WeftwalkingScenarioTest : FunSpec({
         val actions = enumerator.enumerate(driver.state, player, EnumerationMode.FULL)
 
         val freeCast = actions.firstOrNull { la ->
-            la.actionType == "CastWithAlternativeCost" &&
+            la.actionType == "CastWithoutPayingManaCost" &&
                 (la.action as? CastSpell)?.cardId == bears
         }
         freeCast shouldNotBe null
         freeCast!!.description shouldBe "Cast Grizzly Bears"
         freeCast.manaCostString shouldBe "{0}"
+        (freeCast.action as CastSpell).useWithoutPayingManaCost shouldBe true
     }
 
     test("free-cast variant is not offered on opponent's turn (gate keys on active player)") {
@@ -160,6 +163,158 @@ class WeftwalkingScenarioTest : FunSpec({
         // turn it actually is. The simplest way is to verify the cost-calculator predicate
         // returns false when queried for a non-active player.
         val costCalculator = CostCalculator(driver.cardRegistry)
-        costCalculator.hasFirstSpellOfTurnFreeCast(driver.state, opponent) shouldBe false
+        costCalculator.hasFreeCastPermission(driver.state, opponent) shouldBe false
+    }
+
+    test("Weftwalking entering via non-cast means (intervening-if 'if you cast it') does NOT shuffle/draw") {
+        val driver = createDriver()
+        val player = driver.activePlayer!!
+
+        // Seed graveyard so a shuffle would be detectable.
+        repeat(3) { driver.putCardInGraveyard(player, "Grizzly Bears") }
+        val graveyardBefore = driver.state.getZone(ZoneKey(player, Zone.GRAVEYARD)).size
+        val handBefore = driver.state.getZone(ZoneKey(player, Zone.HAND)).size
+
+        // Drop Weftwalking directly onto the battlefield (simulates reanimation / Show and Tell / etc.).
+        driver.putPermanentOnBattlefield(player, "Weftwalking")
+        driver.bothPass()
+        driver.bothPass()
+
+        // The ETB's intervening-if (Conditions.WasCast) didn't fire — hand and graveyard are untouched.
+        driver.state.getZone(ZoneKey(player, Zone.HAND)).size shouldBe handBefore
+        driver.state.getZone(ZoneKey(player, Zone.GRAVEYARD)).size shouldBe graveyardBefore
+    }
+
+    test("opponent's Weftwalking grants the active player a free first-spell cast (controllerOnly = false)") {
+        val driver = createDriver()
+        val activePlayer = driver.activePlayer!!
+        val opponent = driver.getOpponent(activePlayer)
+
+        // The wording is "each player ... during each of their own turns" — the source's controller
+        // is irrelevant when controllerOnly = false. Opponent's Weftwalking still benefits us.
+        driver.putPermanentOnBattlefield(opponent, "Weftwalking")
+
+        val costCalculator = CostCalculator(driver.cardRegistry)
+        costCalculator.hasFreeCastPermission(driver.state, activePlayer) shouldBe true
+
+        val bears = driver.putCardInHand(activePlayer, "Grizzly Bears")
+        driver.submit(
+            CastSpell(activePlayer, bears, useWithoutPayingManaCost = true, paymentStrategy = PaymentStrategy.FromPool)
+        ).isSuccess shouldBe true
+        driver.bothPass()
+
+        driver.state.getZone(ZoneKey(activePlayer, Zone.BATTLEFIELD)).contains(bears) shouldBe true
+    }
+
+    test("Jodah + Weftwalking on the battlefield: the player picks which alternative cost — both are offered as distinct LegalActions") {
+        val driver = createDriver()
+        val player = driver.activePlayer!!
+
+        driver.putPermanentOnBattlefield(player, "Weftwalking")
+        driver.putPermanentOnBattlefield(player, "Jodah, Archmage Eternal")
+        val bears = driver.putCardInHand(player, "Grizzly Bears")
+        // Give Jodah's full {W}{U}{B}{R}{G} so the Jodah variant is affordable; without it the
+        // enumerator wouldn't emit the Jodah action at all and the test would degenerate.
+        driver.giveMana(player, Color.WHITE)
+        driver.giveMana(player, Color.BLUE)
+        driver.giveMana(player, Color.BLACK)
+        driver.giveMana(player, Color.RED)
+        driver.giveMana(player, Color.GREEN)
+
+        // Both Jodah's GrantAlternativeCastingCost ({W}{U}{B}{R}{G}) and Weftwalking's free
+        // cast ({0}) must surface — the enumerator emits them as distinct legal actions so the
+        // player can choose (CR 118.9a — alternative costs don't combine, but which one to use
+        // is the player's call).
+        val enumerator = LegalActionEnumerator.create(driver.cardRegistry)
+        val actions = enumerator.enumerate(driver.state, player, EnumerationMode.FULL)
+            .filter { (it.action as? CastSpell)?.cardId == bears }
+
+        val freeCast = actions.firstOrNull { it.actionType == "CastWithoutPayingManaCost" }
+        val jodahCast = actions.firstOrNull {
+            it.actionType == "CastWithAlternativeCost" &&
+                (it.action as CastSpell).useAlternativeCost
+        }
+        freeCast shouldNotBe null
+        jodahCast shouldNotBe null
+        freeCast!!.manaCostString shouldBe "{0}"
+        jodahCast!!.manaCostString shouldBe "{W}{U}{B}{R}{G}"
+
+        // The player picks the free cast — and it works at {0}, the WUBRG pool stays untouched.
+        driver.submit(
+            CastSpell(player, bears, useWithoutPayingManaCost = true, paymentStrategy = PaymentStrategy.FromPool)
+        ).isSuccess shouldBe true
+        driver.bothPass()
+        driver.state.getZone(ZoneKey(player, Zone.BATTLEFIELD)).contains(bears) shouldBe true
+    }
+
+    test("combining useWithoutPayingManaCost with useAlternativeCost is rejected (CR 118.9a — alt costs don't combine)") {
+        val driver = createDriver()
+        val player = driver.activePlayer!!
+
+        driver.putPermanentOnBattlefield(player, "Weftwalking")
+        val bears = driver.putCardInHand(player, "Grizzly Bears")
+
+        val result = driver.submit(
+            CastSpell(
+                player, bears,
+                useWithoutPayingManaCost = true,
+                useAlternativeCost = true,
+                paymentStrategy = PaymentStrategy.FromPool
+            )
+        )
+        result.isSuccess shouldBe false
+    }
+
+    test("free-casting Embrace Oblivion still requires sacrificing an artifact or creature (mandatory additional cost survives 'without paying its mana cost')") {
+        val driver = createDriver()
+        val player = driver.activePlayer!!
+        val opponent = driver.getOpponent(player)
+
+        driver.putPermanentOnBattlefield(player, "Weftwalking")
+        // Two creatures: one to sacrifice for the mandatory cost, one to destroy with the spell.
+        val sacFodder = driver.putPermanentOnBattlefield(player, "Grizzly Bears")
+        val victim = driver.putPermanentOnBattlefield(opponent, "Grizzly Bears")
+        val embrace = driver.putCardInHand(player, "Embrace Oblivion")
+
+        // Free-cast Embrace Oblivion — its `{B}` is waived, but the printed "As an additional
+        // cost ... sacrifice an artifact or creature" must still be paid (CR 118.9 ruling cited
+        // on Weftwalking itself).
+        val result = driver.submit(
+            CastSpell(
+                player, embrace,
+                useWithoutPayingManaCost = true,
+                targets = listOf(ChosenTarget.Permanent(victim)),
+                additionalCostPayment = AdditionalCostPayment(sacrificedPermanents = listOf(sacFodder)),
+                paymentStrategy = PaymentStrategy.FromPool
+            )
+        )
+        result.isSuccess shouldBe true
+        driver.bothPass()
+
+        // The sacrifice resolved (fodder is in the graveyard) and Embrace Oblivion destroyed the victim.
+        driver.state.getZone(ZoneKey(player, Zone.GRAVEYARD)).contains(sacFodder) shouldBe true
+        driver.state.getZone(ZoneKey(opponent, Zone.GRAVEYARD)).contains(victim) shouldBe true
+    }
+
+    test("free-casting Embrace Oblivion without nominating a sacrifice fails — the mandatory additional cost is enforced even at {0}") {
+        val driver = createDriver()
+        val player = driver.activePlayer!!
+        val opponent = driver.getOpponent(player)
+
+        driver.putPermanentOnBattlefield(player, "Weftwalking")
+        driver.putPermanentOnBattlefield(player, "Grizzly Bears")  // legal sacrifice exists
+        val victim = driver.putPermanentOnBattlefield(opponent, "Grizzly Bears")
+        val embrace = driver.putCardInHand(player, "Embrace Oblivion")
+
+        val result = driver.submit(
+            CastSpell(
+                player, embrace,
+                useWithoutPayingManaCost = true,
+                targets = listOf(ChosenTarget.Permanent(victim)),
+                // additionalCostPayment intentionally null — no sacrifice nominated
+                paymentStrategy = PaymentStrategy.FromPool
+            )
+        )
+        result.isSuccess shouldBe false
     }
 })

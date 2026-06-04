@@ -86,7 +86,17 @@ data class CastSpell(
      * the face's mana cost and the resulting permanent enters the battlefield with that
      * face's door unlocked (CR 709.5d).
      */
-    val faceIndex: Int? = null
+    val faceIndex: Int? = null,
+    /**
+     * Invokes a `MayCastWithoutPayingManaCost` battlefield permission (e.g. Weftwalking): cast
+     * the spell for {0} via the "without paying its mana cost" alternative cost. Per CR 118.9a
+     * only one alternative cost can apply to a cast, so this is mutually exclusive with
+     * [useAlternativeCost]; distinguishing the two via separate flags is what lets the player
+     * choose between this free cast and any other alt cost (Jodah's `GrantAlternativeCastingCost`,
+     * flashback, harmonize, warp, evoke, impending, `selfAlternativeCost`) when both are legal.
+     * The enumerator emits a separate `CastWithoutPayingManaCost` action per granted permission.
+     */
+    val useWithoutPayingManaCost: Boolean = false
 ) : GameAction
 
 /**

@@ -6,7 +6,7 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.MayCastFirstSpellOfTurnWithoutPayingMana
+import com.wingedsheep.sdk.scripting.MayCastWithoutPayingManaCost
 import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
@@ -25,8 +25,9 @@ import com.wingedsheep.sdk.scripting.references.Player
  * - The ETB is an intervening-if trigger ([Conditions.WasCast]) — only fires when Weftwalking is cast,
  *   not when put onto the battlefield by reanimation or similar non-cast means.
  * - The static grants every player a "may cast without paying its mana cost" alternative on the first
- *   spell they cast during each of their own turns. Engine wiring lives in [CostCalculator] (gate
- *   check) + [CastSpellHandler] (`isFirstSpellOfTurnFreeCastChosen` priority chain).
+ *   spell they cast during each of their own turns. Engine wiring lives in
+ *   [CostCalculator.hasFreeCastPermission] (gate check) and [CastSpellHandler] (free-cast resolution
+ *   via [CastSpell.useWithoutPayingManaCost]).
  */
 val Weftwalking = card("Weftwalking") {
     manaCost = "{4}{U}{U}"
@@ -57,7 +58,7 @@ val Weftwalking = card("Weftwalking") {
     }
 
     staticAbility {
-        ability = MayCastFirstSpellOfTurnWithoutPayingMana()
+        ability = MayCastWithoutPayingManaCost(firstSpellOfTurnOnly = true)
     }
 
     metadata {

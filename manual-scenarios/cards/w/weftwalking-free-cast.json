@@ -22,7 +22,7 @@
       {"name": "Island", "tapped": false},
       {"name": "Island", "tapped": false}
     ],
-    "graveyard": [],
+    "graveyard": ["Memory Deluge"],
     "library": [
       "Opt",
       "Unravel",

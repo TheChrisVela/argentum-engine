@@ -111,17 +111,19 @@ class EnumerationContext(
             (perSpellCastRestrictionPresent &&
                 castPermissionUtils.spellSpecificallyRestricted(state, playerId, cardId))
 
-    // First spell of own turn may be cast without paying its mana cost (e.g., Weftwalking).
-    // Gated to the active player AND zero spells cast this turn — see CostCalculator.
-    val firstSpellOfTurnFreeCast: Boolean by lazy {
-        costCalculator.hasFirstSpellOfTurnFreeCast(state, playerId)
+    // A battlefield [MayCastWithoutPayingManaCost] source is granting the player permission to
+    // cast a spell without paying its mana cost (e.g., Weftwalking on the first spell of the
+    // player's own turn). Surfaced as its own [CastSpell.useWithoutPayingManaCost] action
+    // variant in CastSpellEnumerator, distinct from [alternativeCastingCosts] so the player can
+    // choose between this free cast and any Jodah-style alternative (CR 118.9a — only one
+    // alternative cost can apply to a cast, and which one is the player's choice).
+    val freeCastPermissionAvailable: Boolean by lazy {
+        costCalculator.hasFreeCastPermission(state, playerId)
     }
 
-    // Alternative casting costs from battlefield permanents (e.g., Jodah, plus a {0} entry for
-    // Weftwalking's first-spell-of-turn free cast when the gate is open).
+    // Alternative casting costs from battlefield permanents (e.g., Jodah's WUBRG).
     val alternativeCastingCosts: List<ManaCost> by lazy {
-        val base = costCalculator.findAlternativeCastingCosts(state, playerId)
-        if (firstSpellOfTurnFreeCast) base + ManaCost.ZERO else base
+        costCalculator.findAlternativeCastingCosts(state, playerId)
     }
 
     // Cycling prevention
