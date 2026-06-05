@@ -308,20 +308,22 @@ on both sides. This turns AUTO from a static-tag prediction into **"compiles + c
 ```
 Portal (POR):
   coverage calibration         200/200 = 100%
-  auto-emitted & COMPILED       169/184   (every emitted card compiles — Gradle)
-  VERIFIED (caps match golden)  169        capability MISMATCH: 0
-  left to hand                   15        (the emitter DECLINES rather than emit a wrong card)
+  auto-emitted & COMPILED       174/184   (every emitted card compiles — Gradle)
+  VERIFIED (caps match golden)  174        capability MISMATCH: 0
+  left to hand                   10        (the emitter DECLINES rather than emit a wrong card)
 ```
 
-The gate **passes** when every emitted card is correct (0 mismatch); coverage (169/184) is reported,
+The gate **passes** when every emitted card is correct (0 mismatch); coverage (174/184) is reported,
 not pass/failed — a generator declining a card it can't render faithfully is correct behaviour.
 
-**The 15 it declines are the genuinely engine-feature-complex residue** — exactly the tail the spike
-predicted needs hand-authoring (`add-card`): conditional spells needing a reconstructed `Condition`
-(Gift of Estates, Balance of Power), delayed/global triggers (Last Chance, Harsh Justice), a
-damage-prevention replacement (Deep Wood), "sacrifice unless you sacrifice X" (Plant Elemental,
-Primeval Force, Thing from the Deep), each-player discard/draw loops (Flux, Winds of Change, Noxious
-Toad), and exotic dynamic amounts (Cruel Bargain's half-life, Final Strike's power-of-sacrificed).
+**The 10 it declines are the genuinely engine-feature-complex residue** — exactly the tail the spike
+predicted needs hand-authoring (`add-card`): delayed/global triggers (Last Chance, Harsh Justice), a
+damage-prevention replacement (Deep Wood), a static "can't attack unless the defender controls an
+Island" (Deep-Sea Serpent), "sacrifice unless you sacrifice X" (Plant Elemental, Primeval Force,
+Thing from the Deep), and exotic dynamic amounts (Cruel Bargain's half-life, Final Strike's
+power-of-the-sacrificed-creature, Ebon Dragon's discard-then-may rider). The each-player loops
+(Flux, Winds of Change, Noxious Toad) and conditional spells (Gift of Estates, Balance of Power) are
+now emitted via the `EffectPatterns.eachPlayer*`/`wheelEffect`/`Conditions.*` facades.
 
 **Honest cross-set reality — the strict metric corrects the old inflation.** Re-running `--all` with
 the renders-whole definition:

@@ -75,7 +75,7 @@ just coverage-gaps --set TMP            # AUTOGEN / SCAFFOLD / BLOCKED counts + 
 just coverage-generate --set TMP        # draft .kt for the AUTOGEN cards -> spike/mtgish-coverage/generated/<set>/
 
 # VERIFY — the real gate: COMPILE the emitted cards + diff serialized caps vs golden.
-just coverage-verify --set POR          # POR: 169/184 emitted & compile-verified, 0 capability mismatch
+just coverage-verify --set POR          # POR: 174/184 emitted & compile-verified, 0 capability mismatch
 ```
 
 **When to use.** Spoiler-season/backlog triage (`coverage` leaderboard = which feature unlocks the

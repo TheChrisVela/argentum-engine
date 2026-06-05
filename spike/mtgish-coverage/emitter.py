@@ -840,13 +840,80 @@ def _distributed_spell(card, used):
             '    }']
 
 
+def _flux_effect(card, used) -> str | None:
+    """Each player discards any number, then draws that many; you draw 1 (Flux)."""
+    blob = json.dumps(card.get("Rules", []), separators=(",", ":"))
+    if "TheNumberOfCardsDiscardedByPlayerThisWay" in blob and "DiscardAnyNumberOfCards" in blob:
+        used.add("EffectPatterns")
+        bonus = 1 if '"DrawACard"' in blob else 0
+        return f"EffectPatterns.eachPlayerDiscardsDraws(controllerBonusDraw = {bonus})"
+    return None
+
+
+def _winds_effect(card, used) -> str | None:
+    """Each player shuffles their hand into their library, then draws that many (Winds of Change)."""
+    blob = json.dumps(card.get("Rules", []), separators=(",", ":"))
+    if "ShuffleHandIntoLibrary" in blob and "NumCardsShuffledIntoLibraryThisWay" in blob:
+        used.update(["EffectPatterns", "Player"])
+        return "EffectPatterns.wheelEffect(Player.Each)"
+    return None
+
+
+def _balance_effect(card, used) -> list[str] | None:
+    """Draw the difference between target opponent's hand and yours (Balance of Power)."""
+    blob = json.dumps(card.get("Rules", []), separators=(",", ":"))
+    if "NumCardsInHandIs" in blob and '"Minus"' in blob and "TheNumberOfCardsInPlayersHand" in blob:
+        used.update(["DrawCardsEffect", "DynamicAmounts", "TargetOpponent"])
+        return ["    spell {",
+                "        target = TargetOpponent()",
+                "        effect = DrawCardsEffect(DynamicAmounts.handSizeDifferenceFromTargetOpponent())",
+                "    }"]
+    return None
+
+
+def _condition_dsl(if_node, used) -> str | None:
+    """Map a mtgish If-condition to a Conditions.* facade (best-effort; only known shapes)."""
+    blob = json.dumps(if_node, separators=(",", ":"))
+    if "ControlsMorePermanentThanPlayer" in blob and '"Land"' in blob:
+        used.add("Conditions")
+        return "Conditions.OpponentControlsMoreLands"
+    if "ControlsMorePermanentThanPlayer" in blob and '"Creature"' in blob:
+        used.add("Conditions")
+        return "Conditions.OpponentControlsMoreCreatures"
+    return None
+
+
+def _conditional_spell(card, used, reasons, keywords) -> list[str] | None:
+    """Top-level `If{cond}[effect]` -> spell `condition =` gate + the inner effect (Gift of Estates)."""
+    _targets, actions = extract_envelope(card.get("Rules", []))
+    if not actions or len(actions) != 1 or actions[0].get("_Action") != "If":
+        return None
+    if_node = actions[0]
+    cond = _condition_dsl(if_node, used)
+    if cond is None:
+        return None
+    body = if_node.get("args")
+    inner = body[1] if isinstance(body, list) and len(body) > 1 and isinstance(body[1], list) else None
+    if not inner:
+        return None
+    edsl = render_effect_list(inner, None, used, reasons, keywords)
+    if edsl is None:
+        return None
+    return ["    spell {", f"        condition = {cond}", f"        effect = {edsl}", "    }"]
+
+
 def spell_block(card, used, reasons, keywords) -> list[str] | None:
-    each = _eachplayer_maydraw(card, used)
-    if each is not None:
-        return ["    spell {", f"        effect = {each}", "    }"]
-    dist = _distributed_spell(card, used)
-    if dist is not None:
-        return dist
+    for shortcut in (_eachplayer_maydraw, _flux_effect, _winds_effect):
+        e = shortcut(card, used)
+        if e is not None:
+            return ["    spell {", f"        effect = {e}", "    }"]
+    for whole in (_distributed_spell, _balance_effect):
+        block = whole(card, used)
+        if block is not None:
+            return block
+    cond = _conditional_spell(card, used, reasons, keywords)
+    if cond is not None:
+        return cond
     targets, actions = extract_envelope(card.get("Rules", []))
     if actions is None:
         return None
@@ -1035,6 +1102,9 @@ def _render_look(node, used) -> str | None:
 
 def _render_each_player(node, used) -> str | None:
     used.add("EffectPatterns")
+    blob = json.dumps(node, separators=(",", ":"))
+    if _contains(node, "_Players", "Opponent") and "Discard" in blob:
+        return "EffectPatterns.eachOpponentDiscards(1)"  # Noxious Toad
     if _contains(node, "_Action", "DrawNumberCards") or _contains(node, "_GameNumber", "ValueX"):
         return "EffectPatterns.eachPlayerDrawsX(includeController = true, includeOpponents = true)"
     return None
