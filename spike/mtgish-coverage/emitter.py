@@ -682,7 +682,12 @@ def _render_layer_effect(node, action, tvar, used, keywords) -> str | None:
         used.add("ModifyStatsEffect")
         inner.append(f"ModifyStatsEffect(powerModifier = {pt[0]}, toughnessModifier = {pt[1]}, target = {target})")
     if _contains(node, "_LayerEffect", "AddAbility"):
-        kw = _keyword_of(node, keywords)
+        kw = None
+        if _contains(node, "_Rule", "Landwalk"):  # AddAbility{Landwalk{Forest}} -> FORESTWALK
+            subs = _subtypes(node)
+            if subs and (subs[0].upper() + "WALK") in keywords:
+                kw = subs[0].upper() + "WALK"
+        kw = kw or _keyword_of(node, keywords)
         if kw:
             used.update(["GrantKeywordEffect", "Keyword"])
             inner.append(f"GrantKeywordEffect(Keyword.{kw}, {target})")
@@ -818,10 +823,30 @@ def _spell_target(targets, used, reasons):
     return tdsl, "t"
 
 
+def _distributed_spell(card, used):
+    """Forked-Lightning shape: TargetedDistributed -> TargetCreature(count) + DividedDamageEffect."""
+    blob = json.dumps(card.get("Rules", []), separators=(",", ":"))
+    if '"TargetedDistributed"' not in blob:
+        return None
+    total = re.search(r'"DistributeNumberAmongTargets","args":\{"_GameNumber":"Integer","args":(\d+)', blob)
+    mx = re.search(r'"BetweenOneAndNumberTargetPermanents","args":\[\{"_GameNumber":"Integer","args":(\d+)', blob)
+    if not total or not mx:
+        return None
+    used.update(["TargetCreature", "DividedDamageEffect"])
+    m = mx.group(1)
+    return ['    spell {',
+            f'        target = TargetCreature(count = {m}, minCount = 1)',
+            f'        effect = DividedDamageEffect(totalDamage = {total.group(1)}, minTargets = 1, maxTargets = {m})',
+            '    }']
+
+
 def spell_block(card, used, reasons, keywords) -> list[str] | None:
     each = _eachplayer_maydraw(card, used)
     if each is not None:
         return ["    spell {", f"        effect = {each}", "    }"]
+    dist = _distributed_spell(card, used)
+    if dist is not None:
+        return dist
     targets, actions = extract_envelope(card.get("Rules", []))
     if actions is None:
         return None

@@ -237,9 +237,9 @@
   },
   "DiscardACard": {
     "kind": "composed",
-    "note": "MoveToZone hand->graveyard",
+    "note": "EffectPatterns.discardCards -> Gather/Select/MoveCollection",
     "tags": [
-      "MoveToZone"
+      "MoveCollection"
     ]
   },
   "DiscardNumberCards": {
@@ -258,9 +258,9 @@
   },
   "DiscardACardAtRandom": {
     "kind": "composed",
-    "note": "MoveToZone hand->graveyard, random",
+    "note": "EffectPatterns.discardRandom -> MoveCollection",
     "tags": [
-      "MoveToZone"
+      "MoveCollection"
     ]
   },
   "PutGraveyardCardIntoHand": {
@@ -324,11 +324,17 @@
   },
   "LookAtTheTopNumberCardsOfLibrary": {
     "kind": "composed",
-    "note": "look/scry pipeline (Gather->reveal-to-self)"
+    "note": "EffectPatterns.lookAtTopAndKeep/Reorder -> Gather/Select/MoveCollection",
+    "tags": [
+      "MoveCollection"
+    ]
   },
   "LookAtTheTopNumberCardsOfPlayersLibrary": {
     "kind": "composed",
-    "note": "look pipeline on opponent library"
+    "note": "look pipeline on opponent library -> MoveCollection",
+    "tags": [
+      "MoveCollection"
+    ]
   },
   "CreateReplaceWouldDealDamageUntil": {
     "kind": "composed",
