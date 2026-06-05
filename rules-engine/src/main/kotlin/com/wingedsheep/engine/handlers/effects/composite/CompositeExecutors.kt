@@ -33,7 +33,6 @@ class CompositeExecutors(
     private val mayEffectExecutor by lazy { MayEffectExecutor(effectExecutor) }
     private val mayRevealCardFromHandEffectExecutor by lazy { MayRevealCardFromHandEffectExecutor(effectExecutor) }
     private val beholdEffectExecutor by lazy { BeholdEffectExecutor(effectExecutor) }
-    private val mayPayManaExecutor by lazy { MayPayManaExecutor(cardRegistry, effectExecutor) }
     private val mayPayXForEffectExecutor by lazy { MayPayXForEffectExecutor(cardRegistry, effectExecutor) }
     private val budgetModalEffectExecutor by lazy { BudgetModalEffectExecutor(effectExecutor) }
     private val modalEffectExecutor by lazy { ModalEffectExecutor(effectExecutor) }
@@ -75,7 +74,6 @@ class CompositeExecutors(
         mayEffectExecutor,
         mayRevealCardFromHandEffectExecutor,
         beholdEffectExecutor,
-        mayPayManaExecutor,
         mayPayXForEffectExecutor,
         modalEffectExecutor,
         gatedEffectExecutor,

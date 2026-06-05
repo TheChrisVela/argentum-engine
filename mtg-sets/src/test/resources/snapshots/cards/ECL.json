@@ -628,9 +628,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{U}",
-                    "effect": "Transform"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{U}"
+                        }
+                    },
+                    "then": "Transform"
                 }
             }
         ]
@@ -705,9 +711,15 @@
                     },
                     "binding": "ANY",
                     "effect": {
-                        "type": "MayPayMana",
-                        "cost": "{R}",
-                        "effect": "Transform"
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.MayPay",
+                            "cost": {
+                                "type": "PayManaCost",
+                                "cost": "{R}"
+                            }
+                        },
+                        "then": "Transform"
                     }
                 }
             ]
@@ -2570,9 +2582,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{G}",
-                    "effect": "Transform"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{G}"
+                        }
+                    },
+                    "then": "Transform"
                 }
             }
         ]
@@ -2596,9 +2614,15 @@
                     },
                     "binding": "ANY",
                     "effect": {
-                        "type": "MayPayMana",
-                        "cost": "{W}",
-                        "effect": "Transform"
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.MayPay",
+                            "cost": {
+                                "type": "PayManaCost",
+                                "cost": "{W}"
+                            }
+                        },
+                        "then": "Transform"
                     }
                 }
             ],
@@ -6148,9 +6172,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{B}",
-                    "effect": "Transform"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{B}"
+                        }
+                    },
+                    "then": "Transform"
                 }
             }
         ],
@@ -6184,9 +6214,15 @@
                     },
                     "binding": "ANY",
                     "effect": {
-                        "type": "MayPayMana",
-                        "cost": "{W}",
-                        "effect": "Transform"
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.MayPay",
+                            "cost": {
+                                "type": "PayManaCost",
+                                "cost": "{W}"
+                            }
+                        },
+                        "then": "Transform"
                     }
                 }
             ],
@@ -9404,9 +9440,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{R}",
-                    "effect": "Transform"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{R}"
+                        }
+                    },
+                    "then": "Transform"
                 }
             }
         ]
@@ -9502,9 +9544,15 @@
                     },
                     "binding": "ANY",
                     "effect": {
-                        "type": "MayPayMana",
-                        "cost": "{B}",
-                        "effect": "Transform"
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.MayPay",
+                            "cost": {
+                                "type": "PayManaCost",
+                                "cost": "{B}"
+                            }
+                        },
+                        "then": "Transform"
                     }
                 }
             ]
@@ -13063,9 +13111,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{G}",
-                    "effect": "Transform"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{G}"
+                        }
+                    },
+                    "then": "Transform"
                 }
             }
         ],
@@ -13149,9 +13203,15 @@
                     },
                     "binding": "ANY",
                     "effect": {
-                        "type": "MayPayMana",
-                        "cost": "{U}",
-                        "effect": "Transform"
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.MayPay",
+                            "cost": {
+                                "type": "PayManaCost",
+                                "cost": "{U}"
+                            }
+                        },
+                        "then": "Transform"
                     }
                 }
             ],
@@ -17586,9 +17646,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{W}",
-                    "effect": "Transform"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{W}"
+                        }
+                    },
+                    "then": "Transform"
                 }
             }
         ],
@@ -17679,9 +17745,15 @@
                     },
                     "binding": "ANY",
                     "effect": {
-                        "type": "MayPayMana",
-                        "cost": "{U}",
-                        "effect": "Transform"
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.MayPay",
+                            "cost": {
+                                "type": "PayManaCost",
+                                "cost": "{U}"
+                            }
+                        },
+                        "then": "Transform"
                     }
                 }
             ],
@@ -18833,9 +18905,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{B}",
-                    "effect": "Transform"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{B}"
+                        }
+                    },
+                    "then": "Transform"
                 }
             }
         ]
@@ -18944,9 +19022,15 @@
                     },
                     "binding": "ANY",
                     "effect": {
-                        "type": "MayPayMana",
-                        "cost": "{G}",
-                        "effect": "Transform"
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.MayPay",
+                            "cost": {
+                                "type": "PayManaCost",
+                                "cost": "{G}"
+                            }
+                        },
+                        "then": "Transform"
                     }
                 }
             ]

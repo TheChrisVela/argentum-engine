@@ -459,9 +459,15 @@
                 "trigger": "CommitCrimeEvent",
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{B}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{B}"
+                        }
+                    },
+                    "then": {
                         "type": "MoveToZone",
                         "target": "Self",
                         "destination": "Battlefield"

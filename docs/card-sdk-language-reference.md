@@ -585,6 +585,17 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `OptionalCostEffect(cost, ifPaid, ifNotPaid?)` — "You may [cost]. If you do, [ifPaid]." Facade
   preserved for existing cards; it now **lowers to `GatedEffect` with a `Gate.MayPay`** gate (compiled
   form is `Gated`, not a distinct `OptionalCost` type).
+- `MayPayManaEffect(cost, effect)` — "You may pay [cost]. If you do, [effect]." Facade preserved for
+  existing cards; it now **lowers to `GatedEffect(Gate.MayPay(PayManaCostEffect(cost)), then = effect)`**
+  (compiled form is `Gated`, no distinct `MayPayMana` type or executor). The engine recognizes this
+  exact shape — a flat mana `Gate.MayPay` with no `otherwise` and the default decision-maker, whether
+  authored via `MayPayManaEffect` or `OptionalCostEffect(PayManaCostEffect(...), …)` — and gives it the
+  bespoke optional-mana-payment UX rather than the generic gated yes/no: **manual mana-source
+  selection** at resolution (a `SelectManaSourcesDecision`, so sources that sacrifice or carry a tap
+  sub-cost aren't auto-tapped), and, for a **triggered ability that also requires a target** (the
+  Onslaught "Words of …" cycle, Lightning Rift), the deliberate **pay → select-mana → choose-target**
+  order so the player isn't asked to pick a target before deciding to pay. Composite-cost, life-gated,
+  or `otherwise`-bearing MayPay gates keep the generic auto-tapping path.
 - `Effects.AnyPlayerMayPay(cost, consequence)` / `Effects.UnlessAnyPlayerPays(cost, effect)` —
   back the single `AnyPlayerMayPayEffect(cost, consequence?, consequenceIfNonePaid?)`, which asks
   each player in APNAP order whether to pay `cost`. The first to pay runs `consequence` and stops

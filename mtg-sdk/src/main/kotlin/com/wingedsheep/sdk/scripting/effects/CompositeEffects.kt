@@ -670,30 +670,26 @@ data class StoreCountEffect(
 }
 
 /**
- * "You may pay [manaCost]. If you do, [effect]."
+ * "You may pay [cost]. If you do, [effect]."
  *
- * Optional mana payment during resolution. The controller may pay a mana cost
- * (auto-tapping lands if needed). If they pay, the inner effect is executed.
- * If they can't pay or decline, nothing happens.
+ * Optional mana payment offered to the controller. Backwards-compatible facade preserved for the
+ * cards that authored against the former `MayPayManaEffect` data class. It now lowers to a
+ * [GatedEffect] with a [Gate.MayPay] over a [PayManaCostEffect], so there is no bespoke MayPayMana
+ * executor or continuation type — the gated frame owns the resolution order. Card source is
+ * unchanged; only the compiled/serialized representation moved to `Gated`.
  *
- * Example: Lightning Rift - "you may pay {1}. If you do, Lightning Rift deals 2 damage to any target."
+ * The engine recognizes this exact shape — a flat mana [Gate.MayPay] with no `otherwise` and the
+ * default decision-maker — to keep the optional-mana-payment UX the wrapper used to own: manual
+ * mana-source selection at resolution, and, for a triggered ability that *also* requires a target
+ * (the Onslaught "Words of ..." cycle, Lightning Rift), the deliberate pay-then-choose-target
+ * order. Composite / life-gated / `otherwise`-bearing MayPay gates intentionally fall through to
+ * the generic gated yes/no instead.
  *
- * @property cost The mana cost the player may pay
- * @property effect The effect that happens if the player pays
+ * Example: Lightning Rift — "you may pay {1}. If you do, Lightning Rift deals 2 damage to any target."
  */
-@SerialName("MayPayMana")
-@Serializable
-data class MayPayManaEffect(
-    val cost: ManaCost,
-    val effect: Effect
-) : Effect {
-    override val description: String = "You may pay $cost. If you do, ${effect.description.replaceFirstChar { it.lowercase() }}"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect {
-        val newEffect = effect.applyTextReplacement(replacer)
-        return if (newEffect !== effect) copy(effect = newEffect) else this
-    }
-}
+@Suppress("FunctionName")
+fun MayPayManaEffect(cost: ManaCost, effect: Effect): GatedEffect =
+    GatedEffect(gate = Gate.MayPay(PayManaCostEffect(cost)), then = effect)
 
 /**
  * "You may pay {X}. If you do, [effect]."

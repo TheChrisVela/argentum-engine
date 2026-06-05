@@ -16,7 +16,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
-import com.wingedsheep.sdk.scripting.effects.MayPayManaEffect
+import com.wingedsheep.engine.handlers.effects.composite.asOptionalManaPayment
 
 class ManaPaymentContinuationResumer(
     private val services: com.wingedsheep.engine.core.EngineServices
@@ -1061,10 +1061,9 @@ class ManaPaymentContinuationResumer(
             )
         }
 
-        // Unwrap MayPayManaEffect to get inner effect
+        // Unwrap the optional-mana-payment gate to get its inner effect (mana already paid).
         val trigger = continuation.trigger
-        val mayPayEffect = trigger.ability.effect as MayPayManaEffect
-        val innerEffect = mayPayEffect.effect
+        val innerEffect = trigger.ability.effect.asOptionalManaPayment()!!.then
 
         // Create a modified trigger with the inner effect (mana already paid)
         val unwrappedAbility = trigger.ability.copy(effect = innerEffect)
