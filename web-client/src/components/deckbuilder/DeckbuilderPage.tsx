@@ -341,6 +341,9 @@ export function DeckbuilderPage() {
         // wipe a just-loaded commander) and the legality filter both see it — same trick
         // as the saved-deck hydration above, done in one URL write.
         if (shared?.format) params.set('fmt', shared.format.toUpperCase())
+        // Open shared decks in the Moxfield-style deck view: the recipient is here to
+        // read the list, not browse the catalog to build from scratch.
+        if (shared) params.set('view', 'deck')
         return params
       },
       { replace: true },
