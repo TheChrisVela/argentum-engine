@@ -3131,9 +3131,15 @@
                     "recipient": "AnyPlayer"
                 },
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{2}{B}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}{B}"
+                        }
+                    },
+                    "then": {
                         "type": "ChooseColorThen",
                         "then": {
                             "type": "Composite",
@@ -3489,9 +3495,15 @@
                     "recipient": "AnyPlayer"
                 },
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{2}{R}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}{R}"
+                        }
+                    },
+                    "then": {
                         "type": "ChooseColorThen",
                         "then": {
                             "type": "Composite",
@@ -4242,9 +4254,15 @@
                     "recipient": "AnyPlayer"
                 },
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{2}{U}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}{U}"
+                        }
+                    },
+                    "then": {
                         "type": "ChooseColorThen",
                         "then": {
                             "type": "Composite",
@@ -9845,9 +9863,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{1}{B}{B}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{1}{B}{B}"
+                        }
+                    },
+                    "then": {
                         "type": "MoveToZone",
                         "target": "Self",
                         "destination": "Hand"
@@ -10896,9 +10920,15 @@
                     "recipient": "AnyPlayer"
                 },
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{2}{G}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}{G}"
+                        }
+                    },
+                    "then": {
                         "type": "ChooseColorThen",
                         "then": {
                             "type": "CreateToken",
@@ -15389,9 +15419,15 @@
                     "recipient": "AnyPlayer"
                 },
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{2}{W}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}{W}"
+                        }
+                    },
+                    "then": {
                         "type": "ChooseColorThen",
                         "then": {
                             "type": "GainLife",

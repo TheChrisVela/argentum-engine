@@ -9,6 +9,7 @@ import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
@@ -62,6 +63,13 @@ class GatedEffectExecutor(
                 ?: EffectResult.success(state)
         }
 
+        // An optional *mana* payment (the lowered MayPayManaEffect shape) keeps its bespoke UX —
+        // a "Pay {cost}?" yes/no that, on "yes", routes through the mana-source-selection
+        // continuations rather than the generic auto-tapping cost composite. See [OptionalManaPayment].
+        effect.asOptionalManaPayment()?.let { mana ->
+            return executeOptionalManaPayment(state, playerId, mana.cost, mana.then, context)
+        }
+
         val sourceName = context.sourceId?.let { sourceId ->
             state.getEntity(sourceId)?.get<CardComponent>()?.name
         }
@@ -97,6 +105,63 @@ class GatedEffectExecutor(
 
         val stateWithDecision = state.withPendingDecision(decision)
         val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
+
+        return EffectResult.paused(
+            stateWithContinuation,
+            decision,
+            listOf(
+                DecisionRequestedEvent(
+                    decisionId = decisionId,
+                    playerId = playerId,
+                    decisionType = "YES_NO",
+                    prompt = decision.prompt
+                )
+            )
+        )
+    }
+
+    /**
+     * The optional-mana-payment yes/no — formerly `MayPayManaExecutor`. Affordability is already
+     * checked by the [canAfford] pre-pass above, so this only builds the "Pay {cost}?" prompt and a
+     * [MayPayManaContinuation]; the existing mana-payment resumer then either spends floating mana or
+     * pauses for manual mana-source selection before running [then].
+     */
+    private fun executeOptionalManaPayment(
+        state: GameState,
+        playerId: EntityId,
+        manaCost: ManaCost,
+        then: Effect,
+        context: EffectContext
+    ): EffectResult {
+        val sourceName = context.sourceId?.let { sourceId ->
+            state.getEntity(sourceId)?.get<CardComponent>()?.name
+        }
+
+        val decisionId = UUID.randomUUID().toString()
+        val decision = YesNoDecision(
+            id = decisionId,
+            playerId = playerId,
+            prompt = "Pay $manaCost?",
+            context = DecisionContext(
+                sourceId = context.sourceId,
+                sourceName = sourceName,
+                phase = DecisionPhase.RESOLUTION,
+                triggeringEntityId = context.triggeringEntityId
+            ),
+            yesText = "Pay $manaCost",
+            noText = "Don't pay"
+        )
+
+        val continuation = MayPayManaContinuation(
+            decisionId = decisionId,
+            playerId = playerId,
+            sourceName = sourceName,
+            manaCost = manaCost,
+            effect = then,
+            effectContext = context
+        )
+
+        val stateWithContinuation = state.withPendingDecision(decision).pushContinuation(continuation)
 
         return EffectResult.paused(
             stateWithContinuation,

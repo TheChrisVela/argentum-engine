@@ -8078,9 +8078,15 @@
                 "id": "ability_1",
                 "trigger": "AttackEvent",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{2}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}"
+                        }
+                    },
+                    "then": {
                         "type": "CreateToken",
                         "power": 2,
                         "toughness": 2,
@@ -10750,9 +10756,15 @@
                 },
                 "binding": "OTHER",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{1}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{1}"
+                        }
+                    },
+                    "then": {
                         "type": "AddCounters",
                         "counterType": "+1/+1",
                         "count": 1,

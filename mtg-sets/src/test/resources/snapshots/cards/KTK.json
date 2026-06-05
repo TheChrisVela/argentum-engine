@@ -4267,9 +4267,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{1}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{1}"
+                        }
+                    },
+                    "then": {
                         "type": "CreateToken",
                         "power": 1,
                         "toughness": 1,
@@ -5998,9 +6004,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{2}{B}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}{B}"
+                        }
+                    },
+                    "then": {
                         "type": "Composite",
                         "effects": [
                             {
@@ -8278,9 +8290,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{1}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{1}"
+                        }
+                    },
+                    "then": {
                         "type": "Composite",
                         "effects": [
                             {

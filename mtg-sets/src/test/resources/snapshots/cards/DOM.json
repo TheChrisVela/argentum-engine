@@ -7448,9 +7448,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{B}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{B}"
+                        }
+                    },
+                    "then": {
                         "type": "MoveToZone",
                         "target": "Self",
                         "destination": "Hand"
@@ -8181,9 +8187,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{1}",
-                    "effect": "CreateTokenCopyOfSource"
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{1}"
+                        }
+                    },
+                    "then": "CreateTokenCopyOfSource"
                 }
             }
         ]
@@ -14298,9 +14310,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{2}{R}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}{R}"
+                        }
+                    },
+                    "then": {
                         "type": "MoveToZone",
                         "target": "Self",
                         "destination": "Battlefield",

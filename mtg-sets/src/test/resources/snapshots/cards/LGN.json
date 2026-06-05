@@ -2904,9 +2904,15 @@
                 },
                 "binding": "ANY",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{B}{B}{B}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{B}{B}{B}"
+                        }
+                    },
+                    "then": {
                         "type": "MoveToZone",
                         "target": "Self",
                         "destination": "Hand"
@@ -5779,9 +5785,15 @@
                     "to": "Graveyard"
                 },
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{2}{R}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}{R}"
+                        }
+                    },
+                    "then": {
                         "type": "Composite",
                         "effects": [
                             {
@@ -5834,9 +5846,15 @@
                 },
                 "binding": "OTHER",
                 "effect": {
-                    "type": "MayPayMana",
-                    "cost": "{2}{R}",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{2}{R}"
+                        }
+                    },
+                    "then": {
                         "type": "Composite",
                         "effects": [
                             {

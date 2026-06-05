@@ -3,7 +3,6 @@ package com.wingedsheep.sdk.scripting.effects
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
-import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.TriggerSpec
@@ -671,84 +670,26 @@ data class StoreCountEffect(
 }
 
 /**
- * Blight effect - "may blight N. If you do, [effect]"
- * Blight N means "put N -1/-1 counters on a creature you control".
- * This is an optional cost-gated effect used in triggered abilities.
+ * "You may pay [cost]. If you do, [effect]."
  *
- * The player may choose a creature they control to blight. If they do,
- * the inner effect happens. If they don't (or can't), nothing happens.
+ * Optional mana payment offered to the controller. Backwards-compatible facade preserved for the
+ * cards that authored against the former `MayPayManaEffect` data class. It now lowers to a
+ * [GatedEffect] with a [Gate.MayPay] over a [PayManaCostEffect], so there is no bespoke MayPayMana
+ * executor or continuation type — the gated frame owns the resolution order. Card source is
+ * unchanged; only the compiled/serialized representation moved to `Gated`.
  *
- * @property blightAmount Number of -1/-1 counters to place
- * @property innerEffect The effect that happens if the player blights
- * @property targetId The creature chosen to receive the counters (filled in during resolution)
+ * The engine recognizes this exact shape — a flat mana [Gate.MayPay] with no `otherwise` and the
+ * default decision-maker — to keep the optional-mana-payment UX the wrapper used to own: manual
+ * mana-source selection at resolution, and, for a triggered ability that *also* requires a target
+ * (the Onslaught "Words of ..." cycle, Lightning Rift), the deliberate pay-then-choose-target
+ * order. Composite / life-gated / `otherwise`-bearing MayPay gates intentionally fall through to
+ * the generic gated yes/no instead.
+ *
+ * Example: Lightning Rift — "you may pay {1}. If you do, Lightning Rift deals 2 damage to any target."
  */
-@SerialName("Blight")
-@Serializable
-data class BlightEffect(
-    val blightAmount: Int,
-    val innerEffect: Effect,
-    val targetId: EntityId? = null
-) : Effect {
-    override val description: String = buildString {
-        append("You may blight $blightAmount. If you do, ")
-        append(innerEffect.description.replaceFirstChar { it.lowercase() })
-    }
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect {
-        val newInnerEffect = innerEffect.applyTextReplacement(replacer)
-        return if (newInnerEffect !== innerEffect) copy(innerEffect = newInnerEffect) else this
-    }
-}
-
-/**
- * "May tap another untapped creature you control. If you do, [effect]."
- * This is an optional cost-gated effect - the player may pay the cost to get the effect.
- *
- * @property innerEffect The effect that happens if the player pays the tap cost
- * @property targetId The creature chosen to tap (filled in during resolution)
- */
-@SerialName("TapCreatureForEffect")
-@Serializable
-data class TapCreatureForEffectEffect(
-    val innerEffect: Effect,
-    val targetId: EntityId? = null
-) : Effect {
-    override val description: String = buildString {
-        append("You may tap another untapped creature you control. If you do, ")
-        append(innerEffect.description.replaceFirstChar { it.lowercase() })
-    }
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect {
-        val newInnerEffect = innerEffect.applyTextReplacement(replacer)
-        return if (newInnerEffect !== innerEffect) copy(innerEffect = newInnerEffect) else this
-    }
-}
-
-/**
- * "You may pay [manaCost]. If you do, [effect]."
- *
- * Optional mana payment during resolution. The controller may pay a mana cost
- * (auto-tapping lands if needed). If they pay, the inner effect is executed.
- * If they can't pay or decline, nothing happens.
- *
- * Example: Lightning Rift - "you may pay {1}. If you do, Lightning Rift deals 2 damage to any target."
- *
- * @property cost The mana cost the player may pay
- * @property effect The effect that happens if the player pays
- */
-@SerialName("MayPayMana")
-@Serializable
-data class MayPayManaEffect(
-    val cost: ManaCost,
-    val effect: Effect
-) : Effect {
-    override val description: String = "You may pay $cost. If you do, ${effect.description.replaceFirstChar { it.lowercase() }}"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect {
-        val newEffect = effect.applyTextReplacement(replacer)
-        return if (newEffect !== effect) copy(effect = newEffect) else this
-    }
-}
+@Suppress("FunctionName")
+fun MayPayManaEffect(cost: ManaCost, effect: Effect): GatedEffect =
+    GatedEffect(gate = Gate.MayPay(PayManaCostEffect(cost)), then = effect)
 
 /**
  * "You may pay {X}. If you do, [effect]."

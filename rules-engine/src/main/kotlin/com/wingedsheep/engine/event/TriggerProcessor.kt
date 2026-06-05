@@ -14,8 +14,8 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.engine.handlers.effects.composite.asOptionalManaPayment
 import com.wingedsheep.sdk.scripting.effects.MayEffect
-import com.wingedsheep.sdk.scripting.effects.MayPayManaEffect
 import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectionMode
 import com.wingedsheep.sdk.scripting.effects.StoreNumberEffect
@@ -147,7 +147,7 @@ class TriggerProcessor(
 
         // If the effect is a MayPayManaEffect AND has targets, ask payment first, then targets.
         // This reverses the old flow where targets were chosen before the pay question.
-        if (targetRequirement != null && ability.effect is MayPayManaEffect) {
+        if (targetRequirement != null && ability.effect.asOptionalManaPayment() != null) {
             return processMayPayManaThenTargetTrigger(currentState, trigger, targetRequirement)
         }
 
@@ -255,8 +255,7 @@ class TriggerProcessor(
         targetRequirement: TargetRequirement
     ): ExecutionResult {
         val ability = trigger.ability
-        val mayPayEffect = ability.effect as MayPayManaEffect
-        val manaCost = mayPayEffect.cost
+        val manaCost = ability.effect.asOptionalManaPayment()!!.cost
 
         // Check if the player can pay the mana cost
         val manaSolver = ManaSolver(cardRegistry)
