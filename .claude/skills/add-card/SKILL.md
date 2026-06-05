@@ -255,6 +255,18 @@ just test    # Cards with new effects
 
 Fix only failures caused by your changes. If a pre-existing test fails, report it and stop.
 
+**Expected: a card-snapshot diff.** A new card makes `CardDefinitionSnapshotTest` (in `mtg-sets`)
+fail, because the set's committed golden no longer matches. This is normal — re-bless it and include
+the new golden in the commit:
+
+```bash
+./gradlew :mtg-sets:test --tests "*CardDefinitionSnapshotTest" -DupdateSnapshots=true
+```
+
+Then scan the diff in `git diff mtg-sets/src/test/resources/snapshots/cards/<SET>.json`: it should
+show **only** your card's tree added (and nothing changed on other cards). If an *unrelated* card
+also moved, that's a real signal you changed shared SDK behavior — investigate before committing.
+
 ## Step 9: Walkthrough New Engine Mechanics
 
 **Only if Step 4 introduced new effects, keywords, triggers, conditions, static abilities, or replacement effects.**
