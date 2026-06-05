@@ -176,6 +176,7 @@ object CardValidator {
                     is Gate.DoAction -> collectIndicesRecursive(gate.action, indices)
                     is Gate.MayDecide -> {}
                     is Gate.WhenCondition -> {}
+                    is Gate.MayPayX -> {}
                 }
                 collectIndicesRecursive(effect.then, indices)
                 effect.otherwise?.let { collectIndicesRecursive(it, indices) }

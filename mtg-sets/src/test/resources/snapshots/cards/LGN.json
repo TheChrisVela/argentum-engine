@@ -3610,8 +3610,9 @@
                     "recipient": "AnyPlayer"
                 },
                 "effect": {
-                    "type": "MayPayX",
-                    "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayPayX",
+                    "then": {
                         "type": "Composite",
                         "effects": [
                             {

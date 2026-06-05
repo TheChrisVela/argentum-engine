@@ -68,8 +68,14 @@ Where the frame lives:
 | `ConditionalEffect` | ✅ done | #491 | Facade → `Gate.WhenCondition(condition)` — a synchronous state-test gate (no decision/pause). Added `Effect.asConditional()` matcher (§3a); routed the 3 `is ConditionalEffect` engine sites (ClientStateTransformer stack-resolve, ActivatedAbilityEnumerator stacking, LimitedCardRater) through it. Deleted `ConditionalEffectExecutor`. 171 snapshot lowerings, pure rename. |
 | `MayEffect` | ✅ done | #492 | Facade → `Gate.MayDecide` — extended that gate with `sourceRequiredZone` + `inlineOnTrigger` and ported both skip cases (source-left-zone, infeasible `ChooseActionEffect`) into `GatedEffectExecutor`'s MayDecide branch. Added `Effect.asMayDecide()` matcher (§3a, exact bare-may shape: no `otherwise`); routed the trigger machinery (`TriggerProcessor` may-then-target reorder, `resumeMayTrigger` unwrap), `ClientStateTransformer` gift-walk, `CreateDelayedTriggerExecutor` context-target resolve, `CardValidator` index walk, and `LimitedCardRater` through it. Deleted `MayEffectExecutor` (kept `MayAbilityContinuation`/`resumeMayAbility` — still produced by Reflexive/Explore executors). 121 snapshot lowerings, pure rename. |
 | `IfYouDoEffect` | ✅ done | #494 | Facade → `Gate.DoAction(action, successCriterion)` — a new **action-outcome** (non-decision) gate. Added a `Gate.DoAction` branch in `GatedEffectExecutor` (pre-push pattern: snapshot → push continuation → run action → sync-pop+evaluate, or leave it for the auto-resumer if the action pauses); moved the snapshot-capture + `SuccessCriterion` evaluation out of the deleted executor into `GatedEffectExecutor`. Renamed `IfYouDoContinuation`/`IfYouDoSnapshot` → `GatedActionContinuation`/`GatedActionSnapshot` (the action-drain counterpart to the yes/no `GatedEffectContinuation`); re-pointed the `CoreAutoResumerModule` auto-resumer + `Serialization` registration. No type-keyed engine sites existed, so no `asX()` matcher was needed. Deleted `IfYouDoEffectExecutor`. 13 snapshot lowerings (`IfYouDo` → `Gated`+`Gate.DoAction`), pure rename. |
+| `MayPayXForEffect` | ✅ done | (this PR) | Facade → `Gate.MayPayX` — a new **number-chooser** (non-yes/no) gate, a parameterless `data object` (the {X} cost is implicit). Added a `Gate.MayPayX` branch in `GatedEffectExecutor` that builds the `ChooseNumberDecision` (0..max-affordable generic mana) and **keeps the existing `MayPayXContinuation`/`resumeMayPayX`** (§3b — only the type recognition moved; the continuation auto-taps X and binds it via `DynamicAmount.XValue`). Unaffordable → `otherwise`/silent skip, mirroring the old executor. No type-keyed engine sites existed (only the executor's `effectType`), so no `asX()` matcher was needed. Deleted `MayPayXForEffectExecutor` + its `CompositeExecutors` registration. 2 snapshot lowerings (`MayPayX` → `Gated`+`Gate.MayPayX`, `effect`→`then`), pure rename. |
 
-The remaining wrappers are in §5 (start with #4 `PayOrSufferEffect` next).
+**Migration effectively complete.** Every wrapper whose resolution shares the frame's
+single-decision-maker spine is now folded (#1–#3, #5). The two left — #4 `PayOrSufferEffect` and #6
+`AnyPlayerMayPayEffect` — are deliberately kept **bespoke** because their *resolution machine*
+differs, not their parameters; see the verdicts in §5. The next worthwhile step is no longer a
+forced fold but, if anything, a small `PayCost → Effect` unification (§5 #4) — only if it genuinely
+simplifies.
 
 ---
 
@@ -162,9 +168,9 @@ order: the new-gate-but-synchronous one first, then the two monsters, then decid
 | 1 | ~~`ConditionalEffect`~~ ✅ done | `WhenCondition(condition)` | B | ~168 | ~~`ConditionalEffectExecutor`~~ deleted |
 | 2 | ~~`MayEffect`~~ ✅ done | `MayDecide` | A* | ~129 | ~~`MayEffectExecutor`~~ deleted |
 | 3 | ~~`IfYouDoEffect`~~ ✅ done | `DoAction(action, criterion)` | B | ~16 | ~~`IfYouDoEffectExecutor`~~ deleted |
-| 4 | `PayOrSufferEffect` | `MayPay(cost)` w/ `then=null, otherwise=suffer` | A/B | ~28 | (continuations in `SacrificeAndPayContinuationResumer`) |
-| 5 | `MayPayXForEffect` | new "may pay X" gate | B | ~4 | `MayPayXForEffectExecutor` |
-| 6 | `AnyPlayerMayPayEffect` | `AnyPlayerMayPay(cost)` **(new)** | B | ~6 | `PlayerExecutors` branch |
+| 4 | `PayOrSufferEffect` | ⛔ **kept bespoke** | A/B | ~28 | (continuations in `SacrificeAndPayContinuationResumer`) |
+| 5 | ~~`MayPayXForEffect`~~ ✅ done | `MayPayX` **(new)** | B | ~4 | ~~`MayPayXForEffectExecutor`~~ deleted |
+| 6 | `AnyPlayerMayPayEffect` | ⛔ **kept bespoke** | B | ~6 | `PlayerExecutors` branch |
 
 \* `MayEffect` is "Shape A" only after you extend `MayDecide`/`GatedEffectExecutor` to cover its
 extra behavior (see below).
@@ -227,26 +233,40 @@ for the action-drain case while still routing through one `GatedEffectExecutor`.
 action did nothing (declined / empty hand / no legal sacrifice) → `otherwise`; action paused mid-way
 then completed.
 
-### #4 `PayOrSufferEffect` — only fold if it lowers cleanly
+### #4 `PayOrSufferEffect` — ⛔ kept bespoke (does not lower cleanly)
 
-"[suffer] unless you pay [cost]" = `MayPay(cost)` with `then = null, otherwise = suffer`. But it
-stores a `PayCost` (not an `Effect`) and has its own continuations
-(`PayOrSufferContinuation` / `PayOrSufferChoiceContinuation`, resumed in
-`SacrificeAndPayContinuationResumer`). The frame's `Gate.MayPay` takes a cost **effect**, so you'd
-need either a `PayCost → Effect` adapter or to accept the divergence. Fold only if it lowers
-cleanly; otherwise leave it and note why in the PR.
+**Verdict: left bespoke.** "[suffer] unless you pay [cost]" *looks* like `MayPay(cost)` with
+`then = null, otherwise = suffer`, but it doesn't lower cleanly:
 
-### #5 `MayPayXForEffect` — defer unless the algebra extends
+- It stores a **`PayCost`** (8 variants: Discard/Sacrifice/PayLife/Mana/OwnManaCost/Exile/Choice/Tap),
+  a cost hierarchy *distinct* from the `Effect`-typed `Gate.MayPay.cost` and **also used by Morph**.
+  `PayCost.Choice` (player picks among sub-costs) and `PayCost.OwnManaCost` ("pay its mana cost")
+  have **no `Effect` equivalent**.
+- `GatedEffectExecutor.canAfford` only recognizes `PayManaCostEffect`/`PayLifeEffect`/`CompositeEffect`.
+  Folding would mean re-implementing the whole `PayOrSufferExecutor` (per-`PayCost` affordability +
+  card-selection / targeting / yes/no UX) *inside* the frame's executor, plus its two `PayCost`-keyed
+  continuations — that **bloats** the frame rather than simplifying it (the opposite of the lesson).
 
-Needs a **number chooser** (0..max affordable), not a yes/no — a genuinely different gate
-(`MayPayX`?). Only worth a new gate variant if it composes cleanly with the frame; otherwise leave it.
+If anyone revisits this, the only clean shape would be a dedicated `PayCost → Effect` adapter (with
+real `Effect` forms for Choice/OwnManaCost) — a separate, larger refactor that should stand on its
+own merits, not a wrapper fold. Until then `PayOrSufferEffect` stays a standalone effect.
 
-### #6 `AnyPlayerMayPayEffect` — recommend leaving as-is
+### #5 `MayPayXForEffect` — ✅ done → `Gate.MayPayX`
 
-APNAP, **multi-player**: asks each player in turn order; the single-`decisionMaker` frame can't
-express the ordering. Modeling an `AnyPlayerMayPay` gate means teaching the frame a multi-player loop.
-The original lesson says keep it separate. **Recommend leaving it** unless you can model multi-player
-order cleanly — document the decision either way.
+**Done (this PR).** A **number chooser** (0..max affordable), not a yes/no — modeled as a new
+parameterless `Gate.MayPayX` gate kind, exactly as `Gate.DoAction` added its own resolution branch +
+kept its own continuation (§3b). `GatedEffectExecutor.executeMayPayX` builds the `ChooseNumberDecision`
+and reuses the existing `MayPayXContinuation`/`resumeMayPayX` to auto-tap the chosen X and bind it via
+`DynamicAmount.XValue`. This composes cleanly: it removes a top-level `Effect` type + its executor,
+extends the gate algebra in a principled direction, and `then`/`otherwise`/`decisionMaker` come for
+free. Verified by `DecreeOfJusticeMayPayXTest` (pay / decline / unaffordable-skip).
+
+### #6 `AnyPlayerMayPayEffect` — ⛔ kept bespoke (multi-player)
+
+**Verdict: left bespoke.** APNAP, **multi-player**: asks each player in turn order; the
+single-`decisionMaker` frame can't express the ordering (the `AnyPlayerMayPayContinuation` carries
+`currentPlayerId` + `remainingPlayers` and loops). Modeling it as a gate would mean teaching the frame
+a multi-player loop — out of scope for the single-decision-maker spine. Stays a standalone effect.
 
 ---
 

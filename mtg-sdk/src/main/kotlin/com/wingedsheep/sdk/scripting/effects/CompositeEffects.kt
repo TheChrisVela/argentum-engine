@@ -650,27 +650,23 @@ fun MayPayManaEffect(cost: ManaCost, effect: Effect): GatedEffect =
 /**
  * "You may pay {X}. If you do, [effect]."
  *
- * Presents the player with a number chooser (0 to max affordable mana).
- * If X > 0, pays X mana (auto-tapping lands) and executes the inner effect
- * with the chosen X value set in the effect context.
+ * Presents the player with a number chooser (0 to max affordable mana). If X > 0, pays X mana
+ * (auto-tapping lands) and executes the inner effect with the chosen X value set in the effect
+ * context (read via `DynamicAmount.XValue`).
  *
- * Example: Decree of Justice cycling trigger - "you may pay {X}. If you do,
- * create X 1/1 white Soldier creature tokens."
+ * Backwards-compatible facade preserved for the cards that authored against the former
+ * `MayPayXForEffect` data class. It now lowers to a [GatedEffect] with a [Gate.MayPayX] gate — one
+ * frame, one executor — so there is no bespoke MayPayX executor. Card source is unchanged; only the
+ * compiled/serialized representation moved to `Gated`.
  *
- * @property effect The effect that happens if the player pays (uses DynamicAmount.XValue)
+ * Example: Decree of Justice cycling trigger — "you may pay {X}. If you do, create X 1/1 white
+ * Soldier creature tokens."
+ *
+ * @param effect The effect that happens if the player pays (uses `DynamicAmount.XValue`).
  */
-@SerialName("MayPayX")
-@Serializable
-data class MayPayXForEffect(
-    val effect: Effect
-) : Effect {
-    override val description: String = "You may pay {X}. If you do, ${effect.description.replaceFirstChar { it.lowercase() }}"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect {
-        val newEffect = effect.applyTextReplacement(replacer)
-        return if (newEffect !== effect) copy(effect = newEffect) else this
-    }
-}
+@Suppress("FunctionName")
+fun MayPayXForEffect(effect: Effect): GatedEffect =
+    GatedEffect(gate = Gate.MayPayX, then = effect)
 
 /**
  * "Any player may [cost]." with branching outcomes based on whether anyone paid.

@@ -599,7 +599,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     through to fail-open. The executor pre-pushes a `GatedActionContinuation` so a paused action
     auto-resumes and evaluates after its own continuations drain. Replaces `IfYouDoEffect` (see
     "Sequencing & conditional" below).
-  - The remaining gate kind (APNAP `AnyPlayerMayPay`) folds in as that wrapper migrates.
+  - `Gate.MayPayX` — **not a yes/no, a number chooser.** "You may pay {X}. If you do, [then]." The
+    decision-maker is prompted for a number 0..(most generic mana they can produce); paying X > 0
+    succeeds → `then` runs with the chosen X bound into the context (read via `DynamicAmount.XValue`),
+    X = 0 declines → `otherwise`. An unaffordable gate (no mana) is skipped silently. A parameterless
+    `data object` (the {X} cost is implicit). The executor builds a `ChooseNumberDecision` and reuses
+    the existing `MayPayXContinuation`/`resumeMayPayX` to auto-tap and bind X. Replaces
+    `MayPayXForEffect` (see "Optional & gated" below).
+  - The multi-player APNAP `AnyPlayerMayPayEffect` stays a **standalone effect**, not a gate — a
+    single `decisionMaker` can't express its turn-order loop (see below).
 - `MayEffect(effect, descriptionOverride?, sourceRequiredZone?, inlineOnTrigger?, hint?, decisionMaker?)`
   — "You may [effect]." Facade preserved for existing cards; it now **lowers to
   `GatedEffect(Gate.MayDecide(...), then = effect)`** (compiled form is `Gated`, no distinct `May` type
@@ -620,6 +628,11 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   Onslaught "Words of …" cycle, Lightning Rift), the deliberate **pay → select-mana → choose-target**
   order so the player isn't asked to pick a target before deciding to pay. Composite-cost, life-gated,
   or `otherwise`-bearing MayPay gates keep the generic auto-tapping path.
+- `MayPayXForEffect(effect)` — "You may pay {X}. If you do, [effect]." Facade preserved for existing
+  cards; it now **lowers to `GatedEffect(Gate.MayPayX, then = effect)`** (compiled form is `Gated`, no
+  distinct `MayPayX` type or executor). Prompts a 0..max-affordable number chooser; paying X auto-taps
+  X generic mana and binds the chosen X into `effect`'s context (read via `DynamicAmount.XValue`).
+  Decree of Justice's cycling trigger, Hollow Specter's combat-damage trigger.
 - `Effects.AnyPlayerMayPay(cost, consequence)` / `Effects.UnlessAnyPlayerPays(cost, effect)` —
   back the single `AnyPlayerMayPayEffect(cost, consequence?, consequenceIfNonePaid?)`, which asks
   each player in APNAP order whether to pay `cost`. The first to pay runs `consequence` and stops

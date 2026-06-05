@@ -79,6 +79,12 @@ data class GatedEffect(
                 append(". If you don't, ${otherwise.description.replaceFirstChar { it.lowercase() }}")
             }
         }
+        is Gate.MayPayX -> buildString {
+            append("You may pay {X}. If you do, ${then.description.replaceFirstChar { it.lowercase() }}")
+            if (otherwise != null) {
+                append(". Otherwise, ${otherwise.description.replaceFirstChar { it.lowercase() }}")
+            }
+        }
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect {
@@ -94,10 +100,12 @@ data class GatedEffect(
  * The condition a [GatedEffect] must clear before its [GatedEffect.then] runs.
  *
  * Each variant captures one *gate kind* from the former wrapper cluster; they all share
- * the single [GatedEffect] frame, its executor, and its resumer. New gate kinds are added
- * here as the remaining wrappers migrate in (IfYouDoEffect → a `DoAction` gate that scores
- * an action against a `SuccessCriterion`; AnyPlayerMayPayEffect → an APNAP `AnyPlayerMayPay`
- * gate).
+ * the single [GatedEffect] frame and its executor (decision-driven gates also share its
+ * resumer; the action-drain and number-chooser gates keep their own bespoke continuations).
+ * The set covers the single-decision-maker wrappers: yes/no ([MayDecide]), fixed cost
+ * ([MayPay]), state test ([WhenCondition]), action-outcome ([DoAction]), and variable-mana
+ * pay ([MayPayX]). The multi-player `AnyPlayerMayPayEffect` (APNAP ordering) stays a
+ * standalone effect — a single [GatedEffect.decisionMaker] can't express its turn-order loop.
  */
 @Serializable
 sealed interface Gate {
@@ -196,6 +204,22 @@ sealed interface Gate {
             val newAction = action.applyTextReplacement(replacer)
             return if (newAction !== action) copy(action = newAction) else this
         }
+    }
+
+    /**
+     * Optionally pay a *variable* amount of generic mana — "You may pay {X}. If you do, [then]."
+     * Unlike [MayPay] (a fixed cost resolved by a yes/no), here the *amount* is the decision: the
+     * decision-maker is prompted for a number from 0 to the most generic mana they can currently
+     * produce. Paying X > 0 succeeds → [GatedEffect.then] runs with the chosen X bound into the
+     * resolution context (read via `DynamicAmount.XValue`); declining (X = 0) is failure →
+     * [GatedEffect.otherwise] (none for the current cards). An unaffordable gate (no mana available)
+     * is skipped silently. Carries no fields — the {X} cost is implicit and the amount is chosen at
+     * resolution. Replaces the `MayPayXForEffect` wrapper (see its facade).
+     */
+    @SerialName("Gate.MayPayX")
+    @Serializable
+    data object MayPayX : Gate {
+        override fun applyTextReplacement(replacer: TextReplacer): Gate = this
     }
 }
 

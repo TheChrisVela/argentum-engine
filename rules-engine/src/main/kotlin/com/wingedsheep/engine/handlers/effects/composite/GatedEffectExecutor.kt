@@ -85,6 +85,13 @@ class GatedEffectExecutor(
             return executeDoAction(state, gate, effect, context)
         }
 
+        // Gate.MayPayX: a number-chooser pay-gate, not a yes/no — prompt 0..max affordable generic
+        // mana, pay the chosen X, and run `then` with X bound into the context. Reuses the existing
+        // MayPayXContinuation / resumeMayPayX machinery (only the type recognition moved onto the frame).
+        if (gate is Gate.MayPayX) {
+            return executeMayPayX(state, effect, context)
+        }
+
         // Gate.MayDecide: two cases where the former MayEffect skipped the prompt entirely.
         if (gate is Gate.MayDecide) {
             // Source must still be in its required zone (e.g. a dies-trigger "may" whose source
@@ -131,6 +138,7 @@ class GatedEffectExecutor(
             is Gate.MayPay -> effect.hint
             is Gate.WhenCondition -> effect.hint // unreachable: handled by the synchronous branch above
             is Gate.DoAction -> effect.hint // unreachable: handled by the action-drain branch above
+            is Gate.MayPayX -> effect.hint // unreachable: handled by the number-chooser branch above
         }
 
         val decisionId = UUID.randomUUID().toString()
@@ -226,6 +234,73 @@ class GatedEffectExecutor(
                     decisionId = decisionId,
                     playerId = playerId,
                     decisionType = "YES_NO",
+                    prompt = decision.prompt
+                )
+            )
+        )
+    }
+
+    /**
+     * Resolve a [Gate.MayPayX] gate (the lowered `MayPayXForEffect`). Computes the most generic mana
+     * the decision-maker can produce and, if any, pauses with a 0..max number chooser; the existing
+     * [MayPayXContinuation] resumer (`resumeMayPayX`) then auto-taps the chosen X and runs
+     * [GatedEffect.then] with `xValue` bound into the context. An unaffordable gate (max <= 0) falls
+     * through to [GatedEffect.otherwise] (or nothing), mirroring the former executor's silent skip.
+     */
+    private fun executeMayPayX(
+        state: GameState,
+        effect: GatedEffect,
+        context: EffectContext
+    ): EffectResult {
+        val playerId = effect.decisionMaker
+            ?.let { TargetResolutionUtils.resolvePlayerTarget(it, context, state) }
+            ?: context.controllerId
+
+        val maxAffordable = manaSolver.getAvailableManaCount(state, playerId)
+        if (maxAffordable <= 0) {
+            return effect.otherwise
+                ?.let { effectExecutor(state, it, context) }
+                ?: EffectResult.success(state)
+        }
+
+        val sourceName = context.sourceId?.let { sourceId ->
+            state.getEntity(sourceId)?.get<CardComponent>()?.name
+        }
+
+        val decisionId = UUID.randomUUID().toString()
+        val decision = ChooseNumberDecision(
+            id = decisionId,
+            playerId = playerId,
+            prompt = "Pay {X}? Choose X (0 to decline)",
+            context = DecisionContext(
+                sourceId = context.sourceId,
+                sourceName = sourceName,
+                phase = DecisionPhase.RESOLUTION,
+                triggeringEntityId = context.triggeringEntityId
+            ),
+            minValue = 0,
+            maxValue = maxAffordable
+        )
+
+        val continuation = MayPayXContinuation(
+            decisionId = decisionId,
+            playerId = playerId,
+            sourceName = sourceName,
+            effect = effect.then,
+            maxX = maxAffordable,
+            effectContext = context
+        )
+
+        val stateWithContinuation = state.withPendingDecision(decision).pushContinuation(continuation)
+
+        return EffectResult.paused(
+            stateWithContinuation,
+            decision,
+            listOf(
+                DecisionRequestedEvent(
+                    decisionId = decisionId,
+                    playerId = playerId,
+                    decisionType = "CHOOSE_NUMBER",
                     prompt = decision.prompt
                 )
             )
