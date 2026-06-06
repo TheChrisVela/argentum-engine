@@ -15,8 +15,8 @@ dependencies {
 }
 
 application {
-    // Single dispatch entrypoint: `probe` / `fidelity` / `autogen` subcommands mirror the
-    // three original Python scripts. The justfile coverage* recipes call these.
+    // Single dispatch entrypoint: `probe` / `fidelity` / `autogen` / `fixtures` subcommands. The
+    // justfile coverage* recipes call these.
     mainClass.set("com.wingedsheep.tooling.coverage.MainKt")
 }
 

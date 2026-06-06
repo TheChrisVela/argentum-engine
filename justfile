@@ -141,6 +141,30 @@ coverage-verify SET="POR": _coverage-tool
     ./gradlew :mtg-sets:verifyGeneratedCards -Pset={{SET}} --console=plain --rerun-tasks
     @mtgish-tooling/build/install/mtgish-tooling/bin/mtgish-tooling fidelity --gate {{SET}}
 
+# Vendored emitter-regression fixtures — a small committed slice of the mtgish IR + Scryfall metadata
+# for the calibrated sets, plus a golden of the emitter's output. The in-suite EmitterGoldenTest
+# re-emits from the slice and diffs the golden (hermetic — no IR download, no Gradle compile, runs in
+# `just test`), so a bridge/handler change that silently alters a card fails fast with the exact card.
+#   just coverage-fixtures POR            # refresh slice + golden from real data (needs IR + cache)
+#   just coverage-fixtures --rebless      # re-render golden from committed slices (intentional emitter change)
+[group: 'build']
+coverage-fixtures *ARGS: _coverage-tool
+    @mtgish-tooling/build/install/mtgish-tooling/bin/mtgish-tooling fixtures {{ARGS}}
+
+# Full emitter regression in one target: the fast hermetic golden test, then the compile + gameplay-
+# tree GATE for every set currently at 0-mismatch. Add a set to the loop once `coverage-verify <SET>`
+# passes it clean.
+[group: 'build']
+coverage-verify-all: _coverage-tool
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "== emitter golden (hermetic, all committed fixtures) =="
+    ./gradlew :mtgish-tooling:test --tests "*EmitterGoldenTest" --console=plain
+    for s in POR; do
+        echo "== coverage-verify $s (compile + gameplay-tree gate) =="
+        just coverage-verify "$s"
+    done
+
 # Verify backlog/sets/*/cards.md headers match actual [x] / [x]+[ ] counts
 [group: 'build']
 check-backlog:

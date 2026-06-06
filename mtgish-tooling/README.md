@@ -12,17 +12,43 @@ just coverage-dashboard          # interactive TUI over everything below
 just coverage --set POR
 just coverage-fidelity --set POR
 just coverage-verify POR
+just coverage-verify-all         # fast golden test + the compile/gameplay-tree gate for every 0-mismatch set
 just coverage-generate --set TMP
 just coverage-refresh-set POR
+just coverage-fixtures POR        # (re)generate the vendored emitter-regression fixtures
 ```
 
-The installed CLI has four subcommands:
+The installed CLI has five subcommands:
 
 ```bash
 mtgish-tooling probe      # coverage: can the SDK/engine express a card?
 mtgish-tooling fidelity   # calibration: does generated output match implemented cards?
 mtgish-tooling autogen    # write generated Kotlin drafts
+mtgish-tooling fixtures   # (re)generate the vendored emitter-regression fixtures (see Regression net)
 mtgish-tooling dashboard  # interactive TUI (probe + autogen + a cross-set capability index)
+```
+
+## Regression net
+
+Two layers guard against a bridge/handler change silently altering emitted cards:
+
+- **`EmitterGoldenTest`** (in-suite, runs in `just test`) — the FAST, hermetic net. For each
+  calibrated set it re-emits every card from a committed slice and diffs a committed golden of the
+  emitter's output. No network, no 29 MB IR download, no Gradle compile — a drift fails with the exact
+  card and first divergent line. The vendored inputs live under
+  `src/test/resources/fixtures/<code>.fixture.json` (the front-faced card list plus each card's mtgish
+  IR node and trimmed Scryfall metadata) next to `<code>.emitted.golden.txt`.
+- **`just coverage-verify[-all]`** (out-of-suite) — the DEEP gate: emit → compile in an isolated
+  Gradle source set → gameplay-tree diff the serialised cards vs golden. `coverage-verify-all` runs the
+  golden test first, then the gate for every set currently at 0-mismatch (extend the loop in the
+  recipe as sets converge).
+
+Re-bless after an intentional change (deterministic — uses the CLI, not `-DupdateSnapshots`, which
+Gradle's configuration cache stale-caches for this module):
+
+```bash
+just coverage-fixtures --rebless     # re-render the golden from the committed slice (no real data)
+just coverage-fixtures POR           # full refresh of slice + golden from real data (needs IR + cache)
 ```
 
 ## Dashboard (TUI)

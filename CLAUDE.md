@@ -81,6 +81,12 @@ just coverage-relocate TMP              # backfill canonicals of cards whose ear
 
 # VERIFY — the real gate: COMPILE the emitted cards + diff serialized caps vs golden.
 just coverage-verify --set POR          # POR: 184/184 emitted & compile-verified, 0 capability mismatch
+just coverage-verify-all                # fast hermetic golden test + the compile/gameplay-tree gate for every 0-mismatch set
+
+# REGRESSION — the FAST in-suite net (runs in `just test`): re-emit each calibrated set from a committed
+# slice and diff a committed golden. EmitterGoldenTest fails with the exact card on any emitter drift.
+just coverage-fixtures POR              # (re)generate the vendored fixtures from real data (needs IR + Scryfall cache)
+just coverage-fixtures --rebless        # re-bless the golden from the committed slice after an intentional emitter change
 ```
 
 **When to use.** Spoiler-season/backlog triage (`coverage` leaderboard = which feature unlocks the
