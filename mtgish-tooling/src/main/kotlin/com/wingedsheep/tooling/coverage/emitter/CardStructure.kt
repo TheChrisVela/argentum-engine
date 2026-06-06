@@ -167,6 +167,26 @@ internal fun EmitCtx.triggerBlock(rule: JsonObject): List<String>? {
     return lines
 }
 
+/**
+ * An `AsPermanentEnters` rule -> `replacementEffect(...)` line(s). The rule's second arg is a list of
+ * `_ReplacementActionWouldEnter` nodes (enters tapped, choose a creature type as it enters, ...).
+ * Any replacement we can't render exactly downgrades the card to SCAFFOLD rather than guess.
+ */
+internal fun EmitCtx.asEntersBlock(rule: JsonObject): List<String>? {
+    val replacements = (rule["args"].asArr?.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>()
+    if (replacements.isNullOrEmpty()) { reasons.add("AsPermanentEnters"); return null }
+    val lines = mutableListOf<String>()
+    for (rep in replacements) {
+        val dsl = when (rep.strField("_ReplacementActionWouldEnter")) {
+            "EntersTapped" -> "EntersTapped()"
+            "ChooseACreatureType" -> "EntersWithChoice(ChoiceType.CREATURE_TYPE)"
+            else -> { reasons.add("AsPermanentEnters"); return null }
+        }
+        lines.add("    replacementEffect($dsl)")
+    }
+    return lines
+}
+
 /** An Activated / ActivatedWithModifiers rule -> activatedAbility { cost; [target]; effect }. */
 internal fun EmitCtx.activatedBlock(rule: JsonObject): List<String>? {
     val args = rule["args"].asArr
