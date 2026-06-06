@@ -7,7 +7,8 @@ import kotlin.math.roundToInt
 
 /**
  * Interactive TUI for the mtgish coverage tooling — a navigable, two-pane dashboard over the same
- * analysis the `just coverage*` CLIs print. Left pane: every set with its implemented %. Right pane:
+ * analysis the `just coverage*` CLIs print. Left pane: every set with its three headline numbers —
+ * implemented/total, free-to-add (+N), and auto-gen-whole (gN), matching the set-detail pane. Right pane:
  * the selected set's coverage breakdown (implemented / free-to-add / blocked) and the feature
  * leaderboard, then drill into the card list and a per-card capability verdict. `c` rolls every set's
  * leaderboard into one cross-set "what engine work unlocks the most cards everywhere" ranking.
@@ -164,7 +165,10 @@ object Dashboard {
         val shown = shownSets()
         if (setSel >= shown.size) setSel = max(0, shown.size - 1)
         val lines = ArrayList<String>()
-        val header = if (setFilter.isBlank()) " SETS (${sets.size})" else " SETS (${shown.size}/${sets.size}) · '$setFilter'"
+        val title = if (setFilter.isBlank()) " SETS (${sets.size})" else " SETS (${shown.size}/${sets.size}) · '$setFilter'"
+        val legend = "impl/tot +free gWhole"
+        // Right-align the column legend when there's room; drop it on a narrow pane.
+        val header = if (w >= title.length + legend.length + 2) title + " ".repeat(w - title.length - legend.length - 1) + legend else title
         lines.add(Ansi.style(Ansi.fit(header, w), Ansi.BOLD, Ansi.fg(Ansi.WHITE), Ansi.bg(Ansi.DARKGREY)))
         val listH = h - 1
         setScroll = clampScroll(setSel, setScroll, listH, shown.size)
@@ -173,14 +177,14 @@ object Dashboard {
             if (idx >= shown.size) { lines.add(" ".repeat(w)); continue }
             val s = shown[idx]
             val c = Analyzer.counts(s.code)
-            // Right column: implemented/total and "gG" = cards the generator renders whole across the
-            // WHOLE set (so a 100%-implemented set still shows its auto-gen coverage). "g?" until analyzed.
-            val gen = when {
-                c.total == 0 -> ""
-                Analyzer.isComputed(s.code) -> "g${Analyzer.detail(s.code).genWhole}"
-                else -> "g?"
-            }
-            val stats = if (c.total == 0) "—" else "${c.implemented}/${c.total}${if (gen.isEmpty()) "" else " $gen"}"
+            val computed = Analyzer.isComputed(s.code)
+            val d = if (computed && c.total > 0) Analyzer.detail(s.code) else null
+            // Right column, mirroring the set-detail pane's three headline numbers, all out of `total`:
+            //   implemented/total · "+F" free-to-add (no engine work) · "gG" auto-gen whole (incl. impl).
+            // The free/gen figures need the set analyzed (browsing or `c`); they read "+?"/"g?" until then.
+            val free = when { c.total == 0 -> ""; d != null -> "+${d.free}"; else -> "+?" }
+            val gen = when { c.total == 0 -> ""; d != null -> "g${d.genWhole}"; else -> "g?" }
+            val stats = if (c.total == 0) "—" else "${c.implemented}/${c.total} $free $gen"
             val left = " ${s.code.padEnd(4)} ${year(s)} ${s.name}"
             val leftW = max(0, w - stats.length - 1)
             val plain = Ansi.fit(left, leftW) + " " + stats
@@ -189,9 +193,9 @@ object Dashboard {
                     idx == setSel && mode == Mode.SETS -> Ansi.style(Ansi.fit(plain, w), Ansi.REVERSE)
                     idx == setSel -> Ansi.style(Ansi.fit(plain, w), Ansi.bg(238))
                     c.total == 0 -> Ansi.style(Ansi.fit(plain, w), Ansi.fg(Ansi.DARKGREY))
-                    gen.isEmpty() -> Ansi.fit(plain, w)
                     else -> Ansi.fit(left, leftW) + " ${c.implemented}/${c.total} " +
-                        Ansi.style(gen, Ansi.fg(if (Analyzer.isComputed(s.code)) Ansi.GREEN else Ansi.DARKGREY))
+                        Ansi.style(free, Ansi.fg(Ansi.BLUE)) + " " +
+                        Ansi.style(gen, Ansi.fg(if (computed) Ansi.GREEN else Ansi.DARKGREY))
                 }
             )
         }
