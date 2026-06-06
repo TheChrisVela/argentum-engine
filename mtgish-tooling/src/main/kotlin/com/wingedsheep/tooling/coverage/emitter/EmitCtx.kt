@@ -7,6 +7,7 @@ import com.wingedsheep.tooling.coverage.compact
 import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.findRef
 import com.wingedsheep.tooling.coverage.findRefIn
+import com.wingedsheep.tooling.coverage.firstArgWordTagged
 import com.wingedsheep.tooling.coverage.jsonContains
 import com.wingedsheep.tooling.coverage.pascalToUpperSnake
 import com.wingedsheep.tooling.coverage.strField
@@ -172,7 +173,7 @@ internal fun EmitCtx.dynamicAmount(node: JsonElement?): String? {
         }
         // "for each Goblin/Bird/Elf on the battlefield": a creature subtype, which the land-oriented
         // search filter misses; otherwise fall back to the land/type search filter.
-        val subtype = Regex(""""IsCreatureType",\s*"args":\s*"(\w+)"""").find(compact(node))?.groupValues?.get(1)
+        val subtype = node.firstArgWordTagged("IsCreatureType")
         val filter = if (subtype != null) "GameObjectFilter.Creature.withSubtype(\"$subtype\")" else landSearchFilterDsl(node)
         return "DynamicAmount.AggregateBattlefield($player, $filter)"
     }

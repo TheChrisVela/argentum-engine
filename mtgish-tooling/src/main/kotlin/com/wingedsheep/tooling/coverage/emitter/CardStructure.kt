@@ -1,5 +1,6 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.argWordsTagged
 import com.wingedsheep.tooling.coverage.asArr
 import com.wingedsheep.tooling.coverage.asStr
 import com.wingedsheep.tooling.coverage.compact
@@ -224,7 +225,7 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
         jsonContains(trig, "_Player", "You") && jsonContains(trig, "_Comparison", "GreaterThanOrEqualTo")
     ) {
         val blob = compact(trig)
-        val plainCreature = """"IsCardtype",\s*"args":\s*"Creature"""".toRegex().containsMatchIn(blob) &&
+        val plainCreature = "Creature" in trig.argWordsTagged("IsCardtype") &&
             "IsCreatureType" !in blob && "ControlledByAPlayer" !in blob && "\"Other\"" !in blob && "_Color" !in blob
         val n = findInteger(trig) as? Int
         if (plainCreature && n != null) return "TriggerSpec(EventPattern.YouAttackEvent(minAttackers = $n), TriggerBinding.ANY)"
@@ -258,7 +259,7 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
     // "Whenever you cast a [type] spell" — WhenAPlayerCastsASpell scoped to You + a spell-type filter.
     if (jsonContains(trig, "_Trigger", "WhenAPlayerCastsASpell") && jsonContains(trig, "_Player", "You")) {
         if (jsonContains(trig, "_Spells", "IsHistoric")) return "Triggers.YouCastHistoric"
-        val types = Regex(""""IsCardtype",\s*"args":\s*"(\w+)"""").findAll(compact(trig)).map { it.groupValues[1] }.toSet()
+        val types = trig.argWordsTagged("IsCardtype").toSet()
         return when (types) {
             setOf("Creature") -> "Triggers.YouCastCreature"
             setOf("Enchantment") -> "Triggers.YouCastEnchantment"
@@ -277,8 +278,8 @@ private fun isSelf(trig: JsonObject): Boolean =
 /** True when a trigger's permanent filter is a plain "creature" with no subtype / controller / count
  *  restriction — the only attacks shape we can render as a filterless ANY-binding trigger. */
 private fun isPlainCreatureFilter(trig: JsonObject): Boolean {
+    if ("Creature" !in trig.argWordsTagged("IsCardtype")) return false
     val blob = compact(trig)
-    if (""""IsCardtype",\s*"args":\s*"Creature"""".toRegex().containsMatchIn(blob).not()) return false
     return "IsCreatureType" !in blob && "ControlledByAPlayer" !in blob &&
         "\"Other\"" !in blob && "_Comparison" !in blob && "_Color" !in blob
 }

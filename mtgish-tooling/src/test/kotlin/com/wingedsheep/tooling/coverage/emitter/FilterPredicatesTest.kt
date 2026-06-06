@@ -8,39 +8,51 @@ import kotlinx.serialization.json.JsonElement
 
 /**
  * Pins the shared filter-predicate recovery the two filter renderers ([creatureFilterDsl] /
- * [gameObjectFilterDsl]) now compose, so the regex/condition→DSL fragments stay in one place. The
- * power detector reads `compact()`'s whitespace-free encoding; the spaced inputs here confirm the
- * permissive regex matches both forms identically.
+ * [gameObjectFilterDsl]) compose, so the IR→DSL fragments stay in one place. The predicates now read the
+ * parsed filter subtree through the typed [com.wingedsheep.tooling.coverage] IrQuery accessors (the
+ * power bound is scoped to its `PowerIs` node), rather than regexing a flattened blob.
  */
 class FilterPredicatesTest : StringSpec({
 
     fun node(json: String): JsonElement = J.parseToJsonElement(json)
 
-    "power bounds recover from both compact and spaced encodings" {
-        val compact = """[{"_Permanents":"PowerIs","args":["GreaterThanOrEqualTo",{"_GameNumber":"Integer","args":3}]}]"""
-        FilterPredicates.powerAtLeast(compact) shouldBe ".powerAtLeast(3)"
-        FilterPredicates.powerAtMost(compact).shouldBeNull()
+    // mtgish encodes a power bound as `PowerIs { _Comparison, args: Integer }` (Fleet-Footed Monk's
+    // "creatures with power 2 or greater").
+    fun powerIs(comparison: String, n: Int): String =
+        """{"_Permanents":"PowerIs","args":{"_Comparison":"$comparison","args":{"_GameNumber":"Integer","args":$n}}}"""
 
-        val spaced = """[ {"_Permanents": "PowerIs", "args": [ "LessThanOrEqualTo", {"_GameNumber": "Integer", "args": 2} ]} ]"""
-        FilterPredicates.powerAtMost(spaced) shouldBe ".powerAtMost(2)"
-        FilterPredicates.powerAtLeast(spaced).shouldBeNull()
+    "power bounds recover from the scoped PowerIs node" {
+        val atLeast = node(powerIs("GreaterThanOrEqualTo", 3))
+        FilterPredicates.powerAtLeast(atLeast) shouldBe ".powerAtLeast(3)"
+        FilterPredicates.powerAtMost(atLeast).shouldBeNull()
+
+        val atMost = node(powerIs("LessThanOrEqualTo", 2))
+        FilterPredicates.powerAtMost(atMost) shouldBe ".powerAtMost(2)"
+        FilterPredicates.powerAtLeast(atMost).shouldBeNull()
+    }
+
+    "a power range keeps its two bounds distinct (scoped per PowerIs node)" {
+        // power >= 2 AND power <= 4: each bound must read its OWN PowerIs clause, not the nearest integer.
+        val range = node("""[${powerIs("GreaterThanOrEqualTo", 2)},${powerIs("LessThanOrEqualTo", 4)}]""")
+        FilterPredicates.powerAtLeast(range) shouldBe ".powerAtLeast(2)"
+        FilterPredicates.powerAtMost(range) shouldBe ".powerAtMost(4)"
     }
 
     "tap / attack state predicates map to their fluent suffixes" {
-        FilterPredicates.tapped("""{"_Permanents":"IsTapped"}""") shouldBe ".tapped()"
-        FilterPredicates.untapped("""{"_Permanents":"IsUntapped"}""") shouldBe ".untapped()"
-        FilterPredicates.attacking("""{"_Permanents":"IsAttacking"}""") shouldBe ".attacking()"
-        FilterPredicates.tapped("{}").shouldBeNull()
+        FilterPredicates.tapped(node("""{"_Permanents":"IsTapped"}""")) shouldBe ".tapped()"
+        FilterPredicates.untapped(node("""{"_Permanents":"IsUntapped"}""")) shouldBe ".untapped()"
+        FilterPredicates.attacking(node("""{"_Permanents":"IsAttacking"}""")) shouldBe ".attacking()"
+        FilterPredicates.tapped(node("{}")).shouldBeNull()
+        // IsUntapped must not be mistaken for IsTapped (substring containment would have).
+        FilterPredicates.tapped(node("""{"_Permanents":"IsUntapped"}""")).shouldBeNull()
     }
 
     "flying recovers as with/without keyword, distinguished by the DoesntHaveAbility marker" {
         val without = node("""{"_Permanents":"DoesntHaveAbility","args":[{"_Keyword":"Flying"}]}""")
-        FilterPredicates.withoutFlying(without, J.encodeToString(JsonElement.serializer(), without)) shouldBe
-            ".withoutKeyword(Keyword.FLYING)"
+        FilterPredicates.withoutFlying(without) shouldBe ".withoutKeyword(Keyword.FLYING)"
 
         val plain = node("""{"_Permanents":"HasAbility","args":[{"_Keyword":"Flying"}]}""")
-        val plainBlob = J.encodeToString(JsonElement.serializer(), plain)
-        FilterPredicates.withoutFlying(plain, plainBlob).shouldBeNull()
-        FilterPredicates.withFlying(plainBlob) shouldBe ".withKeyword(Keyword.FLYING)"
+        FilterPredicates.withoutFlying(plain).shouldBeNull()
+        FilterPredicates.withFlying(plain) shouldBe ".withKeyword(Keyword.FLYING)"
     }
 })

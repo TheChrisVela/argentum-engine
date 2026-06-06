@@ -1,11 +1,19 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.argWordsTagged
 import com.wingedsheep.tooling.coverage.asArr
 import com.wingedsheep.tooling.coverage.compact
 import com.wingedsheep.tooling.coverage.findInteger
+import com.wingedsheep.tooling.coverage.firstArgStringTagged
+import com.wingedsheep.tooling.coverage.firstColorOf
+import com.wingedsheep.tooling.coverage.firstWordAtKey
+import com.wingedsheep.tooling.coverage.hasStringValue
+import com.wingedsheep.tooling.coverage.hasTag
 import com.wingedsheep.tooling.coverage.jsonContains
+import com.wingedsheep.tooling.coverage.nodesTagged
 import com.wingedsheep.tooling.coverage.strField
 import com.wingedsheep.tooling.coverage.subtypes
+import com.wingedsheep.tooling.coverage.wordsAtKey
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
@@ -19,41 +27,46 @@ import kotlinx.serialization.json.JsonObject
  * Single source of truth for the filter-predicate suffixes recovered from the mtgish filter IR. The
  * TargetFilter renderer ([creatureFilterDsl]) and the GameObjectFilter renderer ([gameObjectFilterDsl])
  * read the SAME predicate vocabulary onto two parallel fluent surfaces; defining each predicate's
- * regex/condition→DSL fragment ONCE here keeps them from drifting (the regexes were duplicated, and a
- * fix in one renderer had to be mirrored by hand). Each caller still composes these in its own order —
- * the two surfaces are not identical (TargetFilter has no multi-color form, and the renderers append in
+ * IR→DSL recovery ONCE here keeps them from drifting (the regexes were duplicated, and a fix in one
+ * renderer had to be mirrored by hand). Each caller still composes these in its own order — the two
+ * surfaces are not identical (TargetFilter has no multi-color form, and the renderers append in
  * different orders) — but the per-predicate recovery now lives in one place.
+ *
+ * Each predicate reads the parsed filter subtree through the typed [IrQuery][hasTag] accessors (bounded
+ * by the node, vs. a `compact()`+substring/regex that scanned the whole flattened blob).
  */
 internal object FilterPredicates {
-    // mtgish encodes power bounds as `PowerIs <op> Integer`; `compact()` emits no whitespace, but the
-    // permissive `,\s*`/`:\s*` matches both spaced and compact encodings identically.
-    private val POWER_AT_LEAST = Regex(""""PowerIs".*?"GreaterThanOrEqualTo".*?"Integer",\s*"args":\s*(\d+)""")
-    private val POWER_AT_MOST = Regex(""""PowerIs".*?"LessThanOrEqualTo".*?"Integer",\s*"args":\s*(\d+)""")
-
     /** `.powerAtLeast(N)` for a `PowerIs >= N` clause, else null. */
-    fun powerAtLeast(blob: String): String? = POWER_AT_LEAST.find(blob)?.let { ".powerAtLeast(${it.groupValues[1]})" }
+    fun powerAtLeast(node: JsonElement?): String? = powerBound(node, "GreaterThanOrEqualTo")?.let { ".powerAtLeast($it)" }
 
     /** `.powerAtMost(N)` for a `PowerIs <= N` clause, else null. */
-    fun powerAtMost(blob: String): String? = POWER_AT_MOST.find(blob)?.let { ".powerAtMost(${it.groupValues[1]})" }
+    fun powerAtMost(node: JsonElement?): String? = powerBound(node, "LessThanOrEqualTo")?.let { ".powerAtMost($it)" }
 
-    fun tapped(blob: String): String? = if ("IsTapped" in blob) ".tapped()" else null
-    fun untapped(blob: String): String? = if ("IsUntapped" in blob) ".untapped()" else null
-    fun attacking(blob: String): String? = if ("IsAttacking" in blob) ".attacking()" else null
+    fun tapped(node: JsonElement?): String? = if (node.hasTag("IsTapped")) ".tapped()" else null
+    fun untapped(node: JsonElement?): String? = if (node.hasTag("IsUntapped")) ".untapped()" else null
+    fun attacking(node: JsonElement?): String? = if (node.hasTag("IsAttacking")) ".attacking()" else null
 
     /** `.withoutKeyword(Keyword.FLYING)` for a `DoesntHaveAbility Flying` clause, else null. */
-    fun withoutFlying(filterNode: JsonElement?, blob: String): String? =
-        if (jsonContains(filterNode, "_Permanents", "DoesntHaveAbility") && "\"Flying\"" in blob)
+    fun withoutFlying(node: JsonElement?): String? =
+        if (jsonContains(node, "_Permanents", "DoesntHaveAbility") && node.hasStringValue("Flying"))
             ".withoutKeyword(Keyword.FLYING)" else null
 
     /** `.withKeyword(Keyword.FLYING)` for a plain `Flying` clause, else null. */
-    fun withFlying(blob: String): String? = if ("\"Flying\"" in blob) ".withKeyword(Keyword.FLYING)" else null
+    fun withFlying(node: JsonElement?): String? = if (node.hasStringValue("Flying")) ".withKeyword(Keyword.FLYING)" else null
+
+    /** The integer bound of a `PowerIs` clause whose `args` is `{ _Comparison: <comparison>, args: Integer }`,
+     *  scoped to the matching `PowerIs` node so a power range's two bounds stay distinct. */
+    private fun powerBound(node: JsonElement?, comparison: String): Int? =
+        node.nodesTagged("PowerIs")
+            .firstOrNull { it["args"].strField("_Comparison") == comparison }
+            ?.let { findInteger(it["args"]) as? Int }
 }
 
 internal fun EmitCtx.creatureFilterDsl(filterNode: JsonElement?): String? {
     val blob = compact(filterNode)
     // "nonartifact creature" (the Terror template) renders via .nonartifact(); any OTHER non-cardtype
     // restriction has no faithful filter rendering yet, so drop to SCAFFOLD rather than omit it.
-    val nonCardtypes = Regex(""""IsNonCardtype",\s*"args":\s*"(\w+)"""").findAll(blob).map { it.groupValues[1] }.toList()
+    val nonCardtypes = filterNode.argWordsTagged("IsNonCardtype")
     if (nonCardtypes.any { it != "Artifact" }) return null
     // "target creature you control" / "...an opponent controls" — the controller restriction is a
     // ControlledByAPlayer clause. Preserve it as a `.youControl()` / `.opponentControls()` suffix; never
@@ -79,7 +92,7 @@ internal fun EmitCtx.creatureFilterDsl(filterNode: JsonElement?): String? {
     }
     // "Goblin creature" / "Elf or Soldier creature": one subtype -> withSubtype; several -> an Or of
     // per-subtype creature filters (matches golden's distributed Or[And[IsCreature, HasSubtype X]…]).
-    val subs = Regex(""""IsCreatureType",\s*"args":\s*"(\w+)"""").findAll(blob).map { it.groupValues[1] }.toList()
+    val subs = filterNode.argWordsTagged("IsCreatureType")
     if (subs.isNotEmpty()) {
         if (controller.isNotEmpty()) return null
         return "TargetFilter(${subs.joinToString(" or ") { "GameObjectFilter.Creature.withSubtype(\"$it\")" }})"
@@ -88,22 +101,17 @@ internal fun EmitCtx.creatureFilterDsl(filterNode: JsonElement?): String? {
     if ("Artifact" in nonCardtypes) suffix += ".nonartifact()"
     // Color stays inline: TargetFilter has no multi-color form, so the creature target uses the
     // IsColor/IsNonColor-scoped single-color recovery rather than gameObjectFilterDsl's collect-all.
-    Regex(""""IsNonColor".*?"_Color":\s*"(\w+)"""").find(blob)?.let {
-        suffix += ".notColor(Color.${it.groupValues[1].uppercase()})"
-    }
-    Regex(""""IsColor".*?"_Color":\s*"(\w+)"""").find(blob)?.let {
-        suffix += ".withColor(Color.${it.groupValues[1].uppercase()})"
-    }
-    FilterPredicates.withoutFlying(filterNode, blob)?.let { suffix += it }
-    FilterPredicates.tapped(blob)?.let { suffix += it }
-    FilterPredicates.attacking(blob)?.let { suffix += it }
-    FilterPredicates.powerAtMost(blob)?.let { suffix += it }
-    FilterPredicates.powerAtLeast(blob)?.let { suffix += it }
+    filterNode.firstColorOf("IsNonColor")?.let { suffix += ".notColor(Color.${it.uppercase()})" }
+    filterNode.firstColorOf("IsColor")?.let { suffix += ".withColor(Color.${it.uppercase()})" }
+    FilterPredicates.withoutFlying(filterNode)?.let { suffix += it }
+    FilterPredicates.tapped(filterNode)?.let { suffix += it }
+    FilterPredicates.attacking(filterNode)?.let { suffix += it }
+    FilterPredicates.powerAtMost(filterNode)?.let { suffix += it }
+    FilterPredicates.powerAtLeast(filterNode)?.let { suffix += it }
     return "TargetFilter.Creature$suffix$controller"
 }
 
-private fun targetTypes(args: JsonElement?): Set<String> =
-    Regex(""""IsCardtype",\s*"args":\s*"(\w+)"""").findAll(compact(args)).map { it.groupValues[1] }.toSet()
+private fun targetTypes(args: JsonElement?): Set<String> = args.argWordsTagged("IsCardtype").toSet()
 
 /** Faithful Argentum target DSL, or null if the filter can't be rendered (-> not AUTO). */
 internal fun EmitCtx.targetDsl(tnode: JsonObject, actionContext: List<JsonObject>? = null): String? {
@@ -222,7 +230,7 @@ internal fun EmitCtx.gameObjectFilterDsl(filterNode: JsonElement?): String? {
     val types = targetTypes(filterNode)
     val subs = subtypes(filterNode)
     // Creature subtypes come from IsCreatureType (subtypes() only collects land/card subtypes).
-    val creatureSubs = Regex(""""IsCreatureType",\s*"args":\s*"(\w+)"""").findAll(blob).map { it.groupValues[1] }.toList()
+    val creatureSubs = filterNode.argWordsTagged("IsCreatureType")
     var filtered = when {
         subs.isNotEmpty() && ("Land" in types || "IsLandType" in blob || "\"Land\"" in blob) ->
             "GameObjectFilter.Land.withSubtype(${subtypeArg(subs[0])})"
@@ -244,27 +252,26 @@ internal fun EmitCtx.gameObjectFilterDsl(filterNode: JsonElement?): String? {
         "Permanent" in blob -> "GameObjectFilter.Permanent"
         else -> return null
     }
-    val colors = Regex(""""_Color":\s*"(\w+)"""").findAll(blob).map { it.groupValues[1].uppercase() }.distinct().toList()
+    val colors = filterNode.wordsAtKey("_Color").map { it.uppercase() }.distinct()
     if (colors.size > 1 && "\"Or\"" in blob) {
         filtered += ".withAnyColor(${colors.joinToString(", ") { "Color.$it" }})"
     } else if (colors.size == 1) {
-        filtered += if ("IsNonColor" in blob) ".notColor(Color.${colors[0]})" else ".withColor(Color.${colors[0]})"
+        filtered += if (filterNode.hasTag("IsNonColor")) ".notColor(Color.${colors[0]})" else ".withColor(Color.${colors[0]})"
     }
-    filtered += FilterPredicates.withoutFlying(filterNode, blob) ?: FilterPredicates.withFlying(blob) ?: ""
-    FilterPredicates.powerAtLeast(blob)?.let { filtered += it }
-    FilterPredicates.powerAtMost(blob)?.let { filtered += it }
-    FilterPredicates.tapped(blob)?.let { filtered += it }
-    FilterPredicates.untapped(blob)?.let { filtered += it }
-    FilterPredicates.attacking(blob)?.let { filtered += it }
+    filtered += FilterPredicates.withoutFlying(filterNode) ?: FilterPredicates.withFlying(filterNode) ?: ""
+    FilterPredicates.powerAtLeast(filterNode)?.let { filtered += it }
+    FilterPredicates.powerAtMost(filterNode)?.let { filtered += it }
+    FilterPredicates.tapped(filterNode)?.let { filtered += it }
+    FilterPredicates.untapped(filterNode)?.let { filtered += it }
+    FilterPredicates.attacking(filterNode)?.let { filtered += it }
     if ("\"You\"" in blob) filtered += ".youControl()"
     if ("\"Opponent\"" in blob) filtered += ".opponentControls()"
     return filtered
 }
 
 internal fun EmitCtx.revealedHandFilterDsl(filterNode: JsonElement?): String? {
-    val blob = compact(filterNode)
-    val landType = Regex(""""IsLandType","args":"([^"]+)"""").find(blob)?.groupValues?.get(1)
-    val color = Regex(""""_Color":"(\w+)"""").find(blob)?.groupValues?.get(1)
+    val landType = filterNode.firstArgStringTagged("IsLandType")
+    val color = filterNode.firstWordAtKey("_Color")
     if (landType == null && color == null) return null
     val parts = mutableListOf<String>()
     if (landType != null) parts.add("GameObjectFilter.Land.withSubtype(${subtypeArg(landType)})")
@@ -288,7 +295,7 @@ internal fun EmitCtx.landSearchFilterDsl(filterNode: JsonElement?): String {
         "\"Creature\"" in blob || "creature" in oracle -> {
             var out = "GameObjectFilter.Creature"
             if ("black creature" in oracle) out += ".withColor(Color.BLACK)"
-            else Regex(""""_Color":\s*"(\w+)"""").find(blob)?.let { out += ".withColor(Color.${it.groupValues[1].uppercase()})" }
+            else filterNode.firstWordAtKey("_Color")?.let { out += ".withColor(Color.${it.uppercase()})" }
             if ("tapped creature" in oracle) out += ".tapped()"
             if ("attacking" in oracle) out += ".attacking()"
             out
