@@ -209,6 +209,9 @@ internal fun EmitCtx.revealedHandFilterDsl(filterNode: JsonElement?): String? {
 
 internal fun EmitCtx.landSearchFilterDsl(filterNode: JsonElement?): String {
     val subs = subtypes(filterNode)
+    // Dual-land fetch ("a Swamp or Mountain card") -> Land + Or[HasSubtype…], i.e. withAnySubtype;
+    // golden factors IsLand out (unlike the distributed creature-subtype form).
+    if (subs.size >= 2) return "GameObjectFilter.Land.withAnySubtype(${subs.joinToString(", ") { "\"$it\"" }})"
     if (subs.isNotEmpty()) return "GameObjectFilter.Land.withSubtype(${subtypeArg(subs[0])})"
     val blob = compact(filterNode)
     val oracle = oracleText?.lowercase() ?: ""
