@@ -97,6 +97,11 @@ internal fun EmitCtx.renderPlayerAction(node: JsonObject, tvar: String?): String
         "RevealHand" -> {
             return if (ptv != null) "RevealHandEffect($ptv)" else "RevealHandEffect()"
         }
+        "ShuffleGraveyardIntoLibrary" -> {
+            // "target player shuffles their graveyard into their library" (Reminisce). Only the
+            // bound-target-player form renders; an untargeted/you form scaffolds rather than guess.
+            return if (ptv != null) "Patterns.Library.shuffleGraveyardIntoLibrary($ptv)" else null
+        }
     }
     return null
 }

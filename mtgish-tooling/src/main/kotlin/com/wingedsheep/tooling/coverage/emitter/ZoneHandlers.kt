@@ -52,6 +52,10 @@ internal val zoneHandlers: Map<String, ActionHandler> = actionHandlers {
         "Effects.Move($tgt, Zone.LIBRARY, ZonePlacement.Shuffled)"
     }
 
+    on("Surveil") { _, args, _ ->  // "Surveil N" -> the look-top / keep-or-bin pipeline
+        (findInteger(args) as? Int)?.let { "Patterns.Library.surveil($it)" }
+    }
+
     on("SearchLibrary") { _, args, _ -> renderSearch(args) }
     on("LookAtTheTopNumberCardsOfLibrary", "LookAtTheTopNumberCardsOfPlayersLibrary") { node, args, tvar -> renderLook(node, args, tvar) }
 
