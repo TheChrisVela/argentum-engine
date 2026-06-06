@@ -3,7 +3,11 @@ package com.wingedsheep.tooling.coverage.bridge
 /** Mana, counters, control, and combat/untap-state effects. Mostly the "universal" verbs that Portal
  *  never exercised but every later set does — each line lifts recall on every set at once. */
 internal fun BridgeBuilder.manaCountersAndState() {
-    effects("AddMana", "AddManaRepeated", tag = "AddMana", note = UNIVERSAL)
+    // AddMana's exact Effect depends on the produced symbol — colorless ({C}) serialises as
+    // AddColorlessMana, "any color" as AddManaOfChoice, a fixed colour as AddMana — and the capability
+    // scorer can't see the symbol arg, so name the whole mana family the action can lower to.
+    composed("AddMana", UNIVERSAL, composes = listOf("AddMana", "AddColorlessMana", "AddManaOfChoice"))
+    composed("AddManaRepeated", UNIVERSAL, composes = listOf("AddMana", "AddColorlessMana", "AddManaOfChoice"))
     effect("AddColorlessMana", "AddColorlessMana", UNIVERSAL)
 
     effect("CreateTokens", "CreateToken", UNIVERSAL)

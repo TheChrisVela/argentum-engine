@@ -182,7 +182,12 @@ internal fun EmitCtx.activatedBlock(rule: JsonObject): List<String>? {
     val lines = mutableListOf("    activatedAbility {", "        cost = $cost")
     activationRestrictionLines(rule)?.let { lines.addAll(it) } ?: return null
     if (tvar != null) lines.add("        val t = target(\"target\", $tdsl)")
-    lines.addAll(listOf("        effect = $edsl", "    }"))
+    lines.add("        effect = $edsl")
+    if (isManaAbility(tvar, actions)) {
+        lines.add("        manaAbility = true")
+        lines.add("        timing = TimingRule.ManaAbility")
+    }
+    lines.add("    }")
     return lines
 }
 

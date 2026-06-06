@@ -18,7 +18,7 @@ import kotlinx.serialization.json.JsonObject
  * rather than emit something confidently wrong.
  */
 internal val ACTION_HANDLERS: Map<String, ActionHandler> =
-    damageDrawLifeHandlers + zoneHandlers + tapLayerStateHandlers + playerContinuousHandlers
+    damageDrawLifeHandlers + zoneHandlers + tapLayerStateHandlers + playerContinuousHandlers + manaHandlers
 
 /** A per-`_Action` rendering rule. Returns the Effect DSL string, or null → SCAFFOLD. */
 internal typealias ActionHandler = EmitCtx.(node: JsonObject, args: JsonElement?, tvar: String?) -> String?
