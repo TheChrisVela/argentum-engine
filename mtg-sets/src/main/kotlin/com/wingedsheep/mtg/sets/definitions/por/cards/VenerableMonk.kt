@@ -21,6 +21,7 @@ val VenerableMonk = card("Venerable Monk") {
     manaCost = "{2}{W}"
     colorIdentity = "W"
     typeLine = "Creature — Human Monk Cleric"
+    oracleText = "When this creature enters, you gain 2 life."
     power = 2
     toughness = 2
     triggeredAbility {

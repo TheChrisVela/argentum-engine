@@ -24,6 +24,7 @@ val Gravedigger = card("Gravedigger") {
     manaCost = "{3}{B}"
     colorIdentity = "B"
     typeLine = "Creature — Zombie"
+    oracleText = "When this creature enters, you may return target creature card from your graveyard to your hand."
     power = 2
     toughness = 2
     triggeredAbility {

@@ -20,6 +20,7 @@ val DjinnOfTheLamp = card("Djinn of the Lamp") {
     manaCost = "{5}{U}{U}"
     colorIdentity = "U"
     typeLine = "Creature — Djinn"
+    oracleText = "Flying"
     power = 5
     toughness = 6
     keywords(Keyword.FLYING)

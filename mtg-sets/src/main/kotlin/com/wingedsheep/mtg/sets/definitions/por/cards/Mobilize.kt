@@ -22,6 +22,7 @@ val Mobilize = card("Mobilize") {
     manaCost = "{G}"
     colorIdentity = "G"
     typeLine = "Sorcery"
+    oracleText = "Untap all creatures you control."
     spell {
         effect = Effects.ForEachInGroup(
             GroupFilter(GameObjectFilter.Creature.youControl()),

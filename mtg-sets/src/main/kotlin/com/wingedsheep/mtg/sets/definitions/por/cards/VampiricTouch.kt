@@ -22,6 +22,7 @@ val VampiricTouch = card("Vampiric Touch") {
     manaCost = "{2}{B}"
     colorIdentity = "B"
     typeLine = "Sorcery"
+    oracleText = "Vampiric Touch deals 2 damage to target opponent or planeswalker and you gain 2 life."
     spell {
         val t = target("target", TargetOpponentOrPlaneswalker())
         effect = Effects.Composite(

@@ -24,6 +24,7 @@ val Omen = card("Omen") {
     manaCost = "{1}{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Look at the top three cards of your library, then put them back in any order. You may shuffle.\nDraw a card."
     spell {
         effect = Effects.Composite(
             Patterns.Library.lookAtTopAndReorder(count = 3),

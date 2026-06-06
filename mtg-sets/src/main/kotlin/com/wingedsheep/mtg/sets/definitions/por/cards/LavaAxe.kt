@@ -20,6 +20,7 @@ val LavaAxe = card("Lava Axe") {
     manaCost = "{4}{R}"
     colorIdentity = "R"
     typeLine = "Sorcery"
+    oracleText = "Lava Axe deals 5 damage to target player or planeswalker."
     spell {
         val t = target("target", TargetPlayerOrPlaneswalker())
         effect = DealDamageEffect(5, t)

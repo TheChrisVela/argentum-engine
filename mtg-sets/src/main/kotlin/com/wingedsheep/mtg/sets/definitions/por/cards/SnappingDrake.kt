@@ -20,6 +20,7 @@ val SnappingDrake = card("Snapping Drake") {
     manaCost = "{3}{U}"
     colorIdentity = "U"
     typeLine = "Creature — Drake"
+    oracleText = "Flying (This creature can't be blocked except by creatures with flying or reach.)"
     power = 3
     toughness = 2
     keywords(Keyword.FLYING)

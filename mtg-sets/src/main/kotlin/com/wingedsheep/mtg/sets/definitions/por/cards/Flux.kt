@@ -20,6 +20,7 @@ val Flux = card("Flux") {
     manaCost = "{2}{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Each player discards any number of cards, then draws that many cards.\nDraw a card."
     spell {
         effect = Patterns.Hand.eachPlayerDiscardsDraws(controllerBonusDraw = 1)
     }

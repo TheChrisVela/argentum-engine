@@ -22,6 +22,7 @@ val ChargingPaladin = card("Charging Paladin") {
     manaCost = "{2}{W}"
     colorIdentity = "W"
     typeLine = "Creature — Human Knight"
+    oracleText = "Whenever this creature attacks, it gets +0/+3 until end of turn."
     power = 2
     toughness = 2
     triggeredAbility {

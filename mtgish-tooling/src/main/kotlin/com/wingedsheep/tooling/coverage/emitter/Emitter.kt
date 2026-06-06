@@ -41,6 +41,9 @@ object Emitter {
         body.add("    manaCost = \"${renderMana(card["ManaCost"])}\"")
         colorIdentityDsl(scryfall)?.let { body.add("    colorIdentity = \"$it\"") }
         body.add("    typeLine = \"${renderTypeline(card["Typeline"])}\"")
+        // Printed oracle text is display/training data (the gym observation surfaces it to agents); the
+        // engine still derives behaviour from the structured keywords/effects below, never from this string.
+        scryfall?.strField("oracle_text")?.takeIf { it.isNotEmpty() }?.let { body.add("    oracleText = \"${ktStr(it)}\"") }
         if (pt != null) { body.add("    power = ${pt["Power"].asInt()}"); body.add("    toughness = ${pt["Toughness"].asInt()}") }
         if (kw.isNotEmpty()) body.add("    keywords(${kw.sorted().joinToString(", ") { "Keyword.$it" }})")
         val cardLevelLines = ctx.cardLevelCastEffectLines(card) ?: return incomplete(ctx, body, scryfall, pkg)

@@ -24,6 +24,7 @@ val CapriciousSorcerer = card("Capricious Sorcerer") {
     manaCost = "{2}{U}"
     colorIdentity = "U"
     typeLine = "Creature — Human Wizard Sorcerer"
+    oracleText = "{T}: This creature deals 1 damage to any target. Activate only during your turn, before attackers are declared."
     power = 1
     toughness = 1
     activatedAbility {

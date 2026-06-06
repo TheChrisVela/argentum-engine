@@ -28,6 +28,7 @@ val BalefulStare = card("Baleful Stare") {
     manaCost = "{2}{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Target opponent reveals their hand. You draw a card for each Mountain and red card in it."
     spell {
         val t = target("target", TargetOpponent())
         effect = Effects.Composite(

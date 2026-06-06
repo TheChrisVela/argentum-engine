@@ -24,6 +24,7 @@ val SymbolOfUnsummoning = card("Symbol of Unsummoning") {
     manaCost = "{2}{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Return target creature to its owner's hand.\nDraw a card."
     spell {
         val t = target("target", TargetCreature(filter = TargetFilter.Creature))
         effect = Effects.Composite(

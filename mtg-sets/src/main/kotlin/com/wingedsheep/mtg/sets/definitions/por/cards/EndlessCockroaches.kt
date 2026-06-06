@@ -23,6 +23,7 @@ val EndlessCockroaches = card("Endless Cockroaches") {
     manaCost = "{1}{B}{B}"
     colorIdentity = "B"
     typeLine = "Creature — Insect"
+    oracleText = "When this creature dies, return it to its owner's hand."
     power = 1
     toughness = 1
     triggeredAbility {

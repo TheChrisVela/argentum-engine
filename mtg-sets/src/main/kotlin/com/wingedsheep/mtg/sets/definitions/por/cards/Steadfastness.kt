@@ -22,6 +22,7 @@ val Steadfastness = card("Steadfastness") {
     manaCost = "{1}{W}"
     colorIdentity = "W"
     typeLine = "Sorcery"
+    oracleText = "Creatures you control get +0/+3 until end of turn."
     spell {
         effect = Effects.ForEachInGroup(
             GroupFilter(GameObjectFilter.Creature.youControl()),

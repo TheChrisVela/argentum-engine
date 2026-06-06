@@ -24,6 +24,7 @@ val FinalStrike = card("Final Strike") {
     manaCost = "{2}{B}{B}"
     colorIdentity = "B"
     typeLine = "Sorcery"
+    oracleText = "As an additional cost to cast this spell, sacrifice a creature.\nFinal Strike deals damage to target opponent or planeswalker equal to the sacrificed creature's power."
     additionalCost(Costs.additional.SacrificePermanent(GameObjectFilter.Creature))
     spell {
         val t = target("target", TargetOpponentOrPlaneswalker())

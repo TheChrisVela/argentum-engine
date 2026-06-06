@@ -21,6 +21,7 @@ val BalanceOfPower = card("Balance of Power") {
     manaCost = "{3}{U}{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "If target opponent has more cards in hand than you, draw cards equal to the difference."
     spell {
         target = TargetOpponent()
         effect = DrawCardsEffect(DynamicAmounts.handSizeDifferenceFromTargetOpponent())

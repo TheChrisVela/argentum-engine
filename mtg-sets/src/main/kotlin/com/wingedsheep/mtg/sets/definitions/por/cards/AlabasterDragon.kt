@@ -26,6 +26,7 @@ val AlabasterDragon = card("Alabaster Dragon") {
     manaCost = "{4}{W}{W}"
     colorIdentity = "W"
     typeLine = "Creature — Dragon"
+    oracleText = "Flying\nWhen this creature dies, shuffle it into its owner's library."
     power = 4
     toughness = 4
     keywords(Keyword.FLYING)

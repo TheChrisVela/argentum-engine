@@ -19,6 +19,7 @@ val TouchOfBrilliance = card("Touch of Brilliance") {
     manaCost = "{3}{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Draw two cards."
     spell {
         effect = DrawCardsEffect(2)
     }

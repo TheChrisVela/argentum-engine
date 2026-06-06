@@ -20,6 +20,7 @@ val WallOfGranite = card("Wall of Granite") {
     manaCost = "{2}{R}"
     colorIdentity = "R"
     typeLine = "Creature — Wall"
+    oracleText = "Defender (This creature can't attack.)"
     power = 0
     toughness = 7
     keywords(Keyword.DEFENDER)

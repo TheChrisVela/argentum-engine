@@ -20,6 +20,7 @@ val BullHippo = card("Bull Hippo") {
     manaCost = "{3}{G}"
     colorIdentity = "G"
     typeLine = "Creature — Hippo"
+    oracleText = "Islandwalk (This creature can't be blocked as long as defending player controls an Island.)"
     power = 3
     toughness = 3
     keywords(Keyword.ISLANDWALK)

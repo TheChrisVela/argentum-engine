@@ -20,6 +20,7 @@ val RagingGoblin = card("Raging Goblin") {
     manaCost = "{R}"
     colorIdentity = "R"
     typeLine = "Creature — Goblin Berserker"
+    oracleText = "Haste (This creature can attack and {T} as soon as it comes under your control.)"
     power = 1
     toughness = 1
     keywords(Keyword.HASTE)

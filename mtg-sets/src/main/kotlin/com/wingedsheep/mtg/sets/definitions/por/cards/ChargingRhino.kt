@@ -20,6 +20,7 @@ val ChargingRhino = card("Charging Rhino") {
     manaCost = "{3}{G}{G}"
     colorIdentity = "G"
     typeLine = "Creature — Rhino"
+    oracleText = "This creature can't be blocked by more than one creature."
     power = 4
     toughness = 4
     staticAbility {

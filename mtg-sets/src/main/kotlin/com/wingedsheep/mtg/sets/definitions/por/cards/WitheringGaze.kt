@@ -28,6 +28,7 @@ val WitheringGaze = card("Withering Gaze") {
     manaCost = "{2}{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Target opponent reveals their hand. You draw a card for each Forest and green card in it."
     spell {
         val t = target("target", TargetOpponent())
         effect = Effects.Composite(

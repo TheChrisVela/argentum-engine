@@ -22,6 +22,7 @@ val AngelicBlessing = card("Angelic Blessing") {
     manaCost = "{2}{W}"
     colorIdentity = "W"
     typeLine = "Sorcery"
+    oracleText = "Target creature gets +3/+3 and gains flying until end of turn. (It can't be blocked except by creatures with flying or reach.)"
     spell {
         val t = target("target", TargetCreature(filter = TargetFilter.Creature))
         effect = Effects.Composite(

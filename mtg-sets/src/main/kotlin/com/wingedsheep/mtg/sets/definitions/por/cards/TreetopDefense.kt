@@ -26,6 +26,7 @@ val TreetopDefense = card("Treetop Defense") {
     manaCost = "{1}{G}"
     colorIdentity = "G"
     typeLine = "Instant"
+    oracleText = "Cast this spell only during the declare attackers step and only if you've been attacked this step.\nCreatures you control gain reach until end of turn. (They can block creatures with flying.)"
     spell {
         castOnlyDuring(Step.DECLARE_ATTACKERS)
         castOnlyIf(YouWereAttackedThisStep)

@@ -20,6 +20,7 @@ val Taunt = card("Taunt") {
     manaCost = "{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "During target player's next turn, creatures that player controls attack you if able."
     spell {
         val t = target("target", TargetPlayer())
         effect = TauntEffect(t)

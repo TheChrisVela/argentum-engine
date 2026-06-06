@@ -26,6 +26,7 @@ val KingsAssassin = card("King's Assassin") {
     manaCost = "{1}{B}{B}"
     colorIdentity = "B"
     typeLine = "Creature — Human Assassin"
+    oracleText = "{T}: Destroy target tapped creature. Activate only during your turn, before attackers are declared."
     power = 1
     toughness = 1
     activatedAbility {

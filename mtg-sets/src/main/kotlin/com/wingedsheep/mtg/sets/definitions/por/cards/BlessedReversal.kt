@@ -22,6 +22,7 @@ val BlessedReversal = card("Blessed Reversal") {
     manaCost = "{1}{W}"
     colorIdentity = "W"
     typeLine = "Instant"
+    oracleText = "You gain 3 life for each creature attacking you."
     spell {
         effect = GainLifeEffect(
             DynamicAmount.Multiply(

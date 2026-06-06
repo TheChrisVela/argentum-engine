@@ -20,6 +20,7 @@ val WillowDryad = card("Willow Dryad") {
     manaCost = "{G}"
     colorIdentity = "G"
     typeLine = "Creature — Dryad"
+    oracleText = "Forestwalk (This creature can't be blocked as long as defending player controls a Forest.)"
     power = 1
     toughness = 1
     keywords(Keyword.FORESTWALK)

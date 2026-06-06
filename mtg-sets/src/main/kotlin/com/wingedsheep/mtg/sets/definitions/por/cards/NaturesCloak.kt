@@ -24,6 +24,7 @@ val NaturesCloak = card("Nature's Cloak") {
     manaCost = "{2}{G}"
     colorIdentity = "G"
     typeLine = "Sorcery"
+    oracleText = "Green creatures you control gain forestwalk until end of turn. (They can't be blocked as long as defending player controls a Forest.)"
     spell {
         effect = Effects.ForEachInGroup(
             GroupFilter(GameObjectFilter.Creature.withColor(Color.GREEN).youControl()),

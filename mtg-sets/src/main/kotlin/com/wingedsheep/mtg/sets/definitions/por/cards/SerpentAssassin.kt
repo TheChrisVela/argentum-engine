@@ -25,6 +25,7 @@ val SerpentAssassin = card("Serpent Assassin") {
     manaCost = "{3}{B}{B}"
     colorIdentity = "B"
     typeLine = "Creature — Snake Assassin"
+    oracleText = "When this creature enters, you may destroy target nonblack creature."
     power = 2
     toughness = 2
     triggeredAbility {

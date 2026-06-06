@@ -20,6 +20,7 @@ val MindKnives = card("Mind Knives") {
     manaCost = "{1}{B}"
     colorIdentity = "B"
     typeLine = "Sorcery"
+    oracleText = "Target opponent discards a card at random."
     spell {
         val t = target("target", TargetOpponent())
         effect = Patterns.Hand.discardRandom(1, t)

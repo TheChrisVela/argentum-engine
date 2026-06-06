@@ -23,6 +23,7 @@ val CloudSpirit = card("Cloud Spirit") {
     manaCost = "{2}{U}"
     colorIdentity = "U"
     typeLine = "Creature — Spirit"
+    oracleText = "Flying\nThis creature can block only creatures with flying."
     power = 3
     toughness = 1
     keywords(Keyword.FLYING)

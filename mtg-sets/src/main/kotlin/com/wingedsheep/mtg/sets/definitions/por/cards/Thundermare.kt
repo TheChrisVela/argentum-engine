@@ -26,6 +26,7 @@ val Thundermare = card("Thundermare") {
     manaCost = "{5}{R}"
     colorIdentity = "R"
     typeLine = "Creature — Elemental Horse"
+    oracleText = "Haste (This creature can attack and {T} as soon as it comes under your control.)\nWhen this creature enters, tap all other creatures."
     power = 5
     toughness = 5
     keywords(Keyword.HASTE)

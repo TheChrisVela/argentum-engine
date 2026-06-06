@@ -21,6 +21,7 @@ val DeepSeaSerpent = card("Deep-Sea Serpent") {
     manaCost = "{4}{U}{U}"
     colorIdentity = "U"
     typeLine = "Creature — Serpent"
+    oracleText = "This creature can't attack unless defending player controls an Island."
     power = 5
     toughness = 5
     staticAbility {

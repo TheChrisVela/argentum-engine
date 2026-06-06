@@ -24,6 +24,7 @@ val WoodElves = card("Wood Elves") {
     manaCost = "{2}{G}"
     colorIdentity = "G"
     typeLine = "Creature — Elf Scout"
+    oracleText = "When this creature enters, search your library for a Forest card, put that card onto the battlefield, then shuffle."
     power = 1
     toughness = 1
     triggeredAbility {

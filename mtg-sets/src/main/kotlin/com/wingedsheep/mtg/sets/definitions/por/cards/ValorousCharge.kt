@@ -23,6 +23,7 @@ val ValorousCharge = card("Valorous Charge") {
     manaCost = "{1}{W}{W}"
     colorIdentity = "W"
     typeLine = "Sorcery"
+    oracleText = "White creatures get +2/+0 until end of turn."
     spell {
         effect = Effects.ForEachInGroup(
             GroupFilter(GameObjectFilter.Creature.withColor(Color.WHITE)),

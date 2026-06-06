@@ -22,6 +22,7 @@ val LavaFlow = card("Lava Flow") {
     manaCost = "{3}{R}{R}"
     colorIdentity = "R"
     typeLine = "Sorcery"
+    oracleText = "Destroy target creature or land."
     spell {
         val t = target("target", TargetPermanent(filter = TargetFilter.CreatureOrLandPermanent))
         effect = Effects.Move(t, Zone.GRAVEYARD, byDestruction = true)

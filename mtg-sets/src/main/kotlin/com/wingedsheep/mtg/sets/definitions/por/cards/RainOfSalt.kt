@@ -24,6 +24,7 @@ val RainOfSalt = card("Rain of Salt") {
     manaCost = "{4}{R}{R}"
     colorIdentity = "R"
     typeLine = "Sorcery"
+    oracleText = "Destroy two target lands."
     spell {
         val t = target("target", TargetPermanent(count = 2, filter = TargetFilter.Land))
         effect = ForEachTargetEffect(

@@ -26,6 +26,7 @@ val WickedPact = card("Wicked Pact") {
     manaCost = "{1}{B}{B}"
     colorIdentity = "B"
     typeLine = "Sorcery"
+    oracleText = "Destroy two target nonblack creatures. You lose 5 life."
     spell {
         val t = target("target", TargetCreature(count = 2, filter = TargetFilter.Creature.notColor(Color.BLACK)))
         effect = Effects.Composite(

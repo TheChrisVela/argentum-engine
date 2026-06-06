@@ -22,6 +22,7 @@ val DreadCharge = card("Dread Charge") {
     manaCost = "{3}{B}"
     colorIdentity = "B"
     typeLine = "Sorcery"
+    oracleText = "Black creatures you control can't be blocked this turn except by black creatures."
     spell {
         effect = GrantCantBeBlockedExceptByColorEffect(
             filter = GroupFilter(GameObjectFilter.Creature.withColor(Color.BLACK).youControl()),

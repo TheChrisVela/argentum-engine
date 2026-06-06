@@ -22,6 +22,7 @@ val RainOfTears = card("Rain of Tears") {
     manaCost = "{1}{B}{B}"
     colorIdentity = "B"
     typeLine = "Sorcery"
+    oracleText = "Destroy target land."
     spell {
         val t = target("target", TargetPermanent(filter = TargetFilter.Land))
         effect = Effects.Move(t, Zone.GRAVEYARD, byDestruction = true)

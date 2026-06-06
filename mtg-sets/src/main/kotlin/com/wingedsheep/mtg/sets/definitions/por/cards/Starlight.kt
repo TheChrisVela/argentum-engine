@@ -24,6 +24,7 @@ val Starlight = card("Starlight") {
     manaCost = "{1}{W}"
     colorIdentity = "W"
     typeLine = "Sorcery"
+    oracleText = "You gain 3 life for each black creature target opponent controls."
     spell {
         val t = target("target", TargetOpponent())
         effect = GainLifeEffect(

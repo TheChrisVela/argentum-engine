@@ -19,6 +19,7 @@ val LastChance = card("Last Chance") {
     manaCost = "{R}{R}"
     colorIdentity = "R"
     typeLine = "Sorcery"
+    oracleText = "Take an extra turn after this one. At the beginning of that turn's end step, you lose the game."
     spell {
         effect = TakeExtraTurnEffect(loseAtEndStep = true)
     }

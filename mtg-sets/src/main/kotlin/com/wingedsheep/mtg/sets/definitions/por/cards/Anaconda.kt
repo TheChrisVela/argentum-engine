@@ -20,6 +20,7 @@ val Anaconda = card("Anaconda") {
     manaCost = "{3}{G}"
     colorIdentity = "G"
     typeLine = "Creature — Snake"
+    oracleText = "Swampwalk (This creature can't be blocked as long as defending player controls a Swamp.)"
     power = 3
     toughness = 3
     keywords(Keyword.SWAMPWALK)

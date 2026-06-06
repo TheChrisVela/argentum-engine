@@ -24,6 +24,7 @@ val DreadReaper = card("Dread Reaper") {
     manaCost = "{3}{B}{B}{B}"
     colorIdentity = "B"
     typeLine = "Creature — Horror"
+    oracleText = "Flying\nWhen this creature enters, you lose 5 life."
     power = 6
     toughness = 5
     keywords(Keyword.FLYING)

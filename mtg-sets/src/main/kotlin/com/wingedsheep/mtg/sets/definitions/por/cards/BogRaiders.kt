@@ -20,6 +20,7 @@ val BogRaiders = card("Bog Raiders") {
     manaCost = "{2}{B}"
     colorIdentity = "B"
     typeLine = "Creature — Zombie"
+    oracleText = "Swampwalk (This creature can't be blocked as long as defending player controls a Swamp.)"
     power = 2
     toughness = 2
     keywords(Keyword.SWAMPWALK)

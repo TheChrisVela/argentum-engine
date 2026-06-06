@@ -25,6 +25,7 @@ val ThingFromTheDeep = card("Thing from the Deep") {
     manaCost = "{6}{U}{U}{U}"
     colorIdentity = "U"
     typeLine = "Creature — Leviathan"
+    oracleText = "Whenever this creature attacks, sacrifice it unless you sacrifice an Island."
     power = 9
     toughness = 9
     triggeredAbility {

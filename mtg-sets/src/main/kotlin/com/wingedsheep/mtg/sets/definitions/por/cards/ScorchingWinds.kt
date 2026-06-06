@@ -26,6 +26,7 @@ val ScorchingWinds = card("Scorching Winds") {
     manaCost = "{R}"
     colorIdentity = "R"
     typeLine = "Instant"
+    oracleText = "Cast this spell only during the declare attackers step and only if you've been attacked this step.\nScorching Winds deals 1 damage to each attacking creature."
     spell {
         castOnlyDuring(Step.DECLARE_ATTACKERS)
         castOnlyIf(YouWereAttackedThisStep)

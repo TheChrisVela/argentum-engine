@@ -24,6 +24,7 @@ val MercenaryKnight = card("Mercenary Knight") {
     manaCost = "{2}{B}"
     colorIdentity = "B"
     typeLine = "Creature — Human Mercenary Knight"
+    oracleText = "When this creature enters, sacrifice it unless you discard a creature card."
     power = 4
     toughness = 4
     triggeredAbility {

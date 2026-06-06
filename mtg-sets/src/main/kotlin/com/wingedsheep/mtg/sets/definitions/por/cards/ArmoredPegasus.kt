@@ -20,6 +20,7 @@ val ArmoredPegasus = card("Armored Pegasus") {
     manaCost = "{1}{W}"
     colorIdentity = "W"
     typeLine = "Creature — Pegasus"
+    oracleText = "Flying"
     power = 1
     toughness = 2
     keywords(Keyword.FLYING)

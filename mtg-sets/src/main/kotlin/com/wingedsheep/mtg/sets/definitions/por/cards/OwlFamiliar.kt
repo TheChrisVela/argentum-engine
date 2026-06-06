@@ -25,6 +25,7 @@ val OwlFamiliar = card("Owl Familiar") {
     manaCost = "{1}{U}"
     colorIdentity = "U"
     typeLine = "Creature — Bird"
+    oracleText = "Flying\nWhen this creature enters, draw a card, then discard a card."
     power = 1
     toughness = 1
     keywords(Keyword.FLYING)

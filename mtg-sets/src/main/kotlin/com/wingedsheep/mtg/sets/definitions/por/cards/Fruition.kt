@@ -23,6 +23,7 @@ val Fruition = card("Fruition") {
     manaCost = "{G}"
     colorIdentity = "G"
     typeLine = "Sorcery"
+    oracleText = "You gain 1 life for each Forest on the battlefield."
     spell {
         effect = GainLifeEffect(
             DynamicAmount.AggregateBattlefield(Player.Each, GameObjectFilter.Land.withSubtype(Subtype.FOREST))

@@ -20,6 +20,7 @@ val ScorchingSpear = card("Scorching Spear") {
     manaCost = "{R}"
     colorIdentity = "R"
     typeLine = "Sorcery"
+    oracleText = "Scorching Spear deals 1 damage to any target."
     spell {
         val t = target("target", AnyTarget())
         effect = DealDamageEffect(1, t)

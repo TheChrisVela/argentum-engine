@@ -23,6 +23,7 @@ val Devastation = card("Devastation") {
     manaCost = "{5}{R}{R}"
     colorIdentity = "R"
     typeLine = "Sorcery"
+    oracleText = "Destroy all creatures and lands."
     spell {
         effect = Effects.ForEachInGroup(
             GroupFilter(GameObjectFilter.CreatureOrLand),

@@ -23,6 +23,7 @@ val PathOfPeace = card("Path of Peace") {
     manaCost = "{3}{W}"
     colorIdentity = "W"
     typeLine = "Sorcery"
+    oracleText = "Destroy target creature. Its owner gains 4 life."
     spell {
         val t = target("target", TargetCreature(filter = TargetFilter.Creature))
         effect = Effects.Composite(

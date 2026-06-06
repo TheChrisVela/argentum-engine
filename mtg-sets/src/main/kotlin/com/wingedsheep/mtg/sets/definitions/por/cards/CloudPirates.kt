@@ -23,6 +23,7 @@ val CloudPirates = card("Cloud Pirates") {
     manaCost = "{U}"
     colorIdentity = "U"
     typeLine = "Creature — Human Pirate"
+    oracleText = "Flying\nThis creature can block only creatures with flying."
     power = 1
     toughness = 1
     keywords(Keyword.FLYING)

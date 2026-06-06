@@ -24,6 +24,7 @@ val FireSnake = card("Fire Snake") {
     manaCost = "{4}{R}"
     colorIdentity = "R"
     typeLine = "Creature — Snake"
+    oracleText = "When this creature dies, destroy target land."
     power = 3
     toughness = 1
     triggeredAbility {

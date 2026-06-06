@@ -23,6 +23,7 @@ val PillagingHorde = card("Pillaging Horde") {
     manaCost = "{2}{R}{R}"
     colorIdentity = "R"
     typeLine = "Creature — Human Barbarian"
+    oracleText = "When this creature enters, sacrifice it unless you discard a card at random."
     power = 5
     toughness = 5
     triggeredAbility {

@@ -23,6 +23,7 @@ val TimeEbb = card("Time Ebb") {
     manaCost = "{2}{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Put target creature on top of its owner's library."
     spell {
         val t = target("target", TargetCreature(filter = TargetFilter.Creature))
         effect = Effects.Move(t, Zone.LIBRARY, ZonePlacement.Top)

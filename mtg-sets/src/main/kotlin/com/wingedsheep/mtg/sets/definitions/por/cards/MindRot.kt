@@ -20,6 +20,7 @@ val MindRot = card("Mind Rot") {
     manaCost = "{2}{B}"
     colorIdentity = "B"
     typeLine = "Sorcery"
+    oracleText = "Target player discards two cards."
     spell {
         val t = target("target", TargetPlayer())
         effect = Patterns.Hand.discardCards(2, t)

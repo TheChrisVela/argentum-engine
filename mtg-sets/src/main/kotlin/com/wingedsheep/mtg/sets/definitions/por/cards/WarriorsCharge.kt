@@ -22,6 +22,7 @@ val WarriorsCharge = card("Warrior's Charge") {
     manaCost = "{2}{W}"
     colorIdentity = "W"
     typeLine = "Sorcery"
+    oracleText = "Creatures you control get +1/+1 until end of turn."
     spell {
         effect = Effects.ForEachInGroup(
             GroupFilter(GameObjectFilter.Creature.youControl()),

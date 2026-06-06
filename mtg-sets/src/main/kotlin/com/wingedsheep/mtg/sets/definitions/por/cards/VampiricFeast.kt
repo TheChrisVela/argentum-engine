@@ -22,6 +22,7 @@ val VampiricFeast = card("Vampiric Feast") {
     manaCost = "{5}{B}{B}"
     colorIdentity = "B"
     typeLine = "Sorcery"
+    oracleText = "Vampiric Feast deals 4 damage to any target and you gain 4 life."
     spell {
         val t = target("target", AnyTarget())
         effect = Effects.Composite(

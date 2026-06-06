@@ -23,6 +23,7 @@ val CloudDragon = card("Cloud Dragon") {
     manaCost = "{5}{U}"
     colorIdentity = "U"
     typeLine = "Creature — Illusion Dragon"
+    oracleText = "Flying\nThis creature can block only creatures with flying."
     power = 5
     toughness = 4
     keywords(Keyword.FLYING)

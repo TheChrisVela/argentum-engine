@@ -20,6 +20,7 @@ val EliteCatWarrior = card("Elite Cat Warrior") {
     manaCost = "{2}{G}"
     colorIdentity = "G"
     typeLine = "Creature — Cat Warrior"
+    oracleText = "Forestwalk (This creature can't be blocked as long as defending player controls a Forest.)"
     power = 2
     toughness = 3
     keywords(Keyword.FORESTWALK)

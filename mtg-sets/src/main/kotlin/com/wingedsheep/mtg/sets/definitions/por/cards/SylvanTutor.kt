@@ -21,6 +21,7 @@ val SylvanTutor = card("Sylvan Tutor") {
     manaCost = "{G}"
     colorIdentity = "G"
     typeLine = "Sorcery"
+    oracleText = "Search your library for a creature card, reveal it, then shuffle and put that card on top."
     spell {
         effect = Patterns.Library.searchLibrary(
             filter = GameObjectFilter.Creature,

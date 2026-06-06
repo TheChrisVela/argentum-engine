@@ -20,6 +20,7 @@ val JungleLion = card("Jungle Lion") {
     manaCost = "{G}"
     colorIdentity = "G"
     typeLine = "Creature — Cat"
+    oracleText = "This creature can't block."
     power = 2
     toughness = 1
     staticAbility {

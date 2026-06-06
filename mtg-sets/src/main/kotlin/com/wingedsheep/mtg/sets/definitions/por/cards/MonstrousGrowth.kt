@@ -21,6 +21,7 @@ val MonstrousGrowth = card("Monstrous Growth") {
     manaCost = "{1}{G}"
     colorIdentity = "G"
     typeLine = "Sorcery"
+    oracleText = "Target creature gets +4/+4 until end of turn."
     spell {
         val t = target("target", TargetCreature(filter = TargetFilter.Creature))
         effect = Effects.ModifyStats(4, 4, t)

@@ -20,6 +20,7 @@ val ArrogantVampire = card("Arrogant Vampire") {
     manaCost = "{3}{B}{B}"
     colorIdentity = "B"
     typeLine = "Creature — Vampire"
+    oracleText = "Flying"
     power = 4
     toughness = 3
     keywords(Keyword.FLYING)

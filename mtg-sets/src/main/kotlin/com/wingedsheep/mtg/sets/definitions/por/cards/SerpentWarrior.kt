@@ -22,6 +22,7 @@ val SerpentWarrior = card("Serpent Warrior") {
     manaCost = "{2}{B}"
     colorIdentity = "B"
     typeLine = "Creature — Snake Warrior"
+    oracleText = "When this creature enters, you lose 3 life."
     power = 3
     toughness = 3
     triggeredAbility {

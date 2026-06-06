@@ -23,6 +23,7 @@ val GiftOfEstates = card("Gift of Estates") {
     manaCost = "{1}{W}"
     colorIdentity = "W"
     typeLine = "Sorcery"
+    oracleText = "If an opponent controls more lands than you, search your library for up to three Plains cards, reveal them, put them into your hand, then shuffle."
     spell {
         condition = Conditions.OpponentControlsMoreLands
         effect = Patterns.Library.searchLibrary(

@@ -24,6 +24,7 @@ val IngeniousThief = card("Ingenious Thief") {
     manaCost = "{1}{U}"
     colorIdentity = "U"
     typeLine = "Creature — Human Rogue"
+    oracleText = "Flying\nWhen this creature enters, look at target player's hand."
     power = 1
     toughness = 1
     keywords(Keyword.FLYING)

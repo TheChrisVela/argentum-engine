@@ -20,6 +20,7 @@ val MoonSprite = card("Moon Sprite") {
     manaCost = "{1}{G}"
     colorIdentity = "G"
     typeLine = "Creature — Faerie"
+    oracleText = "Flying"
     power = 1
     toughness = 1
     keywords(Keyword.FLYING)

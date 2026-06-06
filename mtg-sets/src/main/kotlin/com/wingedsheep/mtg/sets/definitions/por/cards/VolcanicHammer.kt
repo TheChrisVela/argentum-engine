@@ -20,6 +20,7 @@ val VolcanicHammer = card("Volcanic Hammer") {
     manaCost = "{1}{R}"
     colorIdentity = "R"
     typeLine = "Sorcery"
+    oracleText = "Volcanic Hammer deals 3 damage to any target."
     spell {
         val t = target("target", AnyTarget())
         effect = DealDamageEffect(3, t)

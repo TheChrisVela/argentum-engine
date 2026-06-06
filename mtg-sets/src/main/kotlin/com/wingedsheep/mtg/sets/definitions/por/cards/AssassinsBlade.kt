@@ -26,6 +26,7 @@ val AssassinsBlade = card("Assassin's Blade") {
     manaCost = "{1}{B}"
     colorIdentity = "B"
     typeLine = "Instant"
+    oracleText = "Cast this spell only during the declare attackers step and only if you've been attacked this step.\nDestroy target nonblack attacking creature."
     spell {
         castOnlyDuring(Step.DECLARE_ATTACKERS)
         castOnlyIf(YouWereAttackedThisStep)

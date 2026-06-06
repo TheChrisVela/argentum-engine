@@ -20,6 +20,7 @@ val ForkedLightning = card("Forked Lightning") {
     manaCost = "{3}{R}"
     colorIdentity = "R"
     typeLine = "Sorcery"
+    oracleText = "Forked Lightning deals 4 damage divided as you choose among one, two, or three target creatures."
     spell {
         target = TargetCreature(count = 3, minCount = 1)
         effect = DividedDamageEffect(totalDamage = 4, minTargets = 1, maxTargets = 3)

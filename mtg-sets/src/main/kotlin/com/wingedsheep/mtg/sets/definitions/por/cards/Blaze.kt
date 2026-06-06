@@ -21,6 +21,7 @@ val Blaze = card("Blaze") {
     manaCost = "{X}{R}"
     colorIdentity = "R"
     typeLine = "Sorcery"
+    oracleText = "Blaze deals X damage to any target."
     spell {
         val t = target("target", AnyTarget())
         effect = DealDamageEffect(DynamicAmount.XValue, t)

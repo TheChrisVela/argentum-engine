@@ -24,6 +24,7 @@ val NeedleStorm = card("Needle Storm") {
     manaCost = "{2}{G}"
     colorIdentity = "G"
     typeLine = "Sorcery"
+    oracleText = "Needle Storm deals 4 damage to each creature with flying."
     spell {
         effect = Effects.ForEachInGroup(
             GroupFilter(GameObjectFilter.Creature.withKeyword(Keyword.FLYING)),

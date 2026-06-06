@@ -24,6 +24,7 @@ val UndyingBeast = card("Undying Beast") {
     manaCost = "{3}{B}"
     colorIdentity = "B"
     typeLine = "Creature — Beast"
+    oracleText = "When this creature dies, put it on top of its owner's library."
     power = 3
     toughness = 2
     triggeredAbility {

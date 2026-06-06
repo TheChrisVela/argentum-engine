@@ -20,6 +20,7 @@ val CravenGiant = card("Craven Giant") {
     manaCost = "{2}{R}"
     colorIdentity = "R"
     typeLine = "Creature — Giant"
+    oracleText = "This creature can't block."
     power = 4
     toughness = 1
     staticAbility {

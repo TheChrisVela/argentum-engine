@@ -20,6 +20,7 @@ val RagingCougar = card("Raging Cougar") {
     manaCost = "{2}{R}"
     colorIdentity = "R"
     typeLine = "Creature — Cat"
+    oracleText = "Haste"
     power = 2
     toughness = 2
     keywords(Keyword.HASTE)

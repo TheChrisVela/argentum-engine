@@ -24,6 +24,7 @@ val ThunderingWurm = card("Thundering Wurm") {
     manaCost = "{2}{G}"
     colorIdentity = "G"
     typeLine = "Creature — Wurm"
+    oracleText = "When this creature enters, sacrifice it unless you discard a land card."
     power = 4
     toughness = 4
     triggeredAbility {

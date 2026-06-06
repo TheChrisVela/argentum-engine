@@ -21,6 +21,7 @@ val HowlingFury = card("Howling Fury") {
     manaCost = "{2}{B}"
     colorIdentity = "B"
     typeLine = "Sorcery"
+    oracleText = "Target creature gets +4/+0 until end of turn."
     spell {
         val t = target("target", TargetCreature(filter = TargetFilter.Creature))
         effect = Effects.ModifyStats(4, 0, t)

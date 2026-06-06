@@ -29,6 +29,7 @@ val FireDragon = card("Fire Dragon") {
     manaCost = "{6}{R}{R}{R}"
     colorIdentity = "R"
     typeLine = "Creature — Dragon"
+    oracleText = "Flying\nWhen this creature enters, it deals damage to target creature equal to the number of Mountains you control."
     power = 6
     toughness = 6
     keywords(Keyword.FLYING)

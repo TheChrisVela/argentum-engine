@@ -19,6 +19,7 @@ val TemporaryTruce = card("Temporary Truce") {
     manaCost = "{1}{W}"
     colorIdentity = "W"
     typeLine = "Sorcery"
+    oracleText = "Each player may draw up to two cards. For each card less than two a player draws this way, that player gains 2 life."
     spell {
         effect = Patterns.Hand.eachPlayerMayDraw(maxCards = 2, lifePerCardNotDrawn = 2)
     }

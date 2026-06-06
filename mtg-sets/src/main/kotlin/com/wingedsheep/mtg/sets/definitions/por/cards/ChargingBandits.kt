@@ -22,6 +22,7 @@ val ChargingBandits = card("Charging Bandits") {
     manaCost = "{4}{B}"
     colorIdentity = "B"
     typeLine = "Creature — Human Rogue"
+    oracleText = "Whenever this creature attacks, it gets +2/+0 until end of turn."
     power = 3
     toughness = 3
     triggeredAbility {

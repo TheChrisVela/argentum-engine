@@ -20,6 +20,7 @@ val StarlitAngel = card("Starlit Angel") {
     manaCost = "{3}{W}{W}"
     colorIdentity = "W"
     typeLine = "Creature — Angel"
+    oracleText = "Flying"
     power = 3
     toughness = 4
     keywords(Keyword.FLYING)

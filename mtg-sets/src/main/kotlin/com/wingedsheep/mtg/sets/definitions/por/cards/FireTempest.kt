@@ -25,6 +25,7 @@ val FireTempest = card("Fire Tempest") {
     manaCost = "{5}{R}{R}"
     colorIdentity = "R"
     typeLine = "Sorcery"
+    oracleText = "Fire Tempest deals 6 damage to each creature and each player."
     spell {
         effect = Effects.Composite(
             Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Creature), DealDamageEffect(6, EffectTarget.Self)),

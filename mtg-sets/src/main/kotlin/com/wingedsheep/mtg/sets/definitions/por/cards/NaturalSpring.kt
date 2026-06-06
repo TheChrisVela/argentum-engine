@@ -20,6 +20,7 @@ val NaturalSpring = card("Natural Spring") {
     manaCost = "{3}{G}{G}"
     colorIdentity = "G"
     typeLine = "Sorcery"
+    oracleText = "Target player gains 8 life."
     spell {
         val t = target("target", TargetPlayer())
         effect = GainLifeEffect(8, t)

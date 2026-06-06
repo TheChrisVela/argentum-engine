@@ -24,6 +24,7 @@ val BoilingSeas = card("Boiling Seas") {
     manaCost = "{3}{R}"
     colorIdentity = "R"
     typeLine = "Sorcery"
+    oracleText = "Destroy all Islands."
     spell {
         effect = Effects.ForEachInGroup(
             GroupFilter(GameObjectFilter.Land.withSubtype(Subtype.ISLAND)),

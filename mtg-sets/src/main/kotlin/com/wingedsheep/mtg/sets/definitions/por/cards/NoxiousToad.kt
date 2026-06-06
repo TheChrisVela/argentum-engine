@@ -21,6 +21,7 @@ val NoxiousToad = card("Noxious Toad") {
     manaCost = "{2}{B}"
     colorIdentity = "B"
     typeLine = "Creature — Frog"
+    oracleText = "When this creature dies, each opponent discards a card."
     power = 1
     toughness = 1
     triggeredAbility {

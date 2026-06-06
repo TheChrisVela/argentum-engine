@@ -25,6 +25,7 @@ val SternMarshal = card("Stern Marshal") {
     manaCost = "{2}{W}"
     colorIdentity = "W"
     typeLine = "Creature — Human Soldier"
+    oracleText = "{T}: Target creature gets +2/+2 until end of turn. Activate only during your turn, before attackers are declared."
     power = 2
     toughness = 2
     activatedAbility {

@@ -21,6 +21,7 @@ val FleetFootedMonk = card("Fleet-Footed Monk") {
     manaCost = "{1}{W}"
     colorIdentity = "W"
     typeLine = "Creature — Human Monk"
+    oracleText = "This creature can't be blocked by creatures with power 2 or greater."
     power = 1
     toughness = 1
     staticAbility {

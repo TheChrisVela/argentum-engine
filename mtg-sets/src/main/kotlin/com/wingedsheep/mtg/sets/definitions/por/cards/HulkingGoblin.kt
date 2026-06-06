@@ -20,6 +20,7 @@ val HulkingGoblin = card("Hulking Goblin") {
     manaCost = "{1}{R}"
     colorIdentity = "R"
     typeLine = "Creature — Goblin"
+    oracleText = "This creature can't block."
     power = 2
     toughness = 2
     staticAbility {

@@ -25,6 +25,7 @@ val PrimevalForce = card("Primeval Force") {
     manaCost = "{2}{G}{G}{G}"
     colorIdentity = "G"
     typeLine = "Creature — Elemental"
+    oracleText = "When this creature enters, sacrifice it unless you sacrifice three Forests."
     power = 8
     toughness = 8
     triggeredAbility {

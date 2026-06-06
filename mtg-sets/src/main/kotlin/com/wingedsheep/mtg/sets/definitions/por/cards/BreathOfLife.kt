@@ -22,6 +22,7 @@ val BreathOfLife = card("Breath of Life") {
     manaCost = "{3}{W}"
     colorIdentity = "W"
     typeLine = "Sorcery"
+    oracleText = "Return target creature card from your graveyard to the battlefield."
     spell {
         val t = target("target", TargetObject(filter = TargetFilter.CreatureInYourGraveyard))
         effect = Effects.Move(t, Zone.BATTLEFIELD)

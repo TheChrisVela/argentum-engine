@@ -21,6 +21,7 @@ val PersonalTutor = card("Personal Tutor") {
     manaCost = "{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Search your library for a sorcery card, reveal it, then shuffle and put that card on top."
     spell {
         effect = Patterns.Library.searchLibrary(
             filter = GameObjectFilter.Sorcery,

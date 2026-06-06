@@ -24,6 +24,7 @@ val CruelBargain = card("Cruel Bargain") {
     manaCost = "{B}{B}{B}"
     colorIdentity = "B"
     typeLine = "Sorcery"
+    oracleText = "Draw four cards. You lose half your life, rounded up."
     spell {
         effect = Effects.Composite(
             DrawCardsEffect(4),

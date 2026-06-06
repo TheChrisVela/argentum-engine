@@ -21,6 +21,7 @@ val MysticDenial = card("Mystic Denial") {
     manaCost = "{1}{U}{U}"
     colorIdentity = "U"
     typeLine = "Instant"
+    oracleText = "Counter target creature or sorcery spell."
     spell {
         val t = target("target", TargetSpell(filter = TargetFilter.CreatureOrSorcerySpellOnStack))
         effect = CounterEffect()

@@ -21,6 +21,7 @@ val AlluringScent = card("Alluring Scent") {
     manaCost = "{1}{G}{G}"
     colorIdentity = "G"
     typeLine = "Sorcery"
+    oracleText = "All creatures able to block target creature this turn do so."
     spell {
         val t = target("target", TargetCreature(filter = TargetFilter.Creature))
         effect = MustBeBlockedEffect(t)

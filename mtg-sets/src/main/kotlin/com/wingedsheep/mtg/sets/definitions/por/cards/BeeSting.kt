@@ -20,6 +20,7 @@ val BeeSting = card("Bee Sting") {
     manaCost = "{3}{G}"
     colorIdentity = "G"
     typeLine = "Sorcery"
+    oracleText = "Bee Sting deals 2 damage to any target."
     spell {
         val t = target("target", AnyTarget())
         effect = DealDamageEffect(2, t)

@@ -22,6 +22,7 @@ val DeepWood = card("Deep Wood") {
     manaCost = "{1}{G}"
     colorIdentity = "G"
     typeLine = "Instant"
+    oracleText = "Cast this spell only during the declare attackers step and only if you've been attacked this step.\nPrevent all damage that would be dealt to you this turn by attacking creatures."
     spell {
         castOnlyDuring(Step.DECLARE_ATTACKERS)
         castOnlyIf(YouWereAttackedThisStep)

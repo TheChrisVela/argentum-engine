@@ -23,6 +23,7 @@ val TheftOfDreams = card("Theft of Dreams") {
     manaCost = "{2}{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Draw a card for each tapped creature target opponent controls."
     spell {
         val t = target("target", TargetOpponent())
         effect = DrawCardsEffect(

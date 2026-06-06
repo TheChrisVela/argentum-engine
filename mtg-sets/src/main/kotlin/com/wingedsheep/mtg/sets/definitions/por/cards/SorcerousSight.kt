@@ -23,6 +23,7 @@ val SorcerousSight = card("Sorcerous Sight") {
     manaCost = "{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Look at target opponent's hand.\nDraw a card."
     spell {
         val t = target("target", TargetOpponent())
         effect = Effects.Composite(

@@ -24,6 +24,7 @@ val RenewingDawn = card("Renewing Dawn") {
     manaCost = "{1}{W}"
     colorIdentity = "W"
     typeLine = "Sorcery"
+    oracleText = "You gain 2 life for each Mountain target opponent controls."
     spell {
         val t = target("target", TargetOpponent())
         effect = GainLifeEffect(

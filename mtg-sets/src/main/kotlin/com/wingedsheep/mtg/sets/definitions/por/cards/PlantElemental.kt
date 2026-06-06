@@ -25,6 +25,7 @@ val PlantElemental = card("Plant Elemental") {
     manaCost = "{1}{G}"
     colorIdentity = "G"
     typeLine = "Creature — Plant Elemental"
+    oracleText = "When this creature enters, sacrifice it unless you sacrifice a Forest."
     power = 3
     toughness = 4
     triggeredAbility {

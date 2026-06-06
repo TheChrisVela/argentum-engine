@@ -24,6 +24,7 @@ val SoulShred = card("Soul Shred") {
     manaCost = "{3}{B}{B}"
     colorIdentity = "B"
     typeLine = "Sorcery"
+    oracleText = "Soul Shred deals 3 damage to target nonblack creature. You gain 3 life."
     spell {
         val t = target("target", TargetCreature(filter = TargetFilter.Creature.notColor(Color.BLACK)))
         effect = Effects.Composite(

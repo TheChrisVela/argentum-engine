@@ -23,6 +23,7 @@ val FireImp = card("Fire Imp") {
     manaCost = "{2}{R}"
     colorIdentity = "R"
     typeLine = "Creature — Imp"
+    oracleText = "When this creature enters, it deals 2 damage to target creature."
     power = 2
     toughness = 1
     triggeredAbility {

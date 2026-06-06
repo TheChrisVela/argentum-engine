@@ -22,6 +22,7 @@ val HarshJustice = card("Harsh Justice") {
     manaCost = "{2}{W}"
     colorIdentity = "W"
     typeLine = "Instant"
+    oracleText = "Cast this spell only during the declare attackers step and only if you've been attacked this step.\nThis turn, whenever an attacking creature deals combat damage to you, it deals that much damage to its controller."
     spell {
         castOnlyDuring(Step.DECLARE_ATTACKERS)
         castOnlyIf(YouWereAttackedThisStep)

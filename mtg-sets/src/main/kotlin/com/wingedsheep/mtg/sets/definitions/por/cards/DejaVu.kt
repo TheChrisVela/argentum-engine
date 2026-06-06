@@ -23,6 +23,7 @@ val DejaVu = card("Déjà Vu") {
     manaCost = "{2}{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Return target sorcery card from your graveyard to your hand."
     spell {
         val t = target(
             "target",

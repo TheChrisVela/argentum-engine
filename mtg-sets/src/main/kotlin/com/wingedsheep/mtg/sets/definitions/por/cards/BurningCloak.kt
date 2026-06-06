@@ -22,6 +22,7 @@ val BurningCloak = card("Burning Cloak") {
     manaCost = "{R}"
     colorIdentity = "R"
     typeLine = "Sorcery"
+    oracleText = "Target creature gets +2/+0 until end of turn. Burning Cloak deals 2 damage to that creature."
     spell {
         val t = target("target", TargetCreature(filter = TargetFilter.Creature))
         effect = Effects.Composite(

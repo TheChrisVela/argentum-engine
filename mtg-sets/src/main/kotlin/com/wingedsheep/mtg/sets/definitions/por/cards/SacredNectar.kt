@@ -19,6 +19,7 @@ val SacredNectar = card("Sacred Nectar") {
     manaCost = "{1}{W}"
     colorIdentity = "W"
     typeLine = "Sorcery"
+    oracleText = "You gain 4 life."
     spell {
         effect = GainLifeEffect(4)
     }

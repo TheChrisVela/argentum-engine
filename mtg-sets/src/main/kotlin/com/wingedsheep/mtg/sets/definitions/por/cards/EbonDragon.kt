@@ -24,6 +24,7 @@ val EbonDragon = card("Ebon Dragon") {
     manaCost = "{5}{B}{B}"
     colorIdentity = "B"
     typeLine = "Creature — Dragon"
+    oracleText = "Flying\nWhen this creature enters, you may have target opponent discard a card."
     power = 5
     toughness = 4
     keywords(Keyword.FLYING)

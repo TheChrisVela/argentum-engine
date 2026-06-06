@@ -24,6 +24,7 @@ val NaturesRuin = card("Nature's Ruin") {
     manaCost = "{2}{B}"
     colorIdentity = "B"
     typeLine = "Sorcery"
+    oracleText = "Destroy all green creatures."
     spell {
         effect = Effects.ForEachInGroup(
             GroupFilter(GameObjectFilter.Creature.withColor(Color.GREEN)),

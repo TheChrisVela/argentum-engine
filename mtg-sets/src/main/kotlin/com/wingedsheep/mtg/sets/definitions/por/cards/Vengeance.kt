@@ -22,6 +22,7 @@ val Vengeance = card("Vengeance") {
     manaCost = "{3}{W}"
     colorIdentity = "W"
     typeLine = "Sorcery"
+    oracleText = "Destroy target tapped creature."
     spell {
         val t = target("target", TargetCreature(filter = TargetFilter.Creature.tapped()))
         effect = Effects.Move(t, Zone.GRAVEYARD, byDestruction = true)

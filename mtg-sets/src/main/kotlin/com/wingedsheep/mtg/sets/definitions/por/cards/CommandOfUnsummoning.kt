@@ -27,6 +27,7 @@ val CommandOfUnsummoning = card("Command of Unsummoning") {
     manaCost = "{2}{U}"
     colorIdentity = "U"
     typeLine = "Instant"
+    oracleText = "Cast this spell only during the declare attackers step and only if you've been attacked this step.\nReturn one or two target attacking creatures to their owner's hand."
     spell {
         castOnlyDuring(Step.DECLARE_ATTACKERS)
         castOnlyIf(YouWereAttackedThisStep)

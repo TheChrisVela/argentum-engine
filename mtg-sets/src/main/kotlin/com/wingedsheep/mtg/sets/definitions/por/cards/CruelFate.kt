@@ -31,6 +31,7 @@ val CruelFate = card("Cruel Fate") {
     manaCost = "{4}{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Look at the top five cards of target opponent's library. Put one of those cards into that player's graveyard and the rest on top of their library in any order."
     spell {
         val t = target("target", TargetOpponent())
         effect = Effects.Composite(

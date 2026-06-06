@@ -22,6 +22,7 @@ val WintersGrasp = card("Winter's Grasp") {
     manaCost = "{1}{G}{G}"
     colorIdentity = "G"
     typeLine = "Sorcery"
+    oracleText = "Destroy target land."
     spell {
         val t = target("target", TargetPermanent(filter = TargetFilter.Land))
         effect = Effects.Move(t, Zone.GRAVEYARD, byDestruction = true)

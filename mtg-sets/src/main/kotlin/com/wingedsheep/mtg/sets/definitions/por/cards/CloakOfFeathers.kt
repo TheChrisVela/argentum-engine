@@ -24,6 +24,7 @@ val CloakOfFeathers = card("Cloak of Feathers") {
     manaCost = "{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Target creature gains flying until end of turn.\nDraw a card."
     spell {
         val t = target("target", TargetCreature(filter = TargetFilter.Creature))
         effect = Effects.Composite(

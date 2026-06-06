@@ -20,6 +20,7 @@ val RagingMinotaur = card("Raging Minotaur") {
     manaCost = "{2}{R}{R}"
     colorIdentity = "R"
     typeLine = "Creature — Minotaur Berserker"
+    oracleText = "Haste"
     power = 3
     toughness = 3
     keywords(Keyword.HASTE)

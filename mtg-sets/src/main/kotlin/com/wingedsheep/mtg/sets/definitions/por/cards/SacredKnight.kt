@@ -22,6 +22,7 @@ val SacredKnight = card("Sacred Knight") {
     manaCost = "{3}{W}"
     colorIdentity = "W"
     typeLine = "Creature — Human Knight"
+    oracleText = "This creature can't be blocked by black and/or red creatures."
     power = 3
     toughness = 2
     staticAbility {

@@ -23,6 +23,7 @@ val SeasonedMarshal = card("Seasoned Marshal") {
     manaCost = "{2}{W}{W}"
     colorIdentity = "W"
     typeLine = "Creature — Human Soldier"
+    oracleText = "Whenever this creature attacks, you may tap target creature."
     power = 2
     toughness = 2
     triggeredAbility {

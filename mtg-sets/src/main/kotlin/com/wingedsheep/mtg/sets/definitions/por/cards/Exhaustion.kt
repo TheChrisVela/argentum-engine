@@ -20,6 +20,7 @@ val Exhaustion = card("Exhaustion") {
     manaCost = "{2}{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Creatures and lands target opponent controls don't untap during their next untap step."
     spell {
         val t = target("target", TargetOpponent())
         effect = SkipUntapEffect(t)

@@ -20,6 +20,7 @@ val WindDrake = card("Wind Drake") {
     manaCost = "{2}{U}"
     colorIdentity = "U"
     typeLine = "Creature — Drake"
+    oracleText = "Flying"
     power = 2
     toughness = 2
     keywords(Keyword.FLYING)

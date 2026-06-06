@@ -23,6 +23,7 @@ val HandOfDeath = card("Hand of Death") {
     manaCost = "{2}{B}"
     colorIdentity = "B"
     typeLine = "Sorcery"
+    oracleText = "Destroy target nonblack creature."
     spell {
         val t = target("target", TargetCreature(filter = TargetFilter.Creature.notColor(Color.BLACK)))
         effect = Effects.Move(t, Zone.GRAVEYARD, byDestruction = true)

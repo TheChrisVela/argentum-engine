@@ -20,6 +20,7 @@ val PhantomWarrior = card("Phantom Warrior") {
     manaCost = "{1}{U}{U}"
     colorIdentity = "U"
     typeLine = "Creature — Illusion Warrior"
+    oracleText = "This creature can't be blocked."
     power = 2
     toughness = 2
     flags(AbilityFlag.CANT_BE_BLOCKED)

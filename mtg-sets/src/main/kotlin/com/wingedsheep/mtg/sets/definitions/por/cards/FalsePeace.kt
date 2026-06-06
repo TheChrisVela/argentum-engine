@@ -20,6 +20,7 @@ val FalsePeace = card("False Peace") {
     manaCost = "{W}"
     colorIdentity = "W"
     typeLine = "Sorcery"
+    oracleText = "Target player skips all combat phases of their next turn."
     spell {
         val t = target("target", TargetPlayer())
         effect = SkipCombatPhasesEffect(t)

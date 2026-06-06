@@ -20,6 +20,7 @@ val ArdentMilitia = card("Ardent Militia") {
     manaCost = "{4}{W}"
     colorIdentity = "W"
     typeLine = "Creature — Human Soldier"
+    oracleText = "Vigilance"
     power = 2
     toughness = 5
     keywords(Keyword.VIGILANCE)

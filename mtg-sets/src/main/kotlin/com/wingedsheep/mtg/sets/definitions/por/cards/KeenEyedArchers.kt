@@ -20,6 +20,7 @@ val KeenEyedArchers = card("Keen-Eyed Archers") {
     manaCost = "{2}{W}"
     colorIdentity = "W"
     typeLine = "Creature — Elf Archer"
+    oracleText = "Reach (This creature can block creatures with flying.)"
     power = 2
     toughness = 2
     keywords(Keyword.REACH)

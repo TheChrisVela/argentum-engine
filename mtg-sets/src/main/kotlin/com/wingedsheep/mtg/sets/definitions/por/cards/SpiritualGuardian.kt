@@ -21,6 +21,7 @@ val SpiritualGuardian = card("Spiritual Guardian") {
     manaCost = "{3}{W}{W}"
     colorIdentity = "W"
     typeLine = "Creature — Spirit"
+    oracleText = "When this creature enters, you gain 4 life."
     power = 3
     toughness = 4
     triggeredAbility {

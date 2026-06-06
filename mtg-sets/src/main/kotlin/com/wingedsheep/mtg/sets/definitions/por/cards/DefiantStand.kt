@@ -24,6 +24,7 @@ val DefiantStand = card("Defiant Stand") {
     manaCost = "{1}{W}"
     colorIdentity = "W"
     typeLine = "Instant"
+    oracleText = "Cast this spell only during the declare attackers step and only if you've been attacked this step.\nTarget creature gets +1/+3 until end of turn. Untap that creature."
     spell {
         castOnlyDuring(Step.DECLARE_ATTACKERS)
         castOnlyIf(YouWereAttackedThisStep)

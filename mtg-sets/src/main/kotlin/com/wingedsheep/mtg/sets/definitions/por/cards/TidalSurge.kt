@@ -22,6 +22,7 @@ val TidalSurge = card("Tidal Surge") {
     manaCost = "{1}{U}"
     colorIdentity = "U"
     typeLine = "Sorcery"
+    oracleText = "Tap up to three target creatures without flying."
     spell {
         val t = target(
             "target",
