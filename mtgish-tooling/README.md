@@ -168,6 +168,29 @@ The generator must be conservative:
 - `coverage-verify` is the regression gate: generated cards must compile and gameplay-tree match calibrated snapshots.
 - When golden snapshots disagree with current Scryfall oracle text, the gate reports `GOLDEN DRIFT SUSPECTED` instead of treating the generated output as wrong.
 
+## ⚠ Creator's note: extra costs & chosen / inherited values
+
+> A warning from the creator about what the engine underneath this tooling does *not* handle cleanly
+> yet — so you don't trust an emitted card in this space without a scenario test, and so you know
+> where help is wanted.
+>
+> The spell-casting / ability-activation path is still **sloppy around extra costs and value
+> selection**. Three things in particular:
+>
+> - **Extra (additional) costs** — costs declared and paid alongside the mana cost.
+> - **Choosing values at cast/activation time** — X, a chosen creature type, a chosen color, etc.
+> - **Inheriting a chosen value into later effects** — e.g. *"When ~ enters, draw X cards"* where `X`
+>   must be the same `X` that was chosen when the creature was cast.
+>
+> Forge models this with a **`declare` directive** for the choices plus some hidden bookkeeping that
+> carries `X` forward; we don't have a clean equivalent. So the emitter should keep returning `null`
+> (→ `SCAFFOLD`) for these shapes rather than guessing, and a "complete render" touching them still
+> needs a scenario test before you trust it.
+>
+> **This is an open area the creator wants to fix and welcomes suggestions on** — a proper
+> declare-the-choices mechanism and a way to thread a cast-time `X`/chosen value into later triggered
+> and resolved effects. If you're touching it, that's the design to aim for.
+
 ## Source Refreshes
 
 `autogen --write-all --set CODE` replaces real set card source files with mtgish-generated files:
