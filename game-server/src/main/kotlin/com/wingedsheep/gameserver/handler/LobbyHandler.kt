@@ -1942,6 +1942,13 @@ class LobbyHandler(
 
         message.chaosBoosters?.let { lobby.chaosBoosters = it }
 
+        // Host ban list — the full list is sent each time (not a delta). Trim, drop blanks and
+        // duplicates; unknown names are kept as-is (they simply never match a card in the pool),
+        // so the editor round-trips exactly what the host typed/picked.
+        message.bannedCardNames?.let { names ->
+            lobby.bannedCardNames = names.map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+        }
+
         ctx.broadcastLobbyUpdate(lobby)
         lobbyRepository.saveLobby(lobby)
     }

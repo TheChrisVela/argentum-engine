@@ -1076,6 +1076,8 @@ export interface LobbySettings {
   readonly commanderPreset: CommanderPreset
   /** When true, each booster mixes cards from the union of all selected sets. */
   readonly chaosBoosters: boolean
+  /** Host ban list — oracle card names excluded from generated boosters (sorted). */
+  readonly bannedCardNames: readonly string[]
 }
 
 export type TournamentFormat =
@@ -1948,6 +1950,8 @@ export interface UpdateLobbySettingsMessage {
   readonly commanderPreset?: CommanderPreset
   /** Toggle Chaos boosters: each pack pulls from the union of selected sets. */
   readonly chaosBoosters?: boolean
+  /** Replace the host ban list (full list, not a delta). Omit to leave unchanged. */
+  readonly bannedCardNames?: readonly string[]
 }
 
 // Tournament Client Messages
@@ -2131,6 +2135,7 @@ export function createUpdateLobbySettingsMessage(
     isPublic?: boolean
     deckFormat?: DeckFormat | '' | null
     chaosBoosters?: boolean
+    bannedCardNames?: readonly string[]
   }
 ): UpdateLobbySettingsMessage {
   return { type: 'updateLobbySettings', ...settings }

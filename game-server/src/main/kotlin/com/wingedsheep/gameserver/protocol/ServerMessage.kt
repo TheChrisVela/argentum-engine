@@ -413,6 +413,11 @@ sealed interface ServerMessage {
         val commanderPreset: String = "BRAWL",
         /** When true, each booster mixes cards from the union of all selected sets. */
         val chaosBoosters: Boolean = false,
+        /**
+         * Host ban list: oracle card names excluded from generated boosters. Sorted for a stable
+         * UI order. Empty = no exclusions. Ignored by [TournamentFormat.PREMADE_DECKS].
+         */
+        val bannedCardNames: List<String> = emptyList(),
     )
 
     /**

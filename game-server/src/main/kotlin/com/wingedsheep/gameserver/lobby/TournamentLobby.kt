@@ -239,6 +239,13 @@ class TournamentLobby(
      * — only [boosterCount] matters.
      */
     var chaosBoosters: Boolean = false,
+    /**
+     * Host-settable ban list: oracle card names excluded from every booster pack this lobby
+     * generates (sealed pool, draft pack, Winston/Grid deck). Matched case-insensitively by
+     * [BoosterGenerator]. Has no effect on [TournamentFormat.PREMADE_DECKS] (those bring their
+     * own decks) or on basic lands. Empty = no exclusions.
+     */
+    var bannedCardNames: Set<String> = emptySet(),
 ) {
 
     /**
@@ -533,7 +540,7 @@ class TournamentLobby(
 
         if (effectiveDistribution != null) {
             players.forEach { (playerId, playerState) ->
-                val pool = boosterGenerator.generateSealedPool(effectiveDistribution, strategy, chaos = chaosBoosters)
+                val pool = boosterGenerator.generateSealedPool(effectiveDistribution, strategy, chaos = chaosBoosters, bannedCardNames = bannedCardNames)
                 players[playerId] = playerState.copy(cardPool = pool)
             }
         } else {
@@ -547,6 +554,7 @@ class TournamentLobby(
                     distributionSeed,
                     strategy,
                     chaos = chaosBoosters,
+                    bannedCardNames = bannedCardNames,
                 )
                 players[playerId] = playerState.copy(cardPool = pool)
             }
@@ -608,9 +616,9 @@ class TournamentLobby(
 
         players.forEach { (_, playerState) ->
             val newPack = if (packSetCode != null) {
-                boosterGenerator.generateBooster(packSetCode, strategy)
+                boosterGenerator.generateBooster(packSetCode, strategy, bannedCardNames)
             } else {
-                boosterGenerator.generateBooster(setCodes, strategy, chaos = chaosBoosters)
+                boosterGenerator.generateBooster(setCodes, strategy, chaos = chaosBoosters, bannedCardNames = bannedCardNames)
             }
             playerState.currentPack = newPack
             playerState.packQueue.clear()
@@ -773,7 +781,7 @@ class TournamentLobby(
         // Generate boosters and shuffle into main deck
         val allCards = mutableListOf<CardDefinition>()
         repeat(boosterCount) {
-            allCards.addAll(boosterGenerator.generateBooster(setCodes, chaos = chaosBoosters))
+            allCards.addAll(boosterGenerator.generateBooster(setCodes, chaos = chaosBoosters, bannedCardNames = bannedCardNames))
         }
         allCards.shuffle()
 
@@ -819,7 +827,7 @@ class TournamentLobby(
             val boostersPerGroup = boosterCount / 2
             fun generateGroupPool(count: Int): MutableList<CardDefinition> {
                 val pool = mutableListOf<CardDefinition>()
-                repeat(count) { pool.addAll(boosterGenerator.generateBooster(setCodes, chaos = chaosBoosters)) }
+                repeat(count) { pool.addAll(boosterGenerator.generateBooster(setCodes, chaos = chaosBoosters, bannedCardNames = bannedCardNames)) }
                 pool.shuffle()
                 return pool
             }
@@ -830,7 +838,7 @@ class TournamentLobby(
         } else {
             // 2-3 players: 1 group with all players
             val pool = mutableListOf<CardDefinition>()
-            repeat(boosterCount) { pool.addAll(boosterGenerator.generateBooster(setCodes, chaos = chaosBoosters)) }
+            repeat(boosterCount) { pool.addAll(boosterGenerator.generateBooster(setCodes, chaos = chaosBoosters, bannedCardNames = bannedCardNames)) }
             pool.shuffle()
             gridGroups = listOf(
                 GridGroup(mainDeck = pool, playerOrder = allPlayers)
@@ -1417,6 +1425,7 @@ class TournamentLobby(
                 allowDuplicates = allowDuplicates,
                 commanderPreset = commanderPreset.name,
                 chaosBoosters = chaosBoosters,
+                bannedCardNames = bannedCardNames.sorted(),
             ),
             isHost = isHost(forPlayerId)
         )

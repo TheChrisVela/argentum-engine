@@ -249,6 +249,11 @@ sealed interface ClientMessage {
         val commanderPreset: String? = null,
         /** Toggle Chaos boosters: each pack pulls from the union of selected sets. */
         val chaosBoosters: Boolean? = null,
+        /**
+         * Replace the host ban list — oracle card names excluded from generated boosters. The
+         * full list is sent each time (not a delta); null leaves the current ban list unchanged.
+         */
+        val bannedCardNames: List<String>? = null,
     ) : ClientMessage
 
     /**
