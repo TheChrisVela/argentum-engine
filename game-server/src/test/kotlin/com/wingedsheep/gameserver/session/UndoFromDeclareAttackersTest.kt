@@ -1,5 +1,7 @@
 package com.wingedsheep.gameserver.session
 
+import com.wingedsheep.engine.core.DeclareAttackers
+import com.wingedsheep.engine.core.DeclareBlockers
 import com.wingedsheep.engine.core.PassPriority
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -83,6 +85,119 @@ class UndoFromDeclareAttackersTest : ScenarioTestBase() {
                     restored.getEntity(id)?.get<CardComponent>()?.name == "Mountain"
                 }
                 hasMountain shouldBe true
+            }
+        }
+
+        test("AP cannot undo once real attackers have been declared") {
+            val game = scenario()
+                .withPlayers("Player1", "Player2")
+                .withLandsOnBattlefield(1, "Mountain", 1)
+                .withCardOnBattlefield(1, "Grizzly Bears", summoningSickness = false)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val session = newSession(game)
+
+            // AP presses "Pass to Attackers" — server records SET_PRECOMBAT_CHECKPOINT.
+            session.executeAction(game.player1Id, PassPriority(game.player1Id))
+
+            // Drive the auto-pass loop until AP lands at DECLARE_ATTACKERS.
+            repeat(100) {
+                val state = session.getStateForTesting()!!
+                if (state.step == Step.DECLARE_ATTACKERS && state.priorityPlayerId == game.player1Id) {
+                    return@repeat
+                }
+                session.executeAutoPass(state.priorityPlayerId!!)
+            }
+
+            val atDeclare = session.getStateForTesting()!!
+            withClue("Undo is available before attackers are declared") {
+                session.isUndoAvailable(game.player1Id) shouldBe true
+            }
+
+            // AP declares the Grizzly Bears as an attacker — a real commitment.
+            val bearId = atDeclare.zones[ZoneKey(game.player1Id, Zone.BATTLEFIELD)].orEmpty()
+                .first { atDeclare.getEntity(it)?.get<CardComponent>()?.name == "Grizzly Bears" }
+            val declareResult = session.executeAction(
+                game.player1Id,
+                DeclareAttackers(game.player1Id, mapOf(bearId to game.player2Id))
+            )
+            check(declareResult is com.wingedsheep.gameserver.session.GameSession.ActionResult.Success) {
+                "Declare attackers should succeed: $declareResult"
+            }
+
+            withClue("Undo must be unavailable once real attackers are declared") {
+                session.isUndoAvailable(game.player1Id) shouldBe false
+            }
+            withClue("Attempting to undo anyway should fail") {
+                val undo = session.executeUndo(game.player1Id)
+                (undo is com.wingedsheep.gameserver.session.GameSession.ActionResult.Failure) shouldBe true
+            }
+        }
+
+        test("DP cannot undo once real blockers have been declared") {
+            val game = scenario()
+                .withPlayers("Player1", "Player2")
+                .withCardOnBattlefield(1, "Grizzly Bears", summoningSickness = false)
+                .withCardOnBattlefield(2, "Grizzly Bears", summoningSickness = false)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            val session = newSession(game)
+
+            // Drive AP to DECLARE_ATTACKERS and declare a real attacker.
+            repeat(100) {
+                val state = session.getStateForTesting()!!
+                if (state.step == Step.DECLARE_ATTACKERS && state.priorityPlayerId == game.player1Id) {
+                    return@repeat
+                }
+                session.executeAutoPass(state.priorityPlayerId!!)
+            }
+            val atDeclareAttackers = session.getStateForTesting()!!
+            val attackerId = atDeclareAttackers.zones[ZoneKey(game.player1Id, Zone.BATTLEFIELD)].orEmpty()
+                .first { atDeclareAttackers.getEntity(it)?.get<CardComponent>()?.name == "Grizzly Bears" }
+            session.executeAction(
+                game.player1Id,
+                DeclareAttackers(game.player1Id, mapOf(attackerId to game.player2Id))
+            )
+
+            // Drive to DECLARE_BLOCKERS with DP holding priority (no blockers declared yet).
+            repeat(100) {
+                val state = session.getStateForTesting()!!
+                if (state.step == Step.DECLARE_BLOCKERS && state.priorityPlayerId == game.player2Id) {
+                    return@repeat
+                }
+                session.executeAutoPass(state.priorityPlayerId!!)
+            }
+
+            val atDeclareBlockers = session.getStateForTesting()!!
+            withClue("Expected to arrive at DECLARE_BLOCKERS with DP holding priority") {
+                atDeclareBlockers.step shouldBe Step.DECLARE_BLOCKERS
+                atDeclareBlockers.priorityPlayerId shouldBe game.player2Id
+            }
+            withClue("Undo is available before blockers are declared") {
+                session.isUndoAvailable(game.player2Id) shouldBe true
+            }
+
+            // DP declares a real block — a commitment that reveals information.
+            val blockerId = atDeclareBlockers.zones[ZoneKey(game.player2Id, Zone.BATTLEFIELD)].orEmpty()
+                .first { atDeclareBlockers.getEntity(it)?.get<CardComponent>()?.name == "Grizzly Bears" }
+            val declareResult = session.executeAction(
+                game.player2Id,
+                DeclareBlockers(game.player2Id, mapOf(blockerId to listOf(attackerId)))
+            )
+            check(declareResult is com.wingedsheep.gameserver.session.GameSession.ActionResult.Success) {
+                "Declare blockers should succeed: $declareResult"
+            }
+
+            withClue("Undo must be unavailable once real blockers are declared") {
+                session.isUndoAvailable(game.player2Id) shouldBe false
+            }
+            withClue("Attempting to undo anyway should fail") {
+                val undo = session.executeUndo(game.player2Id)
+                (undo is com.wingedsheep.gameserver.session.GameSession.ActionResult.Failure) shouldBe true
             }
         }
     }

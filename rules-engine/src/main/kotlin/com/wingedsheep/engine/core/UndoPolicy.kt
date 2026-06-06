@@ -71,6 +71,18 @@ object UndoPolicyComputer {
         }
 
         return when {
+            // Declaring attackers/blockers commits the declaration and reveals it to the
+            // opponent, so it can't be taken back once real creatures are involved. An *empty*
+            // declaration is the auto-pass-through-combat case — it stays undoable so a player
+            // who skipped into combat by accident can step back.
+            action is DeclareAttackers ->
+                if (action.attackers.isEmpty()) UndoCheckpointAction.SET_CHECKPOINT
+                else UndoCheckpointAction.CLEAR
+
+            action is DeclareBlockers ->
+                if (action.blockers.isEmpty()) UndoCheckpointAction.SET_CHECKPOINT
+                else UndoCheckpointAction.CLEAR
+
             isUndoEligibleAction(action) -> UndoCheckpointAction.SET_CHECKPOINT
 
             // Active player passing priority in precombat main -> save pre-combat state
@@ -106,7 +118,7 @@ object UndoPolicyComputer {
      * before the opponent has a chance to respond.
      */
     private fun isUndoEligibleAction(action: GameAction): Boolean = when (action) {
-        is PlayLand, is DeclareAttackers, is DeclareBlockers, is OrderBlockers, is TurnFaceUp -> true
+        is PlayLand, is OrderBlockers, is TurnFaceUp -> true
         else -> false
     }
 
