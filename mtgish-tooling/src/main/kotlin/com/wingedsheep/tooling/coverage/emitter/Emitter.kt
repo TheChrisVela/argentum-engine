@@ -50,6 +50,20 @@ object Emitter {
         val cardLevelLines = ctx.cardLevelCastEffectLines(card) ?: return incomplete(ctx, body, scryfall, pkg)
         body.addAll(cardLevelLines)
 
+        // Auras: the pure static-buff shape (EnchantPermanent + PermanentLayerEffect) renders faithfully,
+        // but an activated/triggered ability on an Aura references its "enchanted creature" — context the
+        // generic activated/trigger emitters don't model (they'd render a plain self/own-permanent ability).
+        // e.g. the Onslaught Crowns' "Sacrifice this Aura: enchanted creature AND others sharing a type get …".
+        // Scaffold those rather than emit a confidently-wrong complete render.
+        if (jsonContains(card["Rules"], "_Rule", "EnchantPermanent")) {
+            val unfaithfulOnAuras = setOf("Activated", "ActivatedWithModifiers", "TriggerA", "AsPermanentEnters", "FromAnyZone")
+            (card["Rules"].asArr ?: JsonArray(emptyList())).forEach { r ->
+                (r as? JsonObject)?.strField("_Rule")?.takeIf { it in unfaithfulOnAuras }?.let {
+                    ctx.reasons.add("aura-with-$it"); return incomplete(ctx, body, scryfall, pkg)
+                }
+            }
+        }
+
         val handledRules = setOf("SpellActions", "TriggerA", "PermanentRuleEffect", "Flying", "Haste",
             "Vigilance", "Reach", "Defender", "Landwalk", "FirstStrike", "Trample", "CastEffect")
         for (rule in (card["Rules"].asArr ?: JsonArray(emptyList()))) {
@@ -64,6 +78,8 @@ object Emitter {
                 rname == "SpellActions" -> block = ctx.spellBlock(card)
                 rname == "TriggerA" -> block = ctx.triggerBlock(rule)
                 rname == "PermanentRuleEffect" -> block = ctx.staticBlock(rule)
+                rname == "EnchantPermanent" -> block = ctx.auraTargetBlock(rule)
+                rname == "PermanentLayerEffect" -> block = ctx.staticHostBlock(rule)
                 rname == "AsPermanentEnters" -> block = ctx.asEntersBlock(rule)
                 rname == "EachPermanentLayerEffect" -> block = ctx.staticLordBlock(rule)
                 rname == "FromAnyZone" -> block = ctx.fromAnyZoneBlock(rule)

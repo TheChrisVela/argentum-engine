@@ -24,6 +24,12 @@ internal fun BridgeBuilder.structuralEnvelopes() {
     envelope("EachPlayerActions", "envelope: APNAP each-player (plural)")
     envelope("HavePlayerTakeAction", "envelope: delegated action")
 
+    // Aura / host-permanent continuous effects. `EnchantPermanent` declares the aura's enchant
+    // restriction — a universal capability (the engine supports auras). `PermanentLayerEffect` wraps
+    // the host's static continuous effect, whose real capability is the nested _StaticLayerEffect.
+    supported("EnchantPermanent", "aura: enchant restriction (engine supports auras)")
+    envelope("PermanentLayerEffect", "envelope: host continuous effect (capability is the _StaticLayerEffect)")
+
     // Continuous-effect envelopes (the capability is the nested _LayerEffect / _Rule).
     envelope("CreatePermanentLayerEffectUntil", "envelope: continuous effect (capability is the _LayerEffect)")
     envelope("CreateEachPermanentLayerEffectUntil", "envelope: continuous effect, each")
