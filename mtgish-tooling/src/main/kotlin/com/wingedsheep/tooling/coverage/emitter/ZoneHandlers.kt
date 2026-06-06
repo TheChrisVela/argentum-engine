@@ -88,6 +88,7 @@ internal fun EmitCtx.renderSearch(args: JsonElement?): String? {
     val parts = mutableListOf("filter = $filt")
     if (count is Int && count != 1) parts.add("count = $count")
     parts.add("destination = SearchDestination.$dest")
+    if ("EntersTapped" in blob) parts.add("entersTapped = true")  // "...onto the battlefield tapped"
     if ("RevealFoundCards" in blob) parts.add("reveal = true")
     return "Patterns.Library.searchLibrary(${parts.joinToString(", ")})"
 }
