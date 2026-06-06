@@ -1,6 +1,10 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.Dsl
+import com.wingedsheep.tooling.coverage.Lit
+import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.asArr
+import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.compact
 import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.jsonContains
@@ -14,7 +18,7 @@ internal val playerContinuousHandlers: Map<String, ActionHandler> = actionHandle
     on("MayAction") { node, _, tvar ->  // "you may X" -> MayEffect wrapper
         val inner = innerAction(node) ?: return@on null
         val rendered = renderAction(inner, tvar) ?: return@on null
-        "MayEffect($rendered)"
+        call("MayEffect", arg(rendered))
     }
 
     // "you may [X and Y]" — a single optional choice gating a sequence of actions (Gustcloak cycle's
@@ -23,7 +27,7 @@ internal val playerContinuousHandlers: Map<String, ActionHandler> = actionHandle
     on("MayActions") { node, _, tvar ->
         val inner = node["args"].asArr?.filterIsInstance<JsonObject>() ?: return@on null
         val edsl = renderEffectList(inner, tvar) ?: return@on null
-        "MayEffect($edsl)"
+        call("MayEffect", arg(edsl))
     }
 
     on("EachPlayerAction") { node, _, _ -> renderEachPlayer(node) }
@@ -34,12 +38,12 @@ internal val playerContinuousHandlers: Map<String, ActionHandler> = actionHandle
         when {
             // "prevent all damage attacking creatures would deal to you this turn" (Deep Wood)
             "IsAttacking" in blob && "PreventThatDamage" in blob && jsonContains(node, "_Player", "You") ->
-                "Effects.PreventDamageFromAttackingCreatures()"
+                call("Effects.PreventDamageFromAttackingCreatures")
             // "prevent all combat damage that would be dealt this turn" (Leery Fogbeast): the unrestricted
             // CombatDamageWouldBeDealt event (no source/recipient filter) + PreventThatDamage until EOT.
             jsonContains(node, "_ReplacableEventWouldDealDamage", "CombatDamageWouldBeDealt") &&
                 "PreventThatDamage" in blob && jsonContains(node, "_Expiration", "UntilEndOfTurn") ->
-                "Effects.PreventAllCombatDamage()"
+                call("Effects.PreventAllCombatDamage")
             else -> null
         }
     }
@@ -47,37 +51,37 @@ internal val playerContinuousHandlers: Map<String, ActionHandler> = actionHandle
         // Harsh Justice: reflect attackers' combat damage back to their controller.
         val blob = compact(node)
         if ("WhenACreatureDealsCombatDamageToAPlayer" in blob && "ControllerOfPermanent" in blob && "Trigger_ThatMuch" in blob) {
-            "ReflectCombatDamageEffect()"
+            call("ReflectCombatDamageEffect")
         } else null
     }
     on("CreateEachPermanentRuleEffectUntil") { node, _, tvar -> renderGrantToGroup(node, tvar) }
 }
 
 /** A spell that grants a combat rule to a group / target (Alluring Scent, Taunt, Dread Charge). */
-internal fun EmitCtx.renderGrantToGroup(node: JsonObject, tvar: String?): String? {
+internal fun EmitCtx.renderGrantToGroup(node: JsonObject, tvar: String?): Dsl? {
     if (jsonContains(node, "_PermanentRule", "MustBlockAttacker")) {  // "all creatures must block target"
         val tgt = refTarget(node["args"], tvar) ?: return null
-        return "MustBeBlockedEffect($tgt)"
+        return call("MustBeBlockedEffect", arg(Lit(tgt)))
     }
     if (jsonContains(node, "_PermanentRule", "MustAttackPlayer")) {  // Taunt
-        return if (tvar != null) "TauntEffect($tvar)" else "TauntEffect()"
+        return if (tvar != null) call("TauntEffect", arg(Lit(tvar))) else call("TauntEffect")
     }
     val blob = compact(node)
     if (("CantBeBlockedExceptByColor" in blob || "CantBeBlockedExceptByDefenders" in blob) && "\"_Color\"" in blob) {
         val m = Regex(""""_Color":\s*"(\w+)"""").find(blob)
         val color = if (m != null) "Color.${m.groupValues[1].uppercase()}" else "Color.BLACK"
-        val filter = groupFilterDsl(node["args"]) ?: return null
-        return "GrantCantBeBlockedExceptByColorEffect(filter = $filter, canOnlyBeBlockedByColor = $color)"
+        val filter = groupFilterExpr(node["args"]) ?: return null
+        return call("GrantCantBeBlockedExceptByColorEffect", arg("filter", filter), arg("canOnlyBeBlockedByColor", color))
     }
     return null
 }
 
 /** `target player does X` — render X scoped to the referenced player. */
-internal fun EmitCtx.renderPlayerAction(node: JsonObject, tvar: String?): String? {
+internal fun EmitCtx.renderPlayerAction(node: JsonObject, tvar: String?): Dsl? {
     val args = node["args"]
     if (jsonContains(node, "_Player", "OwnerOfPermanent") && jsonContains(node, "_Action", "GainLife")) {
         // Path of Peace: destroyed permanent's owner gains N
-        return "OwnerGainsLifeEffect(${findInteger(args)})"
+        return call("OwnerGainsLifeEffect", arg("${findInteger(args)}"))
     }
     val inner = innerAction(node) ?: return null
     val ptv = refTarget(args, tvar)  // the player the action applies to
@@ -87,49 +91,49 @@ internal fun EmitCtx.renderPlayerAction(node: JsonObject, tvar: String?): String
             // can't be expressed, so scaffold rather than default to a wrong fixed amount.
             val n = if (inner.strField("_Action") == "DiscardACard") "1" else strictCardCount(inner["args"])
             if (n == null) return null
-            return if (ptv != null) "Patterns.Hand.discardCards($n, $ptv)" else "Patterns.Hand.discardCards($n)"
+            return if (ptv != null) call("Patterns.Hand.discardCards", arg(Lit(n)), arg(Lit(ptv))) else call("Patterns.Hand.discardCards", arg(Lit(n)))
         }
         "DrawNumberCards", "DrawACard" -> {
             // Only a fixed Integer or X count renders; a derived count (Mathemagics' "2ˣ") scaffolds.
             val amt = if (inner.strField("_Action") == "DrawACard") "1"
                       else strictCardCount(inner["args"], forX = "DynamicAmount.XValue")
             if (amt == null) return null
-            return if (ptv != null) "DrawCardsEffect($amt, $ptv)" else "DrawCardsEffect($amt)"
+            return if (ptv != null) call("DrawCardsEffect", arg(Lit(amt)), arg(Lit(ptv))) else call("DrawCardsEffect", arg(Lit(amt)))
         }
         "GainLife" -> {
             val amt = amount(inner["args"])
-            return if (amt != null && ptv != null) "GainLifeEffect($amt, $ptv)" else if (amt != null) "GainLifeEffect($amt)" else null
+            return if (amt != null && ptv != null) call("GainLifeEffect", arg(Lit(amt)), arg(Lit(ptv))) else if (amt != null) call("GainLifeEffect", arg(Lit(amt))) else null
         }
         "LoseLife" -> {
             val amt = amount(inner["args"])
             if (amt == null || ptv == null) return null
-            return "LoseLifeEffect($amt, $ptv)"
+            return call("LoseLifeEffect", arg(Lit(amt)), arg(Lit(ptv)))
         }
         "DiscardACardAtRandom" -> {
-            return if (ptv != null) "Patterns.Hand.discardRandom(1, $ptv)" else "Patterns.Hand.discardRandom(1)"
+            return if (ptv != null) call("Patterns.Hand.discardRandom", arg("1"), arg(Lit(ptv))) else call("Patterns.Hand.discardRandom", arg("1"))
         }
         "SkipAllCombatPhasesTheirNextTurn" -> {
-            return if (ptv != null) "SkipCombatPhasesEffect($ptv)" else "SkipCombatPhasesEffect()"
+            return if (ptv != null) call("SkipCombatPhasesEffect", arg(Lit(ptv))) else call("SkipCombatPhasesEffect")
         }
         "RevealHand" -> {
-            return if (ptv != null) "RevealHandEffect($ptv)" else "RevealHandEffect()"
+            return if (ptv != null) call("RevealHandEffect", arg(Lit(ptv))) else call("RevealHandEffect")
         }
         "ShuffleGraveyardIntoLibrary" -> {
             // "target player shuffles their graveyard into their library" (Reminisce). Only the
             // bound-target-player form renders; an untargeted/you form scaffolds rather than guess.
-            return if (ptv != null) "Patterns.Library.shuffleGraveyardIntoLibrary($ptv)" else null
+            return if (ptv != null) call("Patterns.Library.shuffleGraveyardIntoLibrary", arg(Lit(ptv))) else null
         }
     }
     return null
 }
 
-internal fun EmitCtx.renderEachPlayer(node: JsonObject): String? {
+internal fun EmitCtx.renderEachPlayer(node: JsonObject): Dsl? {
     val blob = compact(node)
     // "each player returns a permanent they control to its owner's hand" (Words of Wind's replacement).
     if (jsonContains(node, "_Players", "AnyPlayer") && "PutAPermanentIntoItsOwnersHand" in blob)
-        return "Effects.EachPlayerReturnPermanentToHand()"
-    if (jsonContains(node, "_Players", "Opponent") && "Discard" in blob) return "Patterns.Hand.eachOpponentDiscards(1)"  // Noxious Toad
+        return call("Effects.EachPlayerReturnPermanentToHand")
+    if (jsonContains(node, "_Players", "Opponent") && "Discard" in blob) return call("Patterns.Hand.eachOpponentDiscards", arg("1"))  // Noxious Toad
     if (jsonContains(node, "_Action", "DrawNumberCards") || jsonContains(node, "_GameNumber", "ValueX"))
-        return "Patterns.Hand.eachPlayerDrawsX(includeController = true, includeOpponents = true)"
+        return call("Patterns.Hand.eachPlayerDrawsX", arg("includeController", "true"), arg("includeOpponents", "true"))
     return null
 }

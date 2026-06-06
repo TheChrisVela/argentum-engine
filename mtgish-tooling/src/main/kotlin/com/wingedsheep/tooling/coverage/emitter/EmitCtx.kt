@@ -1,5 +1,7 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.Call
+import com.wingedsheep.tooling.coverage.Composite
 import com.wingedsheep.tooling.coverage.Dsl
 import com.wingedsheep.tooling.coverage.Lit
 import com.wingedsheep.tooling.coverage.arg
@@ -59,18 +61,16 @@ internal val SELF_REFS = setOf(
 // Dispatch + effect-list assembly.
 // ---------------------------------------------------------------------------
 
-/** Render one mtgish action to an Effect DSL string via the [ACTION_HANDLERS] registry. */
-internal fun EmitCtx.renderAction(node: JsonObject, tvar: String?): String? {
-    val handler = ACTION_HANDLERS[node.strField("_Action")] ?: return null
-    return handler(node, node["args"], tvar)
-}
+/** Render one mtgish action to an Effect [Dsl] node via the [ACTION_HANDLERS] registry. */
+internal fun EmitCtx.renderAction(node: JsonObject, tvar: String?): Dsl? =
+    ACTION_HANDLERS[node.strField("_Action")]?.invoke(this, node, node["args"], tvar)
 
-/** Render a list of mtgish actions to one Effect (Composite if >1). Null if any can't render. */
-internal fun EmitCtx.renderEffectList(actions: List<JsonObject>, tvar: String?): String? {
+/** Render a list of mtgish actions to one Effect ([Composite] if >1). Null if any can't render. */
+internal fun EmitCtx.renderEffectList(actions: List<JsonObject>, tvar: String?): Dsl? {
     echoEffect(actions)?.let { return it }
     becomeCreatureTypeEffect(actions, tvar)?.let { return it }
     chooseCreatureTypeRevealTopEffect(actions)?.let { return it }
-    val rendered = mutableListOf<String>()
+    val rendered = mutableListOf<Dsl>()
     for (act in actions) {
         val r = renderAction(act, tvar)
         if (r == null) { reasons.add(act.strField("_Action") ?: act.strField("_Rule") ?: "unknown-action"); return null }
@@ -78,16 +78,8 @@ internal fun EmitCtx.renderEffectList(actions: List<JsonObject>, tvar: String?):
     }
     if (rendered.isEmpty()) return null
     if (rendered.size == 1) return rendered[0]
-    return composite(rendered)
+    return Composite(rendered)
 }
-
-/**
- * `Effects.Composite(...)` with one element per line, indented to sit in the `effect = ` (8-space)
- * slot. Each element's first line is placed at 12 spaces; multi-line elements keep their own inner
- * indentation. Callers pass ≥2 elements (a single effect is emitted directly, never wrapped).
- */
-internal fun composite(parts: List<String>): String =
-    parts.joinToString(",\n", prefix = "Effects.Composite(\n", postfix = "\n        )") { "            $it" }
 
 // ---------------------------------------------------------------------------
 // Generic amount / reference / keyword toolkit (shared by every handler).
@@ -269,7 +261,7 @@ internal fun EmitCtx.paycostDsl(costNode: JsonElement?): String? {
  * `ChooseACreatureTypeOtherThan X` carries an excluded type (Imagecrafter / Mistform Mutant's "other
  * than Wall") -> `excludedTypes = listOf("X")`.
  */
-internal fun EmitCtx.becomeCreatureTypeEffect(actions: List<JsonObject>, tvar: String?): String? {
+internal fun EmitCtx.becomeCreatureTypeEffect(actions: List<JsonObject>, tvar: String?): Dsl? {
     val chooser = actions.firstOrNull {
         it.strField("_Action") in setOf("ChooseACreatureType", "ChooseACreatureTypeOtherThan")
     } ?: return null
@@ -281,8 +273,9 @@ internal fun EmitCtx.becomeCreatureTypeEffect(actions: List<JsonObject>, tvar: S
     if (!jsonContains(layer, "_Expiration", "UntilEndOfTurn")) return null  // non-EOT -> SCAFFOLD
     val target = refTarget(layer["args"], tvar) ?: return null
     val excluded = if (chooser.strField("_Action") == "ChooseACreatureTypeOtherThan") chooser["args"].asStr() else null
-    return if (excluded != null) "BecomeCreatureTypeEffect(target = $target, excludedTypes = listOf(\"${ktStr(excluded)}\"))"
-    else "BecomeCreatureTypeEffect(target = $target)"
+    val parts = mutableListOf(arg("target", Lit(target)))
+    if (excluded != null) parts.add(arg("excludedTypes", "listOf(\"${ktStr(excluded)}\")"))
+    return Call("BecomeCreatureTypeEffect", parts)
 }
 
 /**
@@ -291,7 +284,7 @@ internal fun EmitCtx.becomeCreatureTypeEffect(actions: List<JsonObject>, tvar: S
  * (Bloodline Shaman). The whole three-action chain collapses to the named SDK pattern, so it renders
  * as one effect rather than three; any deviation from this exact shape declines (null -> SCAFFOLD).
  */
-internal fun EmitCtx.chooseCreatureTypeRevealTopEffect(actions: List<JsonObject>): String? {
+internal fun EmitCtx.chooseCreatureTypeRevealTopEffect(actions: List<JsonObject>): Dsl? {
     if (actions.size != 3) return null
     if (actions[0].strField("_Action") != "ChooseACreatureType") return null
     if (actions[1].strField("_Action") != "RevealTopCardOfLibrary") return null
@@ -300,15 +293,15 @@ internal fun EmitCtx.chooseCreatureTypeRevealTopEffect(actions: List<JsonObject>
     if ("ACardWasRevealedThisWay" !in blob || "IsCreatureTypeVariable" !in blob ||
         "TheChosenCreatureType" !in blob) return null
     if ("PutTopOfLibraryInHand" !in blob || "PutTopOfLibraryInGraveyard" !in blob) return null
-    return "Patterns.CreatureType.chooseCreatureTypeRevealTop()"
+    return call("Patterns.CreatureType.chooseCreatureTypeRevealTop")
 }
 
 /** [MayCost(cost), Unless(CostWasPaid, [Sacrifice...])] -> PayOrSufferEffect (echo / upkeep cost). */
-internal fun EmitCtx.echoEffect(actions: List<JsonObject>): String? {
+internal fun EmitCtx.echoEffect(actions: List<JsonObject>): Dsl? {
     if (actions.size != 2) return null
     val (a0, a1) = actions
     if (a0.strField("_Action") != "MayCost" || a1.strField("_Action") != "Unless") return null
     if (!jsonContains(a1, "_Condition", "CostWasPaid") || !jsonContains(a1, "_Action", "SacrificePermanent")) return null
     val cost = paycostDsl(a0["args"]) ?: return null
-    return "PayOrSufferEffect(cost = $cost, suffer = SacrificeSelfEffect)"
+    return call("PayOrSufferEffect", arg("cost", Lit(cost)), arg("suffer", "SacrificeSelfEffect"))
 }

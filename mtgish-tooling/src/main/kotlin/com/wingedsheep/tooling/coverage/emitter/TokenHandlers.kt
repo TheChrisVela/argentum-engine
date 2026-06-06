@@ -1,8 +1,12 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.Call
+import com.wingedsheep.tooling.coverage.Dsl
+import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.asArr
 import com.wingedsheep.tooling.coverage.asInt
 import com.wingedsheep.tooling.coverage.asStr
+import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.pascalToUpperSnake
 import com.wingedsheep.tooling.coverage.strField
@@ -26,7 +30,7 @@ private val TOKEN_COLOR = mapOf(
 
 /** A `_CreatableToken` spec -> `Effects.CreateToken(...)`, or null (-> SCAFFOLD) for shapes we can't
  *  render exactly. `NumberTokens` wraps a base spec with a fixed count. */
-internal fun EmitCtx.createTokenDsl(spec: JsonObject, count: Int = 1): String? {
+internal fun EmitCtx.createTokenDsl(spec: JsonObject, count: Int = 1): Dsl? {
     when (spec.strField("_CreatableToken")) {
         "NumberTokens" -> {
             val a = spec["args"].asArr ?: return null
@@ -36,7 +40,7 @@ internal fun EmitCtx.createTokenDsl(spec: JsonObject, count: Int = 1): String? {
         }
         // Predefined artifact token with fixed characteristics -> its dedicated facade
         // (serialises as CreatePredefinedToken, not the generic CreateToken).
-        "TreasureToken" -> return "Effects.CreateTreasure($count)"
+        "TreasureToken" -> return call("Effects.CreateTreasure", arg("$count"))
         "TokenWithPT" -> {
             // args: [ {_PT [p,t]}, {_TokenColorList [names]}, [supertypes], [cardtypes],
             //         {_TokenSubtypes [subs]}, [abilities] ]
@@ -64,12 +68,12 @@ internal fun EmitCtx.createTokenDsl(spec: JsonObject, count: Int = 1): String? {
                 if (kw !in keywords) return null
                 tokenKeywords.add(kw)
             }
-            val parts = mutableListOf("power = $power", "toughness = $toughness")
-            if (colors.isNotEmpty()) parts.add("colors = setOf(${colors.joinToString(", ") { "Color.$it" }})")
-            parts.add("creatureTypes = setOf(${subs.joinToString(", ") { "\"$it\"" }})")
-            if (tokenKeywords.isNotEmpty()) parts.add("keywords = setOf(${tokenKeywords.joinToString(", ") { "Keyword.$it" }})")
-            if (count != 1) parts.add("count = $count")
-            return "Effects.CreateToken(${parts.joinToString(", ")})"
+            val parts = mutableListOf(arg("power", "$power"), arg("toughness", "$toughness"))
+            if (colors.isNotEmpty()) parts.add(arg("colors", "setOf(${colors.joinToString(", ") { "Color.$it" }})"))
+            parts.add(arg("creatureTypes", "setOf(${subs.joinToString(", ") { "\"$it\"" }})"))
+            if (tokenKeywords.isNotEmpty()) parts.add(arg("keywords", "setOf(${tokenKeywords.joinToString(", ") { "Keyword.$it" }})"))
+            if (count != 1) parts.add(arg("count", "$count"))
+            return Call("Effects.CreateToken", parts)
         }
     }
     return null

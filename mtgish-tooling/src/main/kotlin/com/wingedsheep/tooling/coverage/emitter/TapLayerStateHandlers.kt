@@ -1,7 +1,14 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.Arg
+import com.wingedsheep.tooling.coverage.Call
+import com.wingedsheep.tooling.coverage.Composite
+import com.wingedsheep.tooling.coverage.Dsl
+import com.wingedsheep.tooling.coverage.Lit
+import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.asArr
 import com.wingedsheep.tooling.coverage.asInt
+import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.compact
 import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.jsonContains
@@ -18,30 +25,30 @@ internal val tapLayerStateHandlers: Map<String, ActionHandler> = actionHandlers 
 
     on("TapPermanent", "UntapPermanent") { node, args, tvar ->
         val tgt = refTarget(args, tvar) ?: return@on null
-        "Effects.${if (node.strField("_Action") == "TapPermanent") "Tap" else "Untap"}($tgt)"
+        call("Effects.${if (node.strField("_Action") == "TapPermanent") "Tap" else "Untap"}", arg(Lit(tgt)))
     }
     on("GoadCreature") { _, args, tvar ->  // CR 701.15: goad target creature
         val tgt = refTarget(args, tvar) ?: return@on null
-        "Effects.Goad($tgt)"
+        call("Effects.Goad", arg(Lit(tgt)))
     }
     on("RemoveCreatureFromCombat") { _, args, tvar ->  // "remove it from combat" (Gustcloak cycle)
         val tgt = refTarget(args, tvar) ?: return@on null
-        "Effects.RemoveFromCombat($tgt)"
+        call("Effects.RemoveFromCombat", arg(Lit(tgt)))
     }
     on("RegeneratePermanent") { _, args, _ ->
         // Self-regeneration ("{cost}: Regenerate this") renders faithfully. A chosen target's
         // requirement isn't always recovered exactly (e.g. "Regenerate target Zombie" flattens the
         // subtype to "permanent"), so scaffold the targeted case rather than emit a too-broad target.
         if (!jsonContains(args, "_Permanent", "ThisPermanent")) return@on null
-        "RegenerateEffect(EffectTarget.Self)"
+        call("RegenerateEffect", arg("EffectTarget.Self"))
     }
     on("TapEachPermanent", "UntapEachPermanent") { node, args, _ ->
         val verb = if (node.strField("_Action") == "TapEachPermanent") "Tap" else "Untap"
         if (jsonContains(node, "_Permanents", "Ref_TargetPermanents")) {  // Tidal Surge: each chosen target
-            return@on "Effects.${verb}EachTarget()"
+            return@on call("Effects.${verb}EachTarget")
         }
-        val filter = groupFilterDsl(args) ?: return@on null  // mass: tap/untap a group
-        "Effects.ForEachInGroup($filter, Effects.$verb(EffectTarget.Self))"
+        val filter = groupFilterExpr(args) ?: return@on null  // mass: tap/untap a group
+        call("Effects.ForEachInGroup", arg(filter), arg(call("Effects.$verb", arg("EffectTarget.Self"))))
     }
 
     on("PutACounterOfTypeOnPermanent") { _, args, tvar ->
@@ -57,7 +64,7 @@ internal val tapLayerStateHandlers: Map<String, ActionHandler> = actionHandlers 
             else -> return@on null
         }
         val tgt = refTarget(arr.getOrNull(1), tvar) ?: return@on null
-        "AddCountersEffect(counterType = $counter, count = 1, target = $tgt)"
+        call("AddCountersEffect", arg("counterType", counter), arg("count", "1"), arg("target", tgt))
     }
 
     on("CreatePermanentLayerEffectUntil", "CreateEachPermanentLayerEffectUntil") { node, _, tvar ->
@@ -70,15 +77,15 @@ internal val tapLayerStateHandlers: Map<String, ActionHandler> = actionHandlers 
     on("CreatePlayerEffectUntil") { node, _, _ ->  // Summer Bloom: may play N additional lands
         val n = findInteger(node)
         if (jsonContains(node, "_PlayerEffect", "MayPlayAdditionalLands") && n is Int) {
-            "PlayAdditionalLandsEffect($n)"
+            call("PlayAdditionalLandsEffect", arg("$n"))
         } else null
     }
 
     on("EachPermanentDoesntUntapDuringControllersNextUntap") { _, _, tvar ->
-        if (tvar != null) "SkipUntapEffect($tvar)" else "SkipUntapEffect()"
+        if (tvar != null) call("SkipUntapEffect", arg(Lit(tvar))) else call("SkipUntapEffect")
     }
     on("SkipAllCombatPhasesTheirNextTurn") { _, _, tvar ->
-        if (tvar != null) "SkipCombatPhasesEffect($tvar)" else "SkipCombatPhasesEffect()"
+        if (tvar != null) call("SkipCombatPhasesEffect", arg(Lit(tvar))) else call("SkipCombatPhasesEffect")
     }
 }
 
@@ -89,17 +96,16 @@ internal val tapLayerStateHandlers: Map<String, ActionHandler> = actionHandlers 
  *  buff) would emit a confidently-wrong card. The `_Expiration` is honoured exactly: end-of-turn uses
  *  the default-duration facade; "for as long as it remains tapped" carries an explicit
  *  Duration.WhileSourceTapped(); any other expiration scaffolds rather than emit a wrong duration. */
-internal fun EmitCtx.renderLayerEffect(node: JsonObject, action: String, tvar: String?): String? {
+internal fun EmitCtx.renderLayerEffect(node: JsonObject, action: String, tvar: String?): Dsl? {
     val mass = action == "CreateEachPermanentLayerEffectUntil"
     val target = if (mass) "EffectTarget.Self" else refTarget(node["args"], tvar)
     if (target == null) return null
     val duration = expirationDsl(node) ?: return null  // unknown expiration -> SCAFFOLD
-    val durArg = if (duration.isEmpty()) "" else ", $duration"
 
     // The layer-effects list (mtgish always shapes the action's args as [target/filter, list, expiration]).
     val layerEffects = (node["args"].asArr)?.getOrNull(1) as? JsonArray ?: return null
     if (layerEffects.isEmpty()) return null
-    val inner = mutableListOf<String>()
+    val inner = mutableListOf<Dsl>()
     for (le in layerEffects) {
         val leObj = le as? JsonObject ?: return null
         when (leObj.strField("_LayerEffect")) {
@@ -108,25 +114,27 @@ internal fun EmitCtx.renderLayerEffect(node: JsonObject, action: String, tvar: S
                 if (pt == null || pt.size != 2) return null
                 // ModifyStats' facade carries no duration param, so a non-default duration uses the raw effect.
                 inner.add(
-                    if (duration.isEmpty()) "Effects.ModifyStats(${pt[0].asInt()}, ${pt[1].asInt()}, $target)"
-                    else "ModifyStatsEffect(${pt[0].asInt()}, ${pt[1].asInt()}, $target, $duration)"
+                    if (duration.isEmpty()) call("Effects.ModifyStats", arg("${pt[0].asInt()}"), arg("${pt[1].asInt()}"), arg(Lit(target)))
+                    else call("ModifyStatsEffect", arg("${pt[0].asInt()}"), arg("${pt[1].asInt()}"), arg(Lit(target)), arg(Lit(duration))),
                 )
             }
             "AddAbility" -> {
                 // Only a bare keyword grant renders faithfully; a granted triggered/activated ability or a
                 // parameterized keyword can't be reproduced here, so scaffold instead of dropping it.
                 val kw = grantedKeyword(leObj) ?: return null
-                inner.add("Effects.GrantKeyword(Keyword.$kw, $target$durArg)")
+                val gkArgs = mutableListOf(arg("Keyword.$kw"), arg(Lit(target)))
+                if (duration.isNotEmpty()) gkArgs.add(arg(Lit(duration)))
+                inner.add(Call("Effects.GrantKeyword", gkArgs))
             }
             else -> return null  // any other layer effect (e.g. set base P/T, lose abilities) -> SCAFFOLD
         }
     }
     if (inner.isEmpty()) return null
-    val effect = if (inner.size == 1) inner[0] else composite(inner)
+    val effect = if (inner.size == 1) inner[0] else Composite(inner)
     if (mass) {
         val gfArg = (node["args"].asArr)?.getOrNull(0) ?: JsonObject(emptyMap())
-        val filter = groupFilterDsl(gfArg) ?: return null
-        return "Effects.ForEachInGroup($filter, $effect)"
+        val filter = groupFilterExpr(gfArg) ?: return null
+        return call("Effects.ForEachInGroup", arg(filter), arg(effect))
     }
     return effect
 }
@@ -139,37 +147,37 @@ internal fun EmitCtx.renderLayerEffect(node: JsonObject, action: String, tvar: S
  * ForEachInGroup can't express. Recognise exactly that shape (+ end-of-turn) and render the dedicated
  * `GrantToEnchantedCreatureTypeGroupEffect`; anything else returns null so the generic path / scaffold runs.
  */
-internal fun EmitCtx.enchantedTypeGroupGrant(node: JsonObject): String? {
+internal fun EmitCtx.enchantedTypeGroupGrant(node: JsonObject): Dsl? {
     val args = node["args"].asArr ?: return null
     val blob = compact(args.getOrNull(0))
     if ("SharesACreatureTypeWithPermanent" !in blob || "HostPermanent" !in blob) return null
     if (firstExpiration(node) !in setOf(null, "UntilEndOfTurn")) return null  // non-EOT -> decline
     val layerEffects = (args.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>() ?: return null
     if (layerEffects.isEmpty()) return null
-    val params = mutableListOf<String>()
+    val params = mutableListOf<Arg>()
     for (le in layerEffects) {
         when (le.strField("_LayerEffect")) {
             "AdjustPT" -> {
                 val pt = le["args"].asArr ?: return null
                 if (pt.size != 2) return null
-                params.add("powerModifier = ${pt[0].asInt()}")
-                params.add("toughnessModifier = ${pt[1].asInt()}")
+                params.add(arg("powerModifier", "${pt[0].asInt()}"))
+                params.add(arg("toughnessModifier", "${pt[1].asInt()}"))
             }
             "AddAbility" -> {
                 val granted = (le["args"].asArr)?.getOrNull(0) as? JsonObject
                 if (granted != null && jsonContains(granted, "_Protectable", "FromColor")) {
                     val colors = protectionGrantColors(granted) ?: return null
-                    params.add("protectionColors = setOf(${colors.joinToString(", ") { "Color.$it" }})")
+                    params.add(arg("protectionColors", "setOf(${colors.joinToString(", ") { "Color.$it" }})"))
                 } else {
                     val kw = grantedKeyword(le) ?: return null
-                    params.add("keyword = Keyword.$kw")
+                    params.add(arg("keyword", "Keyword.$kw"))
                 }
             }
             else -> return null
         }
     }
     if (params.isEmpty()) return null
-    return "GrantToEnchantedCreatureTypeGroupEffect(${params.joinToString(", ")})"
+    return Call("GrantToEnchantedCreatureTypeGroupEffect", params)
 }
 
 /** The granted [Keyword] for an `AddAbility` layer effect, or null (-> SCAFFOLD) when the grant is not

@@ -1,5 +1,7 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.Dsl
+import com.wingedsheep.tooling.coverage.Lit
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
@@ -21,12 +23,14 @@ import kotlinx.serialization.json.JsonObject
 // top-level `val` is initialised. Eager init can cycle: a handler file's val calls `actionHandlers`
 // (defined here), which forces this sum to read that same val before it finishes initialising.
 internal val ACTION_HANDLERS: Map<String, ActionHandler> by lazy {
-    damageDrawLifeHandlers + zoneHandlers + tapLayerStateHandlers + playerContinuousHandlers +
-        manaHandlers + tokenHandlers
+    buildMap<String, ActionHandler> {
+        putAll(damageDrawLifeHandlers); putAll(zoneHandlers); putAll(tapLayerStateHandlers)
+        putAll(playerContinuousHandlers); putAll(manaHandlers); putAll(tokenHandlers)
+    }
 }
 
-/** A per-`_Action` rendering rule. Returns the Effect DSL string, or null → SCAFFOLD. */
-internal typealias ActionHandler = EmitCtx.(node: JsonObject, args: JsonElement?, tvar: String?) -> String?
+/** A per-`_Action` rendering rule. Returns the Effect [Dsl] node it emits, or null → SCAFFOLD. */
+internal typealias ActionHandler = EmitCtx.(node: JsonObject, args: JsonElement?, tvar: String?) -> Dsl?
 
 /** Fluent builder shared by every themed handler file (mirrors `bridge.BridgeBuilder`). */
 internal class ActionRegistry {
@@ -35,8 +39,8 @@ internal class ActionRegistry {
     /** Register a handler under one or more tags. */
     fun on(vararg tags: String, handler: ActionHandler) = tags.forEach { map[it] = handler }
 
-    /** A constant 1:1 effect — `tag → fixed DSL string` (imports auto-derived from the string). */
-    fun simple(vararg tags: String, dsl: String) = on(*tags) { _, _, _ -> dsl }
+    /** A constant 1:1 effect — `tag → fixed DSL token` rendered as a [Lit] (imports auto-derived). */
+    fun simple(vararg tags: String, dsl: String) = on(*tags) { _, _, _ -> Lit(dsl) }
 
     fun build(): Map<String, ActionHandler> = map
 }

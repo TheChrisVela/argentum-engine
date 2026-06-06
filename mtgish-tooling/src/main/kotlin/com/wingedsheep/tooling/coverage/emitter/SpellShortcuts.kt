@@ -1,5 +1,9 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.Call
+import com.wingedsheep.tooling.coverage.Dsl
+import com.wingedsheep.tooling.coverage.arg
+import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.compact
 import com.wingedsheep.tooling.coverage.jsonContains
 import com.wingedsheep.tooling.coverage.strField
@@ -10,42 +14,43 @@ import kotlinx.serialization.json.JsonObject
  * than rendered action-by-action. [spellBlock] tries each before falling back to the generic path.
  * A `String?` shortcut yields a one-line `effect =`; a `List<String>?` shortcut yields a whole block.
  */
-internal fun EmitCtx.eachplayerMaydraw(card: JsonObject): String? {
+internal fun EmitCtx.eachplayerMaydraw(card: JsonObject): Dsl? {
     val rules = card["Rules"]
     if (!jsonContains(rules, "_Action", "EachPlayerActions") || !jsonContains(rules, "_Action", "DrawUptoNumberCards")) return null
     val blob = compact(rules)
     val mx = Regex(""""DrawUptoNumberCards".*?"args":\s*(\d+)""").find(blob) ?: return null
     val life = Regex(""""GainLifeForEach".*?"args":\s*(\d+)""").find(blob)
-    val lpc = if (life != null) ", lifePerCardNotDrawn = ${life.groupValues[1]}" else ""
-    return "Patterns.Hand.eachPlayerMayDraw(maxCards = ${mx.groupValues[1]}$lpc)"
+    val parts = mutableListOf(arg("maxCards", mx.groupValues[1]))
+    if (life != null) parts.add(arg("lifePerCardNotDrawn", life.groupValues[1]))
+    return Call("Patterns.Hand.eachPlayerMayDraw", parts)
 }
 
 /** Each player discards any number, then draws that many; you draw 1 (Flux). */
-internal fun EmitCtx.fluxEffect(card: JsonObject): String? {
+internal fun EmitCtx.fluxEffect(card: JsonObject): Dsl? {
     val blob = compact(card["Rules"])
     if ("TheNumberOfCardsDiscardedByPlayerThisWay" in blob && "DiscardAnyNumberOfCards" in blob) {
         val bonus = if ("\"DrawACard\"" in blob) 1 else 0
-        return "Patterns.Hand.eachPlayerDiscardsDraws(controllerBonusDraw = $bonus)"
+        return call("Patterns.Hand.eachPlayerDiscardsDraws", arg("controllerBonusDraw", "$bonus"))
     }
     return null
 }
 
 /** Each player shuffles their hand into their library, then draws that many (Winds of Change). */
-internal fun EmitCtx.windsEffect(card: JsonObject): String? {
+internal fun EmitCtx.windsEffect(card: JsonObject): Dsl? {
     val blob = compact(card["Rules"])
     if ("ShuffleHandIntoLibrary" in blob && "NumCardsShuffledIntoLibraryThisWay" in blob) {
-        return "Patterns.Hand.wheelEffect(Player.Each)"
+        return call("Patterns.Hand.wheelEffect", arg("Player.Each"))
     }
     return null
 }
 
 /** Take an extra turn, then lose at that turn's end step (Last Chance / Final Fortune). */
-internal fun EmitCtx.extraTurnEffect(card: JsonObject): String? {
+internal fun EmitCtx.extraTurnEffect(card: JsonObject): Dsl? {
     val (_, actions) = extractEnvelope(card["Rules"])
     if (actions == null) return null
     val hasExtra = actions.any { it.strField("_Action") == "TakeAnExtraTurn" }
     val loseAfter = actions.any { it.strField("_Action") == "CreateFutureTrigger" && jsonContains(it, "_Action", "LoseTheGame") }
-    if (hasExtra && loseAfter) return "TakeExtraTurnEffect(loseAtEndStep = true)"
+    if (hasExtra && loseAfter) return call("TakeExtraTurnEffect", arg("loseAtEndStep", "true"))
     return null
 }
 

@@ -7,6 +7,7 @@ import com.wingedsheep.tooling.coverage.compact
 import com.wingedsheep.tooling.coverage.field
 import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.jsonContains
+import com.wingedsheep.tooling.coverage.render
 import com.wingedsheep.tooling.coverage.strField
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -110,7 +111,7 @@ private fun EmitCtx.conditionalSpell(card: JsonObject): List<String>? {
     val inner = if (body != null && body.size > 1 && body[1] is JsonArray) (body[1] as JsonArray).filterIsInstance<JsonObject>() else null
     if (inner == null) return null
     val edsl = renderEffectList(inner, null) ?: return null
-    return listOf("    spell {", "        condition = $cond", "        effect = $edsl", "    }")
+    return listOf("    spell {", "        condition = $cond", "        effect = ${render(edsl)}", "    }")
 }
 
 internal fun EmitCtx.spellBlock(card: JsonObject): List<String>? {
@@ -119,10 +120,10 @@ internal fun EmitCtx.spellBlock(card: JsonObject): List<String>? {
     // silently drop the rest, so scaffold the whole card rather than emit one arm of a modal spell.
     if ("\"Modal_" in compact(card["Rules"])) { reasons.add("modal-spell"); return null }
     // One-line `effect =` shortcuts, then whole-block shortcuts, then the generic envelope path.
-    eachplayerMaydraw(card)?.let { return spellOf(it) }
-    fluxEffect(card)?.let { return spellOf(it) }
-    windsEffect(card)?.let { return spellOf(it) }
-    extraTurnEffect(card)?.let { return spellOf(it) }
+    eachplayerMaydraw(card)?.let { return spellOf(render(it)) }
+    fluxEffect(card)?.let { return spellOf(render(it)) }
+    windsEffect(card)?.let { return spellOf(render(it)) }
+    extraTurnEffect(card)?.let { return spellOf(render(it)) }
     distributedSpell(card)?.let { return it }
     balanceEffect(card)?.let { return it }
     conditionalSpell(card)?.let { return it }
@@ -134,7 +135,7 @@ internal fun EmitCtx.spellBlock(card: JsonObject): List<String>? {
     val edsl = renderEffectList(actions, tvar) ?: return null
     val restrictions = castRestrictionLines((card["Rules"].asArr ?: JsonArray(emptyList())).filterIsInstance<JsonObject>()) ?: return null
     val inner = if (tvar != null) listOf("        val t = target(\"target\", $tdsl)") else emptyList()
-    return listOf("    spell {") + restrictions + inner + listOf("        effect = $edsl", "    }")
+    return listOf("    spell {") + restrictions + inner + listOf("        effect = ${render(edsl)}", "    }")
 }
 
 private fun spellOf(effect: String) = listOf("    spell {", "        effect = $effect", "    }")
@@ -177,7 +178,7 @@ internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false
     if (oncePerTurn) lines.add("        oncePerTurn = true")
     if (mayWrapped && !selfOptional) lines.add("        optional = true")
     if (tvar != null) lines.add("        val t = target(\"target\", $tdsl)")
-    lines.addAll(listOf("        effect = $edsl", "    }"))
+    lines.addAll(listOf("        effect = ${render(edsl)}", "    }"))
     return lines
 }
 
@@ -339,7 +340,7 @@ internal fun EmitCtx.fromAnyZoneBlock(rule: JsonObject): List<String>? {
     val lines = mutableListOf("    triggeredAbility {", "        trigger = Triggers.YouCycleThis")
     if (mayWrapped) lines.add("        optional = true")
     if (tvar != null) lines.add("        val t = target(\"target\", $tdsl)")
-    lines.addAll(listOf("        effect = $edsl", "    }"))
+    lines.addAll(listOf("        effect = ${render(edsl)}", "    }"))
     return lines
 }
 
@@ -358,7 +359,7 @@ internal fun EmitCtx.activatedBlock(rule: JsonObject): List<String>? {
     val lines = mutableListOf("    activatedAbility {", "        cost = $cost")
     activationRestrictionLines(rule)?.let { lines.addAll(it) } ?: return null
     if (tvar != null) lines.add("        val t = target(\"target\", $tdsl)")
-    lines.add("        effect = $edsl")
+    lines.add("        effect = ${render(edsl)}")
     // A ReplaceNextDraw effect ("the next time you would draw … instead") prompts on the replaced draw,
     // not at activation — the activated-ability flag the Words cycle's golden carries.
     if (actions.any { it.strField("_Action") == "CreateFutureReplaceWouldDraw" }) lines.add("        promptOnDraw = true")
