@@ -138,6 +138,10 @@ internal fun EmitCtx.spellBlock(card: JsonObject): List<String>? {
 
 private fun spellOf(effect: String) = listOf("    spell {", "        effect = $effect", "    }")
 
+/** mtgish actions whose Argentum rendering already embeds the "you may" choice (so a wrapping
+ *  MayAction must NOT also set the ability's `optional = true`). */
+private val SELF_OPTIONAL_ACTIONS = setOf("PutACardFromHandOnBattlefield")
+
 private val TRIGGER_SPEC = mapOf(
     "WhenAPermanentEntersTheBattlefield" to "Triggers.EntersBattlefield",
     "WhenACreatureOrPlaneswalkerDies" to "Triggers.Dies",
@@ -159,12 +163,17 @@ internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false
     // by choosing no targets), not a resolution-time MayEffect. Unwrap a lone MayAction so the
     // ability carries `optional = true` and a plain effect — the engine's idiom for "may [target]".
     val mayWrapped = actions.singleOrNull()?.strField("_Action") == "MayAction"
-    val effectActions = if (mayWrapped) listOf(innerAction(actions.single()) ?: return null) else actions
+    val mayInner = if (mayWrapped) innerAction(actions.single()) ?: return null else null
+    val effectActions = if (mayWrapped) listOf(mayInner!!) else actions
+    // Some effects already carry their own "you may" choice (putFromHand prompts whether to put the
+    // card), so the MayAction wrapper is absorbed by the effect, not re-expressed as `optional = true`
+    // (which would double-wrap vs the golden — Elvish Pioneer).
+    val selfOptional = mayInner?.strField("_Action") in SELF_OPTIONAL_ACTIONS
     val edsl = renderEffectList(effectActions, tvar) ?: return null
 
     val lines = mutableListOf("    triggeredAbility {", "        trigger = $spec")
     if (oncePerTurn) lines.add("        oncePerTurn = true")
-    if (mayWrapped) lines.add("        optional = true")
+    if (mayWrapped && !selfOptional) lines.add("        optional = true")
     if (tvar != null) lines.add("        val t = target(\"target\", $tdsl)")
     lines.addAll(listOf("        effect = $edsl", "    }"))
     return lines

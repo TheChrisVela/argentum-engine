@@ -61,6 +61,7 @@ internal fun EmitCtx.renderAction(node: JsonObject, tvar: String?): String? {
 internal fun EmitCtx.renderEffectList(actions: List<JsonObject>, tvar: String?): String? {
     echoEffect(actions)?.let { return it }
     becomeCreatureTypeEffect(actions, tvar)?.let { return it }
+    chooseCreatureTypeRevealTopEffect(actions)?.let { return it }
     val rendered = mutableListOf<String>()
     for (act in actions) {
         val r = renderAction(act, tvar)
@@ -254,6 +255,24 @@ internal fun EmitCtx.becomeCreatureTypeEffect(actions: List<JsonObject>, tvar: S
     if (!jsonContains(layer, "_Expiration", "UntilEndOfTurn")) return null  // non-EOT -> SCAFFOLD
     val target = refTarget(layer["args"], tvar) ?: return null
     return "BecomeCreatureTypeEffect(target = $target)"
+}
+
+/**
+ * [ChooseACreatureType, RevealTopCardOfLibrary, IfElse(revealed creature is of the chosen type ->
+ * hand, else -> graveyard)] -> the single `Patterns.CreatureType.chooseCreatureTypeRevealTop()` pattern
+ * (Bloodline Shaman). The whole three-action chain collapses to the named SDK pattern, so it renders
+ * as one effect rather than three; any deviation from this exact shape declines (null -> SCAFFOLD).
+ */
+internal fun EmitCtx.chooseCreatureTypeRevealTopEffect(actions: List<JsonObject>): String? {
+    if (actions.size != 3) return null
+    if (actions[0].strField("_Action") != "ChooseACreatureType") return null
+    if (actions[1].strField("_Action") != "RevealTopCardOfLibrary") return null
+    if (actions[2].strField("_Action") != "IfElse") return null
+    val blob = compact(actions[2])
+    if ("ACardWasRevealedThisWay" !in blob || "IsCreatureTypeVariable" !in blob ||
+        "TheChosenCreatureType" !in blob) return null
+    if ("PutTopOfLibraryInHand" !in blob || "PutTopOfLibraryInGraveyard" !in blob) return null
+    return "Patterns.CreatureType.chooseCreatureTypeRevealTop()"
 }
 
 /** [MayCost(cost), Unless(CostWasPaid, [Sacrifice...])] -> PayOrSufferEffect (echo / upkeep cost). */
