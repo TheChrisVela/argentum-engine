@@ -1,5 +1,6 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.asArr
 import com.wingedsheep.tooling.coverage.compact
 import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.jsonContains
@@ -43,9 +44,31 @@ internal val zoneHandlers: Map<String, ActionHandler> = actionHandlers {
         "Effects.Move($tgt, Zone.HAND)"
     }
 
+    on("SacrificePermanent") { _, args, _ ->  // "sacrifice ~" (Blistering Firecat's end-step sacrifice)
+        if (jsonContains(args, "_Permanent", "ThisPermanent")) "SacrificeSelfEffect" else null
+    }
+
     on("ShuffleGraveyardCardIntoLibrary") { _, args, tvar ->  // e.g. Alabaster Dragon
         val tgt = refTarget(args, tvar) ?: "EffectTarget.Self"
         "Effects.Move($tgt, Zone.LIBRARY, ZonePlacement.Shuffled)"
+    }
+
+    on("Surveil") { _, args, _ ->  // "Surveil N" -> the look-top / keep-or-bin pipeline
+        (findInteger(args) as? Int)?.let { "Patterns.Library.surveil($it)" }
+    }
+
+    on("PutACardFromHandOnBattlefield") { _, args, _ ->  // "you may put a [basic land] card from your hand …"
+        val arr = args.asArr ?: return@on null
+        val blob = compact(arr.getOrNull(0))
+        val filter = when {
+            "IsSupertype" in blob && "\"Basic\"" in blob && "\"Land\"" in blob -> "GameObjectFilter.BasicLand"
+            "\"Land\"" in blob && "IsSupertype" !in blob && "IsLandType" !in blob -> "GameObjectFilter.Land"
+            else -> return@on null
+        }
+        val entersTapped = "EntersTapped" in compact(arr.getOrNull(1))
+        val parts = mutableListOf("filter = $filter")
+        if (entersTapped) parts.add("entersTapped = true")
+        "Patterns.Hand.putFromHand(${parts.joinToString(", ")})"
     }
 
     on("SearchLibrary") { _, args, _ -> renderSearch(args) }

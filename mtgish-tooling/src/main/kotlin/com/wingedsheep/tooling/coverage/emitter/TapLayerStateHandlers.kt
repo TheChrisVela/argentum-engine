@@ -39,6 +39,22 @@ internal val tapLayerStateHandlers: Map<String, ActionHandler> = actionHandlers 
         "Effects.ForEachInGroup($filter, Effects.$verb(EffectTarget.Self))"
     }
 
+    on("PutACounterOfTypeOnPermanent") { _, args, tvar ->
+        // "Put a +1/+1 (or -1/-1) counter on <permanent>." Only the bare ±1/±1 PTCounter renders; any
+        // other counter kind scaffolds rather than guess. The subject ref is self or the bound target.
+        val arr = args.asArr ?: return@on null
+        val counterNode = arr.getOrNull(0) as? JsonObject ?: return@on null
+        if (counterNode.strField("_CounterType") != "PTCounter") return@on null
+        val pt = counterNode["args"].asArr ?: return@on null
+        val counter = when (Pair(pt.getOrNull(0).asInt(), pt.getOrNull(1).asInt())) {
+            Pair(1, 1) -> "Counters.PLUS_ONE_PLUS_ONE"
+            Pair(-1, -1) -> "Counters.MINUS_ONE_MINUS_ONE"
+            else -> return@on null
+        }
+        val tgt = refTarget(arr.getOrNull(1), tvar) ?: return@on null
+        "AddCountersEffect(counterType = $counter, count = 1, target = $tgt)"
+    }
+
     on("CreatePermanentLayerEffectUntil", "CreateEachPermanentLayerEffectUntil") { node, _, tvar ->
         renderLayerEffect(node, node.strField("_Action")!!, tvar)
     }
