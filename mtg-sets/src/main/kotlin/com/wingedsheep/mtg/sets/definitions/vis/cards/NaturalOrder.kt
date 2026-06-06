@@ -26,7 +26,10 @@ val NaturalOrder = card("Natural Order") {
     typeLine = "Sorcery"
     additionalCost(Costs.additional.SacrificePermanent(GameObjectFilter.Creature.withColor(Color.GREEN)))
     spell {
-        effect = Patterns.Library.searchLibrary(filter = GameObjectFilter.Creature.withColor(Color.GREEN), destination = SearchDestination.BATTLEFIELD)
+        effect = Patterns.Library.searchLibrary(
+            filter = GameObjectFilter.Creature.withColor(Color.GREEN),
+            destination = SearchDestination.BATTLEFIELD
+        )
     }
     metadata {
         rarity = Rarity.RARE

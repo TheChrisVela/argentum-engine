@@ -23,7 +23,10 @@ val Mobilize = card("Mobilize") {
     colorIdentity = "G"
     typeLine = "Sorcery"
     spell {
-        effect = Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Creature.youControl()), Effects.Untap(EffectTarget.Self))
+        effect = Effects.ForEachInGroup(
+            GroupFilter(GameObjectFilter.Creature.youControl()),
+            Effects.Untap(EffectTarget.Self)
+        )
     }
     metadata {
         rarity = Rarity.COMMON

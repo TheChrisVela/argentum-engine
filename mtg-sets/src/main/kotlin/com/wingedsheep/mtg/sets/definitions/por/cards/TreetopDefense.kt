@@ -29,7 +29,10 @@ val TreetopDefense = card("Treetop Defense") {
     spell {
         castOnlyDuring(Step.DECLARE_ATTACKERS)
         castOnlyIf(YouWereAttackedThisStep)
-        effect = Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Creature.youControl()), Effects.GrantKeyword(Keyword.REACH, EffectTarget.Self))
+        effect = Effects.ForEachInGroup(
+            GroupFilter(GameObjectFilter.Creature.youControl()),
+            Effects.GrantKeyword(Keyword.REACH, EffectTarget.Self)
+        )
     }
     metadata {
         rarity = Rarity.RARE

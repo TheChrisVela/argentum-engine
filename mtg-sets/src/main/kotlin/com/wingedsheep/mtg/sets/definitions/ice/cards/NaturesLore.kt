@@ -4,6 +4,7 @@
 
 package com.wingedsheep.mtg.sets.definitions.ice.cards
 
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
@@ -22,7 +23,10 @@ val NaturesLore = card("Nature's Lore") {
     colorIdentity = "G"
     typeLine = "Sorcery"
     spell {
-        effect = Patterns.Library.searchLibrary(filter = GameObjectFilter.Land.withSubtype("Forest"), destination = SearchDestination.BATTLEFIELD)
+        effect = Patterns.Library.searchLibrary(
+            filter = GameObjectFilter.Land.withSubtype(Subtype.FOREST),
+            destination = SearchDestination.BATTLEFIELD
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

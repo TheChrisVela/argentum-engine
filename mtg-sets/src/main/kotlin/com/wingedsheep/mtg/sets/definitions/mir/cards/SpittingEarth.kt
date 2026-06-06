@@ -4,6 +4,7 @@
 
 package com.wingedsheep.mtg.sets.definitions.mir.cards
 
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -26,7 +27,10 @@ val SpittingEarth = card("Spitting Earth") {
     typeLine = "Sorcery"
     spell {
         val t = target("target", TargetCreature(filter = TargetFilter.Creature))
-        effect = DealDamageEffect(DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Land.withSubtype("Mountain")), t)
+        effect = DealDamageEffect(
+            DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Land.withSubtype(Subtype.MOUNTAIN)),
+            t
+        )
     }
     metadata {
         rarity = Rarity.COMMON

@@ -26,7 +26,10 @@ val CruelTutor = card("Cruel Tutor") {
     typeLine = "Sorcery"
     spell {
         effect = Effects.Composite(
-            Patterns.Library.searchLibrary(filter = GameObjectFilter.Any, destination = SearchDestination.TOP_OF_LIBRARY),
+            Patterns.Library.searchLibrary(
+                filter = GameObjectFilter.Any,
+                destination = SearchDestination.TOP_OF_LIBRARY
+            ),
             LoseLifeEffect(2, EffectTarget.Controller)
         )
     }

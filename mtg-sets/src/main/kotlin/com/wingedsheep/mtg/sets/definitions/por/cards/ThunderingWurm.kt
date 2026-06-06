@@ -28,7 +28,10 @@ val ThunderingWurm = card("Thundering Wurm") {
     toughness = 4
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        effect = PayOrSufferEffect(cost = Costs.pay.Discard(filter = GameObjectFilter.Land), suffer = SacrificeSelfEffect)
+        effect = PayOrSufferEffect(
+            cost = Costs.pay.Discard(filter = GameObjectFilter.Land),
+            suffer = SacrificeSelfEffect
+        )
     }
     metadata {
         rarity = Rarity.RARE

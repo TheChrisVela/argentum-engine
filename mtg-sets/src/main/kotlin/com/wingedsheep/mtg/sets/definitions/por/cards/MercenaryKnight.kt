@@ -28,7 +28,10 @@ val MercenaryKnight = card("Mercenary Knight") {
     toughness = 4
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        effect = PayOrSufferEffect(cost = Costs.pay.Discard(filter = GameObjectFilter.Creature), suffer = SacrificeSelfEffect)
+        effect = PayOrSufferEffect(
+            cost = Costs.pay.Discard(filter = GameObjectFilter.Creature),
+            suffer = SacrificeSelfEffect
+        )
     }
     metadata {
         rarity = Rarity.RARE

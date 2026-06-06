@@ -23,7 +23,10 @@ val TidalSurge = card("Tidal Surge") {
     colorIdentity = "U"
     typeLine = "Sorcery"
     spell {
-        val t = target("target", TargetCreature(optional = true, count = 3, filter = TargetFilter.Creature.withoutKeyword(Keyword.FLYING)))
+        val t = target(
+            "target",
+            TargetCreature(optional = true, count = 3, filter = TargetFilter.Creature.withoutKeyword(Keyword.FLYING))
+        )
         effect = Effects.TapEachTarget()
     }
     metadata {

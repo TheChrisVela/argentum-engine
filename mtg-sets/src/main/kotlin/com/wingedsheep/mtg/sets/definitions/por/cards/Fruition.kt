@@ -4,6 +4,7 @@
 
 package com.wingedsheep.mtg.sets.definitions.por.cards
 
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -23,7 +24,9 @@ val Fruition = card("Fruition") {
     colorIdentity = "G"
     typeLine = "Sorcery"
     spell {
-        effect = GainLifeEffect(DynamicAmount.AggregateBattlefield(Player.Each, GameObjectFilter.Land.withSubtype("Forest")))
+        effect = GainLifeEffect(
+            DynamicAmount.AggregateBattlefield(Player.Each, GameObjectFilter.Land.withSubtype(Subtype.FOREST))
+        )
     }
     metadata {
         rarity = Rarity.COMMON

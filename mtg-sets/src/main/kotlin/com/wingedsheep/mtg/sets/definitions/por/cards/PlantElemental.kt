@@ -4,6 +4,7 @@
 
 package com.wingedsheep.mtg.sets.definitions.por.cards
 
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
@@ -28,7 +29,10 @@ val PlantElemental = card("Plant Elemental") {
     toughness = 4
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        effect = PayOrSufferEffect(cost = Costs.pay.Sacrifice(GameObjectFilter.Land.withSubtype("Forest")), suffer = SacrificeSelfEffect)
+        effect = PayOrSufferEffect(
+            cost = Costs.pay.Sacrifice(GameObjectFilter.Land.withSubtype(Subtype.FOREST)),
+            suffer = SacrificeSelfEffect
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

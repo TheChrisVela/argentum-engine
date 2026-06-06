@@ -25,7 +25,10 @@ val NaturesCloak = card("Nature's Cloak") {
     colorIdentity = "G"
     typeLine = "Sorcery"
     spell {
-        effect = Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Creature.withColor(Color.GREEN).youControl()), Effects.GrantKeyword(Keyword.FORESTWALK, EffectTarget.Self))
+        effect = Effects.ForEachInGroup(
+            GroupFilter(GameObjectFilter.Creature.withColor(Color.GREEN).youControl()),
+            Effects.GrantKeyword(Keyword.FORESTWALK, EffectTarget.Self)
+        )
     }
     metadata {
         rarity = Rarity.RARE

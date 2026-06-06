@@ -24,7 +24,10 @@ val ValorousCharge = card("Valorous Charge") {
     colorIdentity = "W"
     typeLine = "Sorcery"
     spell {
-        effect = Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Creature.withColor(Color.WHITE)), Effects.ModifyStats(2, 0, EffectTarget.Self))
+        effect = Effects.ForEachInGroup(
+            GroupFilter(GameObjectFilter.Creature.withColor(Color.WHITE)),
+            Effects.ModifyStats(2, 0, EffectTarget.Self)
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

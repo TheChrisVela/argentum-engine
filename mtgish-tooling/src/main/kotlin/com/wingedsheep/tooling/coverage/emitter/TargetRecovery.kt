@@ -144,9 +144,9 @@ internal fun EmitCtx.gameObjectFilterDsl(filterNode: JsonElement?): String? {
     val subs = subtypes(filterNode)
     var filtered = when {
         subs.isNotEmpty() && ("Land" in types || "IsLandType" in blob || "\"Land\"" in blob) ->
-            "GameObjectFilter.Land.withSubtype(\"${subs[0]}\")"
+            "GameObjectFilter.Land.withSubtype(${subtypeArg(subs[0])})"
         subs.isNotEmpty() && ("Creature" in types || "\"Creature\"" in blob) ->
-            "GameObjectFilter.Creature.withSubtype(\"${subs[0]}\")"
+            "GameObjectFilter.Creature.withSubtype(${subtypeArg(subs[0])})"
         types == setOf("Creature", "Land") -> "GameObjectFilter.CreatureOrLand"
         types == setOf("Creature", "Artifact") -> "GameObjectFilter.CreatureOrArtifact"
         types == setOf("Creature", "Enchantment") -> "GameObjectFilter.CreatureOrEnchantment"
@@ -185,14 +185,14 @@ internal fun EmitCtx.revealedHandFilterDsl(filterNode: JsonElement?): String? {
     val color = Regex(""""_Color":"(\w+)"""").find(blob)?.groupValues?.get(1)
     if (landType == null && color == null) return null
     val parts = mutableListOf<String>()
-    if (landType != null) parts.add("GameObjectFilter.Land.withSubtype(\"$landType\")")
+    if (landType != null) parts.add("GameObjectFilter.Land.withSubtype(${subtypeArg(landType)})")
     if (color != null) parts.add("GameObjectFilter.Any.withColor(Color.${color.uppercase()})")
     return parts.joinToString(" or ").let { if (parts.size > 1) "($it)" else it }
 }
 
 internal fun EmitCtx.landSearchFilterDsl(filterNode: JsonElement?): String {
     val subs = subtypes(filterNode)
-    if (subs.isNotEmpty()) return "GameObjectFilter.Land.withSubtype(\"${subs[0]}\")"
+    if (subs.isNotEmpty()) return "GameObjectFilter.Land.withSubtype(${subtypeArg(subs[0])})"
     val blob = compact(filterNode)
     val oracle = oracleText?.lowercase() ?: ""
     return when {

@@ -35,6 +35,7 @@ val REPO_ROOT: File by lazy {
 val SDK_EFFECTS: File get() = File(REPO_ROOT, "mtg-sdk/src/main/kotlin/com/wingedsheep/sdk/scripting/effects")
 val SDK_ROOT: File get() = File(REPO_ROOT, "mtg-sdk/src/main/kotlin")
 val KEYWORD_KT: File get() = File(REPO_ROOT, "mtg-sdk/src/main/kotlin/com/wingedsheep/sdk/core/Keyword.kt")
+val SUBTYPE_KT: File get() = File(REPO_ROOT, "mtg-sdk/src/main/kotlin/com/wingedsheep/sdk/core/Subtype.kt")
 val DEFINITIONS_ROOT: File get() = File(REPO_ROOT, "mtg-sets/src/main/kotlin/com/wingedsheep/mtg/sets/definitions")
 val SNAP_DIR: File get() = File(REPO_ROOT, "mtg-sets/src/test/resources/snapshots/cards")
 val GEN_DIR: File get() = File(REPO_ROOT, "mtg-sets/build/generated-cards")

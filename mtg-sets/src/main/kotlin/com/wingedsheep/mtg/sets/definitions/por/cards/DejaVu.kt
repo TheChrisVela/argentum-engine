@@ -24,7 +24,10 @@ val DejaVu = card("Déjà Vu") {
     colorIdentity = "U"
     typeLine = "Sorcery"
     spell {
-        val t = target("target", TargetObject(filter = TargetFilter(GameObjectFilter.Sorcery.ownedByYou(), zone = Zone.GRAVEYARD)))
+        val t = target(
+            "target",
+            TargetObject(filter = TargetFilter(GameObjectFilter.Sorcery.ownedByYou(), zone = Zone.GRAVEYARD))
+        )
         effect = Effects.Move(t, Zone.HAND)
     }
     metadata {

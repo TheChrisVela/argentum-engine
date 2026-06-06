@@ -57,4 +57,14 @@ object Registry {
     }
 
     fun importFor(sym: String): String? = symbolIndex[sym]?.let { "$it.$sym" }
+
+    // --- Subtype value -> named companion constant, scanned from Subtype.kt (anti-rot) -----------
+    private val SUBTYPE_DECL = Regex("""\bval\s+([A-Z][A-Z0-9_]*)\s*=\s*Subtype\("([^"]+)"\)""")
+
+    private val subtypeConstants: Map<String, String> by lazy {
+        SUBTYPE_DECL.findAll(SUBTYPE_KT.readText()).associate { it.groupValues[2] to it.groupValues[1] }
+    }
+
+    /** The `Subtype.X` constant name for a subtype value (e.g. "Plains" -> "PLAINS"), or null. */
+    fun subtypeConstant(value: String): String? = subtypeConstants[value]
 }

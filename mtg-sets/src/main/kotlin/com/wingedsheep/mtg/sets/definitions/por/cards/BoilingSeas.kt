@@ -4,6 +4,7 @@
 
 package com.wingedsheep.mtg.sets.definitions.por.cards
 
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
@@ -24,7 +25,11 @@ val BoilingSeas = card("Boiling Seas") {
     colorIdentity = "R"
     typeLine = "Sorcery"
     spell {
-        effect = Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Land.withSubtype("Island")), Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true), noRegenerate = false)
+        effect = Effects.ForEachInGroup(
+            GroupFilter(GameObjectFilter.Land.withSubtype(Subtype.ISLAND)),
+            Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
+            noRegenerate = false
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

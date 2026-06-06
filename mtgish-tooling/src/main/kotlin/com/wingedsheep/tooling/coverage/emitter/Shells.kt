@@ -67,6 +67,14 @@ internal fun renderTypeline(tl: JsonElement?): String {
 internal fun ktStr(s: String): String =
     s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\t", "\\t").replace("\n", "\\n")
 
+/**
+ * Render a subtype as the typed `Subtype.X` companion constant when one exists (typo-safe, matches
+ * hand-authored cards); fall back to the stringly-typed `withSubtype("…")` form for subtypes the
+ * SDK doesn't name yet.
+ */
+internal fun subtypeArg(value: String): String =
+    Registry.subtypeConstant(value)?.let { "Subtype.$it" } ?: "\"${ktStr(value)}\""
+
 internal fun colorIdentityDsl(meta: JsonObject?): String? {
     if (meta == null) return null
     val ci = meta["color_identity"].asArr ?: return null
@@ -137,8 +145,92 @@ internal fun isPermanent(card: JsonObject): Boolean =
 
 internal fun assemble(body: List<String>, pkg: String, complete: Boolean): String {
     val fileHeader = if (complete) COMPLETE_HEADER else DRAFT_HEADER
-    val header = fileHeader + listOf("", "package $pkg", "") + importsFor(body).map { "import $it" } + listOf("", "")
-    return (header + body).joinToString("\n") + "\n"
+    val wrapped = body.flatMap { wrapLine(it) }
+    val header = fileHeader + listOf("", "package $pkg", "") + importsFor(wrapped).map { "import $it" } + listOf("", "")
+    return (header + wrapped).joinToString("\n") + "\n"
+}
+
+/** Max source line width before [wrapLine] breaks a call's argument list across lines. */
+private const val MAX_LINE_WIDTH = 120
+
+/** Index of the first `(` that is real code (not inside a string literal), or null. */
+private fun firstCodeParen(s: String): Int? {
+    var inStr = false
+    var i = 0
+    while (i < s.length) {
+        val c = s[i]
+        if (inStr) { if (c == '\\') i++ else if (c == '"') inStr = false }
+        else if (c == '"') inStr = true
+        else if (c == '(') return i
+        i++
+    }
+    return null
+}
+
+/** Index of the `)` matching the `(` at [open], skipping string literals, or null. */
+private fun matchParen(s: String, open: Int): Int? {
+    var depth = 0
+    var inStr = false
+    var i = open
+    while (i < s.length) {
+        val c = s[i]
+        if (inStr) { if (c == '\\') i++ else if (c == '"') inStr = false }
+        else when (c) {
+            '"' -> inStr = true
+            '(' -> depth++
+            ')' -> { depth--; if (depth == 0) return i }
+        }
+        i++
+    }
+    return null
+}
+
+/** Split a call's argument string on top-level commas (depth-0, outside strings). */
+private fun splitTopLevelArgs(s: String): List<String> {
+    val out = mutableListOf<String>()
+    val sb = StringBuilder()
+    var depth = 0
+    var inStr = false
+    var i = 0
+    while (i < s.length) {
+        val c = s[i]
+        when {
+            inStr -> { sb.append(c); if (c == '\\' && i + 1 < s.length) { sb.append(s[i + 1]); i++ } else if (c == '"') inStr = false }
+            c == '"' -> { inStr = true; sb.append(c) }
+            c == '(' -> { depth++; sb.append(c) }
+            c == ')' -> { depth--; sb.append(c) }
+            c == ',' && depth == 0 -> { out.add(sb.toString()); sb.clear() }
+            else -> sb.append(c)
+        }
+        i++
+    }
+    if (sb.isNotBlank()) out.add(sb.toString())
+    return out
+}
+
+/**
+ * Pretty-print over-long generated lines by breaking the outermost call's argument list one-per-line
+ * (recursively), matching the hand-authored house style. Whitespace-only — the compiled card is
+ * unchanged — so it needs no snapshot re-bless. Comment/KDoc lines and lines whose only parens live
+ * inside string literals (flavour text, image URLs) are left untouched.
+ */
+internal fun wrapLine(line: String, maxWidth: Int = MAX_LINE_WIDTH): List<String> {
+    if (line.length <= maxWidth) return listOf(line)
+    val trimmed = line.trimStart()
+    if (trimmed.startsWith("*") || trimmed.startsWith("/*") || trimmed.startsWith("//")) return listOf(line)
+    val open = firstCodeParen(line) ?: return listOf(line)
+    val close = matchParen(line, open) ?: return listOf(line)
+    val args = splitTopLevelArgs(line.substring(open + 1, close))
+    if (args.isEmpty()) return listOf(line)
+    val indent = line.takeWhile { it == ' ' }
+    val inner = "$indent    "
+    val out = mutableListOf(line.substring(0, open + 1))  // prefix up to and including '('
+    args.forEachIndexed { i, arg ->
+        val comma = if (i < args.lastIndex) "," else ""
+        out += wrapLine(inner + arg.trim() + comma, maxWidth)  // recurse for nested long calls
+    }
+    out += indent + ")" + line.substring(close + 1)  // closing ')' + any trailing suffix
+    return out
 }
 
 private val STRING_LITERAL = Regex("\"(?:\\\\.|[^\"\\\\])*\"")

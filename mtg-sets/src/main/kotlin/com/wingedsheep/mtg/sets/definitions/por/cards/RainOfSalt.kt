@@ -26,7 +26,9 @@ val RainOfSalt = card("Rain of Salt") {
     typeLine = "Sorcery"
     spell {
         val t = target("target", TargetPermanent(count = 2, filter = TargetFilter.Land))
-        effect = ForEachTargetEffect(listOf(Effects.Move(EffectTarget.ContextTarget(0), Zone.GRAVEYARD, byDestruction = true)))
+        effect = ForEachTargetEffect(
+            listOf(Effects.Move(EffectTarget.ContextTarget(0), Zone.GRAVEYARD, byDestruction = true))
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

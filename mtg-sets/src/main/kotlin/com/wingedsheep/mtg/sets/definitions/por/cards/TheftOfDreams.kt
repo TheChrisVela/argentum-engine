@@ -25,7 +25,9 @@ val TheftOfDreams = card("Theft of Dreams") {
     typeLine = "Sorcery"
     spell {
         val t = target("target", TargetOpponent())
-        effect = DrawCardsEffect(DynamicAmount.AggregateBattlefield(Player.TargetOpponent, GameObjectFilter.Creature.tapped()))
+        effect = DrawCardsEffect(
+            DynamicAmount.AggregateBattlefield(Player.TargetOpponent, GameObjectFilter.Creature.tapped())
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

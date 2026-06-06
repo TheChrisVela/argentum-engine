@@ -22,7 +22,10 @@ val UntamedWilds = card("Untamed Wilds") {
     colorIdentity = "G"
     typeLine = "Sorcery"
     spell {
-        effect = Patterns.Library.searchLibrary(filter = GameObjectFilter.BasicLand, destination = SearchDestination.BATTLEFIELD)
+        effect = Patterns.Library.searchLibrary(
+            filter = GameObjectFilter.BasicLand,
+            destination = SearchDestination.BATTLEFIELD
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

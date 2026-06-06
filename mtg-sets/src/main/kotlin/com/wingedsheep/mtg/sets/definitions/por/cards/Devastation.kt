@@ -24,7 +24,11 @@ val Devastation = card("Devastation") {
     colorIdentity = "R"
     typeLine = "Sorcery"
     spell {
-        effect = Effects.ForEachInGroup(GroupFilter(GameObjectFilter.CreatureOrLand), Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true), noRegenerate = false)
+        effect = Effects.ForEachInGroup(
+            GroupFilter(GameObjectFilter.CreatureOrLand),
+            Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
+            noRegenerate = false
+        )
     }
     metadata {
         rarity = Rarity.RARE

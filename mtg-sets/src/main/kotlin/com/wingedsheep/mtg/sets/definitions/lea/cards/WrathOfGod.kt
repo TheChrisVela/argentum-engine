@@ -24,7 +24,11 @@ val WrathOfGod = card("Wrath of God") {
     colorIdentity = "W"
     typeLine = "Sorcery"
     spell {
-        effect = Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Creature), Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true), noRegenerate = true)
+        effect = Effects.ForEachInGroup(
+            GroupFilter(GameObjectFilter.Creature),
+            Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
+            noRegenerate = true
+        )
     }
     metadata {
         rarity = Rarity.RARE

@@ -22,7 +22,11 @@ val SylvanTutor = card("Sylvan Tutor") {
     colorIdentity = "G"
     typeLine = "Sorcery"
     spell {
-        effect = Patterns.Library.searchLibrary(filter = GameObjectFilter.Creature, destination = SearchDestination.TOP_OF_LIBRARY, reveal = true)
+        effect = Patterns.Library.searchLibrary(
+            filter = GameObjectFilter.Creature,
+            destination = SearchDestination.TOP_OF_LIBRARY,
+            reveal = true
+        )
     }
     metadata {
         rarity = Rarity.RARE

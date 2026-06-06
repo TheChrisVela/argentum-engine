@@ -4,6 +4,7 @@
 
 package com.wingedsheep.mtg.sets.definitions.por.cards
 
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -25,7 +26,15 @@ val RenewingDawn = card("Renewing Dawn") {
     typeLine = "Sorcery"
     spell {
         val t = target("target", TargetOpponent())
-        effect = GainLifeEffect(DynamicAmount.Multiply(DynamicAmount.AggregateBattlefield(Player.TargetOpponent, GameObjectFilter.Land.withSubtype("Mountain")), 2))
+        effect = GainLifeEffect(
+            DynamicAmount.Multiply(
+                DynamicAmount.AggregateBattlefield(
+                    Player.TargetOpponent,
+                    GameObjectFilter.Land.withSubtype(Subtype.MOUNTAIN)
+                ),
+                2
+            )
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

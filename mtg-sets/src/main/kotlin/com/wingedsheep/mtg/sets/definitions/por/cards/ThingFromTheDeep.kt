@@ -4,6 +4,7 @@
 
 package com.wingedsheep.mtg.sets.definitions.por.cards
 
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
@@ -28,7 +29,10 @@ val ThingFromTheDeep = card("Thing from the Deep") {
     toughness = 9
     triggeredAbility {
         trigger = Triggers.Attacks
-        effect = PayOrSufferEffect(cost = Costs.pay.Sacrifice(GameObjectFilter.Land.withSubtype("Island")), suffer = SacrificeSelfEffect)
+        effect = PayOrSufferEffect(
+            cost = Costs.pay.Sacrifice(GameObjectFilter.Land.withSubtype(Subtype.ISLAND)),
+            suffer = SacrificeSelfEffect
+        )
     }
     metadata {
         rarity = Rarity.RARE

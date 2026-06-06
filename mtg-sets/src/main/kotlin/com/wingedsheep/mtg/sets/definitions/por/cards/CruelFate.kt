@@ -34,7 +34,10 @@ val CruelFate = card("Cruel Fate") {
     spell {
         val t = target("target", TargetOpponent())
         effect = Effects.Composite(
-            GatherCardsEffect(CardSource.TopOfLibrary(DynamicAmount.Fixed(5), Player.TargetOpponent), storeAs = "looked"),
+            GatherCardsEffect(
+                CardSource.TopOfLibrary(DynamicAmount.Fixed(5), Player.TargetOpponent),
+                storeAs = "looked"
+            ),
             SelectFromCollectionEffect(
                 from = "looked",
                 selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(1)),
@@ -43,7 +46,10 @@ val CruelFate = card("Cruel Fate") {
                 selectedLabel = "Put in graveyard",
                 remainderLabel = "Put on top"
             ),
-            MoveCollectionEffect(from = "toGraveyard", destination = CardDestination.ToZone(Zone.GRAVEYARD, Player.TargetOpponent)),
+            MoveCollectionEffect(
+                from = "toGraveyard",
+                destination = CardDestination.ToZone(Zone.GRAVEYARD, Player.TargetOpponent)
+            ),
             MoveCollectionEffect(
                 from = "toTop",
                 destination = CardDestination.ToZone(Zone.LIBRARY, Player.TargetOpponent, ZonePlacement.Top),

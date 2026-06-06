@@ -4,6 +4,7 @@
 
 package com.wingedsheep.mtg.sets.definitions.por.cards
 
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.Patterns
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
@@ -27,7 +28,10 @@ val WoodElves = card("Wood Elves") {
     toughness = 1
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        effect = Patterns.Library.searchLibrary(filter = GameObjectFilter.Land.withSubtype("Forest"), destination = SearchDestination.BATTLEFIELD)
+        effect = Patterns.Library.searchLibrary(
+            filter = GameObjectFilter.Land.withSubtype(Subtype.FOREST),
+            destination = SearchDestination.BATTLEFIELD
+        )
     }
     metadata {
         rarity = Rarity.RARE

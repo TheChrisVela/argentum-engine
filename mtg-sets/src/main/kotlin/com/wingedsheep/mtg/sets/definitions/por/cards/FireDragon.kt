@@ -5,6 +5,7 @@
 package com.wingedsheep.mtg.sets.definitions.por.cards
 
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
@@ -34,7 +35,10 @@ val FireDragon = card("Fire Dragon") {
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
         val t = target("target", TargetCreature(filter = TargetFilter.Creature))
-        effect = DealDamageEffect(DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Land.withSubtype("Mountain")), t)
+        effect = DealDamageEffect(
+            DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Land.withSubtype(Subtype.MOUNTAIN)),
+            t
+        )
     }
     metadata {
         rarity = Rarity.RARE

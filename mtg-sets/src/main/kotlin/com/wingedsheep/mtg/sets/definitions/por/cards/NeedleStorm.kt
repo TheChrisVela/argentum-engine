@@ -25,7 +25,10 @@ val NeedleStorm = card("Needle Storm") {
     colorIdentity = "G"
     typeLine = "Sorcery"
     spell {
-        effect = Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Creature.withKeyword(Keyword.FLYING)), DealDamageEffect(4, EffectTarget.Self))
+        effect = Effects.ForEachInGroup(
+            GroupFilter(GameObjectFilter.Creature.withKeyword(Keyword.FLYING)),
+            DealDamageEffect(4, EffectTarget.Self)
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

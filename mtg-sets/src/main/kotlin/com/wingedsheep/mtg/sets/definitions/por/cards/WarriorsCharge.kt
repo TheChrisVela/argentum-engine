@@ -23,7 +23,10 @@ val WarriorsCharge = card("Warrior's Charge") {
     colorIdentity = "W"
     typeLine = "Sorcery"
     spell {
-        effect = Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Creature.youControl()), Effects.ModifyStats(1, 1, EffectTarget.Self))
+        effect = Effects.ForEachInGroup(
+            GroupFilter(GameObjectFilter.Creature.youControl()),
+            Effects.ModifyStats(1, 1, EffectTarget.Self)
+        )
     }
     metadata {
         rarity = Rarity.COMMON

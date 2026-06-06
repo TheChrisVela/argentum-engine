@@ -31,7 +31,10 @@ val Thundermare = card("Thundermare") {
     keywords(Keyword.HASTE)
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        effect = Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Creature, excludeSelf = true), Effects.Tap(EffectTarget.Self))
+        effect = Effects.ForEachInGroup(
+            GroupFilter(GameObjectFilter.Creature, excludeSelf = true),
+            Effects.Tap(EffectTarget.Self)
+        )
     }
     metadata {
         rarity = Rarity.RARE

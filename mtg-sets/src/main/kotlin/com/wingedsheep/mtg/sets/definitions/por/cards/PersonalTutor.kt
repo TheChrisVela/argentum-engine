@@ -22,7 +22,11 @@ val PersonalTutor = card("Personal Tutor") {
     colorIdentity = "U"
     typeLine = "Sorcery"
     spell {
-        effect = Patterns.Library.searchLibrary(filter = GameObjectFilter.Sorcery, destination = SearchDestination.TOP_OF_LIBRARY, reveal = true)
+        effect = Patterns.Library.searchLibrary(
+            filter = GameObjectFilter.Sorcery,
+            destination = SearchDestination.TOP_OF_LIBRARY,
+            reveal = true
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

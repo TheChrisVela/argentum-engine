@@ -23,7 +23,12 @@ val BlessedReversal = card("Blessed Reversal") {
     colorIdentity = "W"
     typeLine = "Instant"
     spell {
-        effect = GainLifeEffect(DynamicAmount.Multiply(DynamicAmount.AggregateBattlefield(Player.Opponent, GameObjectFilter.Creature.attacking()), 3))
+        effect = GainLifeEffect(
+            DynamicAmount.Multiply(
+                DynamicAmount.AggregateBattlefield(Player.Opponent, GameObjectFilter.Creature.attacking()),
+                3
+            )
+        )
     }
     metadata {
         rarity = Rarity.RARE

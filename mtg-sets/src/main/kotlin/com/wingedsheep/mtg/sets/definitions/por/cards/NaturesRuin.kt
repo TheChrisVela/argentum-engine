@@ -25,7 +25,11 @@ val NaturesRuin = card("Nature's Ruin") {
     colorIdentity = "B"
     typeLine = "Sorcery"
     spell {
-        effect = Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Creature.withColor(Color.GREEN)), Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true), noRegenerate = false)
+        effect = Effects.ForEachInGroup(
+            GroupFilter(GameObjectFilter.Creature.withColor(Color.GREEN)),
+            Effects.Move(EffectTarget.Self, Zone.GRAVEYARD, byDestruction = true),
+            noRegenerate = false
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

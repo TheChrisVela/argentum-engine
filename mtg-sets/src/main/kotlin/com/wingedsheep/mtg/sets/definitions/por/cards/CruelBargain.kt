@@ -27,7 +27,10 @@ val CruelBargain = card("Cruel Bargain") {
     spell {
         effect = Effects.Composite(
             DrawCardsEffect(4),
-            LoseLifeEffect(DynamicAmount.Divide(DynamicAmount.LifeTotal(Player.You), DynamicAmount.Fixed(2), roundUp = true), EffectTarget.Controller)
+            LoseLifeEffect(
+                DynamicAmount.Divide(DynamicAmount.LifeTotal(Player.You), DynamicAmount.Fixed(2), roundUp = true),
+                EffectTarget.Controller
+            )
         )
     }
     metadata {

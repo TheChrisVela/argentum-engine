@@ -23,7 +23,10 @@ val DreadCharge = card("Dread Charge") {
     colorIdentity = "B"
     typeLine = "Sorcery"
     spell {
-        effect = GrantCantBeBlockedExceptByColorEffect(filter = GroupFilter(GameObjectFilter.Creature.withColor(Color.BLACK).youControl()), canOnlyBeBlockedByColor = Color.BLACK)
+        effect = GrantCantBeBlockedExceptByColorEffect(
+            filter = GroupFilter(GameObjectFilter.Creature.withColor(Color.BLACK).youControl()),
+            canOnlyBeBlockedByColor = Color.BLACK
+        )
     }
     metadata {
         rarity = Rarity.RARE

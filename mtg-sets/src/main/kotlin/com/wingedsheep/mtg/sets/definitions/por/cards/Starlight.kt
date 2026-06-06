@@ -26,7 +26,15 @@ val Starlight = card("Starlight") {
     typeLine = "Sorcery"
     spell {
         val t = target("target", TargetOpponent())
-        effect = GainLifeEffect(DynamicAmount.Multiply(DynamicAmount.AggregateBattlefield(Player.TargetOpponent, GameObjectFilter.Creature.withColor(Color.BLACK)), 3))
+        effect = GainLifeEffect(
+            DynamicAmount.Multiply(
+                DynamicAmount.AggregateBattlefield(
+                    Player.TargetOpponent,
+                    GameObjectFilter.Creature.withColor(Color.BLACK)
+                ),
+                3
+            )
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

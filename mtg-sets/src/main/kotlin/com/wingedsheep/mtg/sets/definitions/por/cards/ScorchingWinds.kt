@@ -29,7 +29,10 @@ val ScorchingWinds = card("Scorching Winds") {
     spell {
         castOnlyDuring(Step.DECLARE_ATTACKERS)
         castOnlyIf(YouWereAttackedThisStep)
-        effect = Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Creature.attacking()), DealDamageEffect(1, EffectTarget.Self))
+        effect = Effects.ForEachInGroup(
+            GroupFilter(GameObjectFilter.Creature.attacking()),
+            DealDamageEffect(1, EffectTarget.Self)
+        )
     }
     metadata {
         rarity = Rarity.UNCOMMON

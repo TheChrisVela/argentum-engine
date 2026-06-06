@@ -23,7 +23,10 @@ val Steadfastness = card("Steadfastness") {
     colorIdentity = "W"
     typeLine = "Sorcery"
     spell {
-        effect = Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Creature.youControl()), Effects.ModifyStats(0, 3, EffectTarget.Self))
+        effect = Effects.ForEachInGroup(
+            GroupFilter(GameObjectFilter.Creature.youControl()),
+            Effects.ModifyStats(0, 3, EffectTarget.Self)
+        )
     }
     metadata {
         rarity = Rarity.COMMON

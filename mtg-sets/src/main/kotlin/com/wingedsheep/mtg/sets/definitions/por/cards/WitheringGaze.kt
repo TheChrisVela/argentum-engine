@@ -5,6 +5,7 @@
 package com.wingedsheep.mtg.sets.definitions.por.cards
 
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
@@ -31,7 +32,13 @@ val WitheringGaze = card("Withering Gaze") {
         val t = target("target", TargetOpponent())
         effect = Effects.Composite(
             RevealHandEffect(t),
-            DrawCardsEffect(DynamicAmount.Count(Player.TargetOpponent, Zone.HAND, (GameObjectFilter.Land.withSubtype("Forest") or GameObjectFilter.Any.withColor(Color.GREEN))))
+            DrawCardsEffect(
+                DynamicAmount.Count(
+                    Player.TargetOpponent,
+                    Zone.HAND,
+                    (GameObjectFilter.Land.withSubtype(Subtype.FOREST) or GameObjectFilter.Any.withColor(Color.GREEN))
+                )
+            )
         )
     }
     metadata {
