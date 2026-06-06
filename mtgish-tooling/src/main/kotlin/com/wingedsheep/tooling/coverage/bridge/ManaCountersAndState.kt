@@ -11,6 +11,9 @@ internal fun BridgeBuilder.manaCountersAndState() {
     effect("AddColorlessMana", "AddColorlessMana", UNIVERSAL)
 
     effect("CreateTokens", "CreateToken", UNIVERSAL)
+    // "becomes the creature type of your choice" — a ChooseACreatureType + an AddCreatureTypeVariable
+    // layer effect collapse to one BecomeCreatureTypeEffect (Mistform cycle, Imagecrafter).
+    effect("AddCreatureTypeVariable", "BecomeCreatureType", UNIVERSAL)
     effects("PutACounterOfTypeOnPermanent", "PutNumberCountersOfTypeOnPermanent", tag = "AddCounters", note = UNIVERSAL)
 
     effect("RegeneratePermanent", "Regenerate", UNIVERSAL)
