@@ -1,6 +1,14 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.Assign
+import com.wingedsheep.tooling.coverage.Block
+import com.wingedsheep.tooling.coverage.Eval
+import com.wingedsheep.tooling.coverage.Lit
+import com.wingedsheep.tooling.coverage.RawLine
+import com.wingedsheep.tooling.coverage.Stmt
+import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.asArr
+import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.asInt
 import com.wingedsheep.tooling.coverage.asObj
 import com.wingedsheep.tooling.coverage.asStr
@@ -9,6 +17,7 @@ import com.wingedsheep.tooling.coverage.field
 import com.wingedsheep.tooling.coverage.asciiIdentifier
 import com.wingedsheep.tooling.coverage.jsonContains
 import com.wingedsheep.tooling.coverage.pascalToUpperSnake
+import com.wingedsheep.tooling.coverage.renderBlock
 import com.wingedsheep.tooling.coverage.strField
 import com.wingedsheep.tooling.coverage.bridge.Bridge
 import kotlinx.serialization.json.JsonArray
@@ -37,22 +46,26 @@ object Emitter {
         val permanent = isPermanent(card)
         val kw = if (permanent) keywordLines(card, keywords) else emptySet()
 
-        val body = mutableListOf<String>()
-        body.addAll(docCommentLines(card, scryfall))
-        body.add("val $ident = card(\"${ktStr(name)}\") {")
-        body.add("    manaCost = \"${renderMana(card["ManaCost"])}\"")
-        colorIdentityDsl(scryfall)?.let { body.add("    colorIdentity = \"$it\"") }
-        body.add("    typeLine = \"${renderTypeline(card["Typeline"])}\"")
+        // The whole card is one Block tree: the KDoc precedes it, the shell/ability lines are its body
+        // statements, and the renderer turns it into source. Shell scaffolding (mana/typeline/metadata)
+        // stays as RawLine — the formatted, un-modeled leaves the Raw escape-hatch is for — while the
+        // ability builders contribute structured statements.
+        val pre = docCommentLines(card, scryfall)
+        val header = "val $ident = card(\"${ktStr(name)}\")"
+        val body = mutableListOf<Stmt>()
+        body.add(RawLine("    manaCost = \"${renderMana(card["ManaCost"])}\""))
+        colorIdentityDsl(scryfall)?.let { body.add(RawLine("    colorIdentity = \"$it\"")) }
+        body.add(RawLine("    typeLine = \"${renderTypeline(card["Typeline"])}\""))
         // Printed oracle text is display/training data (the gym observation surfaces it to agents); the
         // engine still derives behaviour from the structured keywords/effects below, never from this string.
-        scryfall?.strField("oracle_text")?.takeIf { it.isNotEmpty() }?.let { body.add("    oracleText = \"${ktStr(it)}\"") }
-        if (pt != null) { body.add("    power = ${pt["Power"].asInt()}"); body.add("    toughness = ${pt["Toughness"].asInt()}") }
+        scryfall?.strField("oracle_text")?.takeIf { it.isNotEmpty() }?.let { body.add(RawLine("    oracleText = \"${ktStr(it)}\"")) }
+        if (pt != null) { body.add(RawLine("    power = ${pt["Power"].asInt()}")); body.add(RawLine("    toughness = ${pt["Toughness"].asInt()}")) }
         // Emit keywords in printed (rule) order, not alphabetical — `keywordLines` collects them in the
         // card's rule order, which matches the hand-authored golden's `keywords(...)` order (e.g.
         // "Trample, haste" stays TRAMPLE, HASTE rather than re-sorting to HASTE, TRAMPLE).
-        if (kw.isNotEmpty()) body.add("    keywords(${kw.joinToString(", ") { "Keyword.$it" }})")
-        val cardLevelLines = ctx.cardLevelCastEffectLines(card) ?: return incomplete(ctx, body, scryfall, pkg)
-        body.addAll(cardLevelLines)
+        if (kw.isNotEmpty()) body.add(RawLine("    keywords(${kw.joinToString(", ") { "Keyword.$it" }})"))
+        val cardLevelLines = ctx.cardLevelCastEffectLines(card) ?: return incomplete(ctx, pre, header, body, scryfall, pkg)
+        body.addAll(cardLevelLines.map { RawLine(it) })
 
         // Auras: the pure static-buff shape (EnchantPermanent + PermanentLayerEffect) renders faithfully,
         // but an activated/triggered ability on an Aura references its "enchanted creature" — context the
@@ -68,7 +81,7 @@ object Emitter {
                 // renders rather than scaffolds; every other ability on an Aura still scaffolds.
                 if ((rn == "Activated" || rn == "ActivatedWithModifiers") &&
                     "SharesACreatureTypeWithPermanent" in compact(r)) return@forEach
-                ctx.reasons.add("aura-with-$rn"); return incomplete(ctx, body, scryfall, pkg)
+                ctx.reasons.add("aura-with-$rn"); return incomplete(ctx, pre, header, body, scryfall, pkg)
             }
         }
 
@@ -77,10 +90,12 @@ object Emitter {
         for (rule in (card["Rules"].asArr ?: JsonArray(emptyList()))) {
             if (rule !is JsonObject) continue
             val rname = rule.strField("_Rule")
-            val block: List<String>?
+            // Every ability builder returns structured statements; the renderer turns the whole card
+            // tree into source lines.
+            val block: List<Stmt>?
             when {
                 rname == "CastEffect" -> {
-                    if (!ctx.castEffectHandled(rule)) return incomplete(ctx, body, scryfall, pkg)
+                    if (!ctx.castEffectHandled(rule)) return incomplete(ctx, pre, header, body, scryfall, pkg)
                     continue
                 }
                 rname == "SpellActions" -> block = ctx.spellBlock(card)
@@ -96,32 +111,31 @@ object Emitter {
                 rname == "CDA_Power" -> block = ctx.cdaStatsBlock(card, rule)
                 rname == "CDA_Toughness" ->
                     if (jsonContains(card["Rules"], "_Rule", "CDA_Power")) continue  // emitted with CDA_Power
-                    else { ctx.reasons.add("CDA_Toughness"); return incomplete(ctx, body, scryfall, pkg) }
+                    else { ctx.reasons.add("CDA_Toughness"); return incomplete(ctx, pre, header, body, scryfall, pkg) }
                 rname == "Activated" || rname == "ActivatedWithModifiers" -> block = ctx.activatedBlock(rule)
-                rname == "Cycling" -> block = manaKeywordCost(rule)?.let { listOf("    keywordAbility(KeywordAbility.cycling(\"$it\"))") }
-                rname == "Morph" -> block = manaKeywordCost(rule)?.let { listOf("    morph = \"$it\"") }
-                rname == "Flashback" -> block = manaKeywordCost(rule)?.let { listOf("    keywordAbility(KeywordAbility.flashback(\"$it\"))") }
-                rname == "Crew" -> block = rule["args"].asInt()?.let { listOf("    keywordAbility(KeywordAbility.crew($it))") }
-                rname == "Protection" -> block = protectionScopeDsl(rule)?.let { listOf("    keywordAbility(KeywordAbility.Protection($it))") }
+                rname == "Cycling" -> block = manaKeywordCost(rule)?.let { listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.cycling", arg("\"$it\"")))))) }
+                rname == "Morph" -> block = manaKeywordCost(rule)?.let { listOf(Assign("morph", Lit("\"$it\""))) }
+                rname == "Flashback" -> block = manaKeywordCost(rule)?.let { listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.flashback", arg("\"$it\"")))))) }
+                rname == "Crew" -> block = rule["args"].asInt()?.let { listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.crew", arg("$it")))))) }
+                rname == "Protection" -> block = protectionScopeDsl(rule)?.let { listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.Protection", arg(Lit(it))))))) }
                 rname != null && (rname in handledRules || Bridge[rname]?.kind == "keyword") -> continue
                 // A bare auto-keyword rule (Flying, Menace, …) carries no args. A keyword rule that DOES
                 // carry args is parameterized (Crew N, Flashback {cost}, Bushido N, …) — those must be
                 // rendered exactly by an explicit case above or scaffold; never silently stamped bare,
                 // which would drop the parameter.
                 rname != null && pascalToUpperSnake(rname) in keywords && rule["args"] == null -> continue
-                else -> { ctx.reasons.add(rname ?: "unknown-rule"); return incomplete(ctx, body, scryfall, pkg) }
+                else -> { ctx.reasons.add(rname ?: "unknown-rule"); return incomplete(ctx, pre, header, body, scryfall, pkg) }
             }
-            if (block == null) return incomplete(ctx, body, scryfall, pkg)
+            if (block == null) return incomplete(ctx, pre, header, body, scryfall, pkg)
             body.addAll(block)
         }
 
         if (!permanent && !jsonContains(card["Rules"], "_Rule", "SpellActions")) {
-            ctx.reasons.add("no-renderable-effect"); return incomplete(ctx, body, scryfall, pkg)
+            ctx.reasons.add("no-renderable-effect"); return incomplete(ctx, pre, header, body, scryfall, pkg)
         }
 
-        body.addAll(metadataLines(scryfall))
-        body.add("}")
-        return RenderResult(assemble(body, pkg, complete = true), true, ctx.reasons)
+        body.addAll(metadataLines(scryfall).map { RawLine(it) })
+        return RenderResult(assemble(pre + renderBlock(Block(header, body)), pkg, complete = true), true, ctx.reasons)
     }
 
     /** A keyword-ability whose cost is pure mana (`Cycling {2}`, `Morph {4}{W}`). Returns the rendered
@@ -161,11 +175,10 @@ object Emitter {
     fun findLandwalkKeywords(node: JsonElement?, keywords: Set<String>, out: MutableSet<String>) =
         com.wingedsheep.tooling.coverage.emitter.findLandwalkKeywords(node, keywords, out)
 
-    private fun incomplete(ctx: EmitCtx, body: List<String>, scryfall: JsonObject?, pkg: String): RenderResult {
+    private fun incomplete(ctx: EmitCtx, pre: List<String>, header: String, body: List<Stmt>, scryfall: JsonObject?, pkg: String): RenderResult {
         val b = body.toMutableList()
-        b.add("    // STRUCTURE needs human wiring: ${ctx.reasons.sorted().joinToString(", ")}")
-        b.addAll(metadataLines(scryfall))
-        b.add("}")
-        return RenderResult(assemble(b, pkg, complete = false), false, ctx.reasons)
+        b.add(RawLine("    // STRUCTURE needs human wiring: ${ctx.reasons.sorted().joinToString(", ")}"))
+        b.addAll(metadataLines(scryfall).map { RawLine(it) })
+        return RenderResult(assemble(pre + renderBlock(Block(header, b)), pkg, complete = false), false, ctx.reasons)
     }
 }

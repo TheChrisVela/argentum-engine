@@ -1,7 +1,11 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.Composite
+import com.wingedsheep.tooling.coverage.Lit
 import com.wingedsheep.tooling.coverage.amountNode
+import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.asArr
+import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.jsonContains
 import com.wingedsheep.tooling.coverage.strField
@@ -17,31 +21,37 @@ import kotlinx.serialization.json.put
 internal val damageDrawLifeHandlers: Map<String, ActionHandler> = actionHandlers {
 
     on("SpellDealsDamage", "PermanentDealsDamage") { _, args, tvar ->
-        val amt = amount(args) ?: dynamicAmount(amountNode(args)) ?: return@on null
+        val amt = amountExpr(args) ?: dynamicAmountExpr(amountNode(args)) ?: return@on null
         if (jsonContains(args, "_DamageRecipient", "EachPermanent")) {  // mass: deal N to each creature
-            val filter = groupFilterDsl(args) ?: return@on null
-            val eachPermanent = "Effects.ForEachInGroup($filter, DealDamageEffect($amt, EffectTarget.Self))"
+            val filter = groupFilterExpr(args) ?: return@on null
+            val eachPermanent = call(
+                "Effects.ForEachInGroup", arg(filter),
+                arg(call("DealDamageEffect", arg(amt), arg("EffectTarget.Self"))),
+            )
             if (jsonContains(args, "_DamageRecipient", "EachPlayer")) {
-                return@on composite(listOf(
+                return@on Composite(listOf(
                     eachPermanent,
-                    "ForEachPlayerEffect(Player.Each, listOf(DealDamageEffect($amt, EffectTarget.Controller)))",
+                    call(
+                        "ForEachPlayerEffect", arg("Player.Each"),
+                        arg(call("listOf", arg(call("DealDamageEffect", arg(amt), arg("EffectTarget.Controller"))))),
+                    ),
                 ))
             }
             return@on eachPermanent
         }
         val tgt = refTargetIn(args, "_DamageRecipient", tvar) ?: return@on null
-        "DealDamageEffect($amt, $tgt)"
+        call("DealDamageEffect", arg(amt), arg(Lit(tgt)))
     }
 
     on("SpellDealsDistributedDamage") { _, args, _ ->
         val total = findInteger(args)
         if (total !is Int) return@on null
-        "DividedDamageEffect(totalDamage = $total)"
+        call("DividedDamageEffect", arg("totalDamage", "$total"))
     }
 
     on("GainLifeForEach") { _, args, _ ->
-        val dyn = dynamicAmount(gainForEachAmount(args)) ?: return@on null
-        "GainLifeEffect($dyn)"
+        val dyn = dynamicAmountExpr(gainForEachAmount(args)) ?: return@on null
+        call("GainLifeEffect", arg(dyn))
     }
 
     on("DrawNumberCards", "DrawACard") { node, args, _ ->
@@ -52,7 +62,7 @@ internal val damageDrawLifeHandlers: Map<String, ActionHandler> = actionHandlers
         val amt = if (node.strField("_Action") == "DrawACard") "1"
                   else strictCardCount(amountNode(args), forX = "DynamicAmount.XValue")
                       ?: dynamicAmount(amountNode(args))
-        if (amt != null) "DrawCardsEffect($amt)" else null
+        if (amt != null) call("DrawCardsEffect", arg(Lit(amt))) else null
     }
 
     on("PlayerAction") { node, _, tvar ->
@@ -61,7 +71,7 @@ internal val damageDrawLifeHandlers: Map<String, ActionHandler> = actionHandlers
         val action = arr.firstOrNull { it is JsonObject && it.containsKey("_Action") } as? JsonObject ?: return@on null
         if (action.strField("_Action") != "RevealHand") return@on null
         val target = if (jsonContains(playerRef, "_Player", "Ref_TargetPlayer")) tvar else null
-        if (target != null) "RevealHandEffect($target)" else "RevealHandEffect()"
+        if (target != null) call("RevealHandEffect", arg(Lit(target))) else call("RevealHandEffect")
     }
 
     simple("CounterSpell", dsl = "CounterEffect()")
@@ -72,23 +82,23 @@ internal val damageDrawLifeHandlers: Map<String, ActionHandler> = actionHandlers
     on("GainLife") { _, args, _ ->
         // A fixed Integer renders `GainLifeEffect(1)`; a recognised dynamic amount (e.g. a damage
         // trigger's "gain that much life") renders `GainLifeEffect(DynamicAmount…)`.
-        val amt = amount(args) ?: dynamicAmount(amountNode(args)) ?: return@on null
-        "GainLifeEffect($amt)"
+        val amt = amountExpr(args) ?: dynamicAmountExpr(amountNode(args)) ?: return@on null
+        call("GainLifeEffect", arg(amt))
     }
     on("LoseLife") { _, args, _ ->
-        val amt = amount(args) ?: dynamicAmount(amountNode(args)) ?: return@on null
-        "LoseLifeEffect($amt, EffectTarget.Controller)"
+        val amt = amountExpr(args) ?: dynamicAmountExpr(amountNode(args)) ?: return@on null
+        call("LoseLifeEffect", arg(amt), arg("EffectTarget.Controller"))
     }
 
     on("DiscardACard", "DiscardNumberCards", "DiscardAnyNumberOfCards") { node, args, _ ->
         // discardCards takes a fixed Int; a derived/X count can't be expressed, so scaffold.
         val n = if (node.strField("_Action") == "DiscardACard") "1" else strictCardCount(amountNode(args))
-        if (n != null) "Patterns.Hand.discardCards($n)" else null
+        if (n != null) call("Patterns.Hand.discardCards", arg(Lit(n))) else null
     }
 
     on("LookAtPlayersHand") { _, args, tvar ->
         val tgt = refTarget(args, tvar)
-        if (tgt != null) "LookAtTargetHandEffect($tgt)" else "LookAtTargetHandEffect()"
+        if (tgt != null) call("LookAtTargetHandEffect", arg(Lit(tgt))) else call("LookAtTargetHandEffect")
     }
 
     // "{cost}: The next time you would draw a card this turn, [do X] instead." (the Onslaught Words
@@ -107,7 +117,7 @@ internal val damageDrawLifeHandlers: Map<String, ActionHandler> = actionHandlers
         if (tvar != null) return@on null
         val inner = asReplacementActions(a.getOrNull(1)) ?: return@on null
         val edsl = renderEffectList(inner, tvar) ?: return@on null
-        "Effects.ReplaceNextDraw($edsl)"
+        call("Effects.ReplaceNextDraw", arg(edsl))
     }
 }
 

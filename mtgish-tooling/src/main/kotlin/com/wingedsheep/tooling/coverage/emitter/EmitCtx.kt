@@ -1,15 +1,23 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.Call
+import com.wingedsheep.tooling.coverage.Composite
+import com.wingedsheep.tooling.coverage.Dsl
+import com.wingedsheep.tooling.coverage.Lit
+import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.asArr
 import com.wingedsheep.tooling.coverage.asInt
 import com.wingedsheep.tooling.coverage.asStr
+import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.compact
+import com.wingedsheep.tooling.coverage.dot
 import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.findRef
 import com.wingedsheep.tooling.coverage.findRefIn
 import com.wingedsheep.tooling.coverage.firstArgWordTagged
 import com.wingedsheep.tooling.coverage.jsonContains
 import com.wingedsheep.tooling.coverage.pascalToUpperSnake
+import com.wingedsheep.tooling.coverage.render
 import com.wingedsheep.tooling.coverage.strField
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -53,18 +61,16 @@ internal val SELF_REFS = setOf(
 // Dispatch + effect-list assembly.
 // ---------------------------------------------------------------------------
 
-/** Render one mtgish action to an Effect DSL string via the [ACTION_HANDLERS] registry. */
-internal fun EmitCtx.renderAction(node: JsonObject, tvar: String?): String? {
-    val handler = ACTION_HANDLERS[node.strField("_Action")] ?: return null
-    return handler(node, node["args"], tvar)
-}
+/** Render one mtgish action to an Effect [Dsl] node via the [ACTION_HANDLERS] registry. */
+internal fun EmitCtx.renderAction(node: JsonObject, tvar: String?): Dsl? =
+    ACTION_HANDLERS[node.strField("_Action")]?.invoke(this, node, node["args"], tvar)
 
-/** Render a list of mtgish actions to one Effect (Composite if >1). Null if any can't render. */
-internal fun EmitCtx.renderEffectList(actions: List<JsonObject>, tvar: String?): String? {
+/** Render a list of mtgish actions to one Effect ([Composite] if >1). Null if any can't render. */
+internal fun EmitCtx.renderEffectList(actions: List<JsonObject>, tvar: String?): Dsl? {
     echoEffect(actions)?.let { return it }
     becomeCreatureTypeEffect(actions, tvar)?.let { return it }
     chooseCreatureTypeRevealTopEffect(actions)?.let { return it }
-    val rendered = mutableListOf<String>()
+    val rendered = mutableListOf<Dsl>()
     for (act in actions) {
         val r = renderAction(act, tvar)
         if (r == null) { reasons.add(act.strField("_Action") ?: act.strField("_Rule") ?: "unknown-action"); return null }
@@ -72,26 +78,21 @@ internal fun EmitCtx.renderEffectList(actions: List<JsonObject>, tvar: String?):
     }
     if (rendered.isEmpty()) return null
     if (rendered.size == 1) return rendered[0]
-    return composite(rendered)
+    return Composite(rendered)
 }
-
-/**
- * `Effects.Composite(...)` with one element per line, indented to sit in the `effect = ` (8-space)
- * slot. Each element's first line is placed at 12 spaces; multi-line elements keep their own inner
- * indentation. Callers pass ≥2 elements (a single effect is emitted directly, never wrapped).
- */
-internal fun composite(parts: List<String>): String =
-    parts.joinToString(",\n", prefix = "Effects.Composite(\n", postfix = "\n        )") { "            $it" }
 
 // ---------------------------------------------------------------------------
 // Generic amount / reference / keyword toolkit (shared by every handler).
 // ---------------------------------------------------------------------------
 
 /** A DSL amount for a plain int / X, or null (-> SCAFFOLD, never a broken emit). */
-internal fun EmitCtx.amount(node: JsonElement?): String? {
+internal fun EmitCtx.amount(node: JsonElement?): String? = amountExpr(node)?.let(::render)
+
+/** The [Dsl] node behind [amount] — a bare int literal or `DynamicAmount.XValue`. */
+internal fun EmitCtx.amountExpr(node: JsonElement?): Dsl? {
     val n = findInteger(node) ?: return null
-    if (n == "X") return "DynamicAmount.XValue"
-    return n.toString()
+    if (n == "X") return Lit("DynamicAmount.XValue")
+    return Lit(n.toString())
 }
 
 /** A "draw/discard N cards" count read from the amount's TOP-LEVEL `_GameNumber` only: a fixed Integer
@@ -119,29 +120,37 @@ internal fun gainForEachAmount(args: JsonElement?): JsonElement? {
 }
 
 /** A DynamicAmount DSL for a dynamic mtgish _GameNumber, or null if unrecognised. */
-internal fun EmitCtx.dynamicAmount(node: JsonElement?): String? {
+internal fun EmitCtx.dynamicAmount(node: JsonElement?): String? = dynamicAmountExpr(node)?.let(::render)
+
+/** The [Dsl] node behind [dynamicAmount]. Filters it embeds are still carried as [Lit] text (they are
+ *  migrated in the filter layer); the structure around them is typed. */
+internal fun EmitCtx.dynamicAmountExpr(node: JsonElement?): Dsl? {
     if (node !is JsonObject) return null
     val gn = node.strField("_GameNumber")
     when (gn) {
-        "Integer" -> return "DynamicAmount.Fixed(${node["args"].asInt()})"
-        "XValue", "X", "ValueX" -> return "DynamicAmount.XValue"
+        "Integer" -> return call("DynamicAmount.Fixed", arg("${node["args"].asInt()}"))
+        "XValue", "X", "ValueX" -> return Lit("DynamicAmount.XValue")
         // "that much" in a damage trigger — the amount of damage the trigger fired on (Doubtless One's
         // "gain that much life", Thrashing Mudspawn's "lose that much life").
-        "Trigger_AmountOfDamageDealt" -> return "DynamicAmount.ContextProperty(ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT)"
-        "PowerOfTheSacrificedCreature" -> return "DynamicAmounts.sacrificedPower()"
+        "Trigger_AmountOfDamageDealt" ->
+            return call("DynamicAmount.ContextProperty", arg("ContextPropertyKey.TRIGGER_DAMAGE_AMOUNT"))
+        "PowerOfTheSacrificedCreature" -> return call("DynamicAmounts.sacrificedPower")
         "LifeTotalOfPlayer" -> {
             val player = if (jsonContains(node, "_Player", "Opponent")) "Player.Opponent" else "Player.You"
-            return "DynamicAmount.LifeTotal($player)"
+            return call("DynamicAmount.LifeTotal", arg(player))
         }
         "HalfRoundedUp", "HalfRoundedDown" -> {
-            val inner = dynamicAmount(node["args"]) ?: return null
+            val inner = dynamicAmountExpr(node["args"]) ?: return null
             val roundup = if (gn == "HalfRoundedUp") "true" else "false"
-            return "DynamicAmount.Divide($inner, DynamicAmount.Fixed(2), roundUp = $roundup)"
+            return call(
+                "DynamicAmount.Divide",
+                arg(inner), arg(call("DynamicAmount.Fixed", arg("2"))), arg("roundUp", roundup),
+            )
         }
     }
     if (gn == "TheNumberOfCardsOfTypeRevealedFromHandThisWay") {
-        val filter = revealedHandFilterDsl(node["args"]) ?: return null
-        return "DynamicAmount.Count(Player.TargetOpponent, Zone.HAND, $filter)"
+        val filter = revealedHandFilterExpr(node["args"]) ?: return null
+        return call("DynamicAmount.Count", arg("Player.TargetOpponent"), arg("Zone.HAND"), arg(filter))
     }
     if (gn == "Multiply" && node["args"].asArr?.size == 2) {
         val arr = node["args"].asArr!!
@@ -149,9 +158,9 @@ internal fun EmitCtx.dynamicAmount(node: JsonElement?): String? {
         val intA = findInteger(a)
         val mult = if (intA is Int) intA else findInteger(b)
         val cnt = if (findInteger(a) == mult) b else a
-        val inner = dynamicAmount(cnt)
+        val inner = dynamicAmountExpr(cnt)
         if (inner != null && mult is Int) {
-            return if (mult == 1) inner else "DynamicAmount.Multiply($inner, $mult)"
+            return if (mult == 1) inner else call("DynamicAmount.Multiply", arg(inner), arg("$mult"))
         }
         return null
     }
@@ -174,8 +183,9 @@ internal fun EmitCtx.dynamicAmount(node: JsonElement?): String? {
         // "for each Goblin/Bird/Elf on the battlefield": a creature subtype, which the land-oriented
         // search filter misses; otherwise fall back to the land/type search filter.
         val subtype = node.firstArgWordTagged("IsCreatureType")
-        val filter = if (subtype != null) "GameObjectFilter.Creature.withSubtype(\"$subtype\")" else landSearchFilterDsl(node)
-        return "DynamicAmount.AggregateBattlefield($player, $filter)"
+        val filter = if (subtype != null) Lit("GameObjectFilter.Creature").dot("withSubtype", arg("\"$subtype\""))
+                     else landSearchFilterExpr(node)
+        return call("DynamicAmount.AggregateBattlefield", arg(player), arg(filter))
     }
     return null
 }
@@ -251,7 +261,7 @@ internal fun EmitCtx.paycostDsl(costNode: JsonElement?): String? {
  * `ChooseACreatureTypeOtherThan X` carries an excluded type (Imagecrafter / Mistform Mutant's "other
  * than Wall") -> `excludedTypes = listOf("X")`.
  */
-internal fun EmitCtx.becomeCreatureTypeEffect(actions: List<JsonObject>, tvar: String?): String? {
+internal fun EmitCtx.becomeCreatureTypeEffect(actions: List<JsonObject>, tvar: String?): Dsl? {
     val chooser = actions.firstOrNull {
         it.strField("_Action") in setOf("ChooseACreatureType", "ChooseACreatureTypeOtherThan")
     } ?: return null
@@ -263,8 +273,9 @@ internal fun EmitCtx.becomeCreatureTypeEffect(actions: List<JsonObject>, tvar: S
     if (!jsonContains(layer, "_Expiration", "UntilEndOfTurn")) return null  // non-EOT -> SCAFFOLD
     val target = refTarget(layer["args"], tvar) ?: return null
     val excluded = if (chooser.strField("_Action") == "ChooseACreatureTypeOtherThan") chooser["args"].asStr() else null
-    return if (excluded != null) "BecomeCreatureTypeEffect(target = $target, excludedTypes = listOf(\"${ktStr(excluded)}\"))"
-    else "BecomeCreatureTypeEffect(target = $target)"
+    val parts = mutableListOf(arg("target", Lit(target)))
+    if (excluded != null) parts.add(arg("excludedTypes", "listOf(\"${ktStr(excluded)}\")"))
+    return Call("BecomeCreatureTypeEffect", parts)
 }
 
 /**
@@ -273,7 +284,7 @@ internal fun EmitCtx.becomeCreatureTypeEffect(actions: List<JsonObject>, tvar: S
  * (Bloodline Shaman). The whole three-action chain collapses to the named SDK pattern, so it renders
  * as one effect rather than three; any deviation from this exact shape declines (null -> SCAFFOLD).
  */
-internal fun EmitCtx.chooseCreatureTypeRevealTopEffect(actions: List<JsonObject>): String? {
+internal fun EmitCtx.chooseCreatureTypeRevealTopEffect(actions: List<JsonObject>): Dsl? {
     if (actions.size != 3) return null
     if (actions[0].strField("_Action") != "ChooseACreatureType") return null
     if (actions[1].strField("_Action") != "RevealTopCardOfLibrary") return null
@@ -282,15 +293,15 @@ internal fun EmitCtx.chooseCreatureTypeRevealTopEffect(actions: List<JsonObject>
     if ("ACardWasRevealedThisWay" !in blob || "IsCreatureTypeVariable" !in blob ||
         "TheChosenCreatureType" !in blob) return null
     if ("PutTopOfLibraryInHand" !in blob || "PutTopOfLibraryInGraveyard" !in blob) return null
-    return "Patterns.CreatureType.chooseCreatureTypeRevealTop()"
+    return call("Patterns.CreatureType.chooseCreatureTypeRevealTop")
 }
 
 /** [MayCost(cost), Unless(CostWasPaid, [Sacrifice...])] -> PayOrSufferEffect (echo / upkeep cost). */
-internal fun EmitCtx.echoEffect(actions: List<JsonObject>): String? {
+internal fun EmitCtx.echoEffect(actions: List<JsonObject>): Dsl? {
     if (actions.size != 2) return null
     val (a0, a1) = actions
     if (a0.strField("_Action") != "MayCost" || a1.strField("_Action") != "Unless") return null
     if (!jsonContains(a1, "_Condition", "CostWasPaid") || !jsonContains(a1, "_Action", "SacrificePermanent")) return null
     val cost = paycostDsl(a0["args"]) ?: return null
-    return "PayOrSufferEffect(cost = $cost, suffer = SacrificeSelfEffect)"
+    return call("PayOrSufferEffect", arg("cost", Lit(cost)), arg("suffer", "SacrificeSelfEffect"))
 }

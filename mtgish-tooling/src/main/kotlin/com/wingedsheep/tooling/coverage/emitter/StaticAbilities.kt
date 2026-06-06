@@ -1,7 +1,16 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.Assign
+import com.wingedsheep.tooling.coverage.Block
+import com.wingedsheep.tooling.coverage.Dsl
+import com.wingedsheep.tooling.coverage.Eval
+import com.wingedsheep.tooling.coverage.Lit
+import com.wingedsheep.tooling.coverage.Stmt
+import com.wingedsheep.tooling.coverage.Sub
+import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.asInt
 import com.wingedsheep.tooling.coverage.asStr
+import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.compact
 import com.wingedsheep.tooling.coverage.jsonContains
 import com.wingedsheep.tooling.coverage.strField
@@ -10,12 +19,15 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
+/** `staticAbility { ability = <ability> }` as one card-body statement. */
+internal fun staticAbilityStmt(ability: Dsl): Stmt = Sub(Block("staticAbility", listOf(Assign("ability", ability))))
+
 /**
  * PermanentRuleEffect → `flags()` / `staticAbility { ability = ... }`. These classes live outside the
  * effects registry, so the capability gate is vacuous for them; the generated static is best-effort
  * and (like every draft) flagged for rules-text review.
  */
-internal fun EmitCtx.staticBlock(rule: JsonObject): List<String>? {
+internal fun EmitCtx.staticBlock(rule: JsonObject): List<Stmt>? {
     val rules = mutableListOf<JsonObject>()
     fun collect(n: JsonElement?) {
         when (n) {
@@ -26,19 +38,19 @@ internal fun EmitCtx.staticBlock(rule: JsonObject): List<String>? {
     }
     collect(rule)
     if (rules.isEmpty()) { reasons.add("PermanentRuleEffect"); return null }
-    val lines = mutableListOf<String>()
+    val stmts = mutableListOf<Stmt>()
     for (r in rules) {
         val name = r.strField("_PermanentRule")!!
         if (name == "CantBeBlocked") {
-            lines.add("    flags(AbilityFlag.CANT_BE_BLOCKED)"); continue
+            stmts.add(Eval(call("flags", arg("AbilityFlag.CANT_BE_BLOCKED")))); continue
         }
         if (name == "MayChooseNotToUntapDuringUntap") {
-            lines.add("    flags(AbilityFlag.MAY_NOT_UNTAP)"); continue
+            stmts.add(Eval(call("flags", arg("AbilityFlag.MAY_NOT_UNTAP")))); continue
         }
-        val dsl = staticAbilityDsl(name, r) ?: run { reasons.add(name); return null }
-        lines.addAll(listOf("    staticAbility {", "        ability = $dsl", "    }"))
+        val ability = staticAbilityExpr(name, r) ?: run { reasons.add(name); return null }
+        stmts.add(staticAbilityStmt(ability))
     }
-    return lines
+    return stmts
 }
 
 /**
@@ -48,18 +60,18 @@ internal fun EmitCtx.staticBlock(rule: JsonObject): List<String>? {
  * excludeSelf for "other …", or `GroupFilter.ChosenSubtypeCreatures()` for "creatures of the chosen
  * type"). Anything we can't render exactly scaffolds.
  */
-internal fun EmitCtx.staticLordBlock(rule: JsonObject): List<String>? {
+internal fun EmitCtx.staticLordBlock(rule: JsonObject): List<Stmt>? {
     val args = rule["args"] as? JsonArray
     val layerEffects = (args?.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>()
     if (args == null || layerEffects.isNullOrEmpty()) { reasons.add("EachPermanentLayerEffect"); return null }
-    val group = lordGroupFilterDsl(args.getOrNull(0)) ?: run { reasons.add("EachPermanentLayerEffect"); return null }
-    val lines = mutableListOf<String>()
+    val group = lordGroupFilterExpr(args.getOrNull(0)) ?: run { reasons.add("EachPermanentLayerEffect"); return null }
+    val stmts = mutableListOf<Stmt>()
     for (le in layerEffects) {
-        val ability = when (le.strField("_StaticLayerEffect")) {
+        val ability: Dsl = when (le.strField("_StaticLayerEffect")) {
             "AdjustPT" -> {
                 val pt = le["args"] as? JsonArray ?: return scaffoldLord()
                 if (pt.size != 2) return scaffoldLord()
-                "ModifyStats(powerBonus = ${pt[0].asInt()}, toughnessBonus = ${pt[1].asInt()}, filter = $group)"
+                call("ModifyStats", arg("powerBonus", "${pt[0].asInt()}"), arg("toughnessBonus", "${pt[1].asInt()}"), arg("filter", group))
             }
             "AddAbility" -> {
                 // "Other Merfolk have islandwalk" (Lord of Atlantis / Goblin King): the granted ability is a
@@ -72,23 +84,23 @@ internal fun EmitCtx.staticLordBlock(rule: JsonObject): List<String>? {
                 } else {
                     keywordOf(le) ?: return scaffoldLord()
                 }
-                "GrantKeyword(Keyword.$kw, $group)"
+                call("GrantKeyword", arg("Keyword.$kw"), arg(group))
             }
             else -> return scaffoldLord()
         }
-        lines.addAll(listOf("    staticAbility {", "        ability = $ability", "    }"))
+        stmts.add(staticAbilityStmt(ability))
     }
-    return lines
+    return stmts
 }
 
-private fun EmitCtx.scaffoldLord(): List<String>? { reasons.add("EachPermanentLayerEffect"); return null }
+private fun EmitCtx.scaffoldLord(): List<Stmt>? { reasons.add("EachPermanentLayerEffect"); return null }
 
 /**
  * `EnchantPermanent` -> the card-level `auraTarget = Targets.X` line. The enchant restriction is a
  * cardtype filter ("Enchant creature / land / artifact / enchantment"); anything more specific than a
  * bare cardtype (e.g. "enchant tapped creature") scaffolds rather than emit an inexact restriction.
  */
-internal fun EmitCtx.auraTargetBlock(rule: JsonObject): List<String>? {
+internal fun EmitCtx.auraTargetBlock(rule: JsonObject): List<Stmt>? {
     val filter = rule["args"] as? JsonObject
     if (filter?.strField("_Permanents") != "IsCardtype") { reasons.add("EnchantPermanent"); return null }
     val target = when (filter["args"].asStr()) {
@@ -98,7 +110,7 @@ internal fun EmitCtx.auraTargetBlock(rule: JsonObject): List<String>? {
         "Enchantment" -> "Targets.Enchantment"
         else -> { reasons.add("EnchantPermanent"); return null }
     }
-    return listOf("    auraTarget = $target")
+    return listOf(Assign("auraTarget", Lit(target)))
 }
 
 /**
@@ -108,20 +120,20 @@ internal fun EmitCtx.auraTargetBlock(rule: JsonObject): List<String>? {
  * `GrantKeyword(Keyword.X)`, AddAbility{protection-from-color} -> `GrantProtection(Color.X)` (the Ward
  * cycle). A layer effect we can't render exactly scaffolds.
  */
-internal fun EmitCtx.staticHostBlock(rule: JsonObject): List<String>? {
+internal fun EmitCtx.staticHostBlock(rule: JsonObject): List<Stmt>? {
     val args = rule["args"] as? JsonArray
     if (args == null || !jsonContains(args.getOrNull(0), "_Permanent", "HostPermanent")) {
         reasons.add("PermanentLayerEffect"); return null
     }
     val layerEffects = (args.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>()
     if (layerEffects.isNullOrEmpty()) { reasons.add("PermanentLayerEffect"); return null }
-    val lines = mutableListOf<String>()
+    val stmts = mutableListOf<Stmt>()
     for (le in layerEffects) {
-        val abilities: List<String> = when (le.strField("_StaticLayerEffect")) {
+        val abilities: List<Dsl> = when (le.strField("_StaticLayerEffect")) {
             "AdjustPT" -> {
                 val pt = le["args"] as? JsonArray
                 if (pt?.size != 2) { reasons.add("PermanentLayerEffect"); return null }
-                listOf("ModifyStats(${pt[0].asInt()}, ${pt[1].asInt()})")
+                listOf(call("ModifyStats", arg("${pt[0].asInt()}"), arg("${pt[1].asInt()}")))
             }
             "AddAbility" -> {
                 val granted = (le["args"] as? JsonArray)?.getOrNull(0) as? JsonObject
@@ -129,23 +141,23 @@ internal fun EmitCtx.staticHostBlock(rule: JsonObject): List<String>? {
                 // `ProtectionAndDoesntRemovePermanents` rule, the Crowns a plain `Protection` rule.
                 if (granted?.strField("_Rule") in setOf("Protection", "ProtectionAndDoesntRemovePermanents")) {
                     val colors = protectionGrantColors(granted!!) ?: run { reasons.add("PermanentLayerEffect"); return null }
-                    colors.map { "GrantProtection(Color.$it)" }
+                    colors.map { call("GrantProtection", arg("Color.$it")) }
                 } else {
                     val kw = keywordOf(le) ?: run { reasons.add("PermanentLayerEffect"); return null }
-                    listOf("GrantKeyword(Keyword.$kw)")
+                    listOf(call("GrantKeyword", arg("Keyword.$kw")))
                 }
             }
             "SetController" -> {
                 // "you control enchanted permanent" (Control Magic, Steal Artifact). Only controller=You
                 // maps to the parameterless ControlEnchantedPermanent; any other player scaffolds.
                 if (!jsonContains(le["args"], "_Player", "You")) { reasons.add("PermanentLayerEffect"); return null }
-                listOf("ControlEnchantedPermanent")
+                listOf(Lit("ControlEnchantedPermanent"))
             }
             else -> { reasons.add("PermanentLayerEffect"); return null }
         }
-        abilities.forEach { lines.addAll(listOf("    staticAbility {", "        ability = $it", "    }")) }
+        abilities.forEach { stmts.add(staticAbilityStmt(it)) }
     }
-    return lines
+    return stmts
 }
 
 /** The colors of a host protection grant ("enchanted creature has protection from <color>" — the Ward
@@ -160,22 +172,22 @@ internal fun protectionGrantColors(granted: JsonObject): List<String>? {
 
 /** The affected-group GroupFilter for a lord: chosen-creature-type variable -> the named helper,
  *  otherwise the generic group-filter recovery (fixed subtype, excludeSelf for "other"). */
-private fun EmitCtx.lordGroupFilterDsl(filterNode: kotlinx.serialization.json.JsonElement?): String? {
+private fun EmitCtx.lordGroupFilterExpr(filterNode: JsonElement?): Dsl? {
     if (jsonContains(filterNode, "_CreatureTypeVariable", "TheChosenCreatureType") ||
         jsonContains(filterNode, "_Permanents", "IsCreatureTypeVariable")) {
-        return "GroupFilter.ChosenSubtypeCreatures()"
+        return call("GroupFilter.ChosenSubtypeCreatures")
     }
-    return groupFilterDsl(filterNode)
+    return groupFilterExpr(filterNode)
 }
 
-private fun EmitCtx.staticAbilityDsl(ruleName: String, ruleNode: JsonObject): String? {
+private fun EmitCtx.staticAbilityExpr(ruleName: String, ruleNode: JsonObject): Dsl? {
     when (ruleName) {
-        "CantBlock" -> return "CantBlock()"
-        "CantBeBlockedByMoreThanOne" -> return "CantBeBlockedByMoreThan(maxBlockers = 1)"
+        "CantBlock" -> return call("CantBlock")
+        "CantBeBlockedByMoreThanOne" -> return call("CantBeBlockedByMoreThan", arg("maxBlockers", "1"))
         "CanBlockOnly" -> {
             val kw = keywordOf(ruleNode)
             val bf = if (kw != null) "GameObjectFilter.Creature.withKeyword(Keyword.$kw)" else "GameObjectFilter.Creature"
-            return "CanOnlyBlockCreaturesWith(blockerFilter = $bf)"
+            return call("CanOnlyBlockCreaturesWith", arg("blockerFilter", bf))
         }
         "CantBeBlockedByDefenders" -> {
             // mtgish "Defenders" means blockers generally; the rule's args carry the blocker restriction,
@@ -185,12 +197,12 @@ private fun EmitCtx.staticAbilityDsl(ruleName: String, ruleNode: JsonObject): St
             // gameObjectFilterDsl silently ignores predicates it can't render, so scaffold on any shape it
             // doesn't cover (e.g. ToughnessIs) rather than emit a blocker filter missing a restriction.
             if (Regex("\"(ToughnessIs|HasKeyword|ManaValueIs|HasSubtypeFrom)\"").containsMatchIn(compact(ruleNode))) return null
-            val filter = gameObjectFilterDsl(ruleNode["args"]) ?: return null
-            return "CantBeBlockedBy(blockerFilter = $filter)"
+            val filter = gameObjectFilterExpr(ruleNode["args"]) ?: return null
+            return call("CantBeBlockedBy", arg("blockerFilter", filter))
         }
         "CantBeBlockedExceptByDefenders" -> {
             if (oracleText?.contains("defender", ignoreCase = true) == true) {
-                return "CantBeBlockedExceptBy(blockerFilter = GameObjectFilter.Creature.withKeyword(Keyword.DEFENDER))"
+                return call("CantBeBlockedExceptBy", arg("blockerFilter", "GameObjectFilter.Creature.withKeyword(Keyword.DEFENDER)"))
             }
             // "can't be blocked except by [creature subtype]" (Invisibility: except by Walls). The rule
             // names the *only* legal blockers, so it must render CantBeBlockedExceptBy with that subtype.
@@ -198,16 +210,16 @@ private fun EmitCtx.staticAbilityDsl(ruleName: String, ruleNode: JsonObject): St
             // invert the meaning (it removes those blockers rather than restricting to them).
             val sub = Regex(""""IsCreatureType",\s*"args":\s*"(\w+)"""").find(compact(ruleNode))?.groupValues?.get(1)
                 ?: return null
-            return "CantBeBlockedExceptBy(blockerFilter = GameObjectFilter.Creature.withSubtype(${subtypeArg(sub)}))"
+            return call("CantBeBlockedExceptBy", arg("blockerFilter", "GameObjectFilter.Creature.withSubtype(${subtypeArg(sub)})"))
         }
         "CantAttackUnlessDefendingPlayer" -> {  // Deep-Sea Serpent: defender must control an Island
             val subs = subtypes(ruleNode)
             if (subs.isEmpty()) return null
-            return "CantAttackUnless(Conditions.OpponentControlsLandType(\"${subs[0]}\"))"
+            return call("CantAttackUnless", arg(call("Conditions.OpponentControlsLandType", arg("\"${subs[0]}\""))))
         }
-        "MustBlockAttacker" -> return "MustBlock()"
-        "MustAttackPlayer" -> return "MustAttack()"
-        "CanBlockAnyNumberOfCreatures" -> return "CanBlockAnyNumber()"
+        "MustBlockAttacker" -> return call("MustBlock")
+        "MustAttackPlayer" -> return call("MustAttack")
+        "CanBlockAnyNumberOfCreatures" -> return call("CanBlockAnyNumber")
     }
     return null
 }
@@ -218,20 +230,20 @@ private fun EmitCtx.staticAbilityDsl(ruleName: String, ruleNode: JsonObject): St
  * top-of-library / cost-reduction player statics) scaffolds rather than guess. Currently: "you have
  * shroud" (True Believer).
  */
-internal fun EmitCtx.playerEffectBlock(rule: JsonObject): List<String>? {
+internal fun EmitCtx.playerEffectBlock(rule: JsonObject): List<Stmt>? {
     val args = rule["args"] as? JsonArray
     val player = args?.getOrNull(0)
     val effects = (args?.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>()
     if (player == null || effects.isNullOrEmpty() || !jsonContains(player, "_Player", "You")) {
         reasons.add("PlayerEffect"); return null
     }
-    val lines = mutableListOf<String>()
+    val stmts = mutableListOf<Stmt>()
     for (e in effects) {
         val ability = when (e.strField("_PlayerEffect")) {
-            "Shroud" -> "GrantShroudToController"
+            "Shroud" -> Lit("GrantShroudToController")
             else -> { reasons.add("PlayerEffect"); return null }
         }
-        lines.addAll(listOf("    staticAbility {", "        ability = $ability", "    }"))
+        stmts.add(staticAbilityStmt(ability))
     }
-    return lines
+    return stmts
 }

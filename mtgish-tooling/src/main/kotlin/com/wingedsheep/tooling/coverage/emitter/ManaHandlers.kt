@@ -1,5 +1,9 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.Call
+import com.wingedsheep.tooling.coverage.Dsl
+import com.wingedsheep.tooling.coverage.arg
+import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.strField
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -21,28 +25,31 @@ private val MANA_PRODUCE_COLOR = mapOf(
 )
 
 /** `{_ManaProduce}` -> the matching mana Effect, or null (-> SCAFFOLD) for shapes we don't render. */
-internal fun manaProduceDsl(node: JsonElement?): String? =
+internal fun manaProduceDsl(node: JsonElement?): Dsl? =
     when (val produce = (node as? JsonObject)?.strField("_ManaProduce")) {
         null -> null
-        "ManaProduceC" -> "Effects.AddColorlessMana(1)"
-        "AnyManaColor" -> "Effects.AddManaOfChoice()"
-        "And" -> manaAndDsl(node as JsonObject)  // {B}{B}{B} (Dark Ritual), {C}{C}{C} (Basalt Monolith), …
-        else -> MANA_PRODUCE_COLOR[produce]?.let { "Effects.AddMana($it)" }
+        "ManaProduceC" -> call("Effects.AddColorlessMana", arg("1"))
+        "AnyManaColor" -> call("Effects.AddManaOfChoice")
+        "And" -> manaAndDsl(node)  // {B}{B}{B} (Dark Ritual), {C}{C}{C} (Basalt Monolith), …
+        else -> MANA_PRODUCE_COLOR[produce]?.let { call("Effects.AddMana", arg(it)) }
     }
 
-/** `And[<produce>…]` -> one `Effects.Add*Mana(color, count)` per distinct mana, composited when the
- *  pool mixes colors. Null (-> SCAFFOLD) if any child is itself a non-leaf produce (nested And /
+/** `And[<produce>…]` -> one `Effects.Add*Mana(color, count)` per distinct mana, composited (inline) when
+ *  the pool mixes colors. Null (-> SCAFFOLD) if any child is itself a non-leaf produce (nested And /
  *  choice), so we never emit a partial pool. */
-private fun manaAndDsl(node: JsonObject): String? {
+private fun manaAndDsl(node: JsonObject): Dsl? {
     val children = node["args"] as? JsonArray ?: return null
     val produces = children.map { (it as? JsonObject)?.strField("_ManaProduce") ?: return null }
     if (produces.any { it != "ManaProduceC" && it !in MANA_PRODUCE_COLOR }) return null
     val counts = LinkedHashMap<String, Int>()
     produces.forEach { counts[it] = (counts[it] ?: 0) + 1 }
     val parts = counts.map { (p, n) ->
-        if (p == "ManaProduceC") "Effects.AddColorlessMana($n)" else "Effects.AddMana(${MANA_PRODUCE_COLOR[p]}, $n)"
+        if (p == "ManaProduceC") call("Effects.AddColorlessMana", arg("$n"))
+        else call("Effects.AddMana", arg(MANA_PRODUCE_COLOR.getValue(p)), arg("$n"))
     }
-    return if (parts.size == 1) parts[0] else "Effects.Composite(${parts.joinToString(", ")})"
+    // The mana pool uses an INLINE Effects.Composite(...) (single line), distinct from the multi-line
+    // Composite node the effect-list builder emits.
+    return if (parts.size == 1) parts[0] else Call("Effects.Composite", parts.map { arg(it) })
 }
 
 /** True when this ability is a mana ability: no target, and at least one action adds mana. */

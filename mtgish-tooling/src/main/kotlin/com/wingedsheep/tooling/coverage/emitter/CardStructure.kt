@@ -1,8 +1,19 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.Assign
+import com.wingedsheep.tooling.coverage.Block
+import com.wingedsheep.tooling.coverage.Dsl
+import com.wingedsheep.tooling.coverage.Eval
+import com.wingedsheep.tooling.coverage.Lit
+import com.wingedsheep.tooling.coverage.Local
+import com.wingedsheep.tooling.coverage.RawLine
+import com.wingedsheep.tooling.coverage.Stmt
+import com.wingedsheep.tooling.coverage.Sub
+import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.argWordsTagged
 import com.wingedsheep.tooling.coverage.asArr
 import com.wingedsheep.tooling.coverage.asStr
+import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.compact
 import com.wingedsheep.tooling.coverage.field
 import com.wingedsheep.tooling.coverage.findInteger
@@ -40,13 +51,16 @@ internal fun extractEnvelope(node: JsonElement?): Pair<List<JsonObject>?, List<J
     return foundTargets to foundActions
 }
 
-/** (tdsl, tvar) for an envelope's targets; (null,null) if unrenderable; ("",null) if none. */
-internal fun EmitCtx.spellTarget(targets: List<JsonObject>?, actions: List<JsonObject>? = null): Pair<String?, String?> {
-    if (targets.isNullOrEmpty()) return "" to null
-    if (targets.size > 1) { reasons.add("multi-target"); return null to null }
-    val tdsl = targetDsl(targets[0], actions) ?: run { reasons.add("target:${targets[0].strField("_Target")}"); return null to null }
-    return tdsl to "t"
+/** (targetNode, tvar) for an envelope's targets; null if unrenderable (bail); (null, null) if none. */
+internal fun EmitCtx.spellTargetExpr(targets: List<JsonObject>?, actions: List<JsonObject>? = null): Pair<Dsl?, String?>? {
+    if (targets.isNullOrEmpty()) return null to null
+    if (targets.size > 1) { reasons.add("multi-target"); return null }
+    val t = targetExpr(targets[0], actions) ?: run { reasons.add("target:${targets[0].strField("_Target")}"); return null }
+    return t to "t"
 }
+
+/** `val t = target("target", <node>)` — the bound-target local statement. */
+private fun targetLocal(node: Dsl): Stmt = Local("t", call("target", arg("\"target\""), arg(node)))
 
 private fun EmitCtx.conditionDsl(ifNode: JsonElement?): String? {
     val blob = compact(ifNode)
@@ -101,7 +115,7 @@ private fun EmitCtx.castRestrictionLines(rules: List<JsonObject>): List<String>?
 }
 
 /** Top-level `If{cond}[effect]` -> spell `condition =` gate + the inner effect (Gift of Estates). */
-private fun EmitCtx.conditionalSpell(card: JsonObject): List<String>? {
+private fun EmitCtx.conditionalSpell(card: JsonObject): List<Stmt>? {
     val (_, actions) = extractEnvelope(card["Rules"])
     if (actions == null || actions.size != 1 || actions[0].strField("_Action") != "If") return null
     val ifNode = actions[0]
@@ -110,10 +124,10 @@ private fun EmitCtx.conditionalSpell(card: JsonObject): List<String>? {
     val inner = if (body != null && body.size > 1 && body[1] is JsonArray) (body[1] as JsonArray).filterIsInstance<JsonObject>() else null
     if (inner == null) return null
     val edsl = renderEffectList(inner, null) ?: return null
-    return listOf("    spell {", "        condition = $cond", "        effect = $edsl", "    }")
+    return listOf(Sub(Block("spell", listOf(Assign("condition", Lit(cond)), Assign("effect", edsl)))))
 }
 
-internal fun EmitCtx.spellBlock(card: JsonObject): List<String>? {
+internal fun EmitCtx.spellBlock(card: JsonObject): List<Stmt>? {
     // Modal spells ("Choose one —", "Choose up to four", …) carry a `Modal_*` envelope whose children
     // are the individual modes. The generic envelope path below would grab only the FIRST mode and
     // silently drop the rest, so scaffold the whole card rather than emit one arm of a modal spell.
@@ -129,15 +143,17 @@ internal fun EmitCtx.spellBlock(card: JsonObject): List<String>? {
 
     val (targets, actions) = extractEnvelope(card["Rules"])
     if (actions == null) return null
-    val (tdsl, tvar) = spellTarget(targets, actions)
-    if (tdsl == null) return null
+    val (tnode, tvar) = spellTargetExpr(targets, actions) ?: return null
     val edsl = renderEffectList(actions, tvar) ?: return null
     val restrictions = castRestrictionLines((card["Rules"].asArr ?: JsonArray(emptyList())).filterIsInstance<JsonObject>()) ?: return null
-    val inner = if (tvar != null) listOf("        val t = target(\"target\", $tdsl)") else emptyList()
-    return listOf("    spell {") + restrictions + inner + listOf("        effect = $edsl", "    }")
+    val stmts = mutableListOf<Stmt>()
+    restrictions.forEach { stmts.add(RawLine(it)) }
+    if (tvar != null) stmts.add(targetLocal(tnode!!))
+    stmts.add(Assign("effect", edsl))
+    return listOf(Sub(Block("spell", stmts)))
 }
 
-private fun spellOf(effect: String) = listOf("    spell {", "        effect = $effect", "    }")
+private fun spellOf(effect: Dsl): List<Stmt> = listOf(Sub(Block("spell", listOf(Assign("effect", effect)))))
 
 /** mtgish actions whose Argentum rendering already embeds the "you may" choice (so a wrapping
  *  MayAction must NOT also set the ability's `optional = true`). */
@@ -154,12 +170,11 @@ private val TRIGGER_SPEC = mapOf(
 /** A TriggerA rule (self-triggered) -> triggeredAbility { trigger; [target]; effect }.
  *  [oncePerTurn] is set by the `TriggerOnceEachTurn` rule envelope, whose body is otherwise shaped
  *  identically to a TriggerA. */
-internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false): List<String>? {
+internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false): List<Stmt>? {
     val spec = triggerSpecFor(rule) ?: run { reasons.add("trigger-shape"); return null }
     val (targets, actions) = extractEnvelope(rule)
     if (actions == null) { reasons.add("trigger-actions"); return null }
-    val (tdsl, tvar) = spellTarget(targets, actions)
-    if (tdsl == null) return null
+    val (tnode, tvar) = spellTargetExpr(targets, actions) ?: return null
 
     // "you may [do X]" on a triggered ability is an OPTIONAL ability (declined at announcement /
     // by choosing no targets), not a resolution-time MayEffect. Unwrap a lone MayAction so the
@@ -173,12 +188,12 @@ internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false
     val selfOptional = mayInner?.strField("_Action") in SELF_OPTIONAL_ACTIONS
     val edsl = renderEffectList(effectActions, tvar) ?: return null
 
-    val lines = mutableListOf("    triggeredAbility {", "        trigger = $spec")
-    if (oncePerTurn) lines.add("        oncePerTurn = true")
-    if (mayWrapped && !selfOptional) lines.add("        optional = true")
-    if (tvar != null) lines.add("        val t = target(\"target\", $tdsl)")
-    lines.addAll(listOf("        effect = $edsl", "    }"))
-    return lines
+    val stmts = mutableListOf<Stmt>(Assign("trigger", Lit(spec)))
+    if (oncePerTurn) stmts.add(Assign("oncePerTurn", Lit("true")))
+    if (mayWrapped && !selfOptional) stmts.add(Assign("optional", Lit("true")))
+    if (tvar != null) stmts.add(targetLocal(tnode!!))
+    stmts.add(Assign("effect", edsl))
+    return listOf(Sub(Block("triggeredAbility", stmts)))
 }
 
 /** The triggered-ability trigger spec for a TriggerA / TriggerOnceEachTurn rule, or null (-> SCAFFOLD)
@@ -289,14 +304,14 @@ private fun isPlainCreatureFilter(trig: JsonObject): Boolean {
  * `dynamicStats(...)` line, when both power and toughness are the same dynamic count (the
  * power-and-toughness-equal-to-the-number-of-X cycle). Differing power/toughness amounts scaffold.
  */
-internal fun EmitCtx.cdaStatsBlock(card: JsonObject, rule: JsonObject): List<String>? {
+internal fun EmitCtx.cdaStatsBlock(card: JsonObject, rule: JsonObject): List<Stmt>? {
     val toughnessRule = (card["Rules"].asArr ?: JsonArray(emptyList()))
         .filterIsInstance<JsonObject>().firstOrNull { it.strField("_Rule") == "CDA_Toughness" }
     if (toughnessRule == null || compact(rule["args"]) != compact(toughnessRule["args"])) {
         reasons.add("CDA_Power"); return null
     }
-    val amount = dynamicAmount(rule["args"]) ?: run { reasons.add("CDA_Power"); return null }
-    return listOf("    dynamicStats($amount)")
+    val amount = dynamicAmountExpr(rule["args"]) ?: run { reasons.add("CDA_Power"); return null }
+    return listOf(Eval(call("dynamicStats", arg(amount))))
 }
 
 /**
@@ -304,19 +319,19 @@ internal fun EmitCtx.cdaStatsBlock(card: JsonObject, rule: JsonObject): List<Str
  * `_ReplacementActionWouldEnter` nodes (enters tapped, choose a creature type as it enters, ...).
  * Any replacement we can't render exactly downgrades the card to SCAFFOLD rather than guess.
  */
-internal fun EmitCtx.asEntersBlock(rule: JsonObject): List<String>? {
+internal fun EmitCtx.asEntersBlock(rule: JsonObject): List<Stmt>? {
     val replacements = (rule["args"].asArr?.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>()
     if (replacements.isNullOrEmpty()) { reasons.add("AsPermanentEnters"); return null }
-    val lines = mutableListOf<String>()
+    val stmts = mutableListOf<Stmt>()
     for (rep in replacements) {
-        val dsl = when (rep.strField("_ReplacementActionWouldEnter")) {
-            "EntersTapped" -> "EntersTapped()"
-            "ChooseACreatureType" -> "EntersWithChoice(ChoiceType.CREATURE_TYPE)"
+        val dsl: Dsl = when (rep.strField("_ReplacementActionWouldEnter")) {
+            "EntersTapped" -> call("EntersTapped")
+            "ChooseACreatureType" -> call("EntersWithChoice", arg("ChoiceType.CREATURE_TYPE"))
             else -> { reasons.add("AsPermanentEnters"); return null }
         }
-        lines.add("    replacementEffect($dsl)")
+        stmts.add(Eval(call("replacementEffect", arg(dsl))))
     }
-    return lines
+    return stmts
 }
 
 /**
@@ -324,27 +339,26 @@ internal fun EmitCtx.asEntersBlock(rule: JsonObject): List<String>? {
  * with `trigger = Triggers.YouCycleThis` ("When you cycle this card, [bonus]"). A lone `you may` bonus
  * becomes `optional = true`, mirroring [triggerBlock].
  */
-internal fun EmitCtx.fromAnyZoneBlock(rule: JsonObject): List<String>? {
+internal fun EmitCtx.fromAnyZoneBlock(rule: JsonObject): List<Stmt>? {
     val inner = rule["args"] as? JsonObject
     if (inner?.strField("_Rule") != "TriggerA" ||
         !jsonContains(inner, "_Trigger", "WhenAPlayerCyclesACard") ||
         !jsonContains(inner, "_CardInHand", "ThisCardInHand")) { reasons.add("FromAnyZone"); return null }
     val (targets, actions) = extractEnvelope(inner)
     if (actions == null) { reasons.add("FromAnyZone"); return null }
-    val (tdsl, tvar) = spellTarget(targets, actions)
-    if (tdsl == null) return null
+    val (tnode, tvar) = spellTargetExpr(targets, actions) ?: return null
     val mayWrapped = actions.singleOrNull()?.strField("_Action") == "MayAction"
     val effectActions = if (mayWrapped) listOf(innerAction(actions.single()) ?: return null) else actions
     val edsl = renderEffectList(effectActions, tvar) ?: return null
-    val lines = mutableListOf("    triggeredAbility {", "        trigger = Triggers.YouCycleThis")
-    if (mayWrapped) lines.add("        optional = true")
-    if (tvar != null) lines.add("        val t = target(\"target\", $tdsl)")
-    lines.addAll(listOf("        effect = $edsl", "    }"))
-    return lines
+    val stmts = mutableListOf<Stmt>(Assign("trigger", Lit("Triggers.YouCycleThis")))
+    if (mayWrapped) stmts.add(Assign("optional", Lit("true")))
+    if (tvar != null) stmts.add(targetLocal(tnode!!))
+    stmts.add(Assign("effect", edsl))
+    return listOf(Sub(Block("triggeredAbility", stmts)))
 }
 
 /** An Activated / ActivatedWithModifiers rule -> activatedAbility { cost; [target]; effect }. */
-internal fun EmitCtx.activatedBlock(rule: JsonObject): List<String>? {
+internal fun EmitCtx.activatedBlock(rule: JsonObject): List<Stmt>? {
     val args = rule["args"].asArr
     val costNode = args?.firstOrNull() as? JsonObject
     // Recover the exact activation cost. Anything we can't render exactly -> SCAFFOLD (never guess Tap).
@@ -352,22 +366,20 @@ internal fun EmitCtx.activatedBlock(rule: JsonObject): List<String>? {
     if (cost == null) { reasons.add("activated-cost"); return null }
     val (targets, actions) = extractEnvelope(rule)
     if (actions == null) { reasons.add("activated-actions"); return null }
-    val (tdsl, tvar) = spellTarget(targets, actions)
-    if (tdsl == null) return null
+    val (tnode, tvar) = spellTargetExpr(targets, actions) ?: return null
     val edsl = renderEffectList(actions, tvar) ?: return null
-    val lines = mutableListOf("    activatedAbility {", "        cost = $cost")
-    activationRestrictionLines(rule)?.let { lines.addAll(it) } ?: return null
-    if (tvar != null) lines.add("        val t = target(\"target\", $tdsl)")
-    lines.add("        effect = $edsl")
+    val stmts = mutableListOf<Stmt>(Assign("cost", Lit(cost)))
+    activationRestrictionLines(rule)?.let { lines -> lines.forEach { stmts.add(RawLine(it)) } } ?: return null
+    if (tvar != null) stmts.add(targetLocal(tnode!!))
+    stmts.add(Assign("effect", edsl))
     // A ReplaceNextDraw effect ("the next time you would draw … instead") prompts on the replaced draw,
     // not at activation — the activated-ability flag the Words cycle's golden carries.
-    if (actions.any { it.strField("_Action") == "CreateFutureReplaceWouldDraw" }) lines.add("        promptOnDraw = true")
+    if (actions.any { it.strField("_Action") == "CreateFutureReplaceWouldDraw" }) stmts.add(Assign("promptOnDraw", Lit("true")))
     if (isManaAbility(tvar, actions)) {
-        lines.add("        manaAbility = true")
-        lines.add("        timing = TimingRule.ManaAbility")
+        stmts.add(Assign("manaAbility", Lit("true")))
+        stmts.add(Assign("timing", Lit("TimingRule.ManaAbility")))
     }
-    lines.add("    }")
-    return lines
+    return listOf(Sub(Block("activatedAbility", stmts)))
 }
 
 /**
