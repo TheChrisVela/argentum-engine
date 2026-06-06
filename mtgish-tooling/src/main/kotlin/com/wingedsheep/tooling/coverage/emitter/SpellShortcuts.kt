@@ -1,7 +1,11 @@
 package com.wingedsheep.tooling.coverage.emitter
 
+import com.wingedsheep.tooling.coverage.Assign
+import com.wingedsheep.tooling.coverage.Block
 import com.wingedsheep.tooling.coverage.Call
 import com.wingedsheep.tooling.coverage.Dsl
+import com.wingedsheep.tooling.coverage.Stmt
+import com.wingedsheep.tooling.coverage.Sub
 import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.compact
@@ -55,31 +59,27 @@ internal fun EmitCtx.extraTurnEffect(card: JsonObject): Dsl? {
 }
 
 /** Forked-Lightning shape: TargetedDistributed -> TargetCreature(count) + DividedDamageEffect. */
-internal fun EmitCtx.distributedSpell(card: JsonObject): List<String>? {
+internal fun EmitCtx.distributedSpell(card: JsonObject): List<Stmt>? {
     val blob = compact(card["Rules"])
     if ("\"TargetedDistributed\"" !in blob) return null
     val total = Regex(""""DistributeNumberAmongTargets","args":\{"_GameNumber":"Integer","args":(\d+)""").find(blob)
     val mx = Regex(""""BetweenOneAndNumberTargetPermanents","args":\[\{"_GameNumber":"Integer","args":(\d+)""").find(blob)
     if (total == null || mx == null) return null
     val m = mx.groupValues[1]
-    return listOf(
-        "    spell {",
-        "        target = TargetCreature(count = $m, minCount = 1)",
-        "        effect = DividedDamageEffect(totalDamage = ${total.groupValues[1]}, minTargets = 1, maxTargets = $m)",
-        "    }",
-    )
+    return listOf(Sub(Block("spell", listOf(
+        Assign("target", call("TargetCreature", arg("count", m), arg("minCount", "1"))),
+        Assign("effect", call("DividedDamageEffect", arg("totalDamage", total.groupValues[1]), arg("minTargets", "1"), arg("maxTargets", m))),
+    ))))
 }
 
 /** Draw the difference between target opponent's hand and yours (Balance of Power). */
-internal fun EmitCtx.balanceEffect(card: JsonObject): List<String>? {
+internal fun EmitCtx.balanceEffect(card: JsonObject): List<Stmt>? {
     val blob = compact(card["Rules"])
     if ("NumCardsInHandIs" in blob && "\"Minus\"" in blob && "TheNumberOfCardsInPlayersHand" in blob) {
-        return listOf(
-            "    spell {",
-            "        target = TargetOpponent()",
-            "        effect = DrawCardsEffect(DynamicAmounts.handSizeDifferenceFromTargetOpponent())",
-            "    }",
-        )
+        return listOf(Sub(Block("spell", listOf(
+            Assign("target", call("TargetOpponent")),
+            Assign("effect", call("DrawCardsEffect", arg(call("DynamicAmounts.handSizeDifferenceFromTargetOpponent")))),
+        ))))
     }
     return null
 }

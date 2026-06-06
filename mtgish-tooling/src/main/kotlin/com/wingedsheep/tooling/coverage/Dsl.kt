@@ -51,6 +51,53 @@ data class Raw(val text: String) : Dsl
 data class Arg(val value: Dsl, val name: String? = null)
 
 // ---------------------------------------------------------------------------
+// Statement / block layer — the card-body structure above the expression nodes.
+// An expression [Dsl] renders to ONE token/line; a [Stmt]/[Block] renders to indented source LINES
+// (an ability builder block, the metadata block, the whole `card(...) { }`). This is what lets the
+// emitter assemble a card as a single tree instead of stitching `List<String>` line lists.
+// ---------------------------------------------------------------------------
+
+/** One line (or builder block) inside a [Block] body. */
+sealed interface Stmt
+
+/** `name = <value>` (e.g. `effect = …`, `cost = …`, `auraTarget = …`). */
+data class Assign(val name: String, val value: Dsl) : Stmt
+
+/** `val name = <value>` (e.g. `val t = target("target", …)`). */
+data class Local(val name: String, val value: Dsl) : Stmt
+
+/** A bare expression statement: `<value>` (e.g. `keywordAbility(…)`, `flags(…)`, `dynamicStats(…)`). */
+data class Eval(val value: Dsl) : Stmt
+
+/** A nested builder block as a statement (`spell { … }`, `staticAbility { … }`, `metadata { … }`). */
+data class Sub(val block: Block) : Stmt
+
+/** A pre-formatted verbatim line — the shell scaffolding (mana/typeline/KDoc/metadata text) and the
+ *  occasional multi-line restriction list a node doesn't model yet. The [Stmt]-level [Raw]. */
+data class RawLine(val text: String) : Stmt
+
+/** A `header { body }` builder block (an ability, the metadata block, the whole card). */
+data class Block(val header: String, val body: List<Stmt>)
+
+/** Render a [Block] to source lines at [indent]; the body sits one level (4 spaces) deeper. */
+fun renderBlock(block: Block, indent: String = ""): List<String> {
+    val out = mutableListOf("$indent${block.header} {")
+    block.body.forEach { out += renderStmt(it, "$indent    ") }
+    out += "$indent}"
+    return out
+}
+
+/** Render one [Stmt] to source lines at [indent]. A [RawLine] is emitted verbatim (it already carries
+ *  its own indentation); everything else is placed at [indent]. */
+fun renderStmt(stmt: Stmt, indent: String): List<String> = when (stmt) {
+    is Assign -> listOf("$indent${stmt.name} = ${render(stmt.value)}")
+    is Local -> listOf("${indent}val ${stmt.name} = ${render(stmt.value)}")
+    is Eval -> listOf("$indent${render(stmt.value)}")
+    is Sub -> renderBlock(stmt.block, indent)
+    is RawLine -> listOf(stmt.text)
+}
+
+// ---------------------------------------------------------------------------
 // Construction helpers — keep handler call-sites terse.
 // ---------------------------------------------------------------------------
 

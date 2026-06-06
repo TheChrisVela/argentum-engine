@@ -60,4 +60,40 @@ class DslTest : StringSpec({
     "Raw passes its text through untouched" {
         render(Raw("anything\n    indented")) shouldBe "anything\n    indented"
     }
+
+    "a block renders `header { body }` with the body one indent level deeper" {
+        val block = Block(
+            "spell",
+            listOf(
+                Local("t", call("target", arg("\"target\""), arg(Lit("TargetCreature()")))),
+                Assign("effect", call("DealDamageEffect", arg("2"), arg("t"))),
+            ),
+        )
+        renderBlock(block) shouldBe listOf(
+            "spell {",
+            "    val t = target(\"target\", TargetCreature())",
+            "    effect = DealDamageEffect(2, t)",
+            "}",
+        )
+    }
+
+    "statements: Eval is bare, Sub nests, RawLine is verbatim (ignoring the block indent)" {
+        val block = Block(
+            "card(\"X\")",
+            listOf(
+                RawLine("    manaCost = \"{R}\""),                       // shell scaffolding, pre-indented
+                Eval(call("dynamicStats", arg("DynamicAmount.XValue"))),  // a bare expression statement
+                Sub(Block("staticAbility", listOf(Assign("ability", call("CantBlock"))))),
+            ),
+        )
+        renderBlock(block) shouldBe listOf(
+            "card(\"X\") {",
+            "    manaCost = \"{R}\"",
+            "    dynamicStats(DynamicAmount.XValue)",
+            "    staticAbility {",
+            "        ability = CantBlock()",
+            "    }",
+            "}",
+        )
+    }
 })
