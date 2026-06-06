@@ -159,14 +159,20 @@ class BoosterGenerator(
      * @param strategy Optional override; when null, uses the set's configured strategy.
      *                 Pass an explicit strategy (e.g., [com.wingedsheep.sdk.limited.CommanderDraftBooster])
      *                 to ship Brawl / Commander Draft packs without mutating [SetConfig].
+     * @param bannedCardNames Oracle card names to exclude from the pool before packing (tournament
+     *                        host ban list). Matched case-insensitively; empty = no exclusions.
      * @return List of card definitions
      * @throws IllegalArgumentException if set code is not found
      */
-    fun generateBooster(setCode: String, strategy: BoosterStrategy? = null): List<CardDefinition> {
+    fun generateBooster(
+        setCode: String,
+        strategy: BoosterStrategy? = null,
+        bannedCardNames: Set<String> = emptySet(),
+    ): List<CardDefinition> {
         val setConfig = availableSets[setCode]
             ?: throw IllegalArgumentException("Unknown set code: $setCode")
         val effectiveStrategy = strategy ?: setConfig.boosterStrategy
-        val generated = effectiveStrategy.generate(boosterPool(setConfig.cards), Random.Default)
+        val generated = effectiveStrategy.generate(boosterPool(setConfig.cards, bannedCardNames), Random.Default)
         return applyVariantPrintings(generated, setConfig.printings, setConfig.variantChance, Random.Default)
     }
 
@@ -183,7 +189,12 @@ class BoosterGenerator(
      * @return List of card definitions
      * @throws IllegalArgumentException if any set code is not found
      */
-    fun generateBooster(setCodes: List<String>, strategy: BoosterStrategy? = null, chaos: Boolean = false): List<CardDefinition> {
+    fun generateBooster(
+        setCodes: List<String>,
+        strategy: BoosterStrategy? = null,
+        chaos: Boolean = false,
+        bannedCardNames: Set<String> = emptySet(),
+    ): List<CardDefinition> {
         if (setCodes.isEmpty()) {
             throw IllegalArgumentException("At least one set code is required")
         }
@@ -198,12 +209,12 @@ class BoosterGenerator(
         if (chaos || setConfigs.any { it.incomplete }) {
             val combinedCards = setConfigs.flatMap { it.cards }
             val effectiveStrategy = strategy ?: StandardBooster()
-            return effectiveStrategy.generate(boosterPool(combinedCards), Random.Default)
+            return effectiveStrategy.generate(boosterPool(combinedCards, bannedCardNames), Random.Default)
         }
 
         // Pick a random set and generate a booster from it
         val selectedSet = setCodes.random()
-        return generateBooster(selectedSet, strategy)
+        return generateBooster(selectedSet, strategy, bannedCardNames)
     }
 
     /**
@@ -219,8 +230,9 @@ class BoosterGenerator(
         setCode: String,
         boosterCount: Int = 6,
         strategy: BoosterStrategy? = null,
+        bannedCardNames: Set<String> = emptySet(),
     ): List<CardDefinition> {
-        return (1..boosterCount).flatMap { generateBooster(setCode, strategy) }
+        return (1..boosterCount).flatMap { generateBooster(setCode, strategy, bannedCardNames) }
     }
 
     /**
@@ -247,12 +259,13 @@ class BoosterGenerator(
         distributionSeed: Long? = null,
         strategy: BoosterStrategy? = null,
         chaos: Boolean = false,
+        bannedCardNames: Set<String> = emptySet(),
     ): List<CardDefinition> {
         if (setCodes.isEmpty()) {
             throw IllegalArgumentException("At least one set code is required")
         }
         if (setCodes.size == 1) {
-            return generateSealedPool(setCodes.first(), boosterCount, strategy)
+            return generateSealedPool(setCodes.first(), boosterCount, strategy, bannedCardNames)
         }
 
         // Validate all set codes exist
@@ -265,7 +278,7 @@ class BoosterGenerator(
         if (chaos || setConfigs.any { it.incomplete }) {
             val combinedCards = setConfigs.flatMap { it.cards }
             val combinedStrategy = strategy ?: StandardBooster()
-            val combinedPool = boosterPool(combinedCards)
+            val combinedPool = boosterPool(combinedCards, bannedCardNames)
             return (1..boosterCount).flatMap { combinedStrategy.generate(combinedPool, Random.Default) }
         }
 
@@ -294,7 +307,7 @@ class BoosterGenerator(
 
         // Note: We don't shuffle the final assignments - each player gets their
         // own random card contents anyway, only the set distribution needs to match
-        return boosterAssignments.flatMap { generateBooster(it, strategy) }
+        return boosterAssignments.flatMap { generateBooster(it, strategy, bannedCardNames) }
     }
 
     /**
@@ -308,6 +321,7 @@ class BoosterGenerator(
         boosterDistribution: Map<String, Int>,
         strategy: BoosterStrategy? = null,
         chaos: Boolean = false,
+        bannedCardNames: Set<String> = emptySet(),
     ): List<CardDefinition> {
         if (boosterDistribution.isEmpty()) {
             throw IllegalArgumentException("At least one set code is required")
@@ -324,13 +338,13 @@ class BoosterGenerator(
             val combinedCards = setConfigs.flatMap { it.cards }
             val totalBoosters = boosterDistribution.values.sum()
             val combinedStrategy = strategy ?: StandardBooster()
-            val combinedPool = boosterPool(combinedCards)
+            val combinedPool = boosterPool(combinedCards, bannedCardNames)
             return (1..totalBoosters).flatMap { combinedStrategy.generate(combinedPool, Random.Default) }
         }
 
         // Generate boosters per set according to distribution
         return boosterDistribution.flatMap { (setCode, count) ->
-            (1..count).flatMap { generateBooster(setCode, strategy) }
+            (1..count).flatMap { generateBooster(setCode, strategy, bannedCardNames) }
         }
     }
 
@@ -396,9 +410,21 @@ class BoosterGenerator(
     }
 
     /**
-     * Strip basic lands and non-booster cards (Special Guests / The List / promos);
-     * strategies operate on the booster pool only.
+     * Strip basic lands and non-booster cards (Special Guests / The List / promos), plus any
+     * cards on the tournament host's [bannedCardNames] ban list; strategies operate on the
+     * booster pool only. Banned names are matched case-insensitively so a host typo in casing
+     * still excludes the card.
      */
-    private fun boosterPool(allCards: List<CardDefinition>): List<CardDefinition> =
-        allCards.filter { !it.typeLine.isBasicLand && it.metadata.inBooster }
+    private fun boosterPool(
+        allCards: List<CardDefinition>,
+        bannedCardNames: Set<String> = emptySet(),
+    ): List<CardDefinition> {
+        if (bannedCardNames.isEmpty()) {
+            return allCards.filter { !it.typeLine.isBasicLand && it.metadata.inBooster }
+        }
+        val banned = bannedCardNames.mapTo(HashSet(bannedCardNames.size)) { it.trim().lowercase() }
+        return allCards.filter {
+            !it.typeLine.isBasicLand && it.metadata.inBooster && it.name.trim().lowercase() !in banned
+        }
+    }
 }

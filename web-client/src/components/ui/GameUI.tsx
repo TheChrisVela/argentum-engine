@@ -11,6 +11,7 @@ import type { ReplayData } from '@/replay/reconstructSnapshots.ts'
 import { QuickGameLobbyOverlay } from './QuickGameLobbyOverlay'
 import { useDeckLibrary, buildDraftedDeckSave, type SavedDeckEntry } from '@/store/deckLibrary'
 import { DeckPicker } from './DeckPicker'
+import { BanListEditor } from './BanListEditor'
 import { labelForFormat } from '@/utils/deckLegality'
 import styles from './GameUI.module.css'
 
@@ -1106,6 +1107,14 @@ function LobbyOverlay({
                   </div>
                 </div>
               </div>
+            )}
+            {/* Booster ban list — host excludes named cards from generated boosters. Not for Premade. */}
+            {!isPremade && (
+              <BanListEditor
+                setCodes={lobbyState.settings.setCodes}
+                bannedCardNames={lobbyState.settings.bannedCardNames ?? []}
+                onChange={(names) => updateLobbySettings({ bannedCardNames: names })}
+              />
             )}
             {/* Boosters setting - for Sealed and Winston (Grid uses fixed counts) */}
             {(isSealed || isWinston || isCommanderSealed) && lobbyState.settings.setCodes.length > 1 && !lobbyState.settings.chaosBoosters && (
