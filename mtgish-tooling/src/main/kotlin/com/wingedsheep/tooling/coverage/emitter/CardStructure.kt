@@ -446,6 +446,9 @@ internal fun EmitCtx.abilityCostDsl(node: JsonElement?): String? {
         // (ManaCostX -> "{X}") as the mana cost (Silklash Spider).
         "PayManaX" -> renderMana((obj["args"].asArr)?.getOrNull(0)).ifEmpty { null }?.let { "Costs.Mana(\"$it\")" }
         "DiscardHand" -> "Costs.DiscardHand"  // "Discard your hand" (Slate of Ancestry)
+        // "Discard a card at random" — a fixed, no-choice cost (the engine picks): Costs.DiscardAtRandom(1).
+        // It carries no value selection / X / inherited choice, so it is safe to render exactly (Canyon Drake).
+        "DiscardACardAtRandom" -> "Costs.DiscardAtRandom(1)"
         "TapPermanent" ->
             if (obj.field("args").strField("_Permanent") == "ThisPermanent") "Costs.Tap" else null
         "SacrificePermanent" ->

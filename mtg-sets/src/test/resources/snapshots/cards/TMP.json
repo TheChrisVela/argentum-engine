@@ -54,6 +54,64 @@
     ]
 }
 
+// Canyon Drake
+{
+    "name": "Canyon Drake",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Drake",
+    "oracleText": "Flying\n{1}, Discard a card at random: This creature gets +2/+0 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostMana",
+                            "cost": "{1}"
+                        },
+                        {
+                            "type": "CostDiscard",
+                            "atRandom": true
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{1}, Discard a card at random: This creature gets +2/+0 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "166",
+        "rarity": "RARE",
+        "artist": "Quinton Hoover",
+        "flavorText": "\"These runes are tough enough without the distraction,\" Ertai muttered, one eye on the drake.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/2/22f84143-5912-43ca-a274-f26ed0dbadd0.jpg?1562052811"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Canyon Wildcat
 {
     "name": "Canyon Wildcat",
@@ -186,6 +244,51 @@
     ]
 }
 
+// Flowstone Giant
+{
+    "name": "Flowstone Giant",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Creature — Giant",
+    "oracleText": "{R}: This creature gets +2/-2 until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostMana",
+                    "cost": "{R}"
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": -2
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{R}: This creature gets +2/-2 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "174",
+        "artist": "Joel Biske",
+        "flavorText": "When the first of these giants woke from the bedrock, he was still sleepy. He yawned and stretched until his legs grew so thin that they snapped like icicles in the sun.\n—Vec lore",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/6/46e8240a-d882-4f60-8960-1856284e04a0.jpg?1562053769"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Fylamarid
 {
     "name": "Fylamarid",
@@ -252,6 +355,53 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Goblin Bombardment
+{
+    "name": "Goblin Bombardment",
+    "manaCost": "{1}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "Sacrifice a creature: This enchantment deals 1 damage to any target.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostSacrifice",
+                    "filter": "creature"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "target"
+                    }
+                ],
+                "descriptionOverride": "Sacrifice a creature: This enchantment deals 1 damage to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "179",
+        "rarity": "UNCOMMON",
+        "artist": "Brian Snõddy",
+        "flavorText": "One mogg to aim the catapult, one mogg to steer the rock.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/7/179e954f-1d90-4ef4-b800-25845cc338e2.jpg?1562052788"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -426,6 +576,53 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Mogg Fanatic
+{
+    "name": "Mogg Fanatic",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Goblin",
+    "oracleText": "Sacrifice this creature: It deals 1 damage to any target.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostSacrificeSelf",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "target"
+                    }
+                ],
+                "descriptionOverride": "Sacrifice this creature: It deals 1 damage to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "190",
+        "artist": "Brom",
+        "flavorText": "\"I got it! I got it! I—\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/a/ca2ecfd4-c874-4468-8601-87aa110d5a00.jpg?1562056411"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
