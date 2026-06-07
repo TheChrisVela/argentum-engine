@@ -6,6 +6,7 @@ import com.wingedsheep.tooling.coverage.Dsl
 import com.wingedsheep.tooling.coverage.Lit
 import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.asArr
+import com.wingedsheep.tooling.coverage.amountNode
 import com.wingedsheep.tooling.coverage.asInt
 import com.wingedsheep.tooling.coverage.asStr
 import com.wingedsheep.tooling.coverage.call
@@ -116,6 +117,15 @@ internal fun EmitCtx.amountExpr(node: JsonElement?): Dsl? {
     return Lit(n.toString())
 }
 
+/** The amount DSL for a gain/lose-life effect (both take a DynamicAmount). A composite top-level
+ *  `_GameNumber` (e.g. "X plus 3") routes through the typed dynamic path so it isn't flattened to a
+ *  single arm; a bare int / X renders as a literal; any other recognised dynamic amount falls through. */
+internal fun EmitCtx.lifeAmountExpr(args: JsonElement?): Dsl? {
+    val node = amountNode(args)
+    if ((node as? JsonObject)?.strField("_GameNumber") == "Plus") return dynamicAmountExpr(node)
+    return amountExpr(args) ?: dynamicAmountExpr(node)
+}
+
 /** A "draw/discard N cards" count read from the amount's TOP-LEVEL `_GameNumber` only: a fixed Integer
  *  (-> the int), or X (-> [forX], when the caller's effect accepts a DynamicAmount). Any derived game
  *  number (Power for "2ˣ", "number of colours of mana spent", …) returns null (-> SCAFFOLD). Unlike
@@ -185,6 +195,14 @@ internal fun EmitCtx.dynamicAmountExpr(node: JsonElement?): Dsl? {
         }
         return null
     }
+    // "X plus 3" (Vitalizing Cascade): a sum of two amounts. Both arms must render exactly — a bare
+    // amountExpr would flatten this to just one arm (the X), silently dropping the rest.
+    if (gn == "Plus" && node["args"].asArr?.size == 2) {
+        val arr = node["args"].asArr!!
+        val left = dynamicAmountExpr(arr[0]) ?: return null
+        val right = dynamicAmountExpr(arr[1]) ?: return null
+        return call("DynamicAmount.Add", arg(left), arg(right))
+    }
     // "...ThisWay" game-numbers count objects this resolution touched (e.g. Volcanic Eruption's
     // "number of Mountains put into a graveyard this way"), not a current battlefield aggregate — a
     // resolution-scoped count the AggregateBattlefield heuristic below can't express. Scaffold rather
@@ -211,6 +229,12 @@ internal fun EmitCtx.dynamicAmountExpr(node: JsonElement?): Dsl? {
             // — the key is plural `_Players`, so the singular `_Player` probe above misses it and the count
             // would wrongly default to Player.You (Pygmy Kavu's "each black creature your opponents control").
             jsonContains(node, "_Player", "Opponent") || jsonContains(node, "_Players", "Opponent") -> "Player.Opponent"
+            // An explicit "you control" controller predicate (Fire Dragon's "Mountains you control").
+            "ControlledByAPlayer" in compact(node) -> "Player.You"
+            // A global battlefield tally with NO controller predicate ("the number of attacking
+            // creatures", Divine Retribution) counts every player's permanents — Each, not the You
+            // default the controller-scoped NumberOf forms want.
+            battlefieldCount -> "Player.Each"
             else -> "Player.You"
         }
         // "for each Goblin/Bird/Elf on the battlefield": a creature subtype, which the land-oriented

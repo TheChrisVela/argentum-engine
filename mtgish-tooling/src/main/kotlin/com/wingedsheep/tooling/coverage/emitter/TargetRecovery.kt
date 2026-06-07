@@ -353,8 +353,11 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
         val types = targetTypes(args)
         val filt: Dsl = when {
             types.isEmpty() && "IsCardtype" !in blob -> Lit("TargetFilter.CardInGraveyard")
-            types == setOf("Creature") ->
-                Lit(if ("\"You\"" in blob) "TargetFilter.CreatureInYourGraveyard" else "TargetFilter.CreatureInGraveyard")
+            types == setOf("Creature") -> when {
+                "\"You\"" in blob -> Lit("TargetFilter.CreatureInYourGraveyard")
+                "\"Opponent\"" in blob -> graveyardFilter("Creature", blob)  // "from an opponent's graveyard" (Ashen Powder)
+                else -> Lit("TargetFilter.CreatureInGraveyard")
+            }
             types == setOf("Instant", "Sorcery") -> graveyardFilter("InstantOrSorcery", blob)
             types.size == 1 && types.first() in graveyardSingleTypeFilters -> graveyardFilter(graveyardSingleTypeFilters.getValue(types.first()), blob)
             else -> return null

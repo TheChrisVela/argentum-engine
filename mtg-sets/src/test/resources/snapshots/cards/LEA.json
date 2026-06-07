@@ -1036,6 +1036,28 @@
     ]
 }
 
+// Fog
+{
+    "name": "Fog",
+    "manaCost": "{G}",
+    "typeLine": "Instant",
+    "oracleText": "Prevent all combat damage that would be dealt this turn.",
+    "script": {
+        "spellEffect": {
+            "type": "PreventDamageShield",
+            "scope": "CombatOnly"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "193",
+        "artist": "Jesper Myrfors",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/f/cfba606d-bb55-43ba-aa0c-299649958788.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Frozen Shade
 {
     "name": "Frozen Shade",

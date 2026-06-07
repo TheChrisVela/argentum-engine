@@ -137,8 +137,19 @@ internal val zoneHandlers: Map<String, ActionHandler> = actionHandlers {
         if (tgt == null) {
             if (a == "ReturnDeadGraveyardCardToTopOfLibrary") tgt = "EffectTarget.Self" else return@on null
         }
+        if (a == "PutGraveyardCardOntoBattlefield") {
+            // "onto the battlefield under your control" (Ashen Powder) carries an EntersUnderPlayersControl
+            // flag — a plain Move would (wrongly) return it under its owner's control. Render the
+            // control-grabbing put; under another player's control isn't expressible, so scaffold.
+            val flagBlob = compact(args)
+            return@on when {
+                "EntersUnderPlayersControl" !in flagBlob -> call("Effects.Move", arg(Lit(tgt)), arg("Zone.BATTLEFIELD"))
+                "\"You\"" in flagBlob -> call("Effects.PutOntoBattlefieldUnderYourControl", arg(Lit(tgt)))
+                else -> null
+            }
+        }
         val zone = mapOf(
-            "PutGraveyardCardOntoBattlefield" to "BATTLEFIELD", "PutGraveyardCardIntoHand" to "HAND",
+            "PutGraveyardCardIntoHand" to "HAND",
             "ReturnDeadGraveyardCardToTopOfLibrary" to "LIBRARY", "PutPermanentOnTopOfOwnersLibrary" to "LIBRARY",
         )[a]
         if (a == "PutPermanentOnTopOfOwnersLibrary" || a == "ReturnDeadGraveyardCardToTopOfLibrary") {
@@ -169,10 +180,15 @@ internal fun EmitCtx.renderSearch(args: JsonElement?): Dsl? {
     val named = Regex(""""NamedCard",\s*"args":\s*"([^"]+)"""").find(blob)?.groupValues?.get(1)
     val searchSubtype = Regex(""""IsCreatureType",\s*"args":\s*"(\w+)"""").find(blob)?.groupValues?.get(1)
     val enchSubtype = Regex(""""IsEnchantmentType",\s*"args":\s*"(\w+)"""").find(blob)?.groupValues?.get(1)
+    // "an instant or sorcery card" / "an artifact or enchantment card" (the tutors): an Or of card-type
+    // predicates. Map the whole union to the matching SDK constant. A union we have no constant for
+    // declines to SCAFFOLD rather than silently dropping a type — which picking a single arm would do.
+    val unionTypes = orCardTypes(blob)
     val filt = when {
         named != null -> "GameObjectFilter.Any.named(\"$named\")"
         searchSubtype != null -> "GameObjectFilter.Any.withSubtype(\"$searchSubtype\")"  // "an Elf card"
         enchSubtype != null -> "GameObjectFilter.Enchantment.withSubtype(\"$enchSubtype\")"  // "an Aura card"
+        unionTypes != null -> cardTypeUnionFilter(unionTypes) ?: return null
         else -> landSearchFilterDsl(args)
     }
     val count = findInteger(args)
@@ -182,6 +198,35 @@ internal fun EmitCtx.renderSearch(args: JsonElement?): Dsl? {
     if ("EntersTapped" in blob) parts.add(arg("entersTapped", "true"))  // "...onto the battlefield tapped"
     if ("RevealFoundCards" in blob) parts.add(arg("reveal", "true"))
     return Call("Patterns.Library.searchLibrary", parts)
+}
+
+/**
+ * The card types under an `Or` of `IsCardtype` predicates ("instant or sorcery", "artifact or
+ * enchantment"), or null when the search filter is not a card-type union. The `Or` token gates this
+ * so an `And` ("artifact creature card") doesn't read as a union.
+ */
+private fun orCardTypes(blob: String): List<String>? {
+    if ("\"Or\"" !in blob) return null
+    val types = Regex(""""IsCardtype",\s*"args":\s*"(\w+)"""").findAll(blob).map { it.groupValues[1] }.toList()
+    return if (types.size >= 2) types else null
+}
+
+/**
+ * Map a card-type union to the matching predefined SDK [GameObjectFilter] constant, or null when no
+ * constant exists for it — the caller then declines to SCAFFOLD rather than emit a wrong filter.
+ */
+private fun cardTypeUnionFilter(types: List<String>): String? {
+    val set = types.map { it.lowercase() }.toSortedSet()
+    val constant = mapOf(
+        sortedSetOf("instant", "sorcery") to "InstantOrSorcery",
+        sortedSetOf("artifact", "enchantment") to "ArtifactOrEnchantment",
+        sortedSetOf("creature", "land") to "CreatureOrLand",
+        sortedSetOf("creature", "sorcery") to "CreatureOrSorcery",
+        sortedSetOf("creature", "enchantment") to "CreatureOrEnchantment",
+        sortedSetOf("creature", "artifact") to "CreatureOrArtifact",
+        sortedSetOf("creature", "planeswalker") to "CreatureOrPlaneswalker",
+    )[set] ?: return null
+    return "GameObjectFilter.$constant"
 }
 
 internal fun EmitCtx.renderLook(node: JsonObject, args: JsonElement?, tvar: String?): Dsl? {

@@ -112,11 +112,11 @@ internal val damageDrawLifeHandlers: Map<String, ActionHandler> = actionHandlers
     on("GainLife") { _, args, _ ->
         // A fixed Integer renders `GainLifeEffect(1)`; a recognised dynamic amount (e.g. a damage
         // trigger's "gain that much life") renders `GainLifeEffect(DynamicAmount…)`.
-        val amt = amountExpr(args) ?: dynamicAmountExpr(amountNode(args)) ?: return@on null
+        val amt = lifeAmountExpr(args) ?: return@on null
         call("GainLifeEffect", arg(amt))
     }
     on("LoseLife") { _, args, _ ->
-        val amt = amountExpr(args) ?: dynamicAmountExpr(amountNode(args)) ?: return@on null
+        val amt = lifeAmountExpr(args) ?: return@on null
         call("LoseLifeEffect", arg(amt), arg("EffectTarget.Controller"))
     }
 
