@@ -1,105 +1,93 @@
-# Edge of Eternities (EOE) - Missing Effects & Implementation Plan
+# Edge of Eternities (EOE) - Engine Features Shipped
 
-Engine features required to implement the remaining EOE cards. Each section lists the cards it
-unblocks, the exact oracle clause that can't be expressed with current primitives, and a sketch of
-the engine/SDK work needed.
-
-As of the latest pass, **254 / 261** booster cards are implemented. The cards below remain
-blocked on the engine features listed here. Cards whose every clause maps to an existing primitive
-have already been implemented and are not listed. Section numbers are preserved from earlier
-revisions of this document so that [`problem-cards.md`](problem-cards.md) cross-references stay
-stable; gaps in the numbering correspond to features that have since been resolved.
+Historical log of the engine/SDK features that EOE forced. The set is complete (266 / 266
+implemented); every entry below is resolved and the listed card now ships. Section numbers are
+preserved from earlier revisions so external references stay stable.
 
 ---
 
 ## 12. Opponent exiles from hand and may play it (with cost/tapped modifiers)
 
-**Cards:** Lightstall Inquisitor.
+**Card:** Lightstall Inquisitor.
 
 **Clause:** "each opponent exiles a card from their hand and may play that card for as long as it
 remains exiled. Each spell cast this way costs {1} more to cast. Each land played this way enters
 tapped."
 
-**Plan:** Add an opponent-targeted "exile a card from hand, grant the *owner* may-play from exile"
-effect, plus a cost increase on those specific cards and a lands-enter-tapped modifier scoped to
-them. Vigilance is already expressible.
+**Shipped:** Opponent-targeted "exile a card from hand, grant the *owner* may-play from exile"
+effect, plus a scoped cost increase on those specific cards and a scoped lands-enter-tapped
+modifier.
 
 ---
 
 ## 13. Token-creation replacement: copies of a chosen permanent (once per turn)
 
-**Cards:** Moonlit Meditation.
+**Card:** Moonlit Meditation.
 
 **Clause:** "The first time you would create one or more tokens each turn, you may instead create
 that many tokens that are copies of enchanted permanent."
 
-**Plan:** Add a replacement effect on `CreateTokenEffect` that, once per turn, optionally swaps the
-created tokens for copies of the enchanted permanent. Requires once-per-turn gating and an
+**Shipped:** Replacement effect on `CreateTokenEffect` with once-per-turn gating and an
 aura-attached "copy of enchanted permanent" token source.
 
 ---
 
 ## 15. Grant the Warp alternative-cast cost to cards in hand
 
-**Cards:** Tannuk, Steadfast Second.
+**Card:** Tannuk, Steadfast Second.
 
 **Clause:** "Artifact cards and red creature cards in your hand have warp {2}{R}."
 
-**Plan:** Add a static that grants the Warp keyword (with a specified cost) to cards in hand matching
-a filter. "Other creatures you control have haste" is already expressible.
+**Shipped:** Static that grants the Warp keyword (with a specified cost) to cards in hand matching
+a filter.
 
 ---
 
 ## 16. Put a permanent from hand, then grant it arbitrary abilities
 
-**Cards:** Terminal Velocity.
+**Card:** Terminal Velocity.
 
 **Clause:** "You may put an artifact or creature card from your hand onto the battlefield. That
 permanent gains haste, 'When this permanent leaves the battlefield, it deals damage equal to its
 mana value to each creature,' and 'At the beginning of your end step, sacrifice this permanent.'"
 
-**Plan:** Add a way to grant a bundle of abilities (a triggered LTB ability + a self-sac end-step
-trigger + haste) to a specific permanent put onto the battlefield. Put-from-hand exists; granting a
-*new triggered ability* to a target permanent does not.
+**Shipped:** Grant a bundle of abilities (triggered LTB + self-sac end-step trigger + haste) to a
+specific permanent put onto the battlefield.
 
 ---
 
 ## 19. Cast spells from the top of your library (type-filtered) + restricted mana
 
-**Cards:** Mm'menon, the Right Hand.
+**Card:** Mm'menon, the Right Hand.
 
 **Clause:** "You may cast artifact spells from the top of your library." + "Artifacts you control
 have '{T}: Add {U}. Spend this mana only to cast a spell from anywhere other than your hand.'"
 
-**Plan:** Add (a) a static "may cast cards of type X from the top of your library", (b) restricted
-mana that can only pay for spells cast from non-hand zones, and (c) "look at the top card any time".
-Flying is already expressible.
+**Shipped:** (a) Static "may cast cards of type X from the top of your library", (b) restricted
+mana that can only pay for spells cast from non-hand zones, and (c) "look at the top card any
+time".
 
 ---
 
 ## 20. "First spell each turn may be cast without paying its mana cost"
 
-**Cards:** Weftwalking.
+**Card:** Weftwalking.
 
-**Clause:** "The first spell each player casts during each of their turns may be cast without paying
-its mana cost."
+**Clause:** "The first spell each player casts during each of their turns may be cast without
+paying its mana cost."
 
-**Plan:** Add a static that grants free-cast permission to the first spell each player casts on each
-of their own turns (per-player, per-turn gate). The ETB "shuffle hand and graveyard into library,
-then draw seven" is already expressible.
+**Shipped:** Static granting free-cast permission to the first spell each player casts on each of
+their own turns (per-player, per-turn gate).
 
 ---
 
-
 ## 24. Planeswalker emblem + "becomes a 0/0 Robot artifact creature"
 
-**Cards:** Tezzeret, Cruel Captain.
+**Card:** Tezzeret, Cruel Captain.
 
 **Clause:** "−7: You get an emblem with 'At the beginning of combat on your turn, put three +1/+1
 counters on target artifact you control. If it's not a creature, it becomes a 0/0 Robot artifact
 creature.'"
 
-**Plan:** Planeswalkers and loyalty abilities are supported. The gaps are (a) emblem creation with a
-recurring combat-trigger ability, and (b) a "becomes a 0/0 Robot artifact creature" type-set on a
-noncreature artifact. The passive ("whenever an artifact you control enters, add a loyalty
-counter"), the 0 untap, and the −3 tutor are expressible.
+**Shipped:** Emblem creation with a recurring combat-trigger ability, plus a "becomes a 0/0 Robot
+artifact creature" type-set on a noncreature artifact.
