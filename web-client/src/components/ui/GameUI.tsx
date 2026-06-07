@@ -701,6 +701,8 @@ function LobbyOverlay({
   const [copied, setCopied] = useState(false)
   const [showSetPicker, setShowSetPicker] = useState(false)
   const [setSearch, setSetSearch] = useState('')
+  // Partially-implemented sets are hidden by default; the host opts into them with this toggle.
+  const [showPartialSets, setShowPartialSets] = useState(false)
 
   // Show tournament standings when tournament is active
   if (tournamentState) {
@@ -757,15 +759,22 @@ function LobbyOverlay({
     .map((code) => allSets.find((s) => s.code === code))
     .filter((s): s is AvailableSet => s != null)
 
+  // Partial (not-fully-implemented) sets are hidden unless the host flips the toggle. A partial set
+  // that's already selected stays visible regardless, so the host can still see/untick it here.
+  const partialSetCount = allSets.filter((s) => s.partial).length
+  const pickerSets = showPartialSets
+    ? allSets
+    : allSets.filter((s) => !s.partial || lobbyState.settings.setCodes.includes(s.code))
+
   // Searchable multi-select inside the modal — match on set name or code, like the deckbuilder picker.
   const setSearchNeedle = setSearch.trim().toLowerCase()
   const filteredPickerSets = setSearchNeedle
-    ? allSets.filter(
+    ? pickerSets.filter(
         (s) =>
           s.name.toLowerCase().includes(setSearchNeedle) ||
           s.code.toLowerCase().includes(setSearchNeedle),
       )
-    : allSets
+    : pickerSets
 
   const closeSetPicker = () => {
     setShowSetPicker(false)
@@ -818,7 +827,7 @@ function LobbyOverlay({
         <span className={styles.setPickerCheck} aria-hidden>{isSelected ? '✓' : ''}</span>
         <SetIcon code={set.code} className={styles.setPickerIcon} />
         <span className={styles.setPickerName}>{set.name}</span>
-        {set.incomplete && <span className={styles.setPartialBadge}>partial</span>}
+        {set.partial && <span className={styles.setPartialBadge}>partial</span>}
         {released && <span className={styles.setReleaseDate}>{released}</span>}
         {set.implementedCount != null && (
           <span className={styles.setButtonCardCount}>{set.implementedCount} cards</span>
@@ -1054,8 +1063,8 @@ function LobbyOverlay({
                     {selectedSets.map((set) => (
                       <span
                         key={set.code}
-                        className={`${styles.setChip} ${isAnyDraft ? styles.setChipDraft : ''} ${set.incomplete ? styles.setChipPartial : ''}`}
-                        title={set.incomplete ? `${set.name} — partial (reduced card pool)` : set.name}
+                        className={`${styles.setChip} ${isAnyDraft ? styles.setChipDraft : ''} ${set.partial ? styles.setChipPartial : ''}`}
+                        title={set.partial ? `${set.name} — partial (reduced card pool)` : set.name}
                       >
                         <SetIcon code={set.code} className={styles.setChipIcon} />
                         <span className={styles.setChipName}>{set.name}</span>
@@ -1503,9 +1512,23 @@ function LobbyOverlay({
                 autoFocus
                 onChange={(e) => setSetSearch(e.target.value)}
               />
+              <label className={styles.setPickerToggle}>
+                <input
+                  type="checkbox"
+                  checked={showPartialSets}
+                  onChange={(e) => setShowPartialSets(e.target.checked)}
+                />
+                <span className={styles.setPickerToggleLabel}>
+                  Show partially implemented sets
+                  {partialSetCount > 0 && (
+                    <span className={styles.setPickerToggleCount}> ({partialSetCount})</span>
+                  )}
+                </span>
+              </label>
               <p className={styles.setPickerNote}>
                 Sets tagged <span className={styles.setPartialBadge}>partial</span> aren't fully
-                implemented — their boosters draw from a reduced pool of the cards that exist.
+                implemented — their boosters draw from a reduced pool of the cards that exist. They're
+                hidden by default; tick the box above to pick from every set.
               </p>
               <div className={styles.setPickerList}>
                 {filteredPickerSets.length > 0 ? (

@@ -60,7 +60,7 @@ class SetsController(
     @GetMapping("/booster-ready")
     fun getBoosterReadySets(): List<BoosterSetDTO> =
         boosterGenerator.availableSets.values
-            .filter { !it.incomplete }
+            .filter { it.fullyImplemented }
             .map { config ->
                 BoosterSetDTO(
                     setCode = config.setCode,

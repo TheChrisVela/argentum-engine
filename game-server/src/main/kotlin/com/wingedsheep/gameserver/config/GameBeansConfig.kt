@@ -69,8 +69,12 @@ class GameBeansConfig(
 
     @Bean
     fun boosterGenerator(): BoosterGenerator = BoosterGenerator(
+        // Every set with a non-empty card pool is selectable, not just the sealed-curated few.
+        // Sets that aren't `sealedSupported` (or are flagged incomplete) ride along as "partial":
+        // clients hide them behind a default-off toggle, but a host can still pick them. An empty
+        // pool can't produce a booster, so those are the only sets excluded here.
         activeSets()
-            .filter { it.sealedSupported }
+            .filter { it.cards.isNotEmpty() }
             .associate { it.code to it.toBoosterSetConfig() }
     )
 
@@ -122,6 +126,7 @@ private fun MtgSet.toBoosterSetConfig(): BoosterGenerator.SetConfig =
         cards = cards,
         basicLands = (basicLandsFallback ?: this).basicLands,
         incomplete = incomplete,
+        sealedSupported = sealedSupported,
         block = block,
         releaseDate = releaseDate,
         boosterStrategy = boosterStrategy,

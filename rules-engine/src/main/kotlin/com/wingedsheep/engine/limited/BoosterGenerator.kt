@@ -37,6 +37,13 @@ class BoosterGenerator(
         val cards: List<CardDefinition>,
         val basicLands: List<CardDefinition>,
         val incomplete: Boolean = false,
+        /**
+         * Whether this set is curated/validated for sealed & draft play. Sets that aren't
+         * sealed-supported can still be selected (so every set is playable), but clients surface
+         * them as "partial" so a host opts into them deliberately. Defaults to `true` so existing
+         * callers that hand-build configs keep their prior behaviour.
+         */
+        val sealedSupported: Boolean = true,
         val block: String? = null,
         /** Set release date in ISO `YYYY-MM-DD` form, or null if unknown. Used by clients to sort sets chronologically. */
         val releaseDate: String? = null,
@@ -49,7 +56,14 @@ class BoosterGenerator(
         val printings: List<Printing> = emptyList(),
         /** See [com.wingedsheep.sdk.model.MtgSet.boosterVariantChance]. 0.0 disables the variant slot. */
         val variantChance: Double = 0.0,
-    )
+    ) {
+        /**
+         * A set is "fully implemented" — and therefore shown by default in set pickers — only when
+         * it is both curated for sealed/draft and not flagged incomplete. Everything else is
+         * "partial": still selectable, but hidden behind the lobby's partial-sets toggle.
+         */
+        val fullyImplemented: Boolean get() = sealedSupported && !incomplete
+    }
 
     companion object {
 

@@ -1047,7 +1047,11 @@ export interface LobbyPlayerInfo {
 export interface AvailableSet {
   readonly code: string
   readonly name: string
-  readonly incomplete?: boolean
+  /**
+   * True when the set isn't fully implemented for sealed/draft (not sealed-supported, or flagged
+   * incomplete). The lobby set picker hides partial sets behind a default-off toggle.
+   */
+  readonly partial?: boolean
   readonly block?: string
   readonly implementedCount?: number
   /** Set release date in ISO `YYYY-MM-DD` form, or undefined if unknown. */

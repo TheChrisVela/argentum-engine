@@ -1397,7 +1397,7 @@ class TournamentLobby(
             ServerMessage.AvailableSet(
                 code = config.setCode,
                 name = config.setName,
-                incomplete = config.incomplete,
+                partial = !config.fullyImplemented,
                 block = config.block,
                 implementedCount = config.cards.size,
                 releaseDate = config.releaseDate

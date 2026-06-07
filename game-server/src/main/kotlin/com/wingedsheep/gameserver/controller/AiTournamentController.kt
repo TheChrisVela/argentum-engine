@@ -64,8 +64,14 @@ class AiTournamentController(
                 }
                 lobbyHandler.createAiTournamentWithFixedDecks(decks, request.models)
             } else {
+                // Auto-pick a random *fully implemented* set (partial sets aren't reliable enough
+                // for an unattended AI tournament); fall back to any set if none qualify.
                 val setCodes = request?.setCodes?.ifEmpty { null }
-                    ?: boosterGenerator.availableSets.keys.toList().let { listOf(it.random()) }
+                    ?: boosterGenerator.availableSets.values
+                        .filter { it.fullyImplemented }
+                        .map { it.setCode }
+                        .ifEmpty { boosterGenerator.availableSets.keys.toList() }
+                        .let { listOf(it.random()) }
                 lobbyHandler.createAiTournament(setCodes, playerCount, request?.models, request?.heuristicDeckbuilding)
             }
 

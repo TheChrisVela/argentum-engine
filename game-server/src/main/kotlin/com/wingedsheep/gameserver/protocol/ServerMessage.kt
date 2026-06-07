@@ -381,7 +381,13 @@ sealed interface ServerMessage {
     data class AvailableSet(
         val code: String,
         val name: String,
-        val incomplete: Boolean = false,
+        /**
+         * True when the set isn't fully implemented for sealed/draft — i.e. not sealed-supported, or
+         * flagged incomplete. The lobby set picker hides partial sets behind a default-off toggle.
+         * (The engine keeps the finer-grained `incomplete` flag internally for booster generation;
+         * clients only need this coarser "is it fully ready" signal.)
+         */
+        val partial: Boolean = false,
         val block: String? = null,
         val implementedCount: Int? = null,
         val releaseDate: String? = null
