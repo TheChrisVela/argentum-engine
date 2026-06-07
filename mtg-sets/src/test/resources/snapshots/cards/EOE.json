@@ -16971,6 +16971,140 @@
     ]
 }
 
+// Terminal Velocity
+{
+    "name": "Terminal Velocity",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "You may put an artifact or creature card from your hand onto the battlefield. That permanent gains haste, \"When this permanent leaves the battlefield, it deals damage equal to its mana value to each creature,\" and \"At the beginning of your end step, sacrifice this permanent.\"",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Hand",
+                        "filter": "artifact|creature"
+                    },
+                    "storeAs": "put_candidates"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "put_candidates",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "putting"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "putting",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    }
+                },
+                {
+                    "type": "ConditionalOnCollection",
+                    "collection": "putting",
+                    "ifNotEmpty": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GrantKeyword",
+                                "keyword": "HASTE",
+                                "target": {
+                                    "type": "PipelineTarget",
+                                    "collectionName": "putting"
+                                },
+                                "duration": "Permanent"
+                            },
+                            {
+                                "type": "GrantTriggeredAbility",
+                                "ability": {
+                                    "id": "ability_1",
+                                    "trigger": {
+                                        "type": "ZoneChangeEvent",
+                                        "from": "Battlefield"
+                                    },
+                                    "effect": {
+                                        "type": "ForEachInGroup",
+                                        "filter": {
+                                            "baseFilter": "creature"
+                                        },
+                                        "effect": {
+                                            "type": "DealDamage",
+                                            "amount": {
+                                                "type": "EntityProperty",
+                                                "entity": "Source",
+                                                "numericProperty": "ManaValue"
+                                            },
+                                            "target": "Self"
+                                        }
+                                    },
+                                    "descriptionOverride": "When this permanent leaves the battlefield, it deals damage equal to its mana value to each creature."
+                                },
+                                "target": {
+                                    "type": "PipelineTarget",
+                                    "collectionName": "putting"
+                                },
+                                "duration": "Permanent"
+                            },
+                            {
+                                "type": "GrantTriggeredAbility",
+                                "ability": {
+                                    "id": "ability_2",
+                                    "trigger": {
+                                        "type": "StepEvent",
+                                        "step": "END"
+                                    },
+                                    "binding": "ANY",
+                                    "effect": {
+                                        "type": "SacrificeTarget",
+                                        "target": "Self"
+                                    },
+                                    "descriptionOverride": "At the beginning of your end step, sacrifice this permanent."
+                                },
+                                "target": {
+                                    "type": "PipelineTarget",
+                                    "collectionName": "putting"
+                                },
+                                "duration": "Permanent"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "163",
+        "rarity": "RARE",
+        "artist": "Xabi Gaztelua",
+        "flavorText": "A victory was the best retirement gift the admiral could have asked for.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/d/1d18dc06-16f0-4a3b-8d52-dbf4aa2c393d.jpg?1752947211",
+        "rulings": [
+            {
+                "date": "2025-07-25",
+                "text": "Use the permanent's mana value as it last existed on the battlefield to determine how much damage the triggered ability deals."
+            },
+            {
+                "date": "2025-07-25",
+                "text": "If a permanent has {X} in its mana cost, X is 0 for the purpose of determining its mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Terrapact Intimidator
 {
     "name": "Terrapact Intimidator",

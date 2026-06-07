@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 259 / 261
+**Implemented:** 260 / 261
 ---
 
 - [x] Adagia, Windswept Bastion
@@ -229,7 +229,7 @@
 - [x] Tannuk, Steadfast Second
 - [x] Tapestry Warden
 - [x] Temporal Intervention
-- [ ] Terminal Velocity
+- [x] Terminal Velocity
 - [x] Terrapact Intimidator
 - [x] Terrasymbiosis
 - [x] Territorial Bruntar
