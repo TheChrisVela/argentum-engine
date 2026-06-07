@@ -107,6 +107,47 @@
     ]
 }
 
+// Dismiss
+{
+    "name": "Dismiss",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target spell.\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                "Counter",
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "58",
+        "rarity": "UNCOMMON",
+        "artist": "Donato Giancola",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/e/1e55d6be-7682-4786-9872-e847afd710b0.jpg?1562052798"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Fighting Drake
 {
     "name": "Fighting Drake",
@@ -375,6 +416,42 @@
     ]
 }
 
+// Manta Riders
+{
+    "name": "Manta Riders",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Merfolk",
+    "oracleText": "{U}: This creature gains flying until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostMana",
+                    "cost": "{U}"
+                },
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "74",
+        "artist": "Kaja Foglio",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cdff306c-1c7e-49ae-b10f-99e1927bbef1.jpg?1562056858"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Master Decoy
 {
     "name": "Master Decoy",
@@ -593,6 +670,39 @@
     ]
 }
 
+// Soltari Priest
+{
+    "name": "Soltari Priest",
+    "manaCost": "{W}{W}",
+    "typeLine": "Creature — Soltari Cleric",
+    "oracleText": "Protection from red\nShadow (This creature can block or be blocked by only creatures with shadow.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "SHADOW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Protection",
+            "scope": {
+                "type": "ProtectionScope.Color",
+                "color": "RED"
+            }
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "46",
+        "rarity": "UNCOMMON",
+        "artist": "Janet Aulisio",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/35a71390-3fa8-43eb-ad86-67de2a7aeab8.jpg?1562053297"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Staunch Defenders
 {
     "name": "Staunch Defenders",
@@ -677,6 +787,38 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Time Warp
+{
+    "name": "Time Warp",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Target player takes an extra turn after this one.",
+    "script": {
+        "spellEffect": {
+            "type": "TakeExtraTurn",
+            "target": {
+                "type": "BoundVariable",
+                "name": "player"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "player"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "97",
+        "rarity": "RARE",
+        "artist": "Pete Venters",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/4/3447aeaf-3b26-442a-99d4-0a7ee76c8e76.jpg?1562053291"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
