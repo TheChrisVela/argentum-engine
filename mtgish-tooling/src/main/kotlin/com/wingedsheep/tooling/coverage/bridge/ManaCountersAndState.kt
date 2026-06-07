@@ -36,4 +36,13 @@ internal fun BridgeBuilder.manaCountersAndState() {
         "Exhaustion: target player's creatures+lands don't untap next untap step")
     effect("SkipAllCombatPhasesTheirNextTurn", "SkipCombatPhases",
         "False Peace: target skips all combat phases of their next turn")
+
+    // "As ~ enters the battlefield" replacement actions (nested under the AsPermanentEnters envelope).
+    // The engine realises each via a dedicated ReplacementEffect — EntersTapped, and a +1/+1 counter via
+    // EntersWithCounters. Those SerialNames live in scripting/ReplacementEffect.kt (outside the scanned
+    // effects/ dir, so not registry-validated), hence `composed` with the realising effect noted. Counter
+    // variants beyond a single fixed +1/+1 (EntersWithNumberCounters, EntersWithACounterOfChoice, …) stay
+    // unmapped so they keep blocking until their scoping/rendering is verified.
+    composed("EntersTapped", "enters tapped (EntersTapped replacement)")
+    composed("EntersWithACounter", "enters with one +1/+1 counter (EntersWithCounters replacement)")
 }

@@ -347,11 +347,27 @@ internal fun EmitCtx.cdaStatsBlock(card: JsonObject, rule: JsonObject): List<Stm
 internal fun EmitCtx.asEntersBlock(rule: JsonObject): List<Stmt>? {
     val replacements = (rule["args"].asArr?.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>()
     if (replacements.isNullOrEmpty()) { reasons.add("AsPermanentEnters"); return null }
+    // The rule's first arg is the permanent the replacement scopes to. We only render the self case
+    // ("~ enters …"), where the counter/tap applies to THIS permanent (`selfOnly`); a group scope
+    // ("creatures you control enter …") would need a different rendering, so it scaffolds.
+    val onSelf = (rule["args"].asArr?.getOrNull(0) as? JsonObject)?.strField("_Permanent") == "ThisPermanent"
     val stmts = mutableListOf<Stmt>()
     for (rep in replacements) {
         val dsl: Dsl = when (rep.strField("_ReplacementActionWouldEnter")) {
             "EntersTapped" -> call("EntersTapped")
             "ChooseACreatureType" -> call("EntersWithChoice", arg("ChoiceType.CREATURE_TYPE"))
+            "EntersWithACounter" -> {
+                // "~ enters with a +1/+1 counter on it" — a single fixed counter on this permanent.
+                // Only the self-scoped ±1/±1 counter renders; other counter kinds need a CounterTypeFilter
+                // we don't map here, and a group scope is unsupported, so both scaffold.
+                if (!onSelf) { reasons.add("AsPermanentEnters"); return null }
+                val counter = rep["args"] as? JsonObject
+                val pt = counter?.get("args").asArr
+                if (counter?.strField("_CounterType") != "PTCounter" || pt?.getOrNull(0).asInt() != 1 || pt?.getOrNull(1).asInt() != 1) {
+                    reasons.add("AsPermanentEnters"); return null
+                }
+                call("EntersWithCounters", arg("count", "1"), arg("selfOnly", "true"))
+            }
             "EntersWithNumberCounters" -> {
                 // "enters with X +1/+1 counters" where X is a dynamic count (Stag Beetle: number of other
                 // creatures — as it enters, self isn't on the battlefield, so the plain count IS "other").

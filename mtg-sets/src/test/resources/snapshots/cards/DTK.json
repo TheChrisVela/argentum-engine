@@ -422,6 +422,52 @@
     ]
 }
 
+// Servant of the Scale
+{
+    "name": "Servant of the Scale",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "This creature enters with a +1/+1 counter on it.\nWhen this creature dies, put X +1/+1 counters on target creature you control, where X is the number of +1/+1 counters on this creature.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": "MoveAllLastKnownCounters",
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    }
+                }
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "count": 1,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "203",
+        "artist": "Winona Nelson",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/a/ca887c41-a8ee-4751-a902-87149c29a9df.jpg?1562793074"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Twin Bolt
 {
     "name": "Twin Bolt",

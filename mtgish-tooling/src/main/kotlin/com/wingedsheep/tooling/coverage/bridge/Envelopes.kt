@@ -64,4 +64,10 @@ internal fun BridgeBuilder.structuralEnvelopes() {
     envelope("ChooseACreatureType", UNIVERSAL)
     envelope("ChooseAColor", UNIVERSAL)
     envelope("IfElse", UNIVERSAL)
+
+    // "As ~ enters the battlefield …" — a replacement-effect wrapper. It carries no capability itself;
+    // each nested `_ReplacementActionWouldEnter` (enters tapped, enters with a counter, choose a type, …)
+    // is scored on its own, so an unsupported replacement still blocks the card. See the enters-replacement
+    // entries in `manaCountersAndState()`.
+    envelope("AsPermanentEnters", "envelope: 'as ~ enters' replacement (capability is the _ReplacementActionWouldEnter)")
 }
