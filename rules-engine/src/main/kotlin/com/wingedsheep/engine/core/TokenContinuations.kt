@@ -7,14 +7,14 @@ import kotlinx.serialization.Serializable
 
 /**
  * Resume token creation after the player answers a "may" question for
- * ReplaceTokenCreationWithEquippedCopy (Mirrormind Crown).
+ * ReplaceTokenCreationWithAttachedCopy (Mirrormind Crown, Moonlit Meditation).
  *
- * If yes: create [tokenCount] token copies of the equipped creature.
+ * If yes: create [tokenCount] token copies of the attached permanent.
  * If no: execute the original [originalEffect] normally — this can be any
  * token-creating effect (e.g. CreateTokenEffect, CreateTokenCopyOfTargetEffect).
  *
- * @property equipmentId The equipment with the replacement effect
- * @property equippedCreatureId The creature equipped at the time the decision was posed
+ * @property sourceId The Equipment / Aura / other permanent with the replacement effect
+ * @property attachedPermanentId The permanent attached at the time the decision was posed
  * @property originalEffect The original token creation effect (used if player declines)
  * @property tokenCount The evaluated number of tokens to create
  * @property effectContext The execution context from the original effect
@@ -22,8 +22,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TokenCreationReplacementContinuation(
     override val decisionId: String,
-    val equipmentId: EntityId,
-    val equippedCreatureId: EntityId,
+    val sourceId: EntityId,
+    val attachedPermanentId: EntityId,
     val originalEffect: Effect,
     val tokenCount: Int,
     val effectContext: EffectContext

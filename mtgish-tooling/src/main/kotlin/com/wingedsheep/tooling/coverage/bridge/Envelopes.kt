@@ -29,6 +29,10 @@ internal fun BridgeBuilder.structuralEnvelopes() {
     // restriction — a universal capability (the engine supports auras). `PermanentLayerEffect` wraps
     // the host's static continuous effect, whose real capability is the nested _StaticLayerEffect.
     supported("EnchantPermanent", "aura: enchant restriction (engine supports auras)")
+    // "The first time you would create one or more tokens each turn, you may instead create that many
+    // copies of [attached] permanent" (Mirrormind Crown, Moonlit Meditation) — the engine's
+    // ReplaceTokenCreationWithAttachedCopy replacement effect, driven by the source's AttachedToComponent.
+    supported("ReplaceAPlayerWouldCreateTokens", "replace token creation with copies of attached permanent (ReplaceTokenCreationWithAttachedCopy)")
     envelope("PermanentLayerEffect", "envelope: host continuous effect (capability is the _StaticLayerEffect)")
     // A static "each/other matching permanent gets …" lord (Crusade, Goblin King) — the capability is
     // the nested _StaticLayerEffect; the emitter's staticLordBlock renders it.

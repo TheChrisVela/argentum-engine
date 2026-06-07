@@ -2,7 +2,7 @@ package com.wingedsheep.mtg.sets.definitions.ecl.cards
 
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.ReplaceTokenCreationWithEquippedCopy
+import com.wingedsheep.sdk.scripting.ReplaceTokenCreationWithAttachedCopy
 
 /**
  * Mirrormind Crown
@@ -20,9 +20,10 @@ val MirrormindCrown = card("Mirrormind Crown") {
     oracleText = "As long as this Equipment is attached to a creature, the first time you would create one or more tokens each turn, you may instead create that many tokens that are copies of equipped creature.\nEquip {2}"
 
     replacementEffect(
-        ReplaceTokenCreationWithEquippedCopy(
+        ReplaceTokenCreationWithAttachedCopy(
             optional = true,
-            oncePerTurn = true
+            oncePerTurn = true,
+            attachmentVerb = "equipped"
         )
     )
 

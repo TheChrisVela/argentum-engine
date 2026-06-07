@@ -2703,6 +2703,16 @@ replacementEffect {
   "Devour land N" wording. **Scope today:** only the stack-spell entry path is wired; reanimation and
   token entries skip Devour (which is fine for printed cards — Devour creatures all cost real mana to
   cast).
+- `ReplaceTokenCreationWithAttachedCopy(optional, oncePerTurn, attachmentVerb, appliesTo)` —
+  "the first time you would create one or more tokens each turn, you may instead create that
+  many tokens that are copies of [attached] permanent." Works for both Equipment and Auras —
+  the engine reads the source's `AttachedToComponent` to find the permanent to copy.
+  `optional = true` surfaces a yes/no during resolution; `oncePerTurn = true` adds
+  `TokenReplacementOfferedThisTurnComponent` after the first offer (cleared at end of turn).
+  `attachmentVerb` is a display-only label ("equipped", "enchanted", "fortified") — the
+  attachment-type validation already happens at cast/attach time via `equipmentTarget` /
+  `auraTarget`. Token copies are summoning-sick only when the copy is a creature (CR 302.6).
+  Mirrormind Crown: `attachmentVerb = "equipped"`; Moonlit Meditation: `attachmentVerb = "enchanted"`.
 - `EntersAsCopy(optional, copyFilter, copyFromZone, filterByTotalManaSpent, additionalSubtypes, additionalKeywords, nameOverride, powerOverride, toughnessOverride, exileCopiedCard)` —
   "enter as a copy of …". As the permanent resolves, the controller picks an object matching
   `copyFilter` and the permanent enters as a copy (Rule 707 copiable values), with any overrides

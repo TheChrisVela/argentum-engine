@@ -101,16 +101,41 @@ private fun EmitCtx.scaffoldLord(): List<Stmt>? { reasons.add("EachPermanentLaye
  * bare cardtype (e.g. "enchant tapped creature") scaffolds rather than emit an inexact restriction.
  */
 internal fun EmitCtx.auraTargetBlock(rule: JsonObject): List<Stmt>? {
-    val filter = rule["args"] as? JsonObject
-    if (filter?.strField("_Permanents") != "IsCardtype") { reasons.add("EnchantPermanent"); return null }
-    val target = when (filter["args"].asStr()) {
-        "Creature" -> "Targets.Creature"
-        "Land" -> "Targets.Land"
-        "Artifact" -> "Targets.Artifact"
-        "Enchantment" -> "Targets.Enchantment"
-        else -> { reasons.add("EnchantPermanent"); return null }
+    val filter = rule["args"] as? JsonObject ?: run { reasons.add("EnchantPermanent"); return null }
+    // "Enchant creature / land / artifact / enchantment": a single card-type restriction.
+    if (filter.strField("_Permanents") == "IsCardtype") {
+        val target = when (filter["args"].asStr()) {
+            "Creature" -> "Targets.Creature"
+            "Land" -> "Targets.Land"
+            "Artifact" -> "Targets.Artifact"
+            "Enchantment" -> "Targets.Enchantment"
+            else -> { reasons.add("EnchantPermanent"); return null }
+        }
+        return listOf(Assign("auraTarget", Lit(target)))
     }
-    return listOf(Assign("auraTarget", Lit(target)))
+    // "Enchant artifact or creature you control" (Moonlit Meditation): a card-type Or AND-ed with a
+    // you-control restriction. Only shapes with an exact SDK TargetFilter render; any other combination
+    // declines to a scaffold.
+    auraYouControlTarget(filter)?.let { return listOf(Assign("auraTarget", Lit(it))) }
+    reasons.add("EnchantPermanent")
+    return null
+}
+
+/** `And(Or(<types>), ControlledBy You)` -> a you-control `TargetPermanent(...)` expr, or null
+ *  (-> SCAFFOLD). Currently only "artifact or creature you control" maps to an exact SDK filter. */
+private fun auraYouControlTarget(filter: JsonObject): String? {
+    if (filter.strField("_Permanents") != "And") return null
+    val args = (filter["args"] as? JsonArray)?.filterIsInstance<JsonObject>() ?: return null
+    if (args.size != 2) return null
+    if (args.none { jsonContains(it, "_Permanents", "ControlledByAPlayer") && jsonContains(it, "_Player", "You") }) return null
+    val typeNode = args.firstOrNull { it.strField("_Permanents") == "Or" } ?: return null
+    val types = (typeNode["args"] as? JsonArray)
+        ?.mapNotNull { (it as? JsonObject)?.takeIf { o -> o.strField("_Permanents") == "IsCardtype" }?.get("args").asStr() }
+        ?.toSet() ?: return null
+    return when (types) {
+        setOf("Artifact", "Creature") -> "TargetPermanent(TargetFilter.CreatureOrArtifact.youControl())"
+        else -> null
+    }
 }
 
 /**

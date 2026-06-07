@@ -1217,30 +1217,48 @@ data class RedirectZoneChangeWithEffect(
 // =============================================================================
 
 /**
- * Replace token creation with creating token copies of the equipped creature.
- * Example: Mirrormind Crown — "As long as this Equipment is attached to a creature,
- * the first time you would create one or more tokens each turn, you may instead
- * create that many tokens that are copies of equipped creature."
+ * Replace token creation with creating token copies of the permanent this source is attached to.
+ *
+ * Works for both Equipment (attached creature) and Auras (enchanted artifact / creature / etc.).
+ * The source must have an [com.wingedsheep.engine.state.components.battlefield.AttachedToComponent]
+ * — the engine looks at that to find the permanent to copy.
+ *
+ * Examples:
+ * - Mirrormind Crown — "As long as this Equipment is attached to a creature, the first time
+ *   you would create one or more tokens each turn, you may instead create that many tokens
+ *   that are copies of equipped creature."
+ *     `ReplaceTokenCreationWithAttachedCopy(attachmentVerb = "equipped")`
+ * - Moonlit Meditation — "Enchant artifact or creature you control. The first time you would
+ *   create one or more tokens each turn, you may instead create that many tokens that are
+ *   copies of enchanted permanent."
+ *     `ReplaceTokenCreationWithAttachedCopy(attachmentVerb = "enchanted")`
  *
  * @param optional If true, the player may choose whether to apply the replacement ("you may")
  * @param oncePerTurn If true, only applies to the first token creation each turn
+ * @param attachmentVerb Word used in the description for the attached permanent
+ *        (e.g. "equipped", "enchanted", "fortified"). Display-only — behavior is driven
+ *        entirely by the source's [com.wingedsheep.engine.state.components.battlefield.AttachedToComponent]
+ *        and validated at cast / attach time by auraTarget / equipmentTarget.
  */
-@SerialName("ReplaceTokenCreationWithEquippedCopy")
+@SerialName("ReplaceTokenCreationWithAttachedCopy")
 @Serializable
-data class ReplaceTokenCreationWithEquippedCopy(
+data class ReplaceTokenCreationWithAttachedCopy(
     val optional: Boolean = true,
     val oncePerTurn: Boolean = true,
+    val attachmentVerb: String = "attached",
     override val appliesTo: EventPattern = EventPattern.TokenCreationEvent()
 ) : ReplacementEffect {
     override val description: String = buildString {
-        append("As long as this Equipment is attached to a creature, ")
-        if (oncePerTurn) append("the first time ")
+        if (oncePerTurn) append("The first time ")
+        else append("If ")
         append("you would create one or more tokens")
         if (oncePerTurn) append(" each turn")
         append(", ")
         if (optional) append("you may instead ")
         else append("instead ")
-        append("create that many tokens that are copies of equipped creature")
+        append("create that many tokens that are copies of ")
+        append(attachmentVerb)
+        append(" permanent")
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {

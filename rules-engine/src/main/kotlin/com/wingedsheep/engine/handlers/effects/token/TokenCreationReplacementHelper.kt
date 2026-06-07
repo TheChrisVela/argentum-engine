@@ -27,7 +27,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.DoubleTokenCreation
 import com.wingedsheep.sdk.scripting.EventPattern as SdkGameEvent
 import com.wingedsheep.sdk.scripting.ModifyTokenCount
-import com.wingedsheep.sdk.scripting.ReplaceTokenCreationWithEquippedCopy
+import com.wingedsheep.sdk.scripting.ReplaceTokenCreationWithAttachedCopy
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.events.ControllerFilter
 import java.util.UUID
@@ -102,8 +102,9 @@ object TokenCreationReplacementHelper {
     }
 
     /**
-     * Check if any equipment controlled by the token creator has a
-     * ReplaceTokenCreationWithEquippedCopy replacement effect that applies.
+     * Check if any permanent controlled by the token creator has a
+     * ReplaceTokenCreationWithAttachedCopy replacement effect that applies
+     * (e.g., Mirrormind Crown, Moonlit Meditation).
      *
      * @return A paused EffectResult if a replacement decision is needed, or null
      */
@@ -128,25 +129,26 @@ object TokenCreationReplacementHelper {
             val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
 
             for (re in replacementComponent.replacementEffects) {
-                if (re !is ReplaceTokenCreationWithEquippedCopy) continue
+                if (re !is ReplaceTokenCreationWithAttachedCopy) continue
 
                 // Check once-per-turn
                 if (re.oncePerTurn && container.has<TokenReplacementOfferedThisTurnComponent>()) continue
 
-                // Check attached to creature
+                // Check the source is attached to something (Aura/Equipment that fell off
+                // or never attached can't fire). Attachment-type validation is enforced at
+                // cast/attach time by auraTarget / equipmentTarget — no re-check here.
                 val attachedTo = container.get<AttachedToComponent>() ?: continue
-                val equippedContainer = state.getEntity(attachedTo.targetId) ?: continue
-                val equippedCard = equippedContainer.get<CardComponent>() ?: continue
-                if (!equippedCard.typeLine.isCreature) continue
+                val attachedContainer = state.getEntity(attachedTo.targetId) ?: continue
+                val attachedCard = attachedContainer.get<CardComponent>() ?: continue
 
-                val cardName = container.get<CardComponent>()?.name ?: "Equipment"
+                val cardName = container.get<CardComponent>()?.name ?: "Source"
 
                 // Mark as offered this turn (prevents re-offering on decline)
                 var newState = state.withEntity(entityId, container.with(TokenReplacementOfferedThisTurnComponent))
 
                 if (re.optional) {
                     val decisionId = UUID.randomUUID().toString()
-                    val prompt = "Use $cardName? Create ${if (tokenCount == 1) "a token that's a copy" else "$tokenCount tokens that are copies"} of ${equippedCard.name} instead?"
+                    val prompt = "Use $cardName? Create ${if (tokenCount == 1) "a token that's a copy" else "$tokenCount tokens that are copies"} of ${attachedCard.name} instead?"
 
                     val decision = YesNoDecision(
                         id = decisionId,
@@ -161,8 +163,8 @@ object TokenCreationReplacementHelper {
 
                     val continuation = TokenCreationReplacementContinuation(
                         decisionId = decisionId,
-                        equipmentId = entityId,
-                        equippedCreatureId = attachedTo.targetId,
+                        sourceId = entityId,
+                        attachedPermanentId = attachedTo.targetId,
                         originalEffect = effect,
                         tokenCount = tokenCount,
                         effectContext = context
@@ -185,7 +187,7 @@ object TokenCreationReplacementHelper {
                     )
                 } else {
                     // Mandatory replacement — create copies directly
-                    return createEquippedCreatureCopies(
+                    return createAttachedPermanentCopies(
                         newState, attachedTo.targetId, controllerId, tokenCount,
                         cardRegistry, staticAbilityHandler
                     )
@@ -196,25 +198,28 @@ object TokenCreationReplacementHelper {
     }
 
     /**
-     * Create N token copies of the equipped creature.
+     * Create N token copies of the attached permanent (equipped creature, enchanted
+     * permanent, etc.).
      *
-     * Per the printed rulings, Mirrormind Crown's tokens copy exactly what was printed
-     * on the equipped creature. That includes printed "enters with N counters" replacement
-     * effects (e.g., Burdened Stoneback's "this creature enters with two -1/-1 counters"),
-     * which apply to the token via [EntersWithCountersHelper.applyEntersWithCounters].
+     * Per the printed rulings (Mirrormind Crown, Moonlit Meditation), the tokens copy
+     * exactly what was printed on the attached permanent. That includes printed
+     * "enters with N counters" replacement effects (e.g., Burdened Stoneback's "this
+     * creature enters with two -1/-1 counters"), applied via
+     * [EntersWithCountersHelper.applyEntersWithCounters]. Summoning sickness is added
+     * only when the copy is itself a creature (CR 302.6).
      */
-    fun createEquippedCreatureCopies(
+    fun createAttachedPermanentCopies(
         state: GameState,
-        equippedCreatureId: EntityId,
+        attachedPermanentId: EntityId,
         controllerId: EntityId,
         count: Int,
         cardRegistry: CardRegistry? = null,
         staticAbilityHandler: StaticAbilityHandler? = null
     ): EffectResult {
-        val equippedContainer = state.getEntity(equippedCreatureId)
+        val attachedContainer = state.getEntity(attachedPermanentId)
             ?: return EffectResult.success(state)
 
-        val equippedCard = equippedContainer.get<CardComponent>()
+        val attachedCard = attachedContainer.get<CardComponent>()
             ?: return EffectResult.success(state)
 
         var newState = state
@@ -223,15 +228,20 @@ object TokenCreationReplacementHelper {
         repeat(count) {
             val (tokenId, stateWithId) = newState.newEntity()
             newState = stateWithId
-            val tokenCard = equippedCard.copy(ownerId = controllerId)
+            val tokenCard = attachedCard.copy(ownerId = controllerId)
 
             val components = mutableListOf<Component>(
                 tokenCard,
                 TokenComponent,
                 ControllerComponent(controllerId),
-                SummoningSicknessComponent,
                 EnteredThisTurnComponent
             )
+            // Summoning sickness only applies to creatures (CR 302.6). An artifact or
+            // enchantment token copy doesn't get it; a creature (or artifact-creature)
+            // copy does.
+            if (tokenCard.typeLine.isCreature) {
+                components.add(SummoningSicknessComponent)
+            }
 
             var container = ComponentContainer.of(*components.toTypedArray())
             if (staticAbilityHandler != null) {
@@ -242,8 +252,8 @@ object TokenCreationReplacementHelper {
             newState = com.wingedsheep.engine.handlers.effects.BattlefieldEntry
                 .place(newState, controllerId, tokenId)
 
-            // Apply the equipped creature's printed enters-with-counters replacement effects
-            // (and any global ones from other permanents).
+            // Apply the attached permanent's printed enters-with-counters replacement
+            // effects (and any global ones from other permanents).
             if (cardRegistry != null) {
                 val (afterCounters, counterEvents) = EntersWithCountersHelper.applyEntersWithCounters(
                     newState, tokenId, controllerId, cardRegistry

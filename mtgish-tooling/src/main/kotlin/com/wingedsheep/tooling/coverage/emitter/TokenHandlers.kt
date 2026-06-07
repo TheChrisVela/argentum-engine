@@ -2,12 +2,17 @@ package com.wingedsheep.tooling.coverage.emitter
 
 import com.wingedsheep.tooling.coverage.Call
 import com.wingedsheep.tooling.coverage.Dsl
+import com.wingedsheep.tooling.coverage.Eval
+import com.wingedsheep.tooling.coverage.Stmt
 import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.asArr
 import com.wingedsheep.tooling.coverage.asInt
 import com.wingedsheep.tooling.coverage.asStr
 import com.wingedsheep.tooling.coverage.call
+import com.wingedsheep.tooling.coverage.compact
+import com.wingedsheep.tooling.coverage.field
 import com.wingedsheep.tooling.coverage.findInteger
+import com.wingedsheep.tooling.coverage.jsonContains
 import com.wingedsheep.tooling.coverage.pascalToUpperSnake
 import com.wingedsheep.tooling.coverage.strField
 import kotlinx.serialization.json.JsonArray
@@ -77,4 +82,42 @@ internal fun EmitCtx.createTokenDsl(spec: JsonObject, count: Int = 1): Dsl? {
         }
     }
     return null
+}
+
+/**
+ * `ReplaceAPlayerWouldCreateTokens` -> `replacementEffect(ReplaceTokenCreationWithAttachedCopy(...))`.
+ *
+ * We render exactly the printed shape this primitive models: "the first time you would create one or
+ * more tokens each turn, you may instead create that many tokens that are copies of [attached]
+ * permanent" (Mirrormind Crown, Moonlit Meditation). Any other token-creation replacement (mandatory,
+ * not-first-time-each-turn, doubling, additional tokens, or copying something other than the source's
+ * host permanent) declines to a scaffold rather than misrender, since the SDK type's optional /
+ * oncePerTurn defaults would no longer be faithful. The display-only `attachmentVerb` follows the
+ * source's attachment subtype (Aura -> "enchanted", Equipment -> "equipped", Fortification ->
+ * "fortified"); a host with none of those declines.
+ */
+internal fun EmitCtx.replaceTokenCreationBlock(card: JsonObject, rule: JsonObject): List<Stmt>? {
+    val blob = compact(rule)
+    val faithful = jsonContains(rule, "_ReplacableEventAPlayerWouldCreateTokens",
+        "APlayerWouldCreateTokensForTheFirstTimeEachTurn") &&          // once per turn
+        jsonContains(rule, "_Player", "You") &&                        // "you would create"
+        jsonContains(rule, "_ReplacementActionAPlayerWouldCreateTokens", "ChooseAnAction") && // "you may"
+        "TokenCopyOfPermanent" in blob &&                              // copy a permanent
+        jsonContains(rule, "_Permanent", "HostPermanent") &&           // the attached permanent
+        "NoTokenCopyEffects" in blob                                   // plain copy, no riders
+    if (!faithful) { reasons.add("ReplaceAPlayerWouldCreateTokens"); return null }
+    val verb = attachmentVerb(card) ?: run { reasons.add("ReplaceAPlayerWouldCreateTokens"); return null }
+    val effect = call("ReplaceTokenCreationWithAttachedCopy", arg("attachmentVerb", "\"$verb\""))
+    return listOf(Eval(call("replacementEffect", arg(effect))))
+}
+
+/** The display verb for a token-copy replacement's attached permanent, from the source's subtype. */
+private fun attachmentVerb(card: JsonObject): String? {
+    val subs = card.field("Typeline").field("Subtypes").asArr?.mapNotNull { it.asStr() } ?: emptyList()
+    return when {
+        "Aura" in subs -> "enchanted"
+        "Equipment" in subs -> "equipped"
+        "Fortification" in subs -> "fortified"
+        else -> null
+    }
 }

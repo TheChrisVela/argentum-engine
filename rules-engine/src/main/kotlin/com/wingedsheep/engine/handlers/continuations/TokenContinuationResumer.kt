@@ -34,12 +34,12 @@ class TokenContinuationResumer(
         val context = continuation.effectContext
 
         if (response.choice) {
-            // Player chose to replace: create copies of equipped creature.
-            // Pass cardRegistry so the token applies the equipped creature's printed
+            // Player chose to replace: create copies of the attached permanent.
+            // Pass cardRegistry so the token applies the attached permanent's printed
             // "enters with N counters" replacement effects (per Mirrormind Crown rulings).
-            val result = TokenCreationReplacementHelper.createEquippedCreatureCopies(
+            val result = TokenCreationReplacementHelper.createAttachedPermanentCopies(
                 state,
-                continuation.equippedCreatureId,
+                continuation.attachedPermanentId,
                 context.controllerId,
                 continuation.tokenCount,
                 cardRegistry = services.cardRegistry,
@@ -49,7 +49,7 @@ class TokenContinuationResumer(
             return checkForMore(result.state, result.events)
         } else {
             // Player declined: execute original token creation effect
-            // The equipment is already marked as "offered this turn" so the replacement
+            // The source is already marked as "offered this turn" so the replacement
             // won't fire again when we re-execute the original effect.
             val effectResult = services.effectExecutorRegistry.execute(
                 state,

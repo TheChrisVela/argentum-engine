@@ -393,8 +393,9 @@ data class AbilityResolutionCountThisTurnComponent(
 }
 
 /**
- * Marks an equipment that has already offered its token creation replacement this turn.
- * Used by ReplaceTokenCreationWithEquippedCopy (Mirrormind Crown) to enforce "first time each turn".
+ * Marks an attachment source that has already offered its token creation replacement
+ * this turn. Used by ReplaceTokenCreationWithAttachedCopy (Mirrormind Crown,
+ * Moonlit Meditation) to enforce "first time each turn".
  * Cleared at end of turn by CleanupPhaseManager.
  */
 @Serializable

@@ -10322,6 +10322,60 @@
     ]
 }
 
+// Moonlit Meditation
+{
+    "name": "Moonlit Meditation",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant artifact or creature you control\nThe first time you would create one or more tokens each turn, you may instead create that many tokens that are copies of enchanted permanent.",
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "ReplaceTokenCreationWithAttachedCopy",
+                "attachmentVerb": "enchanted"
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature|artifact ctrl:you"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "69",
+        "rarity": "RARE",
+        "artist": "Liiga Smilshkalne",
+        "flavorText": "\"All is the hand that weaves the Fabric of Being. The Fabric of Being is All.\"\n—Drix Codex, line 1",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f2a56007-5bca-4edf-9cc4-5f77a273636c.jpg?1752946830",
+        "rulings": [
+            {
+                "date": "2025-07-25",
+                "text": "The effect of Moonlit Meditation's last ability applies before anything that modifies how those tokens enter the battlefield."
+            },
+            {
+                "date": "2025-07-25",
+                "text": "The effect of Moonlit Meditation's last ability can apply to any token, not just artifact or creature tokens. For example, you could replace creating a Shard token (a predefined enchantment token) with creating a copy of the enchanted permanent."
+            },
+            {
+                "date": "2025-07-25",
+                "text": "If the enchanted permanent is legendary, the copies will also be legendary. If this results in you controlling more than one legendary permanent with the same name, you'll put all but one of them into their owner's graveyard."
+            },
+            {
+                "date": "2025-07-25",
+                "text": "If you choose not to apply the replacement effect, you will not get the choice to apply it again until the next turn."
+            },
+            {
+                "date": "2025-07-25",
+                "text": "If you create one or more tokens, and then Moonlit Meditation comes under your control that same turn, the replacement effect won't apply to any tokens you create for the rest of the turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Mouth of the Storm
 {
     "name": "Mouth of the Storm",

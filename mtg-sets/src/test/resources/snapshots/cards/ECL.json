@@ -12174,7 +12174,10 @@
             }
         ],
         "replacementEffects": [
-            "ReplaceTokenCreationWithEquippedCopy"
+            {
+                "type": "ReplaceTokenCreationWithAttachedCopy",
+                "attachmentVerb": "equipped"
+            }
         ]
     },
     "equipCost": "{2}",
