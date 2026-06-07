@@ -88,9 +88,20 @@ internal val damageDrawLifeHandlers: Map<String, ActionHandler> = actionHandlers
         val arr = node["args"] as? JsonArray ?: return@on null
         val playerRef = arr.firstOrNull() as? JsonObject
         val action = arr.firstOrNull { it is JsonObject && it.containsKey("_Action") } as? JsonObject ?: return@on null
-        if (action.strField("_Action") != "RevealHand") return@on null
-        val target = if (jsonContains(playerRef, "_Player", "Ref_TargetPlayer")) tvar else null
-        if (target != null) call("RevealHandEffect", arg(Lit(target))) else call("RevealHandEffect")
+        val targetsRef = jsonContains(playerRef, "_Player", "Ref_TargetPlayer")
+        when (action.strField("_Action")) {
+            "RevealHand" -> {
+                val target = if (targetsRef) tvar else null
+                if (target != null) call("RevealHandEffect", arg(Lit(target))) else call("RevealHandEffect")
+            }
+            // "Target player discards a card at random" (Mindwhip Sliver). discardRandom is a fixed,
+            // no-choice discard (the engine picks), so it renders exactly against the target player.
+            "DiscardACardAtRandom" -> {
+                if (!targetsRef || tvar == null) return@on null
+                call("Patterns.Hand.discardRandom", arg("1"), arg(Lit(tvar)))
+            }
+            else -> null
+        }
     }
 
     simple("CounterSpell", dsl = "CounterEffect()")

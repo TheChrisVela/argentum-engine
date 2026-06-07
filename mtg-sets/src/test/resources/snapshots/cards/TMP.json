@@ -64,6 +64,155 @@
     "colorIdentityOverride": []
 }
 
+// Ancient Tomb
+{
+    "name": "Ancient Tomb",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}{C}. This land deals 2 damage to you.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddColorlessMana",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "You"
+                            }
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "315",
+        "rarity": "UNCOMMON",
+        "artist": "Colin MacNeil",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/0/30e401e3-282b-4524-87e1-c6cd50cd6d00.jpg?1562053283"
+    }
+}
+
+// Armor Sliver
+{
+    "name": "Armor Sliver",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Sliver creatures have \"{2}: This creature gets +0/+1 until end of turn.\"",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": {
+                        "type": "CostMana",
+                        "cost": "{2}"
+                    },
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": "Self"
+                    }
+                },
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "4",
+        "rarity": "UNCOMMON",
+        "artist": "Scott Kirschner",
+        "flavorText": "Hanna: \"We must learn how they protect each other.\"\nMirri: \"After they're done trying to kill us, all right?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c275aba7-cac6-48e8-b12c-6bd77a5c38fe.jpg?1708088318"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Barbed Sliver
+{
+    "name": "Barbed Sliver",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Sliver creatures have \"{2}: This creature gets +1/+0 until end of turn.\"",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": {
+                        "type": "CostMana",
+                        "cost": "{2}"
+                    },
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": "Self"
+                    }
+                },
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "163",
+        "rarity": "UNCOMMON",
+        "artist": "Scott Kirschner",
+        "flavorText": "Spans of spines leapt from one sliver to the next, forming a deadly hedge around the *Weatherlight*.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/9/19bddea7-daa7-4bdb-9b91-f7fcbc0d7a57.jpg?1562052790"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Boil
 {
     "name": "Boil",
@@ -92,6 +241,96 @@
         "imageUri": "https://cards.scryfall.io/normal/front/2/f/2fa1c529-44e5-41b6-9704-ae2319f31f13.jpg"
     },
     "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Caldera Lake
+{
+    "name": "Caldera Lake",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {C}.\n{T}: Add {U} or {R}. This land deals 1 damage to you.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddMana",
+                            "color": "BLUE"
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "You"
+                            }
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddMana",
+                            "color": "RED"
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "You"
+                            }
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "316",
+        "rarity": "RARE",
+        "artist": "Allen Williams",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f01fe22-e8ff-4106-8ac5-693ef920b2c9.jpg?1562054963"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
         "RED"
     ]
 }
@@ -274,6 +513,48 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Clot Sliver
+{
+    "name": "Clot Sliver",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Slivers have \"{2}: Regenerate this permanent.\"",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": {
+                        "type": "CostMana",
+                        "cost": "{2}"
+                    },
+                    "effect": {
+                        "type": "Regenerate",
+                        "target": "Self"
+                    }
+                },
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "112",
+        "artist": "Jeff Laubenstein",
+        "flavorText": "\"One would think I would be accustomed to unexpected returns.\"\n—Hanna, *Weatherlight* navigator",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fdead1f4-a6e4-4370-80ae-811881a90d01.jpg?1562057819"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -654,6 +935,56 @@
     ]
 }
 
+// Ghost Town
+{
+    "name": "Ghost Town",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{0}: Return this land to its owner's hand. Activate only if it's not your turn.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostMana",
+                    "cost": "{0}"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "Self",
+                    "destination": "Hand"
+                },
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": "IsNotYourTurn"
+                    }
+                ],
+                "descriptionOverride": "{0}: Return this land to its owner's hand. Activate only if it's not your turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "318",
+        "rarity": "UNCOMMON",
+        "artist": "Tom Wänerstrand",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/2/4218cdda-3a62-43fb-aaf7-7ac836392796.jpg?1562053761"
+    }
+}
+
 // Goblin Bombardment
 {
     "name": "Goblin Bombardment",
@@ -970,6 +1301,216 @@
     ]
 }
 
+// Maze of Shadows
+{
+    "name": "Maze of Shadows",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{T}: Untap target attacking creature with shadow. Prevent all combat damage that would be dealt to and dealt by that creature this turn.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target attacking creature with shadow"
+                            },
+                            "tap": false
+                        },
+                        {
+                            "type": "PreventDamageShield",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target attacking creature with shadow"
+                            },
+                            "scope": "CombatOnly",
+                            "direction": "Both"
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature kw:shadow attacking"
+                        },
+                        "id": "target attacking creature with shadow"
+                    }
+                ],
+                "descriptionOverride": "{T}: Untap target attacking creature with shadow. Prevent all combat damage that would be dealt to and dealt by that creature this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "319",
+        "rarity": "UNCOMMON",
+        "artist": "D. Alexander Gregory",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/a/ba69c3d3-6fb5-478d-93ba-341dd3ace97d.jpg?1562056379"
+    }
+}
+
+// Mindwhip Sliver
+{
+    "name": "Mindwhip Sliver",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Slivers have \"{2}, Sacrifice this permanent: Target player discards a card at random. Activate only as a sorcery.\"",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": {
+                        "type": "CostComposite",
+                        "costs": [
+                            {
+                                "type": "CostMana",
+                                "cost": "{2}"
+                            },
+                            "CostSacrificeSelf"
+                        ]
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "Random",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "discarded"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        "TargetPlayer"
+                    ],
+                    "timing": "SorcerySpeed"
+                },
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "145",
+        "rarity": "UNCOMMON",
+        "artist": "Jeff Miracola",
+        "flavorText": "\"They share more than their thoughts. We must shatter their link quickly!\"\n—Hanna, to Orim",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/fa966fbb-140d-4057-a4fc-998ebe07c307.jpg?1562057377"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Mnemonic Sliver
+{
+    "name": "Mnemonic Sliver",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Slivers have \"{2}, Sacrifice this permanent: Draw a card.\"",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": {
+                        "type": "CostComposite",
+                        "costs": [
+                            {
+                                "type": "CostMana",
+                                "cost": "{2}"
+                            },
+                            "CostSacrificeSelf"
+                        ]
+                    },
+                    "effect": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                },
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "77",
+        "rarity": "UNCOMMON",
+        "artist": "Randy Gallegos",
+        "flavorText": "\"A jigsaw puzzle that lives, breeds, and thinks.\"\n—Hanna, *Weatherlight* navigator",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/b/2b167347-2f8f-4338-a651-c7543d812597.jpg?1562053268"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Mogg Fanatic
 {
     "name": "Mogg Fanatic",
@@ -1154,6 +1695,96 @@
         "imageUri": "https://cards.scryfall.io/normal/front/3/0/307f5d5e-3a4b-430e-8769-fb553216befa.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Pine Barrens
+{
+    "name": "Pine Barrens",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped.\n{T}: Add {C}.\n{T}: Add {B} or {G}. This land deals 1 damage to you.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddMana",
+                            "color": "BLACK"
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "You"
+                            }
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddMana",
+                            "color": "GREEN"
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "You"
+                            }
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "321",
+        "rarity": "RARE",
+        "artist": "Rebecca Guay",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/5/d5ac39e8-bd0e-4fa3-bc1e-a93944d013f3.jpg?1562056869"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
 }
 
 // Pit Imp
