@@ -1,3 +1,187 @@
+// Adventurer's Airship
+{
+    "name": "Adventurer's Airship",
+    "manaCost": "{3}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Flying\nWhenever this Vehicle attacks, draw a card, then discard a card.\nCrew 2 (Tap any number of creatures you control with total power 2 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 2
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "252",
+        "artist": "Racrufi",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/a/0a1d6dcd-bd41-4f57-a35b-6613811fe4d4.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Adventurer's Inn
+{
+    "name": "Adventurer's Inn",
+    "manaCost": "",
+    "typeLine": "Land — Town",
+    "oracleText": "When this land enters, you gain 2 life.\n{T}: Add {C}.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "271",
+        "artist": "Allen Morris",
+        "flavorText": "\"Welcome! We have rooms for 200 gil a night. Would you like to stay and rest your body and mind?\"\n—Innkeep",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/0/f0da2ee1-986e-4cbf-92eb-d96fdb572ca5.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Ahriman
+{
+    "name": "Ahriman",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Eye Horror",
+    "oracleText": "Flying, deathtouch\n{3}, Sacrifice another creature or artifact: Draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostMana",
+                            "cost": "{3}"
+                        },
+                        {
+                            "type": "CostSacrifice",
+                            "filter": "creature|artifact"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "87",
+        "artist": "Kevin Sidharta",
+        "flavorText": "\"The Wrath of Dark has nearly reached its zenith! No one can stop it! Least of all you!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/6/162a415c-5465-497e-8f4e-c6f09681641d.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Ardyn, the Usurper
 {
     "name": "Ardyn, the Usurper",
@@ -107,6 +291,164 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Auron's Inspiration
+{
+    "name": "Auron's Inspiration",
+    "manaCost": "{2}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Attacking creatures get +2/+0 until end of turn.\nFlashback {2}{W}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+    "keywords": [
+        "FLASHBACK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Flashback",
+            "cost": "{2}{W}{W}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "ForEachInGroup",
+            "filter": {
+                "baseFilter": "creature attacking"
+            },
+            "effect": {
+                "type": "ModifyStats",
+                "powerModifier": {
+                    "type": "Fixed",
+                    "amount": 2
+                },
+                "toughnessModifier": {
+                    "type": "Fixed",
+                    "amount": 0
+                },
+                "target": "Self"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "rarity": "UNCOMMON",
+        "artist": "Fang Xinyu",
+        "flavorText": "\"Now is the time to choose! Now is the time to shape your stories! Your fate is in your hands!\"\n—Auron",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/7/77d82764-563c-4bc2-b568-625ec7215e0d.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Blitzball Shot
+{
+    "name": "Blitzball Shot",
+    "manaCost": "{1}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +3/+3 and gains trample until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "176",
+        "artist": "JUGEMT",
+        "flavorText": "\"Everyone seems to be calling for Wakka, folks!\"\n—Blitzball announcer",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/ec8ab637-3d7d-4712-9f83-8920f808f715.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Capital City
+{
+    "name": "Capital City",
+    "manaCost": "",
+    "typeLine": "Land — Town",
+    "oracleText": "{T}: Add {C}.\n{1}, {T}: Add one mana of any color.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostMana",
+                            "cost": "{1}"
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "274",
+        "rarity": "UNCOMMON",
+        "artist": "Wei Guan",
+        "flavorText": "A city built upon the Isles of Ark that straddle the continents of Storm and Ash.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/7/f73ce8ec-c916-48eb-ae20-c0d6d03d7145.jpg"
+    },
+    "colorIdentityOverride": []
 }
 
 // Cecil, Dark Knight
@@ -235,6 +577,77 @@
     ]
 }
 
+// Cloud of Darkness
+{
+    "name": "Cloud of Darkness",
+    "manaCost": "{2}{B}{G}{G}",
+    "typeLine": "Legendary Creature — Avatar",
+    "oracleText": "Flying\nParticle Beam — When Cloud of Darkness enters, target creature an opponent controls gets -X/-X until end of turn, where X is the number of permanent cards in your graveyard.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Multiply",
+                        "amount": {
+                            "type": "Count",
+                            "player": "You",
+                            "zone": "Graveyard",
+                            "filter": "permanent"
+                        },
+                        "multiplier": -1
+                    },
+                    "toughnessModifier": {
+                        "type": "Multiply",
+                        "amount": {
+                            "type": "Count",
+                            "player": "You",
+                            "zone": "Graveyard",
+                            "filter": "permanent"
+                        },
+                        "multiplier": -1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "217",
+        "rarity": "UNCOMMON",
+        "artist": "Fariba Khamseh",
+        "flavorText": "\"We are the Cloud of Darkness! Bringer of wrath and destroyer of light!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/2/a292094a-674a-401f-8776-ba5ebe57c946.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Demon Wall
 {
     "name": "Demon Wall",
@@ -290,6 +703,1261 @@
     ]
 }
 
+// Dragoon's Wyvern
+{
+    "name": "Dragoon's Wyvern",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Drake",
+    "oracleText": "Flying\nWhen this creature enters, create a 1/1 colorless Hero creature token.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Hero"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "49",
+        "artist": "Jason Kiantoro",
+        "flavorText": "\"I heard that to become a dragoon, you had to make a pact with a living wyvern. However, thanks to the dragonslayers, there aren't that many dragons left.\"\n—Ceraulian, San d'Oria citizen",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/9/d92bce20-308e-4841-aaf8-8e20698292e7.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Dreams of Laguna
+{
+    "name": "Dreams of Laguna",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Surveil 1, then draw a card. (To surveil 1, look at the top card of your library. You may put it into your graveyard.)\nFlashback {3}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+    "keywords": [
+        "FLASHBACK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Flashback",
+            "cost": "{3}{U}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "surveiled"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "surveiled",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "toGraveyard",
+                            "storeRemainder": "toTop",
+                            "selectedLabel": "Put in graveyard",
+                            "remainderLabel": "Put on top"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toGraveyard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toTop",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Top"
+                            },
+                            "order": "ControllerChooses"
+                        }
+                    ]
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "50",
+        "artist": "Solan",
+        "flavorText": "\"Don't go back on your word. C'mon, go wave to her.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/a/ba752243-2727-4b8a-8e21-e70becfd4ff3.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Dwarven Castle Guard
+{
+    "name": "Dwarven Castle Guard",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Dwarf Soldier",
+    "oracleText": "When this creature dies, create a 1/1 colorless Hero creature token.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Hero"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "18",
+        "artist": "Crystal Fae",
+        "flavorText": "\"'Lali-ho' is the dwarven greeting!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/1/e17c0d27-e88d-4ba9-acbb-3f916cee3d7e.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Evil Reawakened
+{
+    "name": "Evil Reawakened",
+    "manaCost": "{4}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return target creature card from your graveyard to the battlefield with two additional +1/+1 counters on it.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Battlefield",
+                    "fromZone": "Graveyard"
+                },
+                {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 2,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature own:you",
+                    "zone": "Graveyard"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "98",
+        "rarity": "UNCOMMON",
+        "artist": "Nino Is",
+        "flavorText": "\"Galuf. It's good to see you again . . . Mwa-hahahahaha!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/b/eb98cbc3-749c-44f4-974c-00be1286d69e.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Gladiolus Amicitia
+{
+    "name": "Gladiolus Amicitia",
+    "manaCost": "{4}{R}{G}",
+    "typeLine": "Legendary Creature — Human Warrior",
+    "oracleText": "When Gladiolus Amicitia enters, search your library for a land card, put it onto the battlefield tapped, then shuffle.\nLandfall — Whenever a land you control enters, another target creature you control gets +2/+2 and gains trample until end of turn.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "land"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            }
+                        },
+                        "ShuffleLibrary"
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "land ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "TRAMPLE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "224",
+        "rarity": "UNCOMMON",
+        "artist": "Gal Or",
+        "flavorText": "\"Guard the king with our lives—that's the way it's always been.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/442957fc-045d-4db6-b82a-445f172d23e4.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
+// Goobbue Gardener
+{
+    "name": "Goobbue Gardener",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Plant Beast",
+    "oracleText": "{T}: Add {G}.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "188",
+        "artist": "Janna Sophia",
+        "flavorText": "The parasitic moss that grows in the folds of the goobbue's back is highly valued as an ingredient in various potions and medicines.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/7/b7c3544a-5dd5-423e-8a40-ac4803db8adc.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Hecteyes
+{
+    "name": "Hecteyes",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Ooze Horror",
+    "oracleText": "When this creature enters, each opponent discards a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEachPlayer",
+                    "players": "EachOpponent",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand"
+                            },
+                            "storeAs": "hand"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "hand",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "discarded"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "discarded",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Discard"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "103",
+        "artist": "SHOSUKE",
+        "flavorText": "\"Once, the monsters of Hell poured forth into the world. They entered using a path known as the Jade Passage.\"\n—Hilda, Princess of Fynn",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/6/8680d052-c07b-4d9b-bda9-b5f69f44f424.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Il Mheg Pixie
+{
+    "name": "Il Mheg Pixie",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Faerie",
+    "oracleText": "Flying\nWhenever this creature attacks, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "surveiled"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "surveiled",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "toGraveyard",
+                            "storeRemainder": "toTop",
+                            "selectedLabel": "Put in graveyard",
+                            "remainderLabel": "Put on top"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toGraveyard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toTop",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Top"
+                            },
+                            "order": "ControllerChooses"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "57",
+        "rarity": "UNCOMMON",
+        "artist": "Ramza Psyru",
+        "flavorText": "\"Well now, aren't you just brimming with life? I'd love to suck up all that aether like nectar from a flower!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/e/ae612312-3a8e-495f-8730-deaaf7505ca1.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Instant Ramen
+{
+    "name": "Instant Ramen",
+    "manaCost": "{2}",
+    "typeLine": "Artifact — Food",
+    "oracleText": "Flash\nWhen this artifact enters, draw a card.\n{2}, {T}, Sacrifice this artifact: You gain 3 life.",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostMana",
+                            "cost": "{2}"
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "259",
+        "artist": "David Astruga",
+        "flavorText": "\"It's not about finding the single best ingredient. It's about crafting that perfect blend of meat, egg, and shrimp. That harmony of flavors is key.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/f/ef7011f4-fc08-4b15-973d-d15357cbe744.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Iron Giant
+{
+    "name": "Iron Giant",
+    "manaCost": "{7}",
+    "typeLine": "Artifact Creature — Demon",
+    "oracleText": "Vigilance, reach, trample",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "VIGILANCE",
+        "REACH",
+        "TRAMPLE"
+    ],
+    "metadata": {
+        "collectorNumber": "260",
+        "artist": "John Tyler Christopher",
+        "flavorText": "The iron giant is both hostile and powerful, using a giant blade to fell its foes. The mere mention of its name strikes fear in the hearts of drivers who know how perilous the roads are at night.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e48cf6d5-4d32-4b66-80be-3495ecd3e906.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Jumbo Cactuar
+{
+    "name": "Jumbo Cactuar",
+    "manaCost": "{5}{G}{G}",
+    "typeLine": "Creature — Plant",
+    "oracleText": "10,000 Needles — Whenever this creature attacks, it gets +9999/+0 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 7
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 9999
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "191",
+        "rarity": "RARE",
+        "artist": "Jason Kiantoro",
+        "flavorText": "Some Cactuars live long lives and grow huge. This Jumbo Cactuar is one of them.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/db01c222-8795-47e9-a789-e7f749a3ee7d.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Lion Heart
+{
+    "name": "Lion Heart",
+    "manaCost": "{4}",
+    "typeLine": "Artifact — Equipment",
+    "oracleText": "When this Equipment enters, it deals 2 damage to any target.\nEquipped creature gets +2/+1.\nEquip {2}",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "target"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostMana",
+                    "cost": "{2}"
+                },
+                "effect": {
+                    "type": "AttachEquipment",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:you"
+                        },
+                        "id": "creature you control"
+                    }
+                ],
+                "timing": "SorcerySpeed"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 2,
+                "toughnessBonus": 1
+            }
+        ]
+    },
+    "equipCost": "{2}",
+    "metadata": {
+        "collectorNumber": "261",
+        "rarity": "UNCOMMON",
+        "artist": "Mushk Rizvi",
+        "flavorText": "\"Lions are known for their great strength and pride.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/04d327a3-1699-4556-b681-a957671ad142.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Loporrit Scout
+{
+    "name": "Loporrit Scout",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Rabbit Scout",
+    "oracleText": "Whenever another creature you control enters, this creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "192",
+        "artist": "Andrea Radeck",
+        "flavorText": "\"I've come to realize that it's important to put down the book every now and then, and experience some adventures for myself.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/1/a182bc66-bfda-4bf5-bd12-3de5dba60945.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Lunatic Pandora
+{
+    "name": "Lunatic Pandora",
+    "manaCost": "{1}",
+    "typeLine": "Legendary Artifact",
+    "oracleText": "{2}, {T}: Surveil 1. (Look at the top card of your library. You may put it into your graveyard.)\n{6}, {T}, Sacrifice Lunatic Pandora: Destroy target nonland permanent.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostMana",
+                            "cost": "{2}"
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "surveiled"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "surveiled",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "toGraveyard",
+                            "storeRemainder": "toTop",
+                            "selectedLabel": "Put in graveyard",
+                            "remainderLabel": "Put on top"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toGraveyard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toTop",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Top"
+                            },
+                            "order": "ControllerChooses"
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostMana",
+                            "cost": "{6}"
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "nonland permanent"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "262",
+        "artist": "Enora Mercier",
+        "flavorText": "\"Inside the Lunatic Pandora is this thing called a Crystal Pillar. It calls monsters from the Moon.\"\n—Zell Dincht",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6e1e3e7-20d4-42cb-ad22-60356b9e8fdc.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Magic Damper
+{
+    "name": "Magic Damper",
+    "manaCost": "{U}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature you control gets +1/+1 and gains hexproof until end of turn. Untap it.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "HEXPROOF",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "tap": false
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "61",
+        "artist": "YASUNARI HIRASAKA",
+        "flavorText": "\"You're gonna wish you hadn't.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/44921b2e-5938-4f63-92b9-0b719a2f8c68.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Magic Pot
+{
+    "name": "Magic Pot",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Goblin Construct",
+    "oracleText": "When this creature dies, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\n{2}, {T}: Exile target card from a graveyard.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostMana",
+                            "cost": "{2}"
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Exile"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {},
+                            "zone": "Graveyard"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "263",
+        "artist": "David Astruga",
+        "flavorText": "\"Gimme elixir!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/7/57d07ca0-5618-4a90-a605-ca14a193ce3b.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
+// Magitek Armor
+{
+    "name": "Magitek Armor",
+    "manaCost": "{3}{W}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "When this Vehicle enters, create a 1/1 colorless Hero creature token.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [],
+                    "creatureTypes": [
+                        "Hero"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "24",
+        "rarity": "UNCOMMON",
+        "artist": "Nathaniel Himawan",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/9/59c4a1a2-623c-43b2-8005-ecb5c6436c10.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Overkill
+{
+    "name": "Overkill",
+    "manaCost": "{2}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets -0/-9999 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Fixed",
+                "amount": 0
+            },
+            "toughnessModifier": {
+                "type": "Fixed",
+                "amount": -9999
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "109",
+        "rarity": "UNCOMMON",
+        "artist": "Bachzim",
+        "flavorText": "\"Hey why don't ya try out that sword I gave you!\"\n—Wakka",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/e/ae075e71-d33d-4d6c-b4a5-0b47dd6fd196.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Resentful Revelation
+{
+    "name": "Resentful Revelation",
+    "manaCost": "{1}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Look at the top three cards of your library. Put one of them into your hand and the rest into your graveyard.\nFlashback {6}{B} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+    "keywords": [
+        "FLASHBACK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Flashback",
+            "cost": "{6}{B}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 3
+                        }
+                    },
+                    "storeAs": "looked"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "looked",
+                    "selection": {
+                        "type": "ChooseExactly",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "kept",
+                    "storeRemainder": "rest",
+                    "selectedLabel": "Put in hand",
+                    "remainderLabel": "Put in graveyard"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "kept",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "rest",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "114",
+        "artist": "Justyna Dura",
+        "flavorText": "\"The Jenova Project resulted in my conception.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/4/945006ea-c6a1-4ee5-abb2-387c2b6d3123.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Ring of the Lucii
+{
+    "name": "Ring of the Lucii",
+    "manaCost": "{4}",
+    "typeLine": "Legendary Artifact",
+    "oracleText": "{T}: Add {C}{C}.\n{2}, {T}, Pay 1 life: Tap target nonland permanent.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostMana",
+                            "cost": "{2}"
+                        },
+                        "CostTap",
+                        {
+                            "type": "CostPayLife",
+                            "amount": 1
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "nonland permanent"
+                        },
+                        "id": "target"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "269",
+        "rarity": "UNCOMMON",
+        "artist": "Lorenzo Mastroianni",
+        "flavorText": "\"Kings of Lucis... come to me!\"\n—Noctis Lucis Caelum",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/5/75761f1e-9449-4c58-8265-8abac71dafc1.jpg"
+    },
+    "colorIdentityOverride": []
+}
+
 // Sazh's Chocobo
 {
     "name": "Sazh's Chocobo",
@@ -328,6 +1996,55 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Sephiroth's Intervention
+{
+    "name": "Sephiroth's Intervention",
+    "manaCost": "{3}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Destroy target creature. You gain 2 life.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "116",
+        "artist": "Joshua Raphael",
+        "flavorText": "\"Fate is not to be taken lightly, Cloud.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/f/cf7df82f-937a-443f-813f-2bcc6944c5c0.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -386,6 +2103,66 @@
         "imageUri": "https://cards.scryfall.io/normal/front/f/c/fc7d1912-7e27-49ef-bd98-375d975a42b0.jpg?1748706861"
     },
     "colorIdentityOverride": []
+}
+
+// Tidus, Blitzball Star
+{
+    "name": "Tidus, Blitzball Star",
+    "manaCost": "{1}{W}{U}",
+    "typeLine": "Legendary Creature — Human Warrior",
+    "oracleText": "Whenever an artifact you control enters, put a +1/+1 counter on Tidus.\nWhenever Tidus attacks, tap target creature an opponent controls.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "246",
+        "rarity": "UNCOMMON",
+        "artist": "Nakamura8",
+        "flavorText": "\"Every blitzer knows: when you got the ball, you gotta score!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aa851d68-a7a4-48c0-9cd7-d3d2e079f3a1.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
 }
 
 // Tifa Lockhart
@@ -598,4 +2375,160 @@
     "colorIdentityOverride": [
         "GREEN"
     ]
+}
+
+// Undercity Dire Rat
+{
+    "name": "Undercity Dire Rat",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Rat",
+    "oracleText": "Rat Tail — When this creature dies, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "123",
+        "artist": "Leonardo Santanna",
+        "flavorText": "\"I finally worked out how to get the door on the left side open! I hope there's somethin' in there besides rats...\"\n—Kytes, street urchin",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/7/274788f4-fbf3-4a15-bdc0-f513a2fde30d.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// World Map
+{
+    "name": "World Map",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "{1}, {T}, Sacrifice this artifact: Search your library for a basic land card, reveal it, put it into your hand, then shuffle.\n{3}, {T}, Sacrifice this artifact: Search your library for a land card, reveal it, put it into your hand, then shuffle.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostMana",
+                            "cost": "{1}"
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "basicland"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary"
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostMana",
+                            "cost": "{3}"
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "land"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "270",
+        "artist": "Septian Fajrianto",
+        "flavorText": "And so their quest began.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/0/70d9ab99-ec8a-402e-ba1d-ffa6c4c84a3f.jpg"
+    },
+    "colorIdentityOverride": []
 }
