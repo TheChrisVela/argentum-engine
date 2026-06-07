@@ -45,6 +45,108 @@
     }
 }
 
+// Armor Sliver
+{
+    "name": "Armor Sliver",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Sliver creatures have \"{2}: This creature gets +0/+1 until end of turn.\"",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": {
+                        "type": "CostMana",
+                        "cost": "{2}"
+                    },
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": "Self"
+                    }
+                },
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "4",
+        "rarity": "UNCOMMON",
+        "artist": "Scott Kirschner",
+        "flavorText": "Hanna: \"We must learn how they protect each other.\"\nMirri: \"After they're done trying to kill us, all right?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c275aba7-cac6-48e8-b12c-6bd77a5c38fe.jpg?1708088318"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Barbed Sliver
+{
+    "name": "Barbed Sliver",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Sliver creatures have \"{2}: This creature gets +1/+0 until end of turn.\"",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": {
+                        "type": "CostMana",
+                        "cost": "{2}"
+                    },
+                    "effect": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": "Self"
+                    }
+                },
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "163",
+        "rarity": "UNCOMMON",
+        "artist": "Scott Kirschner",
+        "flavorText": "Spans of spines leapt from one sliver to the next, forming a deadly hedge around the *Weatherlight*.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/9/19bddea7-daa7-4bdb-9b91-f7fcbc0d7a57.jpg?1562052790"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Boil
 {
     "name": "Boil",
@@ -345,6 +447,48 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Clot Sliver
+{
+    "name": "Clot Sliver",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Slivers have \"{2}: Regenerate this permanent.\"",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": {
+                        "type": "CostMana",
+                        "cost": "{2}"
+                    },
+                    "effect": {
+                        "type": "Regenerate",
+                        "target": "Self"
+                    }
+                },
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "112",
+        "artist": "Jeff Laubenstein",
+        "flavorText": "\"One would think I would be accustomed to unexpected returns.\"\n—Hanna, *Weatherlight* navigator",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fdead1f4-a6e4-4370-80ae-811881a90d01.jpg?1562057819"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -1046,6 +1190,149 @@
         "artist": "D. Alexander Gregory",
         "imageUri": "https://cards.scryfall.io/normal/front/b/a/ba69c3d3-6fb5-478d-93ba-341dd3ace97d.jpg?1562056379"
     }
+}
+
+// Mindwhip Sliver
+{
+    "name": "Mindwhip Sliver",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Slivers have \"{2}, Sacrifice this permanent: Target player discards a card at random. Activate only as a sorcery.\"",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": {
+                        "type": "CostComposite",
+                        "costs": [
+                            {
+                                "type": "CostMana",
+                                "cost": "{2}"
+                            },
+                            "CostSacrificeSelf"
+                        ]
+                    },
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "Random",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "discarded"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    },
+                    "targetRequirements": [
+                        "TargetPlayer"
+                    ],
+                    "timing": "SorcerySpeed"
+                },
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "145",
+        "rarity": "UNCOMMON",
+        "artist": "Jeff Miracola",
+        "flavorText": "\"They share more than their thoughts. We must shatter their link quickly!\"\n—Hanna, to Orim",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/a/fa966fbb-140d-4057-a4fc-998ebe07c307.jpg?1562057377"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Mnemonic Sliver
+{
+    "name": "Mnemonic Sliver",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Sliver",
+    "oracleText": "All Slivers have \"{2}, Sacrifice this permanent: Draw a card.\"",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": {
+                        "type": "CostComposite",
+                        "costs": [
+                            {
+                                "type": "CostMana",
+                                "cost": "{2}"
+                            },
+                            "CostSacrificeSelf"
+                        ]
+                    },
+                    "effect": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                },
+                "filter": {
+                    "baseFilter": "creature Sliver"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "77",
+        "rarity": "UNCOMMON",
+        "artist": "Randy Gallegos",
+        "flavorText": "\"A jigsaw puzzle that lives, breeds, and thinks.\"\n—Hanna, *Weatherlight* navigator",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/b/2b167347-2f8f-4338-a651-c7543d812597.jpg?1562053268"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Mogg Fanatic

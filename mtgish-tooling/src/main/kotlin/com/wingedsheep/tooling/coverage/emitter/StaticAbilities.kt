@@ -2,6 +2,7 @@ package com.wingedsheep.tooling.coverage.emitter
 
 import com.wingedsheep.tooling.coverage.Assign
 import com.wingedsheep.tooling.coverage.Block
+import com.wingedsheep.tooling.coverage.Call
 import com.wingedsheep.tooling.coverage.Dsl
 import com.wingedsheep.tooling.coverage.Eval
 import com.wingedsheep.tooling.coverage.Lit
@@ -74,17 +75,25 @@ internal fun EmitCtx.staticLordBlock(rule: JsonObject): List<Stmt>? {
                 call("ModifyStats", arg("powerBonus", "${pt[0].asInt()}"), arg("toughnessBonus", "${pt[1].asInt()}"), arg("filter", group))
             }
             "AddAbility" -> {
-                // "Other Merfolk have islandwalk" (Lord of Atlantis / Goblin King): the granted ability is a
-                // Landwalk rule carrying a land subtype, not a plain keyword — recover the *WALK keyword.
                 val granted = (le["args"] as? JsonArray)?.getOrNull(0) as? JsonObject
-                val kw = if (granted?.strField("_Rule") == "Landwalk") {
-                    val lw = mutableSetOf<String>()
-                    findLandwalkKeywords(granted, keywords, lw)
-                    lw.singleOrNull() ?: return scaffoldLord()
+                // "All Slivers have '{cost}: …'" (the Tempest sliver cycle, Crypt/Magma/Spectral Sliver):
+                // the granted ability is a full activated ability, rendered as GrantActivatedAbility over
+                // the affected group. Anything the inner ability can't render exactly scaffolds.
+                if (granted?.strField("_Rule") in setOf("Activated", "ActivatedWithModifiers")) {
+                    val inner = grantedActivatedAbilityExpr(granted!!) ?: return scaffoldLord()
+                    call("GrantActivatedAbility", arg("ability", inner), arg("filter", group))
                 } else {
-                    keywordOf(le) ?: return scaffoldLord()
+                    // "Other Merfolk have islandwalk" (Lord of Atlantis / Goblin King): the granted ability is a
+                    // Landwalk rule carrying a land subtype, not a plain keyword — recover the *WALK keyword.
+                    val kw = if (granted?.strField("_Rule") == "Landwalk") {
+                        val lw = mutableSetOf<String>()
+                        findLandwalkKeywords(granted, keywords, lw)
+                        lw.singleOrNull() ?: return scaffoldLord()
+                    } else {
+                        keywordOf(le) ?: return scaffoldLord()
+                    }
+                    call("GrantKeyword", arg("Keyword.$kw"), arg(group))
                 }
-                call("GrantKeyword", arg("Keyword.$kw"), arg(group))
             }
             else -> return scaffoldLord()
         }
@@ -94,6 +103,50 @@ internal fun EmitCtx.staticLordBlock(rule: JsonObject): List<Stmt>? {
 }
 
 private fun EmitCtx.scaffoldLord(): List<Stmt>? { reasons.add("EachPermanentLayerEffect"); return null }
+
+/**
+ * An `Activated` / `ActivatedWithModifiers` rule granted to a group ("All Slivers have '{cost}: …'") ->
+ * an `ActivatedAbility(id = AbilityId.generate(), cost = …, [timing = …], effect = …, [targetRequirement
+ * = …])` constructor expression for wrapping in `GrantActivatedAbility`. Reuses the same cost / target /
+ * effect recovery as the card-body [activatedBlock], but in expression form: a chosen target becomes
+ * `targetRequirement = <node>` and the effect references `EffectTarget.ContextTarget(0)` (the granted
+ * ability has no card-body `target(...)` local to bind). The only activation modifier rendered is
+ * `ActivateOnlyAsASorcery` -> `timing = TimingRule.SorcerySpeed`; any other modifier scaffolds.
+ */
+internal fun EmitCtx.grantedActivatedAbilityExpr(rule: JsonObject): Dsl? {
+    val costNode = (rule["args"] as? JsonArray)?.firstOrNull() as? JsonObject
+    val cost = costNode?.let { abilityCostDsl(it) } ?: return null
+    val (targets, actions) = extractEnvelope(rule)
+    if (actions == null) return null
+    if (targets != null && targets.size > 1) return null
+    // A chosen target becomes the ability's targetRequirement; the effect then refers to it via
+    // ContextTarget(0) (the granted ability has no bound `t` local).
+    val targetNode = targets?.firstOrNull()?.let { targetExpr(it, actions) ?: return null }
+    val tvar = if (targetNode != null) "EffectTarget.ContextTarget(0)" else null
+    val effect = renderEffectList(actions, tvar) ?: return null
+    val timing = grantedActivationTiming(rule) ?: return null
+
+    val args = mutableListOf(
+        arg("id", "AbilityId.generate()"),
+        arg("cost", cost),
+    )
+    if (timing.isNotEmpty()) args.add(arg("timing", timing))
+    args.add(arg("effect", effect))
+    if (targetNode != null) args.add(arg("targetRequirement", targetNode))
+    return Call("ActivatedAbility", args)
+}
+
+/** The `timing = …` value for a granted activated ability: "" (omit, default instant speed) for a plain
+ *  `Activated` rule, `TimingRule.SorcerySpeed` for an `ActivatedWithModifiers` carrying ONLY the
+ *  `ActivateOnlyAsASorcery` modifier (Mindwhip Sliver); null (-> SCAFFOLD) for any other modifier. */
+private fun EmitCtx.grantedActivationTiming(rule: JsonObject): String? {
+    if (rule.strField("_Rule") != "ActivatedWithModifiers") return ""
+    val modifiers = (rule["args"] as? JsonArray).orEmpty()
+        .filterIsInstance<JsonObject>().filter { it.strField("_ActivateModifier") != null }
+    if (modifiers.isEmpty()) return ""
+    if (modifiers.all { it.strField("_ActivateModifier") == "ActivateOnlyAsASorcery" }) return "TimingRule.SorcerySpeed"
+    return null
+}
 
 /**
  * `EnchantPermanent` -> the card-level `auraTarget = Targets.X` line. The enchant restriction is a
