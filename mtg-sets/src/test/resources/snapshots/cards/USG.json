@@ -225,6 +225,40 @@
     ]
 }
 
+// Disciple of Law
+{
+    "name": "Disciple of Law",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "Protection from red\nCycling {2}",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywordAbilities": [
+        {
+            "type": "Protection",
+            "scope": {
+                "type": "ProtectionScope.Color",
+                "color": "RED"
+            }
+        },
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "11",
+        "artist": "Matthew D. Wilson",
+        "flavorText": "A religious order for religious order.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7a5c8701-a294-4474-9747-129f972cfb18.jpg?1562920710"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Duress
 {
     "name": "Duress",

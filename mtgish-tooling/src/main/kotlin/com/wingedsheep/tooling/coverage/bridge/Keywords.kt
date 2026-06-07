@@ -15,4 +15,9 @@ internal fun BridgeBuilder.keywords() {
     // resolution is `AttachEquipment`. So it's composed, not a bare keyword (which would emit a
     // non-existent enum). The emitter renders only the canonical unrestricted shape (see Emitter.equipAbilityLine).
     composed("Equip", "equip: equipAbility(cost) -> sorcery-speed AttachEquipment activated ability", composes = listOf("AttachEquipment"))
+    // Cycling (CR 702.29) is a keyword ability with no `Keyword.CYCLING` enum member — `KeywordAbility.cycling(cost)`
+    // synthesises the activated "Discard this card: Draw a card" ability. Like Equip it's composed, not a bare
+    // keyword (PascalCase auto-resolve would look for a non-existent CYCLING enum and block it). The emitter renders
+    // the canonical pure-mana shape (see Emitter.kt `rname == "Cycling"`).
+    composed("Cycling", "cycling: KeywordAbility.cycling(cost) -> 'Discard this card: Draw a card' activated ability", composes = listOf("DrawCards"))
 }
