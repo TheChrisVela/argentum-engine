@@ -10,7 +10,7 @@ Verify status anytime with: `scripts/card-status --set LTR` (and `--list --set L
 
 ## Status
 
-Draft cards at **180/261**. Every remaining unchecked card in `cards.md` (excluding the five
+Draft cards at **181/261**. Every remaining unchecked card in `cards.md` (excluding the five
 basic lands, which `basicLandsFallback` covers) needs at least one new engine primitive — see
 the "Engine gaps blocking the remaining cards" section below. Each card is listed under the
 primitive it is waiting on, with the exact blocking clause. Stop and open a dedicated PR per
@@ -263,8 +263,7 @@ semantics rather than the engine's per-round `state.turnNumber` counter). Same P
 `CreatePredefinedTokenEffect` with an optional `dynamicCount: DynamicAmount?` so Lobelia's
 "X Treasures where X = the exiled card's power" composes from existing primitives.
 - **Samwise the Stouthearted** — ✅ implemented.
-- **Lobelia Sackville-Baggins** — "…creature card from an opponent's graveyard that was put
-  there from the battlefield this turn…" (then Treasures = exiled card's power).
+- **Lobelia Sackville-Baggins** — ✅ implemented.
 
 ### Gap 21 — graveyard-functional triggered ability
 **Engine change:** a triggered ability that works while the card is in the graveyard.

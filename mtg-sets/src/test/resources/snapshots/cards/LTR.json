@@ -7368,6 +7368,81 @@
     "colorIdentityOverride": []
 }
 
+// Lobelia Sackville-Baggins
+{
+    "name": "Lobelia Sackville-Baggins",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Halfling Citizen",
+    "oracleText": "Flash\nMenace\nWhen Lobelia enters, exile target creature card from an opponent's graveyard that was put there from the battlefield this turn, then create X Treasure tokens, where X is the exiled card's power.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLASH",
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "creature card in an opponent's graveyard that was put there from the battlefield this turn"
+                            },
+                            "destination": "Exile",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "CreatePredefinedToken",
+                            "tokenType": "Treasure",
+                            "dynamicCount": {
+                                "type": "EntityProperty",
+                                "entity": "Target",
+                                "numericProperty": "Power"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "statePredicates": [
+                                "PutIntoGraveyardFromBattlefieldThisTurn"
+                            ],
+                            "controllerPredicate": "OwnedByOpponent"
+                        },
+                        "zone": "Graveyard"
+                    },
+                    "id": "creature card in an opponent's graveyard that was put there from the battlefield this turn"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "93",
+        "rarity": "RARE",
+        "artist": "Hristo D. Chukov",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/7/87500b92-3d68-42f3-afa9-f8206b2ebcbb.jpg?1686968553"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Lost to Legend
 {
     "name": "Lost to Legend",
