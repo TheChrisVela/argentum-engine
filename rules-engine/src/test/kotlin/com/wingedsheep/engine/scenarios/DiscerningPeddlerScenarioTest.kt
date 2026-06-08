@@ -37,14 +37,20 @@ class DiscerningPeddlerScenarioTest : ScenarioTestBase() {
                 }
                 game.resolveStack()
 
-                // ETB MayEffect: accept, then choose the card to discard.
-                game.answerYesNo(true)
-                game.resolveStack()
-                val grizzly = game.state.getHand(game.player1Id).first { id ->
-                    game.state.getEntity(id)?.get<CardComponent>()?.name == "Grizzly Bears"
+                // ETB MayEffect: accept, then choose the card to discard. With a single
+                // discardable card the engine auto-selects it (no second decision), so guard
+                // the explicit selection like the Rescue Leopard loot test.
+                if (game.hasPendingDecision()) {
+                    game.answerYesNo(true)
+                    game.resolveStack()
                 }
-                game.selectCards(listOf(grizzly))
-                game.resolveStack()
+                if (game.hasPendingDecision()) {
+                    val grizzly = game.state.getHand(game.player1Id).first { id ->
+                        game.state.getEntity(id)?.get<CardComponent>()?.name == "Grizzly Bears"
+                    }
+                    game.selectCards(listOf(grizzly))
+                    game.resolveStack()
+                }
 
                 withClue("Grizzly Bears should have been discarded to the graveyard") {
                     game.findCardsInGraveyard(1, "Grizzly Bears").size shouldBe 1

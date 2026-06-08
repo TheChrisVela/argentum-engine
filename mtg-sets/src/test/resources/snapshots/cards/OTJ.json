@@ -912,6 +912,91 @@
     "colorIdentityOverride": []
 }
 
+// Discerning Peddler
+{
+    "name": "Discerning Peddler",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Rogue",
+    "oracleText": "When this creature enters, you may discard a card. If you do, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.DoAction",
+                            "action": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        },
+                        "then": {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    }
+                },
+                "descriptionOverride": "When this creature enters, you may discard a card. If you do, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "121",
+        "artist": "Josu Hernaiz",
+        "flavorText": "\"Can I interest you in some herbs from Naktamun? Fresh from the Omenpath! Or a set of Fioran cookware? Finest in the Multiverse!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/3/73b359bf-afd8-439d-a4d2-985db1ad368c.jpg?1712355741"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Drover Grizzly
 {
     "name": "Drover Grizzly",
@@ -1748,6 +1833,60 @@
     ]
 }
 
+// Seize the Secrets
+{
+    "name": "Seize the Secrets",
+    "manaCost": "{2}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "This spell costs {1} less to cast if you've committed a crime this turn. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime.)\nDraw two cards.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            }
+        },
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": "PlayerCommittedCrimeThisTurn"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "64",
+        "artist": "Miranda Meeks",
+        "flavorText": "Nolan refused to give up the vault's location. The strange figure simply smiled and reached into his mind.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/b/1bdbdfa8-aa28-4b3d-95e7-3d0e7e37f982.jpg?1712355485",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "A player commits a crime as they cast a spell, activate an ability, or put a triggered ability on the stack that targets at least one opponent, at least one permanent, spell, or ability an opponent controls, and/or at least one card in an opponent's graveyard."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "Seize the Secrets checks whether you've committed a crime this turn as you cast it, not as it resolves. Targeting something for Seize the Secrets won't help, as it has no targets."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "Once you've committed a crime, you've committed a crime for the rest of the turn. It doesn't matter if the spell or ability that committed the crime is later countered or otherwise leaves the stack."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Shoot the Sheriff
 {
     "name": "Shoot the Sheriff",
@@ -1810,6 +1949,66 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Slick Sequence
+{
+    "name": "Slick Sequence",
+    "manaCost": "{U}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Slick Sequence deals 2 damage to any target. If you've cast another spell this turn, draw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "PlayerCastSpellsThisTurn",
+                            "atLeast": 2
+                        }
+                    },
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "AnyTarget",
+                "id": "any target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "233",
+        "rarity": "UNCOMMON",
+        "artist": "Fajareka Setiawan",
+        "flavorText": "\"Shooting first don't mean much if you ain't got proper follow-through.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/e/beb1c974-0d35-4e9f-a310-44eb2af64494.jpg?1712356219"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
     ]
 }
 
@@ -1924,6 +2123,54 @@
         "artist": "Loïc Canavaggia",
         "flavorText": "It once escaped a cook's pot. Now it fears neither heat nor human.",
         "imageUri": "https://cards.scryfall.io/normal/front/b/6/b6822d12-1a25-42e7-94cc-71bd29daed93.jpg?1712355509"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Stoic Sphinx
+{
+    "name": "Stoic Sphinx",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Creature — Sphinx",
+    "oracleText": "Flash\nFlying\nThis creature has hexproof as long as you haven't cast a spell this turn.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "HEXPROOF",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Not",
+                    "condition": {
+                        "type": "PlayerCastSpellsThisTurn",
+                        "atLeast": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "71",
+        "rarity": "RARE",
+        "artist": "Andreas Zafiratos",
+        "flavorText": "Lucky travelers reported a mighty winged creature among the geysers. Unlucky ones didn't make it back.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/9/f93f5055-30d8-4fc4-afa5-29212e8c7536.jpg?1712355517"
     },
     "colorIdentityOverride": [
         "BLUE"

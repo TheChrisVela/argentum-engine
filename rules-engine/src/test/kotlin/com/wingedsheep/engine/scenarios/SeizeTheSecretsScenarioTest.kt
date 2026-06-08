@@ -1,6 +1,6 @@
 package com.wingedsheep.engine.scenarios
 
-import com.wingedsheep.engine.core.CardRegistry
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
