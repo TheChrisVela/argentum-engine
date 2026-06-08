@@ -2,6 +2,7 @@
   "_comment": "Shortcut to Mushrooms (LTR, {1}{G} enchantment). End-step trigger gated on Gap 19's per-player 'permanent you controlled left the battlefield this turn' tracker. The scenario stages Cirith Ungol Patrol (LTR sac outlet) ready to sacrifice Mirkwood Spider, which sets the LTB tracker; Snarling Warg is the target for the +1/+1 counter at your end step. Shortcut to Mushrooms is already on the battlefield so no Ring temptation gets in the way of the test.",
   "player1Name": "You",
   "player2Name": "Opponent",
+  "aiPlayer": 2,
   "player1": {
     "lifeTotal": 20,
     "hand": [],
