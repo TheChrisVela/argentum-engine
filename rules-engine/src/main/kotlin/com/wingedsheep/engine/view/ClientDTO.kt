@@ -199,6 +199,9 @@ data class ClientCard(
     /** Whether this permanent is suspected (CR 701.60 — has menace and can't block). Battlefield only. */
     val isSuspected: Boolean = false,
 
+    /** Whether this card is plotted in exile (CR 718 — Plot keyword, castable for free on a later turn). Exile only. */
+    val isPlotted: Boolean = false,
+
     /** Morph cost for face-down creatures (only visible to controller) */
     val morphCost: String? = null,
 

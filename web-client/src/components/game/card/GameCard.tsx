@@ -1338,6 +1338,13 @@ function GameCardImpl({
         </div>
       )}
 
+      {/* Plot (CR 718): card sitting face-up in exile, castable for free on a later turn */}
+      {card.isPlotted && (
+        <div style={styles.plottedBadge} title="Plotted (CR 718) — cast it for free on a later turn">
+          Plotted
+        </div>
+      )}
+
       {/* Counter badge for creatures with +1/+1 or -1/-1 counters */}
       {battlefield && hasStatCounters(card) && (
         <div style={{

@@ -992,6 +992,10 @@ class ClientStateTransformer(
             mayPlayFromExile || isCastableFromLinkedExile(state, viewingPlayerId, entityId, container)
         )
 
+        // Plotted cards (CR 718) sit face-up in exile with a PlottedComponent; surface a flag so the
+        // client can badge them as plotted (otherwise indistinguishable from any other exiled card).
+        val isPlotted = zoneKey.zoneType == Zone.EXILE && container.has<PlottedComponent>()
+
         // Threshold-style progress badge: detect static abilities gated on
         // "controller's graveyard has at least N cards".
         val thresholdInfo = cardDef?.let { def ->
@@ -1049,6 +1053,7 @@ class ClientStateTransformer(
             linkedExile = linkedExile,
             isFaceDown = isFaceDown,
             isSuspected = projectedValues?.isSuspected == true,
+            isPlotted = isPlotted,
             morphCost = if (isFaceDown && morphData != null) morphData.morphCost.description else null,
             targets = targets,
             imageUri = cardComponent.imageUri ?: cardDef?.metadata?.imageUri,

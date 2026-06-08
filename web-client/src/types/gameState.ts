@@ -190,6 +190,9 @@ export interface ClientCard {
   /** Whether this permanent is suspected (CR 701.60 — has menace and can't block). Battlefield only. */
   readonly isSuspected?: boolean
 
+  /** Whether this card is plotted in exile (CR 718 — Plot keyword, castable for free on a later turn). Exile only. */
+  readonly isPlotted?: boolean
+
   /** Morph cost for face-down creatures (only visible to controller) */
   readonly morphCost?: string | null
 

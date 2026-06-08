@@ -1540,6 +1540,26 @@ export const styles: Record<string, React.CSSProperties> = {
     pointerEvents: 'none',
     zIndex: 6,
   } as React.CSSProperties,
+  // Plotted status (CR 718) — a card sitting face-up in exile, castable for free on a later turn.
+  plottedBadge: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    borderRadius: 4,
+    padding: '1px 5px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 3,
+    fontWeight: 700,
+    fontSize: 10,
+    color: '#1a1200',
+    background: 'linear-gradient(135deg, #c9a227, #f5d76e)',
+    border: '1px solid #fff3b0',
+    boxShadow: '0 0 6px rgba(245, 215, 110, 0.85)',
+    textShadow: 'none',
+    pointerEvents: 'none',
+    zIndex: 6,
+  } as React.CSSProperties,
 }
 
 /**
