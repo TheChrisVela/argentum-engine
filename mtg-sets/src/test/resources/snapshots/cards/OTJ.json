@@ -912,12 +912,6 @@
     "colorIdentityOverride": []
 }
 
-// Discerning Peddler
-{
-    "name": "Discerning Peddler",
-    "manaCost": "{1}{R}",
-    "typeLine": "Creature — Human Rogue",
-    "oracleText": "When this creature enters, you may discard a card. If you do, draw a card.",
 // Cunning Coyote
 {
     "name": "Cunning Coyote",
@@ -938,6 +932,84 @@
             "cost": "{1}{R}"
         }
     ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "HASTE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "118",
+        "rarity": "UNCOMMON",
+        "artist": "David Auden Nash",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/b/5b4ac6ea-c67b-4f90-be4f-aa25882f5794.jpg?1712355730",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Plot abilities are written \"Plot [cost],\" which means \"Any time you have priority during your main phase while the stack is empty, you may pay [cost] and exile this card from your hand. It becomes plotted.\""
+            },
+            {
+                "date": "2024-04-12",
+                "text": "Cunning Coyote's triggered ability targets another creature you control, not Cunning Coyote itself. If you control no other creatures, the ability is removed from the stack and has no effect."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Discerning Peddler
+{
+    "name": "Discerning Peddler",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Human Rogue",
+    "oracleText": "When this creature enters, you may discard a card. If you do, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
     "script": {
         "triggeredAbilities": [
             {
@@ -999,41 +1071,6 @@
                     }
                 },
                 "descriptionOverride": "When this creature enters, you may discard a card. If you do, draw a card."
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "ModifyStats",
-                            "powerModifier": {
-                                "type": "Fixed",
-                                "amount": 1
-                            },
-                            "toughnessModifier": {
-                                "type": "Fixed",
-                                "amount": 1
-                            },
-                            "target": {
-                                "type": "BoundVariable",
-                                "name": "target"
-                            }
-                        },
-                        {
-                            "type": "GrantKeyword",
-                            "keyword": "HASTE",
-                            "target": {
-                                "type": "BoundVariable",
-                                "name": "target"
-                            }
-                        }
-                    ]
-                },
-                "targetRequirement": {
-                    "type": "TargetObject",
-                    "filter": {
-                        "baseFilter": "creature ctrl:you",
-                        "excludeSelf": true
-                    },
-                    "id": "target"
-                }
             }
         ]
     },
@@ -1042,20 +1079,6 @@
         "artist": "Josu Hernaiz",
         "flavorText": "\"Can I interest you in some herbs from Naktamun? Fresh from the Omenpath! Or a set of Fioran cookware? Finest in the Multiverse!\"",
         "imageUri": "https://cards.scryfall.io/normal/front/7/3/73b359bf-afd8-439d-a4d2-985db1ad368c.jpg?1712355741"
-        "collectorNumber": "118",
-        "rarity": "UNCOMMON",
-        "artist": "David Auden Nash",
-        "imageUri": "https://cards.scryfall.io/normal/front/5/b/5b4ac6ea-c67b-4f90-be4f-aa25882f5794.jpg?1712355730",
-        "rulings": [
-            {
-                "date": "2024-04-12",
-                "text": "Plot abilities are written \"Plot [cost],\" which means \"Any time you have priority during your main phase while the stack is empty, you may pay [cost] and exile this card from your hand. It becomes plotted.\""
-            },
-            {
-                "date": "2024-04-12",
-                "text": "Cunning Coyote's triggered ability targets another creature you control, not Cunning Coyote itself. If you control no other creatures, the ability is removed from the stack and has no effect."
-            }
-        ]
     },
     "colorIdentityOverride": [
         "RED"
@@ -1249,6 +1272,111 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Frontier Seeker
+{
+    "name": "Frontier Seeker",
+    "manaCost": "{1}{W}",
+    "typeLine": "Creature — Human Scout",
+    "oracleText": "When this creature enters, look at the top five cards of your library. You may reveal a Mount creature card or a Plains card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 5
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "looked",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": {
+                                "cardPredicates": [
+                                    {
+                                        "type": "Or",
+                                        "predicates": [
+                                            {
+                                                "type": "And",
+                                                "predicates": [
+                                                    {
+                                                        "type": "HasSubtype",
+                                                        "subtype": "Mount"
+                                                    },
+                                                    "IsCreature"
+                                                ]
+                                            },
+                                            {
+                                                "type": "HasSubtype",
+                                                "subtype": "Plains"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            "storeSelected": "kept",
+                            "storeRemainder": "rest",
+                            "selectedLabel": "Put in hand",
+                            "remainderLabel": "Put on bottom"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kept",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "13",
+        "rarity": "UNCOMMON",
+        "artist": "Raluca Marinescu",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/3/9368cc76-bee5-4b46-a309-981106c3addf.jpg?1712355276"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -1817,6 +1945,53 @@
     ]
 }
 
+// Oasis Gardener
+{
+    "name": "Oasis Gardener",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Scarecrow",
+    "oracleText": "When this creature enters, you gain 2 life.\n{T}: Add one mana of any color.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "you gain 2 life."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "246",
+        "artist": "Kristina Carroll",
+        "flavorText": "\"I think the blasted thing's actually attracting more birds, but all the same, the garden's never looked better.\"\n—Jay Marigold, homesteader",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/e/ee0dc663-4bfb-46d4-af79-d0143c799487.jpg?1712356276"
+    },
+    "colorIdentityOverride": []
+}
+
 // Reckless Lackey
 {
     "name": "Reckless Lackey",
@@ -2014,32 +2189,6 @@
     ]
 }
 
-// Seize the Secrets
-{
-    "name": "Seize the Secrets",
-    "manaCost": "{2}{U}",
-    "typeLine": "Sorcery",
-    "oracleText": "This spell costs {1} less to cast if you've committed a crime this turn. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime.)\nDraw two cards.",
-    "script": {
-        "spellEffect": {
-            "type": "DrawCards",
-            "count": {
-                "type": "Fixed",
-                "amount": 2
-            }
-        },
-        "staticAbilities": [
-            {
-                "type": "ModifySpellCost",
-                "target": "SelfCast",
-                "modification": {
-                    "type": "ReduceGeneric",
-                    "amount": 1
-                },
-                "gating": {
-                    "type": "OnlyIf",
-                    "condition": "PlayerCommittedCrimeThisTurn"
-                }
 // Scorching Shot
 {
     "name": "Scorching Shot",
@@ -2069,6 +2218,47 @@
         ]
     },
     "metadata": {
+        "collectorNumber": "145",
+        "rarity": "UNCOMMON",
+        "artist": "Caio Monteiro",
+        "flavorText": "Most outlaws prefer to strike when there are no witnesses. Slickshots prefer as many as possible.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/9/f93d8357-83bd-4157-a389-68e4aa4985c8.jpg?1712355845"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Seize the Secrets
+{
+    "name": "Seize the Secrets",
+    "manaCost": "{2}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "This spell costs {1} less to cast if you've committed a crime this turn. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime.)\nDraw two cards.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            }
+        },
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": "PlayerCommittedCrimeThisTurn"
+                }
+            }
+        ]
+    },
+    "metadata": {
         "collectorNumber": "64",
         "artist": "Miranda Meeks",
         "flavorText": "Nolan refused to give up the vault's location. The strange figure simply smiled and reached into his mind.",
@@ -2090,14 +2280,6 @@
     },
     "colorIdentityOverride": [
         "BLUE"
-        "collectorNumber": "145",
-        "rarity": "UNCOMMON",
-        "artist": "Caio Monteiro",
-        "flavorText": "Most outlaws prefer to strike when there are no witnesses. Slickshots prefer as many as possible.",
-        "imageUri": "https://cards.scryfall.io/normal/front/f/9/f93d8357-83bd-4157-a389-68e4aa4985c8.jpg?1712355845"
-    },
-    "colorIdentityOverride": [
-        "RED"
     ]
 }
 
@@ -2223,6 +2405,55 @@
     "colorIdentityOverride": [
         "BLUE",
         "RED"
+    ]
+}
+
+// Spinewoods Paladin
+{
+    "name": "Spinewoods Paladin",
+    "manaCost": "{4}{G}",
+    "typeLine": "Creature — Human Knight",
+    "oracleText": "Trample\nWhen this creature enters, you gain 3 life.\nPlot {3}{G} (You may pay {3}{G} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "TRAMPLE",
+        "PLOT"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Plot",
+            "cost": "{3}{G}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 3
+                    }
+                },
+                "descriptionOverride": "you gain 3 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "183",
+        "artist": "Kai Carpenter",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/b/1b2b432d-9e73-4ab2-a098-546d406df6c0.jpg?1712356003"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

@@ -5,11 +5,14 @@ import com.wingedsheep.tooling.coverage.Composite
 import com.wingedsheep.tooling.coverage.Dsl
 import com.wingedsheep.tooling.coverage.Lit
 import com.wingedsheep.tooling.coverage.Raw
+import com.wingedsheep.tooling.coverage.Registry
 import com.wingedsheep.tooling.coverage.amountNode
 import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.asArr
+import com.wingedsheep.tooling.coverage.asStr
 import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.compact
+import com.wingedsheep.tooling.coverage.field
 import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.jsonContains
 import com.wingedsheep.tooling.coverage.strField
@@ -266,6 +269,40 @@ internal fun EmitCtx.renderLook(node: JsonObject, args: JsonElement?, tvar: Stri
             ),
         ))
     }
+    // "Look at the top N. You may reveal a <type> card and put it into your hand. Put the rest on the
+    // BOTTOM of your library in a random order." (Frontier Seeker). This is the filtered-may-keep / bottom
+    // shape: a ChooseUpTo(1) over a card-type filter, kept revealed to hand, remainder bottomed at random.
+    // The flat lookAtTopAndKeep pattern can't carry a selection filter, so render the atomic pipeline.
+    // Only render when the reveal filter translates faithfully; an untranslatable predicate scaffolds.
+    if ("MayRevealACardOfTypeAndPutIntoHand" in blob &&
+        "PutTheRemainingCardsOnTheBottomOfLibraryInARandomOrder" in blob
+    ) {
+        val n = findInteger(node) ?: return null
+        val filterNode = mayRevealFilterNode(node) ?: return null
+        val pred = cardsPredicateDsl(filterNode) ?: return null
+        return Composite(listOf(
+            Lit("GatherCardsEffect(CardSource.TopOfLibrary(DynamicAmount.Fixed($n)), storeAs = \"looked\")"),
+            Raw(
+                "SelectFromCollectionEffect(\n" +
+                    "                from = \"looked\",\n" +
+                    "                selection = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(1)),\n" +
+                    "                filter = GameObjectFilter(cardPredicates = listOf($pred)),\n" +
+                    "                storeSelected = \"kept\",\n" +
+                    "                storeRemainder = \"rest\",\n" +
+                    "                selectedLabel = \"Put in hand\",\n" +
+                    "                remainderLabel = \"Put on bottom\"\n" +
+                    "            )",
+            ),
+            Lit("MoveCollectionEffect(from = \"kept\", destination = CardDestination.ToZone(Zone.HAND), revealed = true)"),
+            Raw(
+                "MoveCollectionEffect(\n" +
+                    "                from = \"rest\",\n" +
+                    "                destination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom),\n" +
+                    "                order = CardOrder.Random\n" +
+                    "            )",
+            ),
+        ))
+    }
     // "Look at the top N, put some into your hand" — only a fixed look/keep count renders this way.
     val look = findInteger(node)
     var keep: Int? = null
@@ -279,3 +316,58 @@ internal fun EmitCtx.renderLook(node: JsonObject, args: JsonElement?, tvar: Stri
     }
     return null
 }
+
+/**
+ * The `_Cards` filter node of the `MayRevealACardOfTypeAndPutIntoHand` sub-action inside a
+ * `LookAtTheTopNumberCardsOfLibrary` action, or null. The look action's `args` is
+ * `[Integer, [subActions…]]`; we find the reveal sub-action and return its `args` (the filter tree).
+ */
+private fun mayRevealFilterNode(node: JsonObject): JsonElement? {
+    val subActions = node.field("args").asArr?.getOrNull(1).asArr ?: return null
+    val reveal = subActions.firstOrNull {
+        it.strField("_LookAtTopOfLibraryAction") == "MayRevealACardOfTypeAndPutIntoHand"
+    } ?: return null
+    return reveal.field("args")
+}
+
+/**
+ * Translate a mtgish `_Cards` filter tree into a `CardPredicate.*` DSL string, or null when any leaf
+ * is a predicate we can't render faithfully (power/mana-value/ability/variable/colour/etc.). Declining
+ * the whole filter sends the card to SCAFFOLD rather than silently dropping a constraint.
+ *
+ * Faithfully handled: card-type (`IsCardtype`), creature subtype (`IsCreatureType`), land/artifact/
+ * enchantment subtype, supertype, and `And`/`Or` compositions of those — the shapes that map exactly
+ * onto `CardPredicate` constants.
+ */
+private fun cardsPredicateDsl(node: JsonElement?): String? {
+    val obj = node as? JsonObject ?: return null
+    return when (obj.strField("_Cards")) {
+        "And" -> obj.field("args").asArr?.let { parts ->
+            val mapped = parts.map { cardsPredicateDsl(it) ?: return null }
+            "CardPredicate.And(listOf(${mapped.joinToString(", ")}))"
+        }
+        "Or" -> obj.field("args").asArr?.let { parts ->
+            val mapped = parts.map { cardsPredicateDsl(it) ?: return null }
+            "CardPredicate.Or(listOf(${mapped.joinToString(", ")}))"
+        }
+        "IsCardtype" -> when (obj.field("args").asStr()) {
+            "Creature" -> "CardPredicate.IsCreature"
+            "Land" -> "CardPredicate.IsLand"
+            "Artifact" -> "CardPredicate.IsArtifact"
+            "Enchantment" -> "CardPredicate.IsEnchantment"
+            "Instant" -> "CardPredicate.IsInstant"
+            "Sorcery" -> "CardPredicate.IsSorcery"
+            "Planeswalker" -> "CardPredicate.IsPlaneswalker"
+            else -> null
+        }
+        // Subtype filters all route through HasSubtype(Subtype("X")); use the named SDK constant when
+        // one exists ("Plains" -> Subtype.PLAINS) so the output matches hand-authored convention.
+        "IsCreatureType", "IsLandType", "IsArtifactType", "IsEnchantmentType" ->
+            obj.field("args").asStr()?.let { "CardPredicate.HasSubtype(${subtypeRef(it)})" }
+        else -> null
+    }
+}
+
+/** `Subtype.PLAINS` when a named companion constant exists for the value, else `Subtype("Mount")`. */
+private fun subtypeRef(value: String): String =
+    Registry.subtypeConstant(value)?.let { "Subtype.$it" } ?: "Subtype(\"$value\")"
