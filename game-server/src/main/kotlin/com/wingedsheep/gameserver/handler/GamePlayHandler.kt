@@ -547,7 +547,8 @@ class GamePlayHandler(
                 tournamentName = tournamentName,
                 tournamentRound = tournamentRound,
                 initialSnapshot = initialSnapshot,
-                deltas = gameSession.getReplayDeltas()
+                deltas = gameSession.getReplayDeltas(),
+                fullStates = gameSession.getReplayFullStates()
             )
             gameHistoryRepository.save(record)
             logger.info("Saved replay for game $gameSessionId ($frameCount frames)")

@@ -12,7 +12,27 @@ import {
   createUpdateAttackerTargetsMessage,
   createUpdateBlockerAssignmentsMessage,
 } from '@/types'
+import type { ClientGameState } from '@/types'
 import { getWebSocket } from '../shared'
+
+/**
+ * The seat a combat declaration should be tagged with. Normally the connection's own seat;
+ * in single-client hotseat the one connection declares for whichever seat the server is
+ * asking — the active player for attackers, the defending player for blockers.
+ */
+function combatActingSeat(
+  mode: string,
+  connectionSeat: EntityId,
+  gameState: ClientGameState | null,
+): EntityId {
+  if (!gameState?.hotseat) return connectionSeat
+  if (mode === 'declareAttackers') return gameState.activePlayerId
+  return (
+    gameState.combat?.defendingPlayerId ??
+    gameState.players.find((p) => p.playerId !== gameState.activePlayerId)?.playerId ??
+    connectionSeat
+  )
+}
 
 export interface CombatSliceState {
   combatState: CombatState | null
@@ -245,14 +265,16 @@ export const createCombatSlice: SliceCreator<CombatSlice> = (set, get) => ({
   },
 
   confirmCombat: () => {
-    const { combatState, playerId } = get()
+    const { combatState, playerId, gameState } = get()
     if (!combatState || !playerId) return
+    // In hotseat the single connection declares for whichever seat the server is asking:
+    // the active player for attackers, the defending player for blockers.
+    const actingSeat = combatActingSeat(combatState.mode, playerId, gameState)
 
     if (combatState.mode === 'declareAttackers') {
-      const { gameState } = get()
       if (!gameState) return
 
-      const opponent = gameState.players.find((p) => p.playerId !== playerId)
+      const opponent = gameState.players.find((p) => p.playerId !== actingSeat)
       if (!opponent) return
 
       const attackers: Record<EntityId, EntityId> = {}
@@ -276,7 +298,7 @@ export const createCombatSlice: SliceCreator<CombatSlice> = (set, get) => ({
 
       const action = {
         type: 'DeclareAttackers' as const,
-        playerId,
+        playerId: actingSeat,
         attackers,
         ...(validBands.length > 0 ? { bands: validBands } : {}),
       }
@@ -289,7 +311,7 @@ export const createCombatSlice: SliceCreator<CombatSlice> = (set, get) => ({
 
       const action = {
         type: 'DeclareBlockers' as const,
-        playerId,
+        playerId: actingSeat,
         blockers,
       }
       getWebSocket()?.send(createSubmitActionMessage(action))
@@ -313,20 +335,21 @@ export const createCombatSlice: SliceCreator<CombatSlice> = (set, get) => ({
   },
 
   cancelCombat: () => {
-    const { combatState, playerId } = get()
+    const { combatState, playerId, gameState } = get()
     if (!combatState || !playerId) return
+    const actingSeat = combatActingSeat(combatState.mode, playerId, gameState)
 
     if (combatState.mode === 'declareAttackers') {
       const action = {
         type: 'DeclareAttackers' as const,
-        playerId,
+        playerId: actingSeat,
         attackers: {} as Record<EntityId, EntityId>,
       }
       getWebSocket()?.send(createSubmitActionMessage(action))
     } else if (combatState.mode === 'declareBlockers') {
       const action = {
         type: 'DeclareBlockers' as const,
-        playerId,
+        playerId: actingSeat,
         blockers: {} as Record<EntityId, readonly EntityId[]>,
       }
       getWebSocket()?.send(createSubmitActionMessage(action))

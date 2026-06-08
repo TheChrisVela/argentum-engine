@@ -1,49 +1,21 @@
 package com.wingedsheep.gameserver.controller
 
 import com.wingedsheep.engine.registry.CardRegistry
-import com.wingedsheep.engine.state.ComponentContainer
-import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.ZoneKey
-import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
-import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
-import com.wingedsheep.engine.state.components.battlefield.CountersComponent
-import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
-import com.wingedsheep.engine.state.components.battlefield.withCastChoice
-import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
-import com.wingedsheep.engine.state.components.battlefield.SagaComponent
-import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
-import com.wingedsheep.engine.state.components.battlefield.TappedComponent
-import com.wingedsheep.engine.state.components.identity.*
-import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
-import com.wingedsheep.sdk.core.Keyword
-import com.wingedsheep.sdk.scripting.KeywordAbility
-import com.wingedsheep.sdk.scripting.ProtectionScope
-import com.wingedsheep.sdk.scripting.ChoiceSlot
-import com.wingedsheep.engine.state.components.player.LandDropsComponent
-import com.wingedsheep.engine.state.components.player.ManaPoolComponent
-import com.wingedsheep.engine.view.ClientStateTransformer
 import com.wingedsheep.gameserver.ai.AiGameManager
-import com.wingedsheep.gameserver.handler.GamePlayHandler
-import com.wingedsheep.gameserver.repository.GameRepository
-import com.wingedsheep.gameserver.session.GameSession
-import com.wingedsheep.gameserver.session.PlayerIdentity
-import com.wingedsheep.gameserver.session.SessionRegistry
-import com.wingedsheep.sdk.core.CounterType
-import com.wingedsheep.sdk.core.Phase
-import com.wingedsheep.sdk.core.Step
-import com.wingedsheep.sdk.core.Zone
-import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.gameserver.scenario.PlayerInfo
+import com.wingedsheep.gameserver.scenario.ScenarioBuilderService
+import com.wingedsheep.gameserver.scenario.ScenarioRequest
+import com.wingedsheep.gameserver.scenario.ScenarioResponse
+import com.wingedsheep.gameserver.scenario.ScenarioSessionFactory
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
-import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import java.util.concurrent.atomic.AtomicLong
 
 private val logger = LoggerFactory.getLogger(DevScenarioController::class.java)
 
@@ -62,13 +34,10 @@ private val logger = LoggerFactory.getLogger(DevScenarioController::class.java)
 @Tag(name = "Dev Scenarios", description = "Development-only endpoints for creating test game scenarios")
 class DevScenarioController(
     private val cardRegistry: CardRegistry,
-    private val printingRegistry: com.wingedsheep.engine.registry.PrintingRegistry,
-    private val gameRepository: GameRepository,
-    private val sessionRegistry: SessionRegistry,
     private val aiGameManager: AiGameManager,
-    private val gamePlayHandler: GamePlayHandler,
+    private val scenarioBuilderService: ScenarioBuilderService,
+    private val scenarioSessionFactory: ScenarioSessionFactory,
 ) {
-    private val stateTransformer = ClientStateTransformer(cardRegistry)
 
     /**
      * Create a new game session with a pre-configured scenario.
@@ -408,206 +377,48 @@ class DevScenarioController(
         @RequestParam(required = false) player1Token: String?,
         @RequestParam(required = false) player2Token: String?
     ): ResponseEntity<ScenarioResponse> {
-        logger.info("Creating dev scenario: player1=${request.player1Name}, player2=${request.player2Name}, aiPlayer=${request.aiPlayer}")
+        logger.info("Creating dev scenario: player1=${request.player1Name}, player2=${request.player2Name}, mode=${request.effectiveMode}, aiPlayer=${request.aiPlayer}")
 
+        // AI-seat preconditions (server-config concerns, not request validity).
         if (request.aiPlayer != null && request.aiPlayer !in setOf(1, 2)) {
-            return ResponseEntity.badRequest().body(ScenarioResponse(
-                sessionId = "",
-                player1 = PlayerInfo("", "", ""),
-                player2 = PlayerInfo("", "", ""),
-                message = "aiPlayer must be 1 or 2 (got ${request.aiPlayer})"
-            ))
+            return badRequest("aiPlayer must be 1 or 2 (got ${request.aiPlayer})")
         }
-        if (request.aiPlayer != null && !aiGameManager.aiEnabledToggle) {
-            return ResponseEntity.badRequest().body(ScenarioResponse(
-                sessionId = "",
-                player1 = PlayerInfo("", "", ""),
-                player2 = PlayerInfo("", "", ""),
-                message = "AI is not enabled on this server. Set game.ai.enabled=true to play scenarios against the AI."
-            ))
+        if (request.effectiveMode == com.wingedsheep.gameserver.scenario.ScenarioMode.AI && !aiGameManager.aiEnabledToggle) {
+            return badRequest("AI is not enabled on this server. Set game.ai.enabled=true to play scenarios against the AI.")
         }
 
-        try {
-            val builder = ScenarioBuilder(cardRegistry)
+        // Dev workflow is permissive: validate for clean error messages but don't enforce caps.
+        val errors = scenarioBuilderService.validate(request, enforceLimits = false)
+        if (errors.isNotEmpty()) {
+            return badRequest(errors.joinToString("; "))
+        }
 
-            // Initialize players
-            builder.withPlayers(request.player1Name ?: "Player1", request.player2Name ?: "Player2")
-
-            // Set up player 1
-            request.player1?.let { config ->
-                config.lifeTotal?.let { builder.withLifeTotal(1, it) }
-                config.commanders?.forEach { builder.withCommander(1, it) }
-                config.hand?.forEach { builder.withCardInHand(1, it) }
-                config.battlefield?.forEach { card ->
-                    builder.withCardOnBattlefield(
-                        1, card.name,
-                        tapped = card.tapped ?: false,
-                        summoningSickness = card.summoningSickness ?: false,
-                        counters = card.counters ?: emptyMap(),
-                        chosenCreatureType = card.chosenCreatureType,
-                        chosenColor = card.chosenColor
-                    )
-                }
-                config.battlefield?.forEach { card ->
-                    card.attachedTo?.let { hostName -> builder.wireAttachment(card.name, hostName) }
-                }
-                config.graveyard?.forEach { builder.withCardInGraveyard(1, it) }
-                config.library?.forEach { builder.withCardInLibrary(1, it) }
-            }
-
-            // Set up player 2
-            request.player2?.let { config ->
-                config.lifeTotal?.let { builder.withLifeTotal(2, it) }
-                config.commanders?.forEach { builder.withCommander(2, it) }
-                config.hand?.forEach { builder.withCardInHand(2, it) }
-                config.battlefield?.forEach { card ->
-                    builder.withCardOnBattlefield(
-                        2, card.name,
-                        tapped = card.tapped ?: false,
-                        summoningSickness = card.summoningSickness ?: false,
-                        counters = card.counters ?: emptyMap(),
-                        chosenCreatureType = card.chosenCreatureType,
-                        chosenColor = card.chosenColor
-                    )
-                }
-                config.battlefield?.forEach { card ->
-                    card.attachedTo?.let { hostName -> builder.wireAttachment(card.name, hostName) }
-                }
-                config.graveyard?.forEach { builder.withCardInGraveyard(2, it) }
-                config.library?.forEach { builder.withCardInLibrary(2, it) }
-            }
-
-            // Set game state
-            request.phase?.let { phase ->
-                val step = request.step ?: phaseToDefaultStep(phase)
-                builder.inPhase(phase, step)
-            }
-            request.activePlayer?.let { builder.withActivePlayer(it) }
-            request.priorityPlayer?.let { builder.withPriorityPlayer(it) }
-
-            // Build the scenario
-            val (state, player1Id, player2Id) = builder.build()
-
-            // Create the game session
-            val gameSession = GameSession(
-                cardRegistry = cardRegistry,
-                stateTransformer = stateTransformer,
-                printingRegistry = printingRegistry,
+        return try {
+            val build = scenarioBuilderService.buildScenario(request)
+            // Stable "p1"/"p2" tokens keep the bookmark-a-browser-tab dev workflow.
+            val response = scenarioSessionFactory.createSession(
+                build = build,
+                request = request,
+                player1Token = player1Token ?: "p1",
+                player2Token = player2Token ?: "p2",
+                includeDevUrls = true,
             )
-
-            // Inject the pre-built state (without player sessions - they'll connect later)
-            gameSession.injectStateForDevScenario(state)
-
-            // Apply per-step stop overrides (prevents auto-pass at specified steps)
-            val p1Stops = request.player1StopAtSteps.orEmpty()
-            val p1OppStops = request.player1OpponentStopAtSteps.orEmpty()
-            if (p1Stops.isNotEmpty() || p1OppStops.isNotEmpty()) {
-                gameSession.setStopOverrides(player1Id, p1Stops.toSet(), p1OppStops.toSet())
-            }
-            val p2Stops = request.player2StopAtSteps.orEmpty()
-            val p2OppStops = request.player2OpponentStopAtSteps.orEmpty()
-            if (p2Stops.isNotEmpty() || p2OppStops.isNotEmpty()) {
-                gameSession.setStopOverrides(player2Id, p2Stops.toSet(), p2OppStops.toSet())
-            }
-
-            // Save the session
-            gameRepository.save(gameSession)
-
-            // Create player identities with matching player IDs from the scenario.
-            // Default to stable tokens "p1"/"p2" for easy dev workflow (bookmark browser tabs).
-            // When [aiPlayer] is set, that seat is filled by AiGameManager.wireAiForDevScenario
-            // (which registers its own AI identity) — we only pre-register the human seat.
-            val p1Name = request.player1Name ?: "Player1"
-            val p2Name = request.player2Name ?: "Player2"
-
-            val humanIdentity1 = if (request.aiPlayer != 1) {
-                PlayerIdentity(
-                    token = player1Token ?: "p1",
-                    playerId = player1Id,
-                    playerName = p1Name
-                ).apply { currentGameSessionId = gameSession.sessionId }
-                    .also { sessionRegistry.preRegisterIdentity(it) }
-            } else null
-
-            val humanIdentity2 = if (request.aiPlayer != 2) {
-                PlayerIdentity(
-                    token = player2Token ?: "p2",
-                    playerId = player2Id,
-                    playerName = p2Name
-                ).apply { currentGameSessionId = gameSession.sessionId }
-                    .also { sessionRegistry.preRegisterIdentity(it) }
-            } else null
-
-            // Wire the AI seat (if any). This associates the AI's PlayerSession with the
-            // GameSession so subsequent broadcastStateUpdate calls reach the AI controller.
-            if (request.aiPlayer != null) {
-                val (aiSeatId, aiSeatName) = if (request.aiPlayer == 1) {
-                    player1Id to p1Name
-                } else {
-                    player2Id to p2Name
-                }
-                aiGameManager.wireAiForDevScenario(
-                    gameSession = gameSession,
-                    aiPlayerId = aiSeatId,
-                    playerName = aiSeatName,
-                    onActionReady = { id, action -> gamePlayHandler.handleAiAction(gameSession, id, action) },
-                    onMulliganKeep = { id -> gamePlayHandler.handleAiMulliganKeep(gameSession, id) },
-                    onMulliganTake = { id -> gamePlayHandler.handleAiMulliganTake(gameSession, id) },
-                    onBottomCards = { id, cardIds -> gamePlayHandler.handleAiBottomCards(gameSession, id, cardIds) }
-                )
-                // Kick off the AI: if it holds priority in the injected state, this triggers
-                // its first action. If the human has priority, the AI receives state and waits.
-                gamePlayHandler.broadcastStateUpdate(gameSession, emptyList())
-            }
-
-            logger.info("Created scenario session ${gameSession.sessionId}")
-
-            val player1Info = PlayerInfo(
-                name = p1Name,
-                token = humanIdentity1?.token ?: "(AI)",
-                playerId = player1Id.value
-            )
-            val player2Info = PlayerInfo(
-                name = p2Name,
-                token = humanIdentity2?.token ?: "(AI)",
-                playerId = player2Id.value
-            )
-
-            // Exactly one human identity is null iff [aiPlayer] selected that seat — assert
-            // the invariant so a future reordering of the pre-registration block fails
-            // loudly here rather than producing a malformed URL.
-            val openMessage = when (request.aiPlayer) {
-                1 -> {
-                    val token = checkNotNull(humanIdentity2) { "humanIdentity2 must be non-null when aiPlayer=1" }.token
-                    "Scenario created vs AI. Open http://localhost:5173/?token=$token (you are Player 2)"
-                }
-                2 -> {
-                    val token = checkNotNull(humanIdentity1) { "humanIdentity1 must be non-null when aiPlayer=2" }.token
-                    "Scenario created vs AI. Open http://localhost:5173/?token=$token (you are Player 1)"
-                }
-                else -> {
-                    val t1 = checkNotNull(humanIdentity1) { "humanIdentity1 must be non-null when aiPlayer is null" }.token
-                    val t2 = checkNotNull(humanIdentity2) { "humanIdentity2 must be non-null when aiPlayer is null" }.token
-                    "Scenario created. Open http://localhost:5173/?token=$t1 (Player 1) or http://localhost:5173/?token=$t2 (Player 2)"
-                }
-            }
-
-            return ResponseEntity.ok(ScenarioResponse(
-                sessionId = gameSession.sessionId,
-                player1 = player1Info,
-                player2 = player2Info,
-                message = openMessage
-            ))
+            ResponseEntity.ok(response)
         } catch (e: Exception) {
             logger.error("Failed to create scenario", e)
-            return ResponseEntity.badRequest().body(ScenarioResponse(
+            badRequest("Failed to create scenario: ${e.message}")
+        }
+    }
+
+    private fun badRequest(message: String): ResponseEntity<ScenarioResponse> =
+        ResponseEntity.badRequest().body(
+            ScenarioResponse(
                 sessionId = "",
                 player1 = PlayerInfo("", "", ""),
                 player2 = PlayerInfo("", "", ""),
-                message = "Failed to create scenario: ${e.message}"
-            ))
-        }
-    }
+                message = message,
+            )
+        )
 
     /**
      * List available cards for scenario building.
@@ -621,399 +432,4 @@ class DevScenarioController(
         val cardNames = cardRegistry.allCardNames().sorted()
         return ResponseEntity.ok(cardNames)
     }
-
-    private fun phaseToDefaultStep(phase: Phase): Step {
-        return when (phase) {
-            Phase.BEGINNING -> Step.UNTAP
-            Phase.PRECOMBAT_MAIN -> Step.PRECOMBAT_MAIN
-            Phase.COMBAT -> Step.BEGIN_COMBAT
-            Phase.POSTCOMBAT_MAIN -> Step.POSTCOMBAT_MAIN
-            Phase.ENDING -> Step.END
-        }
-    }
-
-    /**
-     * Internal scenario builder (similar to ScenarioTestBase.ScenarioBuilder).
-     */
-    private inner class ScenarioBuilder(private val cardRegistry: CardRegistry) {
-        private val entityIdCounter = AtomicLong(1000)
-        private var state = GameState()
-
-        private var player1Id: EntityId? = null
-        private var player2Id: EntityId? = null
-
-        fun withPlayers(player1Name: String, player2Name: String): ScenarioBuilder {
-            player1Id = EntityId.of("player-1")
-            player2Id = EntityId.of("player-2")
-
-            val p1Container = ComponentContainer.of(
-                PlayerComponent(player1Name),
-                LifeTotalComponent(20),
-                ManaPoolComponent(),
-                LandDropsComponent(remaining = 1, maxPerTurn = 1)
-            )
-
-            val p2Container = ComponentContainer.of(
-                PlayerComponent(player2Name),
-                LifeTotalComponent(20),
-                ManaPoolComponent(),
-                LandDropsComponent(remaining = 1, maxPerTurn = 1)
-            )
-
-            state = state
-                .withEntity(player1Id!!, p1Container)
-                .withEntity(player2Id!!, p2Container)
-                .copy(
-                    turnOrder = listOf(player1Id!!, player2Id!!),
-                    activePlayerId = player1Id,
-                    priorityPlayerId = player1Id,
-                    phase = Phase.PRECOMBAT_MAIN,
-                    step = Step.PRECOMBAT_MAIN,
-                    turnNumber = 1
-                )
-
-            // Initialize empty zones for both players
-            for (playerId in listOf(player1Id!!, player2Id!!)) {
-                for (zoneType in listOf(Zone.HAND, Zone.LIBRARY, Zone.GRAVEYARD, Zone.BATTLEFIELD, Zone.COMMAND)) {
-                    val zoneKey = ZoneKey(playerId, zoneType)
-                    state = state.copy(zones = state.zones + (zoneKey to emptyList()))
-                }
-            }
-
-            return this
-        }
-
-        fun withCardInHand(playerNumber: Int, cardName: String): ScenarioBuilder {
-            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
-            val cardId = createCard(cardName, playerId)
-            state = state.addToZone(ZoneKey(playerId, Zone.HAND), cardId)
-            return this
-        }
-
-        /** Tracks placed battlefield card entity IDs by card name for attachment wiring */
-        private val placedCardIds = mutableListOf<Pair<String, EntityId>>()
-
-        fun withCardOnBattlefield(
-            playerNumber: Int,
-            cardName: String,
-            tapped: Boolean = false,
-            summoningSickness: Boolean = false,
-            counters: Map<String, Int> = emptyMap(),
-            chosenCreatureType: String? = null,
-            chosenColor: String? = null
-        ): ScenarioBuilder {
-            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
-            val cardId = createCard(cardName, playerId)
-
-            state = state.addToZone(ZoneKey(playerId, Zone.BATTLEFIELD), cardId)
-
-            var container = state.getEntity(cardId)!!
-            container = container.with(ControllerComponent(playerId))
-
-            if (tapped) {
-                container = container.with(TappedComponent)
-            }
-
-            if (summoningSickness) {
-                container = container.with(SummoningSicknessComponent)
-            }
-
-            if (counters.isNotEmpty()) {
-                val counterMap = counters.mapKeys { CounterType.valueOf(it.key) }
-                container = container.with(CountersComponent(counterMap))
-            }
-
-            if (chosenCreatureType != null) {
-                container = container.withCastChoice(
-                    ChoiceSlot.CREATURE_TYPE, ChoiceValue.TextChoice(chosenCreatureType)
-                )
-            }
-
-            if (chosenColor != null) {
-                container = container.withCastChoice(
-                    ChoiceSlot.COLOR,
-                    ChoiceValue.ColorChoice(com.wingedsheep.sdk.core.Color.valueOf(chosenColor))
-                )
-            }
-
-            // Add continuous effects from static abilities and replacement effects
-            val cardDef = cardRegistry.getCard(cardName)
-            if (cardDef != null) {
-                val staticHandler = StaticAbilityHandler(cardRegistry)
-                container = staticHandler.addContinuousEffectComponent(container, cardDef)
-                container = staticHandler.addReplacementEffectComponent(container, cardDef)
-
-                // Add ClassLevelComponent for Class enchantments (starts at level 1)
-                if (cardDef.isClass) {
-                    container = container.with(ClassLevelComponent(currentLevel = 1))
-                }
-
-                // Add SagaComponent for sagas, marking chapters as triggered based on lore counters
-                if (cardDef.finalChapter != null) {
-                    val loreCount = counters["LORE"] ?: 0
-                    val triggeredChapters = cardDef.sagaChapters
-                        .filter { it.chapter <= loreCount }
-                        .map { it.chapter }
-                        .toSet()
-                    container = container.with(SagaComponent(triggeredChapters))
-                }
-
-                // Add DoubleFacedComponent for DFCs (Rule 712)
-                if (cardDef.isDoubleFaced && cardDef.backFace != null) {
-                    container = container.with(
-                        DoubleFacedComponent(
-                            frontCardDefinitionId = cardDef.name,
-                            backCardDefinitionId = cardDef.backFace!!.name,
-                            currentFace = DoubleFacedComponent.Face.FRONT
-                        )
-                    )
-                }
-            }
-
-            state = state.withEntity(cardId, container)
-            placedCardIds.add(cardName to cardId)
-            return this
-        }
-
-        fun wireAttachment(auraName: String, hostName: String): ScenarioBuilder {
-            val auraId = placedCardIds.lastOrNull { it.first == auraName }?.second
-                ?: error("Aura not found on battlefield: $auraName")
-            val hostId = placedCardIds.lastOrNull { it.first == hostName }?.second
-                ?: error("Host not found on battlefield: $hostName")
-
-            // Set AttachedToComponent on the aura
-            state = state.updateEntity(auraId) { it.with(AttachedToComponent(hostId)) }
-
-            // Set/merge AttachmentsComponent on the host
-            val existingAttachments = state.getEntity(hostId)?.get<AttachmentsComponent>()
-            val attachedIds = (existingAttachments?.attachedIds ?: emptyList()) + auraId
-            state = state.updateEntity(hostId) { it.with(AttachmentsComponent(attachedIds)) }
-
-            return this
-        }
-
-        fun withCardInGraveyard(playerNumber: Int, cardName: String): ScenarioBuilder {
-            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
-            val cardId = createCard(cardName, playerId)
-            state = state.addToZone(ZoneKey(playerId, Zone.GRAVEYARD), cardId)
-            return this
-        }
-
-        fun withCardInLibrary(playerNumber: Int, cardName: String): ScenarioBuilder {
-            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
-            val cardId = createCard(cardName, playerId)
-            state = state.addToZone(ZoneKey(playerId, Zone.LIBRARY), cardId)
-            return this
-        }
-
-        /**
-         * Designate a card as the player's commander, placing it in the command zone with a
-         * [CommanderComponent] and appending it to the player's [CommanderRegistryComponent].
-         * Supports multiple calls per player (Partner / Background).
-         */
-        fun withCommander(playerNumber: Int, cardName: String): ScenarioBuilder {
-            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
-            val cardId = createCard(cardName, playerId)
-            state = state.updateEntity(cardId) { it.with(CommanderComponent(ownerId = playerId)) }
-            state = state.addToZone(ZoneKey(playerId, Zone.COMMAND), cardId)
-            state = state.updateEntity(playerId) { container ->
-                val existing = container.get<CommanderRegistryComponent>()
-                val ids = (existing?.commanderIds ?: emptyList()) + cardId
-                container.with(CommanderRegistryComponent(ids))
-            }
-            return this
-        }
-
-        fun withLifeTotal(playerNumber: Int, life: Int): ScenarioBuilder {
-            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
-            state = state.updateEntity(playerId) { container ->
-                container.with(LifeTotalComponent(life))
-            }
-            return this
-        }
-
-        fun inPhase(phase: Phase, step: Step): ScenarioBuilder {
-            state = state.copy(phase = phase, step = step)
-            return this
-        }
-
-        fun withActivePlayer(playerNumber: Int): ScenarioBuilder {
-            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
-            state = state.copy(activePlayerId = playerId, priorityPlayerId = playerId)
-            return this
-        }
-
-        fun withPriorityPlayer(playerNumber: Int): ScenarioBuilder {
-            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
-            state = state.copy(priorityPlayerId = playerId)
-            return this
-        }
-
-        fun build(): Triple<GameState, EntityId, EntityId> {
-            return Triple(state, player1Id!!, player2Id!!)
-        }
-
-        private fun createCard(cardName: String, ownerId: EntityId): EntityId {
-            val cardDef = cardRegistry.getCard(cardName)
-                ?: error("Card not found in registry: $cardName")
-
-            val cardId = EntityId.of("card-${entityIdCounter.incrementAndGet()}")
-
-            // Use Name#SetCode-CollectorNumber when both are available so the resulting
-            // CardComponent.cardDefinitionId matches the key used by CardRegistry. Without the
-            // set-code prefix, registry lookups (e.g. TriggerAbilityResolver.getTriggeredAbilities)
-            // miss and the card silently has no triggered abilities.
-            val definitionId = cardDef.metadata.collectorNumber?.let { cn ->
-                if (cardDef.setCode != null) "${cardDef.name}#${cardDef.setCode}-$cn"
-                else "${cardDef.name}#$cn"
-            } ?: cardDef.name
-            val cardComponent = CardComponent(
-                cardDefinitionId = definitionId,
-                name = cardDef.name,
-                manaCost = cardDef.manaCost,
-                typeLine = cardDef.typeLine,
-                oracleText = cardDef.oracleText,
-                colors = cardDef.colors,
-                baseKeywords = cardDef.keywords,
-                baseFlags = cardDef.flags,
-                baseStats = cardDef.creatureStats,
-                ownerId = ownerId,
-                spellEffect = cardDef.spellEffect,
-                imageUri = cardDef.metadata.imageUri,
-            )
-
-            var container = ComponentContainer.of(
-                cardComponent,
-                OwnerComponent(ownerId),
-                ControllerComponent(ownerId)
-            )
-
-            if (cardDef.script.cantBeCountered) {
-                container = container.with(CantBeCounteredComponent)
-            }
-
-            if (cardDef.keywordAbilities.any { it is KeywordAbility.Morph }) {
-                container = container.with(HasMorphAbilityComponent)
-            }
-
-            // Add ProtectionComponent for cards with protection from color/subtype
-            val protections = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Protection>()
-            val protectionColors = protections.flatMap { p ->
-                when (val s = p.scope) {
-                    is ProtectionScope.Color -> listOf(s.color)
-                    is ProtectionScope.Colors -> s.colors
-                    else -> emptyList()
-                }
-            }.toSet()
-            val protectionSubtypes = protections.mapNotNull {
-                (it.scope as? ProtectionScope.Subtype)?.subtype
-            }.toSet()
-            val protectionSupertypes = protections.mapNotNull {
-                (it.scope as? ProtectionScope.Supertype)?.supertype
-            }.toSet()
-            if (protectionColors.isNotEmpty() || protectionSubtypes.isNotEmpty() || protectionSupertypes.isNotEmpty()) {
-                container = container.with(ProtectionComponent(protectionColors, protectionSubtypes, protectionSupertypes))
-            }
-
-            // Add HexproofFromColorComponent for cards with hexproof from color
-            val hexproofFromColors = cardDef.keywordAbilities
-                .filterIsInstance<KeywordAbility.Hexproof>()
-                .mapNotNull { (it.scope as? ProtectionScope.Color)?.color }
-                .toSet()
-            if (hexproofFromColors.isNotEmpty()) {
-                container = container.with(HexproofFromColorComponent(hexproofFromColors))
-            }
-
-            // Add ToxicComponent for cards with printed Toxic N (sums per Rule 702.164b)
-            val toxicAmount = cardDef.keywordAbilities
-                .filterIsInstance<KeywordAbility.Numeric>()
-                .filter { it.keyword == Keyword.TOXIC }
-                .sumOf { it.n }
-            if (toxicAmount > 0) {
-                container = container.with(ToxicComponent(toxicAmount))
-            }
-
-            state = state.withEntity(cardId, container)
-            return cardId
-        }
-    }
 }
-
-// ============================================================================
-// Request/Response DTOs
-// ============================================================================
-
-data class ScenarioRequest(
-    val player1Name: String? = "Player1",
-    val player2Name: String? = "Player2",
-    val player1: PlayerConfig? = null,
-    val player2: PlayerConfig? = null,
-    val phase: Phase? = null,
-    val step: Step? = null,
-    val activePlayer: Int? = null,
-    val priorityPlayer: Int? = null,
-    /** Steps where player 1 should stop on their own turn (prevents auto-pass) */
-    val player1StopAtSteps: List<Step>? = null,
-    /** Steps where player 2 should stop on their own turn (prevents auto-pass) */
-    val player2StopAtSteps: List<Step>? = null,
-    /** Steps where player 1 should stop on opponent's turn (prevents auto-pass) */
-    val player1OpponentStopAtSteps: List<Step>? = null,
-    /** Steps where player 2 should stop on opponent's turn (prevents auto-pass) */
-    val player2OpponentStopAtSteps: List<Step>? = null,
-    /**
-     * If set to 1 or 2, that seat is played by the built-in engine AI opponent (driven by
-     * [com.wingedsheep.gameserver.ai.AiGameManager]). Requires `game.ai.enabled=true`.
-     * The other seat is connected normally over WebSocket with the returned token. Dev
-     * scenarios always use the in-process engine AI — no LLM, no API key.
-     */
-    val aiPlayer: Int? = null
-)
-
-data class PlayerConfig(
-    val lifeTotal: Int? = null,
-    val hand: List<String>? = null,
-    val battlefield: List<BattlefieldCardConfig>? = null,
-    val graveyard: List<String>? = null,
-    val library: List<String>? = null,
-    /**
-     * Commander card names. Each name becomes a card in the player's command zone with
-     * [CommanderComponent] attached and registered in [CommanderRegistryComponent].
-     * Provide one name for a standard commander, two for Partner / Background.
-     */
-    val commanders: List<String>? = null
-)
-
-/**
- * Configuration for a card on the battlefield.
- * For simple cases, just provide the name.
- * For detailed setup, also specify tapped/summoningSickness state.
- * For auras, set [attachedTo] to the name of the host creature.
- * For counters, provide a map of counter type name to count (e.g., {"PLUS_ONE_PLUS_ONE": 3}).
- */
-data class BattlefieldCardConfig(
-    val name: String,
-    val tapped: Boolean? = false,
-    val summoningSickness: Boolean? = false,
-    val counters: Map<String, Int>? = null,
-    val attachedTo: String? = null,
-    /** For permanents with "As this enters, choose a creature type" — skips the ETB choice by pre-setting it. */
-    val chosenCreatureType: String? = null,
-    /**
-     * For permanents with "As this enters, choose a color" — skips the ETB choice by pre-setting it.
-     * Value must be a [com.wingedsheep.sdk.core.Color] name, e.g. "WHITE", "GREEN".
-     */
-    val chosenColor: String? = null
-)
-
-data class ScenarioResponse(
-    val sessionId: String,
-    val player1: PlayerInfo,
-    val player2: PlayerInfo,
-    val message: String
-)
-
-data class PlayerInfo(
-    val name: String,
-    val token: String,
-    val playerId: String
-)

@@ -50,4 +50,7 @@ data class StateDelta(
      */
     val youAreHijacking: EntityId? = null,
     val youAreHijackedBy: EntityId? = null,
+
+    /** Hotseat indicator. Always present in the delta; overwrites the client field. */
+    val hotseat: Boolean? = null,
 )

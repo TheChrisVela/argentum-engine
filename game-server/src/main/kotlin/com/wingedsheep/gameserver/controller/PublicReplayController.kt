@@ -2,6 +2,8 @@ package com.wingedsheep.gameserver.controller
 
 import com.wingedsheep.gameserver.handler.MessageSender
 import com.wingedsheep.gameserver.protocol.ServerMessage
+import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.gameserver.persistence.persistenceJson
 import com.wingedsheep.gameserver.replay.GameHistoryRepository
 import com.wingedsheep.gameserver.replay.SpectatorReplayDelta
 import kotlinx.serialization.Serializable
@@ -55,6 +57,27 @@ class PublicReplayController(
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_JSON)
             .body(combinedJson)
+    }
+
+    /**
+     * The full, unmasked game state for a single replay frame, used by "share frame as
+     * scenario" to reproduce the EXACT position (stack, targets, floating effects, mana, …).
+     * Served separately from [getReplay] so normal (masked) replay viewing never receives
+     * hidden information — only an explicit share does. The game is finished, so revealing the
+     * full state of a snapshot is intended.
+     */
+    @GetMapping("/{gameId}/frames/{frame}/full-state", produces = [MediaType.APPLICATION_JSON_VALUE])
+    fun getFrameFullState(
+        @PathVariable gameId: String,
+        @PathVariable frame: Int,
+    ): ResponseEntity<String> {
+        val record = gameHistoryRepository.findById(gameId)
+            ?: return ResponseEntity.notFound().build()
+        val state = record.fullStates.getOrNull(frame)
+            ?: return ResponseEntity.notFound().build()
+        // persistenceJson has allowStructuredMapKeys (GameState.zones is keyed by ZoneKey).
+        val json = persistenceJson.encodeToString(GameState.serializer(), state)
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(json)
     }
 }
 

@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
 import { SpectatorContext } from '../../contexts/SpectatorContext'
 import { GameBoard } from '../game/GameBoard'
 import { CombatArrows } from '../combat/CombatArrows'
 import type { SpectatingState } from '@/store/slices'
 import { reconstructSnapshots, type ReplayData } from '@/replay/reconstructSnapshots.ts'
+import { buildReplayScenarioUrl } from '../scenario/shareScenario'
 
 // ============================================================================
 // Types
@@ -365,6 +366,57 @@ function ReplayView({
     return () => window.removeEventListener('keydown', handler)
   }, [onPrev, onNext, onToggleAutoPlay, onBack])
 
+  // Measure the header so the board sits below it even when the controls wrap to a 2nd row.
+  const headerRef = useRef<HTMLDivElement>(null)
+  const [headerHeight, setHeaderHeight] = useState(HEADER_HEIGHT)
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const update = () => setHeaderHeight(el.offsetHeight)
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  const [scenarioCopied, setScenarioCopied] = useState(false)
+  const handleShareAsScenario = async () => {
+    const url = buildReplayScenarioUrl(window.location.origin, snapshot.gameSessionId, currentStep)
+    try {
+      await navigator.clipboard.writeText(url)
+      setScenarioCopied(true)
+      setTimeout(() => setScenarioCopied(false), 2500)
+    } catch {
+      window.prompt('Copy this scenario link', url)
+    }
+  }
+
+  const [replayCopied, setReplayCopied] = useState(false)
+  const handleShareReplay = async () => {
+    const url = `${window.location.origin}/replay/${snapshot.gameSessionId}`
+    try {
+      await navigator.clipboard.writeText(url)
+      setReplayCopied(true)
+      setTimeout(() => setReplayCopied(false), 2500)
+    } catch {
+      window.prompt('Copy this replay link', url)
+    }
+  }
+
+  const [downloaded, setDownloaded] = useState(false)
+  const handleDownloadSnapshot = async () => {
+    const r = await fetch(`/api/public/replays/${snapshot.gameSessionId}/frames/${currentStep}/full-state`)
+    if (!r.ok) return
+    const blob = new Blob([await r.text()], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `scenario-${snapshot.gameSessionId}-frame${currentStep}.json`
+    a.click()
+    URL.revokeObjectURL(a.href)
+    setDownloaded(true)
+    setTimeout(() => setDownloaded(false), 2500)
+  }
+
   return (
     <SpectatorContext.Provider
       value={{
@@ -376,7 +428,7 @@ function ReplayView({
       }}
     >
       <div style={styles.replayContainer}>
-        <div style={styles.replayHeader}>
+        <div ref={headerRef} style={styles.replayHeader}>
           <button onClick={onBack} style={styles.backButton}>
             Back
           </button>
@@ -410,9 +462,30 @@ function ReplayView({
               {snapshot.player1Name} vs {snapshot.player2Name}
             </span>
           </div>
+          <button
+            onClick={() => void handleShareAsScenario()}
+            style={styles.scenarioButton}
+            title="Copy a short link that drops you into this exact position — full board, hands, libraries, stack, targets and mana — to play it out yourself or against the AI."
+          >
+            {scenarioCopied ? 'Copied!' : 'Share as scenario'}
+          </button>
+          <button
+            onClick={() => void handleDownloadSnapshot()}
+            style={styles.scenarioButton}
+            title="Download this exact position as a snapshot file you can reload later from the Scenario Builder ('Load file')."
+          >
+            {downloaded ? 'Saved!' : 'Save snapshot'}
+          </button>
+          <button
+            onClick={() => void handleShareReplay()}
+            style={styles.shareReplayButton}
+            title="Copy a link to watch this replay."
+          >
+            {replayCopied ? 'Copied!' : 'Share replay'}
+          </button>
         </div>
         <div style={styles.gameBoardContainer}>
-          <GameBoard spectatorMode topOffset={HEADER_HEIGHT} />
+          <GameBoard spectatorMode topOffset={headerHeight} />
         </div>
       </div>
       <CombatArrows />
@@ -545,12 +618,14 @@ const styles: Record<string, React.CSSProperties> = {
   replayHeader: {
     display: 'flex',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    rowGap: 8,
     padding: '10px 16px',
     borderBottom: '1px solid #1a1a25',
     backgroundColor: '#0d0d15',
     flexShrink: 0,
     zIndex: 1600,
-    gap: 16,
+    gap: 10,
   },
   backButton: {
     padding: '8px 16px',
@@ -575,6 +650,28 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid #2a2a3e',
     borderRadius: 4,
     cursor: 'pointer',
+  },
+  scenarioButton: {
+    padding: '7px 10px',
+    fontSize: 12,
+    backgroundColor: '#6d28d9',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 6,
+    cursor: 'pointer',
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+  },
+  shareReplayButton: {
+    padding: '7px 10px',
+    fontSize: 12,
+    backgroundColor: '#1e40af',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 6,
+    cursor: 'pointer',
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
   },
   scrubberContainer: {
     display: 'flex',

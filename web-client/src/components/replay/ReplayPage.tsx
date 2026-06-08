@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore.ts'
 import { SpectatorContext } from '../../contexts/SpectatorContext'
@@ -7,6 +7,7 @@ import { CombatArrows } from '../combat/CombatArrows'
 import type { SpectatingState } from '@/store/slices'
 import type { SpectatorStateUpdate } from '../admin/ReplayViewer'
 import { reconstructSnapshots, type PublicReplayData } from '@/replay/reconstructSnapshots.ts'
+import { buildReplayScenarioUrl } from '../scenario/shareScenario'
 
 const HEADER_HEIGHT = 55
 
@@ -22,6 +23,20 @@ export function ReplayPage() {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const setSpectatingState = useGameStore((s) => s.setSpectatingState)
+
+  // Measure the header so the board sits below it even when the controls wrap to a 2nd row
+  // on narrow windows (otherwise the rightmost buttons overflow off-screen).
+  const headerRef = useRef<HTMLDivElement>(null)
+  const [headerHeight, setHeaderHeight] = useState(HEADER_HEIGHT)
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const update = () => setHeaderHeight(el.offsetHeight)
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const writeSnapshotToStore = useCallback(
     (snapshot: SpectatorStateUpdate) => {
@@ -139,6 +154,37 @@ export function ReplayPage() {
     }
   }
 
+  const [scenarioCopied, setScenarioCopied] = useState(false)
+  const handleShareAsScenario = async (frame: number) => {
+    // Short link that references the stored replay frame — no huge serialized state in the URL.
+    const url = buildReplayScenarioUrl(window.location.origin, gameId ?? '', frame)
+    try {
+      await navigator.clipboard.writeText(url)
+      setScenarioCopied(true)
+      setTimeout(() => setScenarioCopied(false), 2500)
+    } catch {
+      window.prompt('Copy this scenario link', url)
+    }
+  }
+
+  const [downloaded, setDownloaded] = useState(false)
+  const handleDownloadSnapshot = async (frame: number) => {
+    // Download the frame's full game state as a file you can reload locally via the builder.
+    const r = await fetch(`/api/public/replays/${gameId}/frames/${frame}/full-state`)
+    if (!r.ok) {
+      setError('Could not load this frame for download.')
+      return
+    }
+    const blob = new Blob([await r.text()], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `scenario-${gameId}-frame${frame}.json`
+    a.click()
+    URL.revokeObjectURL(a.href)
+    setDownloaded(true)
+    setTimeout(() => setDownloaded(false), 2500)
+  }
+
   if (loading) {
     return (
       <div style={styles.centered}>
@@ -174,7 +220,7 @@ export function ReplayPage() {
       }}
     >
       <div style={styles.replayContainer}>
-        <div style={styles.replayHeader}>
+        <div ref={headerRef} style={styles.replayHeader}>
           <button onClick={() => navigate('/')} style={styles.backButton}>
             Back
           </button>
@@ -211,12 +257,26 @@ export function ReplayPage() {
               <span style={styles.winnerText}>Winner: {metadata.winnerName}</span>
             )}
           </div>
-          <button onClick={handleShare} style={styles.shareButton} title="Copy link to clipboard">
-            {copied ? 'Copied!' : 'Share'}
+          <button
+            onClick={() => void handleShareAsScenario(currentStep)}
+            style={styles.scenarioButton}
+            title="Copy a short link that drops you into this exact position — full board, hands, libraries, stack, targets and mana — to play it out yourself or against the AI."
+          >
+            {scenarioCopied ? 'Copied!' : 'Share as scenario'}
+          </button>
+          <button
+            onClick={() => void handleDownloadSnapshot(currentStep)}
+            style={styles.scenarioButton}
+            title="Download this exact position as a snapshot file you can reload later from the Scenario Builder ('Load file')."
+          >
+            {downloaded ? 'Saved!' : 'Save snapshot'}
+          </button>
+          <button onClick={handleShare} style={styles.shareButton} title="Copy a link to this replay">
+            {copied ? 'Copied!' : 'Share replay'}
           </button>
         </div>
         <div style={styles.gameBoardContainer}>
-          <GameBoard spectatorMode topOffset={HEADER_HEIGHT} />
+          <GameBoard spectatorMode topOffset={headerHeight} />
         </div>
       </div>
       <CombatArrows />
@@ -264,12 +324,14 @@ const styles: Record<string, React.CSSProperties> = {
   replayHeader: {
     display: 'flex',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    rowGap: 8,
     padding: '10px 16px',
     borderBottom: '1px solid #1a1a25',
     backgroundColor: '#0d0d15',
     flexShrink: 0,
     zIndex: 1600,
-    gap: 16,
+    gap: 10,
   },
   backButton: {
     padding: '8px 16px',
@@ -322,7 +384,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   replayInfo: {
     textAlign: 'right',
-    flexShrink: 0,
+    flexShrink: 1,
+    minWidth: 0,
+    overflow: 'hidden',
   },
   replayLabel: {
     display: 'block',
@@ -332,8 +396,12 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.1em',
   },
   matchupText: {
+    display: 'block',
     color: '#aaa',
     fontSize: 13,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
   winnerText: {
     display: 'block',
@@ -341,14 +409,26 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 11,
   },
   shareButton: {
-    padding: '8px 16px',
-    fontSize: 13,
+    padding: '7px 10px',
+    fontSize: 12,
     backgroundColor: '#1e40af',
     color: '#fff',
     border: 'none',
     borderRadius: 6,
     cursor: 'pointer',
     flexShrink: 0,
+    whiteSpace: 'nowrap',
+  },
+  scenarioButton: {
+    padding: '7px 10px',
+    fontSize: 12,
+    backgroundColor: '#6d28d9',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 6,
+    cursor: 'pointer',
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
   },
   gameBoardContainer: {
     flex: 1,

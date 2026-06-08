@@ -320,10 +320,17 @@ data class GameState(
      * Resource ownership (mana, cards, life) is unaffected — it always stays with
      * [playerId]. This helper is only consulted at the input-routing seam: legal
      * action enumeration, decision validation, and per-action seat checks.
+     *
+     * A session-level [com.wingedsheep.engine.state.components.player.HotseatControlComponent]
+     * (play-against-yourself) takes precedence over a per-turn hijack: it permanently routes
+     * input authority to its controller for the whole game.
      */
     fun actorFor(playerId: EntityId): EntityId {
-        val hijack = getEntity(playerId)
-            ?.get<com.wingedsheep.engine.state.components.player.PlayerTurnHijackedComponent>()
+        val entity = getEntity(playerId) ?: return playerId
+        entity.get<com.wingedsheep.engine.state.components.player.HotseatControlComponent>()
+            ?.let { return it.controllerId }
+        val hijack = entity
+            .get<com.wingedsheep.engine.state.components.player.PlayerTurnHijackedComponent>()
         return if (hijack != null &&
             hijack.state == com.wingedsheep.engine.state.components.player.PlayerTurnHijackedComponent.HijackState.ACTIVE
         ) hijack.controllerId else playerId

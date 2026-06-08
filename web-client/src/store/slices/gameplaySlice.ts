@@ -132,7 +132,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'CardsSelectedResponse' as const,
         decisionId: pendingDecision.id,
@@ -148,7 +151,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'TargetsResponse' as const,
         decisionId: pendingDecision.id,
@@ -164,7 +170,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'CancelDecisionResponse' as const,
         decisionId: pendingDecision.id,
@@ -179,7 +188,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'OrderedResponse' as const,
         decisionId: pendingDecision.id,
@@ -195,7 +207,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'YesNoResponse' as const,
         decisionId: pendingDecision.id,
@@ -211,7 +226,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'NumberChosenResponse' as const,
         decisionId: pendingDecision.id,
@@ -227,7 +245,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'OptionChosenResponse' as const,
         decisionId: pendingDecision.id,
@@ -243,7 +264,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'ReplacementChosenResponse' as const,
         decisionId: pendingDecision.id,
@@ -260,7 +284,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'BudgetModalResponse' as const,
         decisionId: pendingDecision.id,
@@ -276,7 +303,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'DistributionResponse' as const,
         decisionId: pendingDecision.id,
@@ -292,7 +322,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'DamageAssignmentResponse' as const,
         decisionId: pendingDecision.id,
@@ -308,7 +341,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'ColorChosenResponse' as const,
         decisionId: pendingDecision.id,
@@ -324,7 +360,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'CombatResolutionResponse' as const,
         decisionId: pendingDecision.id,
@@ -340,7 +379,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'ManaSourcesSelectedResponse' as const,
         decisionId: pendingDecision.id,
@@ -357,7 +399,10 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Stamp the decision's owner, not the connection's own seat. Equal in normal play;
+      // in hotseat / Mindslaver control the one connection answers the other seat's
+      // decisions, and the engine requires SubmitDecision.playerId == pendingDecision.playerId.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'PilesSplitResponse' as const,
         decisionId: pendingDecision.id,

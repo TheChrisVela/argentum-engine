@@ -80,7 +80,16 @@ data class ClientGameState(
      * If non-null, the controller currently driving the viewing player's turn.
      * Drives UI cues such as the affected-player banner and disabling click handlers.
      */
-    val youAreHijackedBy: EntityId? = null
+    val youAreHijackedBy: EntityId? = null,
+
+    /**
+     * True when the viewing player controls *every* seat for the whole game — the
+     * single-client "hotseat" / play-against-yourself mode. Drives the "controlling both
+     * players" banner and lets the client act for whichever seat currently has priority.
+     * Distinct from [youAreHijacking], which is the per-turn Mindslaver effect; the two are
+     * never set together.
+     */
+    val hotseat: Boolean = false
 )
 
 /**

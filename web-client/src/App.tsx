@@ -173,11 +173,11 @@ export default function App() {
         ? [...blockersAction.validBlockers]
         : []
 
-      // Find attacking creatures (opponent's creatures that are attacking)
-      const opponentCreatures = battlefieldCards.opponentCreatures
-      const attackingCreatures: EntityId[] = opponentCreatures
-        .filter((card) => card.isAttacking)
-        .map((card) => card.id)
+      // Attacking creatures come from the server's authoritative combat state rather than
+      // "the viewing player's opponent" — in single-client hotseat the seat we control (the
+      // defender) can be the top row, so the attackers are the viewer's own creatures.
+      const attackingCreatures: EntityId[] = gameState?.combat?.attackers
+        .map((a) => a.creatureId) ?? []
 
       // Find attackers that must be blocked by all (from combat state in game state)
       const mustBeBlockedAttackers: EntityId[] = gameState?.combat?.attackers

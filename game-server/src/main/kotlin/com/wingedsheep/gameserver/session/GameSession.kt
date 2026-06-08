@@ -20,6 +20,7 @@ import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisComba
 import com.wingedsheep.engine.state.components.combat.BlockersDeclaredThisCombatComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
+import com.wingedsheep.engine.state.components.player.HotseatControlComponent
 import com.wingedsheep.engine.state.components.player.LossReason
 import com.wingedsheep.engine.state.components.player.MulliganStateComponent
 import com.wingedsheep.engine.state.components.player.PlayerLostComponent
@@ -135,6 +136,12 @@ class GameSession(
     private var replayInitialSnapshot: ServerMessage.SpectatorStateUpdate? = null
     private var replayLastSnapshot: ServerMessage.SpectatorStateUpdate? = null
     private val replayDeltas = CopyOnWriteArrayList<SpectatorReplayDelta>()
+    // Full (unmasked) game state per frame — one entry per recorded snapshot, in lockstep with
+    // [replayInitialSnapshot] (frame 0) + [replayDeltas]. Lets "share frame as scenario"
+    // reproduce the EXACT position (stack, targets, floating effects, mana, …). Cheap to retain:
+    // GameState is immutable so frames structurally share their component objects; only the map
+    // spine duplicates. Serialized to JSON only on demand at share time, never during viewing.
+    private val replayFullStates = CopyOnWriteArrayList<GameState>()
     var replayStartedAt: Instant? = null
         private set
 
@@ -1009,7 +1016,11 @@ class GameSession(
             replayDeltas.add(SpectatorReplayDiffCalculator.computeDelta(last, snapshot))
         }
         replayLastSnapshot = snapshot
+        gameState?.let { replayFullStates.add(it) }
     }
+
+    /** Per-frame full game states recorded for this game (index aligns with reconstructed frames). */
+    fun getReplayFullStates(): List<GameState> = replayFullStates.toList()
 
     /**
      * Get the initial replay snapshot (null if no snapshots recorded).
@@ -1065,6 +1076,27 @@ class GameSession(
         synchronized(stateLock) {
             gameState = state
             players.clear()
+        }
+    }
+
+    /**
+     * Enable single-client "hotseat" (play-against-yourself) for this session: route the
+     * input authority of *every* seat to [controllerId] by stamping a
+     * [HotseatControlComponent] onto each player entity. One connection then receives every
+     * decision and may submit actions for both seats. Resource ownership is unaffected (see
+     * [HotseatControlComponent] / [GameState.actorFor]).
+     *
+     * Must be called after the scenario state is injected. Only the seat matching
+     * [controllerId] is expected to connect over WebSocket.
+     */
+    fun enableHotseat(controllerId: EntityId) {
+        synchronized(stateLock) {
+            val current = gameState ?: return
+            var next = current
+            for (playerId in current.turnOrder) {
+                next = next.updateEntity(playerId) { it.with(HotseatControlComponent(controllerId)) }
+            }
+            gameState = next
         }
     }
 

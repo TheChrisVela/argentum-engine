@@ -24,6 +24,12 @@ data class GameReplayRecord(
     val initialSnapshot: ServerMessage.SpectatorStateUpdate,
     /** Deltas from each snapshot to the next */
     val deltas: List<SpectatorReplayDelta>,
+    /**
+     * Full (unmasked) game state per frame, in lockstep with [initialSnapshot] (frame 0) +
+     * [deltas]. Used only by the explicit "share frame as scenario" endpoint so a shared
+     * snapshot reproduces the EXACT position; never surfaced during normal masked replay viewing.
+     */
+    val fullStates: List<com.wingedsheep.engine.state.GameState> = emptyList(),
 ) {
     /** Total number of frames (initial + deltas) */
     val frameCount: Int get() = 1 + deltas.size

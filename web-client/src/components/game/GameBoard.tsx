@@ -131,7 +131,14 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
   // Mindslaver-style hijack indicators (Phase 2C). Spectators don't get the UX promotions.
   const youAreHijacking = !spectatorMode ? (gameState?.youAreHijacking ?? null) : null
   const youAreHijackedBy = !spectatorMode ? (gameState?.youAreHijackedBy ?? null) : null
-  const isHijacking = !!youAreHijacking
+  // Single-client hotseat (play against yourself): this connection controls every seat.
+  // When the seat currently to act is the opponent (top) row, reuse the hijack rendering to
+  // make that row interactive and dim our own — the board emphasis flips between seats as
+  // priority alternates, like pass-and-play.
+  const hotseat = !spectatorMode && (gameState?.hotseat ?? false)
+  const hotseatControllingOpponent =
+    hotseat && !!opponent && gameState?.priorityPlayerId === opponent.playerId
+  const isHijacking = !!youAreHijacking || hotseatControllingOpponent
   const isHijacked = !!youAreHijackedBy
   // Soft purple wash for the battlefield row currently under hijack control. We avoid
   // a hard outline (which clipped at the zone-pile column on the right) — instead a
@@ -165,8 +172,13 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
     return null
   }
 
-  // In spectator mode: disable all interaction
-  const hasPriority = spectatorMode ? false : (gameState.priorityPlayerId === viewingPlayer?.playerId)
+  // In spectator mode: disable all interaction. In hotseat the single connection controls
+  // whichever seat holds priority, so it can always act on a live priority window.
+  const hasPriority = spectatorMode
+    ? false
+    : hotseat
+      ? gameState.priorityPlayerId != null
+      : (gameState.priorityPlayerId === viewingPlayer?.playerId)
   const canAct = hasPriority && !opponentDecisionStatus
   const isMyTurn = spectatorMode ? false : (gameState.activePlayerId === viewingPlayer?.playerId)
   const isInCombatMode = spectatorMode ? false : (combatState !== null)
@@ -485,12 +497,14 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
           gap: 4,
           minWidth: 0,
         }}>
-        {(isHijacking || isHijacked) && (() => {
-          const otherId = youAreHijacking ?? youAreHijackedBy
-          const otherName = gameState.players.find((p) => p.playerId === otherId)?.name ?? 'opponent'
-          const text = isHijacking
-            ? `Controlling ${otherName}'s turn`
-            : `${otherName} controls your turn`
+        {(isHijacking || isHijacked || hotseat) && (() => {
+          const text = hotseat
+            ? `Hotseat — acting as ${gameState.players.find((p) => p.playerId === gameState.priorityPlayerId)?.name ?? 'active player'}`
+            : (() => {
+                const otherId = youAreHijacking ?? youAreHijackedBy
+                const otherName = gameState.players.find((p) => p.playerId === otherId)?.name ?? 'opponent'
+                return isHijacking ? `Controlling ${otherName}'s turn` : `${otherName} controls your turn`
+              })()
           return (
             <div
               role="status"
@@ -677,7 +691,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
               onClick={() => {
                 submitAction({
                   type: 'PassPriority',
-                  playerId: viewingPlayer.playerId,
+                  // In hotseat, pass for whichever seat currently holds priority.
+                  playerId: hotseat
+                    ? (gameState.priorityPlayerId ?? viewingPlayer.playerId)
+                    : viewingPlayer.playerId,
                 })
               }}
               style={{

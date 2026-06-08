@@ -160,3 +160,90 @@ Drafting is lower frequency, so standard HTTP JSON is used.
     ]
   }
 }
+
+## 4. Scenario Builder Payload (REST / HTTP)
+
+The Scenario Builder lets any player construct an arbitrary board state and play it. It is a
+production feature: `POST /api/scenarios` is **not** gated behind `game.dev-endpoints.enabled`
+(the older `POST /api/dev/scenarios` is the dev-only equivalent and shares the same request
+shape + builder via `ScenarioBuilderService` / `ScenarioSessionFactory`).
+
+**Request: `POST /api/scenarios`** (`ScenarioRequest`)
+
+```json
+{
+  "player1Name": "Me",
+  "player2Name": "Also me",
+  "player1": {
+    "lifeTotal": 20,
+    "hand": ["Lightning Bolt"],
+    "battlefield": [
+      { "name": "Grizzly Bears", "tapped": true, "counters": { "PLUS_ONE_PLUS_ONE": 2 } },
+      { "name": "Pacifism", "attachedTo": "Grizzly Bears" }
+    ],
+    "graveyard": ["Mountain"],
+    "exile": ["Swamp"],
+    "library": ["Forest", "Forest"],
+    "commanders": []
+  },
+  "player2": { "lifeTotal": 20, "battlefield": [{ "name": "Hill Giant" }] },
+  "phase": "PRECOMBAT_MAIN",
+  "activePlayer": 1,
+  "mode": "SELF"
+}
+```
+
+- `mode` selects how the opponent seat is filled: `SELF` (single-client hotseat / play against
+  yourself — one token controls both seats), `AI` (engine AI, requires `game.ai.enabled`;
+  `aiPlayer` 1|2 picks the seat), or `TWO_PLAYER` (two tokens). When omitted it is derived from
+  `aiPlayer` for back-compat.
+- Validation rejects unknown card names and (production) enforces per-zone + total card caps,
+  returning `400` with `{ "errors": ["Unknown card: …", …] }`.
+
+**Response** (`ScenarioResponse`)
+
+```json
+{
+  "sessionId": "…",
+  "player1": { "name": "Me", "token": "<token>", "playerId": "player-1" },
+  "player2": { "name": "Also me", "token": "<token>", "playerId": "player-2" },
+  "message": "Hotseat scenario created — you control both players.",
+  "mode": "SELF"
+}
+```
+
+The client joins by navigating to `/?token=<token>` (token-based connect). For `SELF`/`AI` a
+single human token is returned (in `SELF` both `playerX.token` echo the same value); for
+`TWO_PLAYER` the two tokens differ.
+
+### Hotseat (`hotseat` on the client state)
+
+`SELF` mode stamps a `HotseatControlComponent(controllerId)` on every seat, so the engine's
+`GameState.actorFor(playerId)` routes input authority (decision delivery, legal-action
+enumeration, per-action seat authorization, and hand visibility) for both seats to the single
+connection — the non-turn-scoped generalization of the Mindslaver-style hijack seam. The
+client state carries a boolean **`hotseat`** so the UI can show a "controlling both players"
+banner and act for whichever seat currently holds priority (board actions ride the
+server-provided `legalActions`, which already carry the acting seat; `SubmitDecision` is stamped
+with `pendingDecision.playerId`; combat declarations with the active/defending seat).
+
+### "Share frame as scenario" (replay)
+
+The replay viewer reproduces an **exact full-state snapshot** — stack, targets, floating effects,
+mana, counters and all trackers, not just the public board. The full (unmasked) `GameState` is
+recorded per frame (`GameReplayRecord.fullStates`; cheap because immutable frames structurally
+share their component objects) and never surfaced during normal masked viewing. Two entry points:
+
+- **Share as scenario** → copies a *short* link that only references the stored frame:
+  `/scenario?replay=<gameId>&frame=<n>`. Opening it `POST`s to `/api/scenarios/from-replay-frame`
+  (`{gameId, frame, mode?}`), which reads `GameReplayRecord.fullStates[frame]` and injects it into
+  a fresh hotseat session (`mode=SELF` default). The link lives as long as the in-memory replay.
+- **Download** → saves the frame's full state as a JSON file
+  (`GET /api/public/replays/{gameId}/frames/{frame}/full-state`). Reload it locally from the
+  builder's **Load file** button, which `POST`s the file to `/api/scenarios/from-state` (a raw
+  serialized `GameState` body) and jumps in. "Load file" also accepts a **name-based** scenario
+  JSON (like the `manual-scenarios/*.json`), loading it into the editable builder instead.
+
+A snapshot is exact but **not editable** in the card-search builder; the builder's own name-based
+`?s=` share remains for authoring/editing. The engine `GameState` is (de)serialized with
+`persistenceJson` (`allowStructuredMapKeys` — `zones` is keyed by `ZoneKey`).

@@ -119,6 +119,12 @@ function GameCardImpl({
   const addTarget = useGameStore((state) => state.addTarget)
   const removeTarget = useGameStore((state) => state.removeTarget)
   const combatState = useGameStore((state) => state.combatState)
+  // Single-client hotseat: the board perspective is fixed to the connection, so the seat we
+  // currently control may render on the opponent row. For combat we then key validity off the
+  // server's combatState membership (authoritative for the acting seat) instead of the row.
+  const hotseat = useGameStore(
+    (state) => ((state.spectatingState?.gameState ?? state.gameState)?.hotseat ?? false),
+  )
   const legalActions = useGameStore((state) => state.legalActions)
   const toggleAttacker = useGameStore((state) => state.toggleAttacker)
   const assignBlocker = useGameStore((state) => state.assignBlocker)
@@ -333,7 +339,11 @@ function GameCardImpl({
 
   // For attacker mode: check if this is a valid attacker (own creature, untapped, no summoning sickness)
   const isOwnCreature = !isOpponentCard && card.cardTypes.includes('CREATURE')
-  const isValidAttacker = isInAttackerMode && isOwnCreature && !card.isTapped && combatState.validCreatures.includes(card.id)
+  // In hotseat the controlled seat can render on either row, so treat any creature as
+  // "ours" / "theirs" for combat and let combatState membership disambiguate.
+  const ownForCombat = isOwnCreature || (hotseat && card.cardTypes.includes('CREATURE'))
+  const opponentForCombat = isOpponentCard || hotseat
+  const isValidAttacker = isInAttackerMode && ownForCombat && !card.isTapped && combatState.validCreatures.includes(card.id)
   const isSelectedAsAttacker = isInAttackerMode && combatState.selectedAttackers.includes(card.id)
 
   // Banding (CR 702.22): which declared band (if any) this creature belongs to. Drives the
@@ -371,13 +381,13 @@ function GameCardImpl({
     (cardHasBanding || draggingAttackerHasBanding === true)
 
   // For blocker mode: check if this is a valid blocker or an attacking creature to block
-  const isValidBlocker = isInBlockerMode && isOwnCreature && !card.isTapped && combatState.validCreatures.includes(card.id)
+  const isValidBlocker = isInBlockerMode && ownForCombat && !card.isTapped && combatState.validCreatures.includes(card.id)
   const isSelectedAsBlocker = isInBlockerMode && !!(combatState?.blockerAssignments[card.id]?.length)
-  const isAttackingInBlockerMode = isInBlockerMode && isOpponentCard && combatState.attackingCreatures.includes(card.id)
-  const isMustBeBlocked = isInBlockerMode && isOpponentCard && combatState.mustBeBlockedAttackers.includes(card.id)
+  const isAttackingInBlockerMode = isInBlockerMode && opponentForCombat && combatState.attackingCreatures.includes(card.id)
+  const isMustBeBlocked = isInBlockerMode && opponentForCombat && combatState.mustBeBlockedAttackers.includes(card.id)
 
   // For attacker mode: check if this is an opponent's planeswalker that can be attacked
-  const isValidPlaneswalkerTarget = isInAttackerMode && isOpponentCard && combatState.validAttackTargets.includes(card.id)
+  const isValidPlaneswalkerTarget = isInAttackerMode && opponentForCombat && combatState.validAttackTargets.includes(card.id)
 
   // Show playable highlight for cards that aren't purely combat-role cards.
   // Valid blockers with legal actions (e.g., activated abilities) are still playable since blocking uses drag.
