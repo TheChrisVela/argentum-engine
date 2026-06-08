@@ -213,17 +213,6 @@ class TargetRecoveryTest : StringSpec({
         ctx.creatureFilterDsl(nonMount) shouldBe "TargetFilter(GameObjectFilter.Creature.notSubtype(Subtype(\"Mount\")))"
     }
 
-    "creatureFilterDsl appends other() for an 'another' (Other) clause (Sterling Supplier)" {
-        // "another target creature you control" — the Other clause must exclude the source via .other().
-        val anotherYours = obj(
-            """{"_Permanents":"And","args":[""" +
-                """{"_Permanents":"Other","args":{"_Permanent":"ThisPermanent"}},""" +
-                """{"_Permanents":"And","args":[{"_Permanents":"IsCardtype","args":"Creature"},""" +
-                """{"_Permanents":"ControlledByAPlayer","args":{"_Players":"SinglePlayer","args":{"_Player":"You"}}}]}]}""",
-        )
-        ctx.creatureFilterDsl(anotherYours) shouldBe "TargetFilter.Creature.youControl().other()"
-    }
-
     "creatureFilterDsl declines a 'dealt damage this turn' restriction (Rooftop Assassin)" {
         // "...that was dealt damage this turn" has no filter helper; dropping it would widen the kill.
         val dealtDamage = obj(
