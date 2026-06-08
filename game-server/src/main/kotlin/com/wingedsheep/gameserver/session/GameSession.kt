@@ -20,6 +20,7 @@ import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisComba
 import com.wingedsheep.engine.state.components.combat.BlockersDeclaredThisCombatComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
+import com.wingedsheep.engine.state.components.player.HotseatControlComponent
 import com.wingedsheep.engine.state.components.player.LossReason
 import com.wingedsheep.engine.state.components.player.MulliganStateComponent
 import com.wingedsheep.engine.state.components.player.PlayerLostComponent
@@ -1065,6 +1066,27 @@ class GameSession(
         synchronized(stateLock) {
             gameState = state
             players.clear()
+        }
+    }
+
+    /**
+     * Enable single-client "hotseat" (play-against-yourself) for this session: route the
+     * input authority of *every* seat to [controllerId] by stamping a
+     * [HotseatControlComponent] onto each player entity. One connection then receives every
+     * decision and may submit actions for both seats. Resource ownership is unaffected (see
+     * [HotseatControlComponent] / [GameState.actorFor]).
+     *
+     * Must be called after the scenario state is injected. Only the seat matching
+     * [controllerId] is expected to connect over WebSocket.
+     */
+    fun enableHotseat(controllerId: EntityId) {
+        synchronized(stateLock) {
+            val current = gameState ?: return
+            var next = current
+            for (playerId in current.turnOrder) {
+                next = next.updateEntity(playerId) { it.with(HotseatControlComponent(controllerId)) }
+            }
+            gameState = next
         }
     }
 

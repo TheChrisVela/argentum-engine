@@ -1,0 +1,542 @@
+/**
+ * Scenario Builder / Tester.
+ *
+ * Construct an arbitrary board state — paste a scenario JSON, or search cards (by name or
+ * Scryfall-style query, reusing the deckbuilder parser) and drop them into either player's
+ * hand / battlefield / graveyard / exile / library with common toggles — then play it against
+ * yourself (hotseat), the AI, or as two-player. Scenarios share via an encoded `?s=` URL.
+ */
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { parseQuery, type CardSummary } from '../deckbuilder/cardFilter'
+import {
+  encodeScenario,
+  buildScenarioUrl,
+  decodeScenario,
+  SCENARIO_SHARE_PARAM,
+} from './shareScenario'
+import type {
+  ScenarioBattlefieldCard,
+  ScenarioCreateResponse,
+  ScenarioMode,
+  ScenarioSpec,
+  ScenarioZone,
+} from './types'
+import { SCENARIO_ZONES } from './types'
+
+type PlayerKey = 'player1' | 'player2'
+
+interface BuilderPlayer {
+  name: string
+  life: number
+  hand: string[]
+  battlefield: ScenarioBattlefieldCard[]
+  graveyard: string[]
+  exile: string[]
+  library: string[]
+}
+
+const PHASES = ['BEGINNING', 'PRECOMBAT_MAIN', 'COMBAT', 'POSTCOMBAT_MAIN', 'ENDING'] as const
+
+function emptyPlayer(name: string): BuilderPlayer {
+  return { name, life: 20, hand: [], battlefield: [], graveyard: [], exile: [], library: [] }
+}
+
+const ZONE_LABEL: Record<ScenarioZone, string> = {
+  hand: 'Hand',
+  battlefield: 'Battlefield',
+  graveyard: 'Graveyard',
+  exile: 'Exile',
+  library: 'Library',
+}
+
+// --- spec <-> builder conversions ----------------------------------------------------------
+
+function toSpec(p1: BuilderPlayer, p2: BuilderPlayer, opts: {
+  phase: string
+  activePlayer: number
+  mode: ScenarioMode
+}): ScenarioSpec {
+  const playerConfig = (p: BuilderPlayer) => {
+    const cfg: ScenarioSpec['player1'] = { lifeTotal: p.life }
+    if (p.hand.length) cfg.hand = p.hand
+    if (p.battlefield.length) cfg.battlefield = p.battlefield
+    if (p.graveyard.length) cfg.graveyard = p.graveyard
+    if (p.exile.length) cfg.exile = p.exile
+    if (p.library.length) cfg.library = p.library
+    return cfg
+  }
+  const spec: ScenarioSpec = {
+    player1Name: p1.name,
+    player2Name: p2.name,
+    player1: playerConfig(p1),
+    player2: playerConfig(p2),
+    phase: opts.phase,
+    activePlayer: opts.activePlayer,
+    mode: opts.mode,
+  }
+  if (opts.mode === 'AI') spec.aiPlayer = 2
+  return spec
+}
+
+function playerFromSpec(name: string, cfg: ScenarioSpec['player1']): BuilderPlayer {
+  return {
+    name,
+    life: cfg?.lifeTotal ?? 20,
+    hand: cfg?.hand ? [...cfg.hand] : [],
+    battlefield: cfg?.battlefield ? cfg.battlefield.map((c) => ({ ...c })) : [],
+    graveyard: cfg?.graveyard ? [...cfg.graveyard] : [],
+    exile: cfg?.exile ? [...cfg.exile] : [],
+    library: cfg?.library ? [...cfg.library] : [],
+  }
+}
+
+// --- component -----------------------------------------------------------------------------
+
+export function ScenarioBuilderPage() {
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const [catalog, setCatalog] = useState<CardSummary[]>([])
+  const [catalogError, setCatalogError] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+
+  const [p1, setP1] = useState<BuilderPlayer>(() => emptyPlayer('Player 1'))
+  const [p2, setP2] = useState<BuilderPlayer>(() => emptyPlayer('Player 2'))
+  const [phase, setPhase] = useState<string>('PRECOMBAT_MAIN')
+  const [activePlayer, setActivePlayer] = useState<number>(1)
+  const [mode, setMode] = useState<ScenarioMode>('SELF')
+
+  const [targetSeat, setTargetSeat] = useState<PlayerKey>('player1')
+  const [targetZone, setTargetZone] = useState<ScenarioZone>('battlefield')
+
+  const [jsonText, setJsonText] = useState('')
+  const [jsonOpen, setJsonOpen] = useState(false)
+  const [status, setStatus] = useState<string | null>(null)
+  const [errors, setErrors] = useState<string[]>([])
+  const [starting, setStarting] = useState(false)
+
+  // --- load catalog --------------------------------------------------------
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/cards')
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((list: CardSummary[]) => {
+        if (!cancelled) setCatalog(list)
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setCatalogError(e instanceof Error ? e.message : 'Failed to load cards')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // --- decode shared scenario on load (?s=<code>) --------------------------
+  const sharedLoadedRef = useRef(false)
+  useEffect(() => {
+    if (sharedLoadedRef.current) return
+    const code = searchParams.get(SCENARIO_SHARE_PARAM)
+    if (!code) return
+    sharedLoadedRef.current = true
+    void decodeScenario(code).then((spec) => {
+      if (spec) {
+        applySpec(spec)
+        setStatus('Loaded shared scenario.')
+      } else {
+        setStatus('Could not read the shared scenario link.')
+      }
+      // Strip the param so a refresh doesn't reload it over edits.
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.delete(SCENARIO_SHARE_PARAM)
+          return next
+        },
+        { replace: true },
+      )
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
+  const applySpec = useCallback((spec: ScenarioSpec) => {
+    setP1(playerFromSpec(spec.player1Name ?? 'Player 1', spec.player1))
+    setP2(playerFromSpec(spec.player2Name ?? 'Player 2', spec.player2))
+    if (spec.phase) setPhase(spec.phase)
+    if (spec.activePlayer) setActivePlayer(spec.activePlayer)
+    if (spec.mode) setMode(spec.mode)
+  }, [])
+
+  // --- search results ------------------------------------------------------
+  const results = useMemo(() => {
+    if (!catalog.length) return []
+    const trimmed = query.trim()
+    if (!trimmed) return catalog.slice(0, 60)
+    let predicate: (c: CardSummary) => boolean
+    try {
+      predicate = parseQuery(trimmed)
+    } catch {
+      return []
+    }
+    return catalog.filter(predicate).slice(0, 60)
+  }, [catalog, query])
+
+  // --- mutations -----------------------------------------------------------
+  const seatSetter = (seat: PlayerKey) => (seat === 'player1' ? setP1 : setP2)
+
+  const addCard = useCallback((seat: PlayerKey, zone: ScenarioZone, name: string) => {
+    seatSetter(seat)((prev) => {
+      if (zone === 'battlefield') {
+        return { ...prev, battlefield: [...prev.battlefield, { name }] }
+      }
+      return { ...prev, [zone]: [...prev[zone], name] }
+    })
+    setStatus(`Added ${name} → ${ZONE_LABEL[zone]} (${seat === 'player1' ? p1.name : p2.name}).`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p1.name, p2.name])
+
+  const removeFromZone = useCallback((seat: PlayerKey, zone: ScenarioZone, index: number) => {
+    seatSetter(seat)((prev) => {
+      if (zone === 'battlefield') {
+        return { ...prev, battlefield: prev.battlefield.filter((_, i) => i !== index) }
+      }
+      return { ...prev, [zone]: (prev[zone] as string[]).filter((_, i) => i !== index) }
+    })
+  }, [])
+
+  const updateBattlefieldCard = useCallback(
+    (seat: PlayerKey, index: number, patch: Partial<ScenarioBattlefieldCard>) => {
+      seatSetter(seat)((prev) => ({
+        ...prev,
+        battlefield: prev.battlefield.map((c, i) => (i === index ? { ...c, ...patch } : c)),
+      }))
+    },
+    [],
+  )
+
+  // --- actions -------------------------------------------------------------
+  const currentSpec = useCallback(
+    () => toSpec(p1, p2, { phase, activePlayer, mode }),
+    [p1, p2, phase, activePlayer, mode],
+  )
+
+  const handleLoadJson = useCallback(() => {
+    try {
+      const parsed = JSON.parse(jsonText) as ScenarioSpec
+      applySpec(parsed)
+      setStatus('Loaded scenario from JSON.')
+      setErrors([])
+    } catch {
+      setStatus('Invalid JSON.')
+    }
+  }, [jsonText, applySpec])
+
+  const handleShowJson = useCallback(() => {
+    setJsonText(JSON.stringify(currentSpec(), null, 2))
+    setJsonOpen(true)
+  }, [currentSpec])
+
+  const handleShare = useCallback(async () => {
+    const code = await encodeScenario(currentSpec())
+    const url = buildScenarioUrl(window.location.origin, code)
+    try {
+      await navigator.clipboard.writeText(url)
+      setStatus('Share link copied to clipboard.')
+    } catch {
+      window.prompt('Copy this scenario link', url)
+    }
+  }, [currentSpec])
+
+  const handleStart = useCallback(async () => {
+    setStarting(true)
+    setErrors([])
+    setStatus('Creating scenario…')
+    try {
+      const res = await fetch('/api/scenarios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentSpec()),
+      })
+      if (!res.ok) {
+        const body: unknown = await res.json().catch(() => null)
+        const msgs =
+          body && typeof body === 'object' && Array.isArray((body as { errors?: unknown }).errors)
+            ? ((body as { errors: string[] }).errors)
+            : [`Request failed (HTTP ${res.status})`]
+        setErrors(msgs)
+        setStatus(null)
+        setStarting(false)
+        return
+      }
+      const data = (await res.json()) as ScenarioCreateResponse
+      // Pick the seat this client should connect as: SELF/AI hand off a single human token.
+      const human =
+        data.player1.token && data.player1.token !== '(AI)' ? data.player1 : data.player2
+      // Full navigation so the app makes a clean token-based connect to the new session.
+      window.location.href = `/?token=${encodeURIComponent(human.token)}`
+    } catch (e: unknown) {
+      setErrors([e instanceof Error ? e.message : 'Failed to create scenario'])
+      setStatus(null)
+      setStarting(false)
+    }
+  }, [currentSpec])
+
+  // --- render --------------------------------------------------------------
+  return (
+    <div style={S.page}>
+      <div style={S.topbar}>
+        <button style={S.linkBtn} onClick={() => navigate('/')}>← Back</button>
+        <h1 style={S.title}>Scenario Builder</h1>
+        <div style={{ flex: 1 }} />
+        <button style={S.ghostBtn} onClick={handleShowJson}>View JSON</button>
+        <button style={S.ghostBtn} onClick={() => void handleShare()}>Share</button>
+        <button style={S.primaryBtn} disabled={starting} onClick={() => void handleStart()}>
+          {starting ? 'Starting…' : 'Start'}
+        </button>
+      </div>
+
+      {(status || errors.length > 0) && (
+        <div style={S.statusBar}>
+          {errors.length > 0 ? (
+            <ul style={S.errorList}>
+              {errors.map((e, i) => (
+                <li key={i} style={{ color: '#fca5a5' }}>{e}</li>
+              ))}
+            </ul>
+          ) : (
+            <span style={{ color: '#a7f3d0' }}>{status}</span>
+          )}
+        </div>
+      )}
+
+      <div style={S.body}>
+        {/* Left: card search */}
+        <div style={S.searchCol}>
+          <div style={S.targetRow}>
+            <span style={S.smallLabel}>Add to</span>
+            <select value={targetSeat} style={S.select} onChange={(e) => setTargetSeat(e.target.value as PlayerKey)}>
+              <option value="player1">{p1.name}</option>
+              <option value="player2">{p2.name}</option>
+            </select>
+            <select value={targetZone} style={S.select} onChange={(e) => setTargetZone(e.target.value as ScenarioZone)}>
+              {SCENARIO_ZONES.map((z) => (
+                <option key={z} value={z}>{ZONE_LABEL[z]}</option>
+              ))}
+            </select>
+          </div>
+          <input
+            style={S.search}
+            placeholder="Search by name or query (e.g. t:creature c:r)"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {catalogError && <div style={{ color: '#fca5a5', padding: 8 }}>{catalogError}</div>}
+          <div style={S.resultList}>
+            {results.map((c) => (
+              <button
+                key={`${c.setCode ?? ''}-${c.collectorNumber ?? c.name}`}
+                style={S.resultRow}
+                title={`Add to ${ZONE_LABEL[targetZone]}`}
+                onClick={() => addCard(targetSeat, targetZone, c.name)}
+              >
+                <span style={S.resultName}>{c.name}</span>
+                <span style={S.resultMeta}>{c.manaCost}</span>
+              </button>
+            ))}
+            {!results.length && catalog.length > 0 && (
+              <div style={{ color: '#94a3b8', padding: 8 }}>No matches.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Middle/right: two player panels */}
+        <div style={S.playersCol}>
+          <PlayerPanel
+            seat="player1"
+            player={p1}
+            onName={(name) => setP1((p) => ({ ...p, name }))}
+            onLife={(life) => setP1((p) => ({ ...p, life }))}
+            onRemove={(zone, i) => removeFromZone('player1', zone, i)}
+            onUpdateBattlefield={(i, patch) => updateBattlefieldCard('player1', i, patch)}
+          />
+          <PlayerPanel
+            seat="player2"
+            player={p2}
+            onName={(name) => setP2((p) => ({ ...p, name }))}
+            onLife={(life) => setP2((p) => ({ ...p, life }))}
+            onRemove={(zone, i) => removeFromZone('player2', zone, i)}
+            onUpdateBattlefield={(i, patch) => updateBattlefieldCard('player2', i, patch)}
+          />
+        </div>
+
+        {/* Settings */}
+        <div style={S.settingsCol}>
+          <div style={S.settingsTitle}>Settings</div>
+          <label style={S.field}>
+            <span style={S.smallLabel}>Opponent</span>
+            <select value={mode} style={S.select} onChange={(e) => setMode(e.target.value as ScenarioMode)}>
+              <option value="SELF">Yourself (hotseat)</option>
+              <option value="AI">AI</option>
+              <option value="TWO_PLAYER">Two players</option>
+            </select>
+          </label>
+          <label style={S.field}>
+            <span style={S.smallLabel}>Phase</span>
+            <select value={phase} style={S.select} onChange={(e) => setPhase(e.target.value)}>
+              {PHASES.map((ph) => (
+                <option key={ph} value={ph}>{ph}</option>
+              ))}
+            </select>
+          </label>
+          <label style={S.field}>
+            <span style={S.smallLabel}>Active player</span>
+            <select value={activePlayer} style={S.select} onChange={(e) => setActivePlayer(Number(e.target.value))}>
+              <option value={1}>{p1.name}</option>
+              <option value={2}>{p2.name}</option>
+            </select>
+          </label>
+
+          <button style={S.ghostBtn} onClick={() => setJsonOpen((o) => !o)}>
+            {jsonOpen ? 'Hide' : 'Paste / view'} JSON
+          </button>
+          {jsonOpen && (
+            <div style={{ marginTop: 8 }}>
+              <textarea
+                style={S.json}
+                value={jsonText}
+                placeholder="Paste a scenario JSON here…"
+                onChange={(e) => setJsonText(e.target.value)}
+              />
+              <button style={S.ghostBtn} onClick={handleLoadJson}>Load JSON</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// --- player panel --------------------------------------------------------------------------
+
+function PlayerPanel(props: {
+  seat: PlayerKey
+  player: BuilderPlayer
+  onName: (name: string) => void
+  onLife: (life: number) => void
+  onRemove: (zone: ScenarioZone, index: number) => void
+  onUpdateBattlefield: (index: number, patch: Partial<ScenarioBattlefieldCard>) => void
+}) {
+  const { player } = props
+  return (
+    <div style={S.panel}>
+      <div style={S.panelHead}>
+        <input style={S.nameInput} value={player.name} onChange={(e) => props.onName(e.target.value)} />
+        <label style={S.lifeWrap}>
+          <span style={S.smallLabel}>Life</span>
+          <input
+            type="number"
+            style={S.lifeInput}
+            value={player.life}
+            onChange={(e) => props.onLife(Number(e.target.value))}
+          />
+        </label>
+      </div>
+
+      {SCENARIO_ZONES.map((zone) => {
+        const isBf = zone === 'battlefield'
+        const items = isBf ? player.battlefield : (player[zone] as string[])
+        return (
+          <div key={zone} style={S.zoneBlock}>
+            <div style={S.zoneHead}>{ZONE_LABEL[zone]} <span style={S.count}>{items.length}</span></div>
+            {items.length === 0 && <div style={S.empty}>—</div>}
+            {isBf
+              ? player.battlefield.map((card, i) => (
+                  <div key={i} style={S.cardRow}>
+                    <span style={S.cardName}>{card.name}</span>
+                    <label style={S.toggle} title="Tapped">
+                      <input
+                        type="checkbox"
+                        checked={!!card.tapped}
+                        onChange={(e) => props.onUpdateBattlefield(i, { tapped: e.target.checked })}
+                      />T
+                    </label>
+                    <label style={S.toggle} title="Summoning sickness">
+                      <input
+                        type="checkbox"
+                        checked={!!card.summoningSickness}
+                        onChange={(e) => props.onUpdateBattlefield(i, { summoningSickness: e.target.checked })}
+                      />SS
+                    </label>
+                    <input
+                      type="number"
+                      style={S.counterInput}
+                      title="+1/+1 counters"
+                      value={card.counters?.PLUS_ONE_PLUS_ONE ?? 0}
+                      min={0}
+                      onChange={(e) => {
+                        const n = Number(e.target.value)
+                        const counters = { ...(card.counters ?? {}) }
+                        if (n > 0) counters.PLUS_ONE_PLUS_ONE = n
+                        else delete counters.PLUS_ONE_PLUS_ONE
+                        props.onUpdateBattlefield(i, { counters })
+                      }}
+                    />
+                    <button style={S.removeBtn} onClick={() => props.onRemove(zone, i)}>✕</button>
+                  </div>
+                ))
+              : (items as string[]).map((name, i) => (
+                  <div key={i} style={S.cardRow}>
+                    <span style={S.cardName}>{name}</span>
+                    <button style={S.removeBtn} onClick={() => props.onRemove(zone, i)}>✕</button>
+                  </div>
+                ))}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// --- styles --------------------------------------------------------------------------------
+
+const S: Record<string, CSSProperties> = {
+  page: { position: 'fixed', inset: 0, background: '#0f172a', color: '#e2e8f0', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, sans-serif' },
+  topbar: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderBottom: '1px solid #1e293b', background: '#111827' },
+  title: { fontSize: 16, fontWeight: 700, margin: 0 },
+  linkBtn: { background: 'transparent', color: '#93c5fd', border: 'none', cursor: 'pointer', fontSize: 14 },
+  ghostBtn: { background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155', borderRadius: 6, padding: '6px 12px', cursor: 'pointer', fontSize: 13 },
+  primaryBtn: { background: '#7c3aed', color: 'white', border: 'none', borderRadius: 6, padding: '6px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 600 },
+  statusBar: { padding: '6px 16px', borderBottom: '1px solid #1e293b', fontSize: 13 },
+  errorList: { margin: 0, paddingLeft: 18 },
+  body: { flex: 1, display: 'flex', minHeight: 0 },
+  searchCol: { width: 300, borderRight: '1px solid #1e293b', display: 'flex', flexDirection: 'column', padding: 12, gap: 8 },
+  targetRow: { display: 'flex', alignItems: 'center', gap: 6 },
+  smallLabel: { fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' },
+  select: { background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155', borderRadius: 6, padding: '4px 6px', fontSize: 13 },
+  search: { background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155', borderRadius: 6, padding: '8px 10px', fontSize: 13 },
+  resultList: { flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 },
+  resultRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1e293b', border: '1px solid #263449', borderRadius: 5, padding: '6px 8px', cursor: 'pointer', textAlign: 'left' },
+  resultName: { color: '#e2e8f0', fontSize: 13 },
+  resultMeta: { color: '#64748b', fontSize: 11 },
+  playersCol: { flex: 1, display: 'flex', gap: 12, padding: 12, overflowY: 'auto' },
+  panel: { flex: 1, background: '#111827', border: '1px solid #1e293b', borderRadius: 8, padding: 10, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 },
+  panelHead: { display: 'flex', alignItems: 'center', gap: 8 },
+  nameInput: { flex: 1, background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155', borderRadius: 6, padding: '6px 8px', fontSize: 14, fontWeight: 600 },
+  lifeWrap: { display: 'flex', alignItems: 'center', gap: 4 },
+  lifeInput: { width: 56, background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155', borderRadius: 6, padding: '6px 8px', fontSize: 13 },
+  zoneBlock: { background: '#0b1220', border: '1px solid #1e293b', borderRadius: 6, padding: 8 },
+  zoneHead: { fontSize: 12, fontWeight: 600, color: '#cbd5e1', marginBottom: 4 },
+  count: { color: '#64748b', fontWeight: 400 },
+  empty: { color: '#475569', fontSize: 12 },
+  cardRow: { display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0' },
+  cardName: { flex: 1, fontSize: 12, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  toggle: { display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 10, color: '#94a3b8' },
+  counterInput: { width: 40, background: '#1e293b', color: '#e2e8f0', border: '1px solid #334155', borderRadius: 4, padding: '2px 4px', fontSize: 11 },
+  removeBtn: { background: 'transparent', color: '#f87171', border: 'none', cursor: 'pointer', fontSize: 12 },
+  settingsCol: { width: 240, borderLeft: '1px solid #1e293b', padding: 12, display: 'flex', flexDirection: 'column', gap: 10 },
+  settingsTitle: { fontSize: 13, fontWeight: 700, color: '#cbd5e1' },
+  field: { display: 'flex', flexDirection: 'column', gap: 4 },
+  json: { width: '100%', height: 220, background: '#0b1220', color: '#e2e8f0', border: '1px solid #334155', borderRadius: 6, padding: 8, fontFamily: 'monospace', fontSize: 11, marginBottom: 6 },
+}
+
+export default ScenarioBuilderPage

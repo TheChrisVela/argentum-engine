@@ -729,6 +729,33 @@ data class PlayerTurnHijackedComponent(
 }
 
 /**
+ * Marks a player whose *input authority* is permanently delegated to [controllerId] for
+ * the entire game — the session-level "hotseat" / play-against-yourself setting.
+ *
+ * This is the non-turn-scoped generalization of [PlayerTurnHijackedComponent]: where a
+ * hijack moves input authority for a single controlled turn, this moves it for the whole
+ * game with no lifecycle. In a hotseat scenario the single human connection is set as the
+ * [controllerId] for *both* seats, so one client answers every decision and may submit
+ * actions for either player.
+ *
+ * As with hijack, this moves input authority ONLY — resource ownership (mana, cards, life,
+ * spell/permanent controllership) stays with the affected player, which is exactly what
+ * keeps the engine's seat/ownership checks correct. It is consulted solely at the
+ * input-routing seam via [com.wingedsheep.engine.state.GameState.actorFor]: legal-action
+ * enumeration, decision delivery/validation, per-action seat authorization, and hand
+ * visibility.
+ *
+ * It is written only by the server's hotseat-scenario creation path and is never settable
+ * by a client message, so it cannot widen authority or visibility in a normal game.
+ *
+ * @property controllerId The connection/player that holds input authority for this seat.
+ */
+@Serializable
+data class HotseatControlComponent(
+    val controllerId: EntityId
+) : Component
+
+/**
  * Component indicating that a player will lose the game at the beginning of
  * a future end step. Applied by effects like Last Chance.
  *

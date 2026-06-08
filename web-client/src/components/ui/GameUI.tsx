@@ -406,6 +406,12 @@ function ConnectionOverlay({
                   Deckbuilder
                 </button>
                 <button
+                  onClick={() => navigate('/scenario')}
+                  className={styles.secondaryButton}
+                >
+                  Scenario Builder
+                </button>
+                <button
                   onClick={() => setShowReplays(true)}
                   className={styles.secondaryButton}
                 >

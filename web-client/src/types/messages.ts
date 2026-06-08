@@ -210,6 +210,8 @@ export interface StateDelta {
   /** Hijack indicators — always overwritten on apply (Mindslaver-style) */
   readonly youAreHijacking?: EntityId | null
   readonly youAreHijackedBy?: EntityId | null
+  /** Hotseat indicator — always overwritten on apply */
+  readonly hotseat?: boolean | null
 }
 
 /**

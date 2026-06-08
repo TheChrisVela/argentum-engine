@@ -465,7 +465,8 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
 
     const action = {
       type: 'SubmitDecision' as const,
-      playerId,
+      // Decision owner, not the connection's own seat — see gameplaySlice for hotseat rationale.
+      playerId: pendingDecision.playerId,
       response: {
         type: 'CardsSelectedResponse' as const,
         decisionId: pendingDecision.id,

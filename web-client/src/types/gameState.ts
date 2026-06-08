@@ -63,6 +63,14 @@ export interface ClientGameState {
    * affected-player banner and disabling click handlers. Null in normal play.
    */
   readonly youAreHijackedBy?: EntityId | null
+
+  /**
+   * True when this client controls every seat for the whole game — single-client hotseat
+   * (play against yourself). Drives the "controlling both players" banner and lets the
+   * client act for whichever seat currently has priority. Never set together with
+   * {@link youAreHijacking}.
+   */
+  readonly hotseat?: boolean
 }
 
 /**

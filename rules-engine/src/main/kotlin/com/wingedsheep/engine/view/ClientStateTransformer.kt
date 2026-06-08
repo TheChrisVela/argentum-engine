@@ -254,17 +254,28 @@ class ClientStateTransformer(
         val activePlayerId = state.activePlayerId ?: state.turnOrder.firstOrNull() ?: viewingPlayerId
         val priorityPlayerId = state.priorityPlayerId ?: activePlayerId
 
+        // Hotseat (play-against-yourself): the viewing player holds input authority for
+        // every seat via HotseatControlComponent. Spectators never get hotseat control.
+        val hotseat = !isSpectator && state.turnOrder.any { playerId ->
+            state.getEntity(playerId)
+                ?.get<com.wingedsheep.engine.state.components.player.HotseatControlComponent>()
+                ?.controllerId == viewingPlayerId
+        }
+
         // Hijack indicators (Mindslaver-style). For every other player whose turn the
         // viewing player currently controls, set youAreHijacking = that player. If the
-        // viewing player is themselves being controlled, set youAreHijackedBy.
+        // viewing player is themselves being controlled, set youAreHijackedBy. Skipped in
+        // hotseat, where actorFor also redirects but the dedicated [hotseat] flag drives UI.
         var youAreHijacking: EntityId? = null
         var youAreHijackedBy: EntityId? = null
-        for (playerId in state.turnOrder) {
-            val actor = state.actorFor(playerId)
-            if (playerId == viewingPlayerId && actor != viewingPlayerId) {
-                youAreHijackedBy = actor
-            } else if (playerId != viewingPlayerId && actor == viewingPlayerId) {
-                youAreHijacking = playerId
+        if (!hotseat) {
+            for (playerId in state.turnOrder) {
+                val actor = state.actorFor(playerId)
+                if (playerId == viewingPlayerId && actor != viewingPlayerId) {
+                    youAreHijackedBy = actor
+                } else if (playerId != viewingPlayerId && actor == viewingPlayerId) {
+                    youAreHijacking = playerId
+                }
             }
         }
 
@@ -283,7 +294,8 @@ class ClientStateTransformer(
             combat = combat,
             voidActive = state.nonlandPermanentLeftBattlefieldThisTurn || state.spellWarpedThisTurn,
             youAreHijacking = youAreHijacking,
-            youAreHijackedBy = youAreHijackedBy
+            youAreHijackedBy = youAreHijackedBy,
+            hotseat = hotseat
         )
     }
 

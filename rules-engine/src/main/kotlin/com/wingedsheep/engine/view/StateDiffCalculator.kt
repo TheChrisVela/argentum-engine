@@ -92,6 +92,7 @@ object StateDiffCalculator {
             newLogEntries = newLogEntries,
             youAreHijacking = current.youAreHijacking,
             youAreHijackedBy = current.youAreHijackedBy,
+            hotseat = current.hotseat,
         )
     }
 }

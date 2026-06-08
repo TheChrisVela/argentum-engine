@@ -5,6 +5,9 @@ import { GameBoard } from '../game/GameBoard'
 import { CombatArrows } from '../combat/CombatArrows'
 import type { SpectatingState } from '@/store/slices'
 import { reconstructSnapshots, type ReplayData } from '@/replay/reconstructSnapshots.ts'
+import { frameToScenario } from '../scenario/frameToScenario'
+import { encodeScenario, buildScenarioUrl } from '../scenario/shareScenario'
+import type { ClientGameState } from '@/types/gameState'
 
 // ============================================================================
 // Types
@@ -365,6 +368,26 @@ function ReplayView({
     return () => window.removeEventListener('keydown', handler)
   }, [onPrev, onNext, onToggleAutoPlay, onBack])
 
+  const [scenarioCopied, setScenarioCopied] = useState(false)
+  const handleShareAsScenario = async () => {
+    const spec = frameToScenario(
+      snapshot.gameState as ClientGameState,
+      snapshot.player1Id,
+      snapshot.player2Id,
+      snapshot.player1Name ?? 'Player 1',
+      snapshot.player2Name ?? 'Player 2',
+    )
+    const code = await encodeScenario(spec)
+    const url = buildScenarioUrl(window.location.origin, code)
+    try {
+      await navigator.clipboard.writeText(url)
+      setScenarioCopied(true)
+      setTimeout(() => setScenarioCopied(false), 2500)
+    } catch {
+      window.prompt('Copy this scenario link', url)
+    }
+  }
+
   return (
     <SpectatorContext.Provider
       value={{
@@ -410,6 +433,13 @@ function ReplayView({
               {snapshot.player1Name} vs {snapshot.player2Name}
             </span>
           </div>
+          <button
+            onClick={() => void handleShareAsScenario()}
+            style={styles.scenarioButton}
+            title="Copy a Scenario Builder link for this frame's public board (battlefield, graveyards, exiles, life). Hands and library are hidden in replays and start empty."
+          >
+            {scenarioCopied ? 'Copied!' : 'Share as scenario'}
+          </button>
         </div>
         <div style={styles.gameBoardContainer}>
           <GameBoard spectatorMode topOffset={HEADER_HEIGHT} />
@@ -575,6 +605,16 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid #2a2a3e',
     borderRadius: 4,
     cursor: 'pointer',
+  },
+  scenarioButton: {
+    padding: '8px 16px',
+    fontSize: 13,
+    backgroundColor: '#6d28d9',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 6,
+    cursor: 'pointer',
+    flexShrink: 0,
   },
   scrubberContainer: {
     display: 'flex',

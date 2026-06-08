@@ -94,5 +94,6 @@ export function applyStateDelta(
     gameLog,
     youAreHijacking: delta.youAreHijacking ?? null,
     youAreHijackedBy: delta.youAreHijackedBy ?? null,
+    hotseat: delta.hotseat ?? false,
   }
 }

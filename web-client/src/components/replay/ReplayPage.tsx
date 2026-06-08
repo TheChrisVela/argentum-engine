@@ -7,6 +7,9 @@ import { CombatArrows } from '../combat/CombatArrows'
 import type { SpectatingState } from '@/store/slices'
 import type { SpectatorStateUpdate } from '../admin/ReplayViewer'
 import { reconstructSnapshots, type PublicReplayData } from '@/replay/reconstructSnapshots.ts'
+import { frameToScenario } from '../scenario/frameToScenario'
+import { encodeScenario, buildScenarioUrl } from '../scenario/shareScenario'
+import type { ClientGameState } from '@/types/gameState'
 
 const HEADER_HEIGHT = 55
 
@@ -139,6 +142,26 @@ export function ReplayPage() {
     }
   }
 
+  const [scenarioCopied, setScenarioCopied] = useState(false)
+  const handleShareAsScenario = async (snapshot: SpectatorStateUpdate) => {
+    const spec = frameToScenario(
+      snapshot.gameState as ClientGameState,
+      snapshot.player1Id,
+      snapshot.player2Id,
+      snapshot.player1Name ?? 'Player 1',
+      snapshot.player2Name ?? 'Player 2',
+    )
+    const code = await encodeScenario(spec)
+    const url = buildScenarioUrl(window.location.origin, code)
+    try {
+      await navigator.clipboard.writeText(url)
+      setScenarioCopied(true)
+      setTimeout(() => setScenarioCopied(false), 2500)
+    } catch {
+      window.prompt('Copy this scenario link', url)
+    }
+  }
+
   if (loading) {
     return (
       <div style={styles.centered}>
@@ -211,6 +234,13 @@ export function ReplayPage() {
               <span style={styles.winnerText}>Winner: {metadata.winnerName}</span>
             )}
           </div>
+          <button
+            onClick={() => void handleShareAsScenario(currentSnapshot)}
+            style={styles.scenarioButton}
+            title="Copy a Scenario Builder link for this frame's public board (battlefield, graveyards, exiles, life). Hands and library are hidden in replays and start empty."
+          >
+            {scenarioCopied ? 'Copied!' : 'Share as scenario'}
+          </button>
           <button onClick={handleShare} style={styles.shareButton} title="Copy link to clipboard">
             {copied ? 'Copied!' : 'Share'}
           </button>
@@ -344,6 +374,16 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '8px 16px',
     fontSize: 13,
     backgroundColor: '#1e40af',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 6,
+    cursor: 'pointer',
+    flexShrink: 0,
+  },
+  scenarioButton: {
+    padding: '8px 16px',
+    fontSize: 13,
+    backgroundColor: '#6d28d9',
     color: '#fff',
     border: 'none',
     borderRadius: 6,

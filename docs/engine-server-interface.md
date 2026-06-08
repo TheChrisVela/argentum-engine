@@ -119,7 +119,13 @@ The `GameRequest` sealed interface represents every possible mutation a player c
 Every request includes:
 
 * `requestId` (String/UUID): For logging and idempotency.
-* `playerId` (EntityId): The actor initiating the request.
+* `playerId` (EntityId): The in-game actor the request is attributed to (whose mana, cards, and
+  controllership it spends). Seat authorization is `connectionSeat == playerId ||
+  state.actorFor(playerId) == connectionSeat`: `GameState.actorFor` redirects input authority for
+  Mindslaver-style hijack and for single-client **hotseat** (a `HotseatControlComponent` routes
+  every seat's authority to one connection). So one hotseat connection may submit a request tagged
+  with either seat's `playerId`. `SubmitDecision` additionally requires `playerId ==
+  pendingDecision.playerId` — the client stamps the decision's owner, not the connection's seat.
 * `clientMetadata` (Map<String, String>): Optional key-value pairs for UI tracking (e.g.,
   `{"source": "drag-drop", "clientTime": "12345"}`).
 
