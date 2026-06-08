@@ -558,9 +558,13 @@ object DamageUtils {
 
                 val sourceControllerId = replacementHostController(state, entityId)
                 when (lifeGainEvent.player) {
-                    Player.Each -> return true
+                    Player.Each, Player.Any -> return true
                     Player.You -> if (playerId == sourceControllerId) return true
-                    Player.Opponent -> if (playerId != sourceControllerId) return true
+                    // Player.EachOpponent reads identically to Player.Opponent here — both mean
+                    // "scope this prevention to opponents of the replacement's host controller".
+                    // Used by Gríma Wormtongue (LTR): "Your opponents can't gain life."
+                    Player.Opponent, Player.EachOpponent ->
+                        if (playerId != sourceControllerId) return true
                     else -> {}
                 }
             }
