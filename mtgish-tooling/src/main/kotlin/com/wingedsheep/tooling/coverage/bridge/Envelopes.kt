@@ -7,6 +7,11 @@ internal fun BridgeBuilder.structuralEnvelopes() {
     envelope("CastEffect", "envelope: on-cast actions")
     envelope("PermanentRuleEffect", "envelope: static ability")
     envelope("TriggerA", "envelope: triggered ability (cond in _Trigger)")
+    // TriggerI — a triggered ability with an intervening-if condition (CR 603.4): args are
+    // [trigger, condition, actions]. The condition is rendered as a `triggerCondition = …` line; an
+    // unrenderable condition declines to a scaffold (Canyon Crab's "if you haven't cast a spell from
+    // your hand this turn").
+    envelope("TriggerI", "envelope: triggered ability with intervening-if condition")
     envelope("TriggerOnceEachTurn", "envelope: triggered ability that triggers only once each turn")
     envelope("Activated", "envelope: activated ability")
     envelope("ActivatedWithModifiers", "envelope: activated ability")

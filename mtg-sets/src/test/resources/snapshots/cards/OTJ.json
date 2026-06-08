@@ -387,6 +387,117 @@
     ]
 }
 
+// Canyon Crab
+{
+    "name": "Canyon Crab",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Crab",
+    "oracleText": "{1}{U}: This creature gets +2/-2 until end of turn.\nAt the beginning of your end step, if you haven't cast a spell from your hand this turn, draw a card, then discard a card.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "Not",
+                    "condition": {
+                        "type": "PlayerCastSpellsThisTurn",
+                        "atLeast": 1,
+                        "fromZone": "Hand"
+                    }
+                },
+                "descriptionOverride": "At the beginning of your end step, if you haven't cast a spell from your hand this turn, draw a card, then discard a card."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostMana",
+                    "cost": "{1}{U}"
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": -2
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "{1}{U}: This creature gets +2/-2 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "40",
+        "rarity": "UNCOMMON",
+        "artist": "Ignatius Budi",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/7/b740a8a8-e1d3-4642-a214-03731c9b5553.jpg?1712355388"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Concealed Courtyard
 {
     "name": "Concealed Courtyard",
@@ -556,6 +667,64 @@
         "imageUri": "https://cards.scryfall.io/normal/front/5/f/5ffa48cc-b991-4d47-b7ec-cf678915c758.jpg?1712356314"
     },
     "colorIdentityOverride": []
+}
+
+// Drover Grizzly
+{
+    "name": "Drover Grizzly",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Bear Mount",
+    "oracleText": "Whenever this creature attacks while saddled, creatures you control gain trample until end of turn.\nSaddle 1 (Tap any number of other creatures you control with total power 1 or more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "keywords": [
+        "SADDLE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "SADDLE",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "ForEachInGroup",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "effect": {
+                        "type": "GrantKeyword",
+                        "keyword": "TRAMPLE",
+                        "target": "Self"
+                    }
+                },
+                "triggerCondition": {
+                    "type": "SourceMatches",
+                    "filter": {
+                        "statePredicates": [
+                            "IsSaddled"
+                        ]
+                    }
+                },
+                "descriptionOverride": "creatures you control gain trample until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "161",
+        "artist": "Adrián Rodríguez Pérez",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/560062cd-34f8-4d30-9e25-099b03961724.jpg?1712355911"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
 }
 
 // Forsaken Miner
@@ -742,6 +911,76 @@
     ]
 }
 
+// Giant Beaver
+{
+    "name": "Giant Beaver",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Beaver Mount",
+    "oracleText": "Vigilance\nWhenever this creature attacks while saddled, put a +1/+1 counter on target creature that saddled it this turn.\nSaddle 3 (Tap any number of other creatures you control with total power 3 or more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "VIGILANCE",
+        "SADDLE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "SADDLE",
+            "n": 3
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature that saddled it this turn"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "statePredicates": [
+                                "CrewedOrSaddledSourceThisTurn"
+                            ]
+                        }
+                    },
+                    "id": "target creature that saddled it this turn"
+                },
+                "triggerCondition": {
+                    "type": "SourceMatches",
+                    "filter": {
+                        "statePredicates": [
+                            "IsSaddled"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "165",
+        "artist": "Lars Grant-West",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/1/919826a9-c427-42c6-8885-a87f0b6d2192.jpg?1712355929"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Harrier Strix
 {
     "name": "Harrier Strix",
@@ -850,6 +1089,105 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Holy Cow
+{
+    "name": "Holy Cow",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Ox Angel",
+    "oracleText": "Flash\nFlying\nWhen this creature enters, you gain 2 life and scry 1.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "TopOfLibrary",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeAs": "scried"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "scried",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "toBottom",
+                                    "storeRemainder": "toTop",
+                                    "selectedLabel": "Put on bottom",
+                                    "remainderLabel": "Put on top"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "toBottom",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Library",
+                                        "placement": "Bottom"
+                                    }
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "toTop",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Library",
+                                        "placement": "Top"
+                                    },
+                                    "order": "ControllerChooses"
+                                },
+                                "EmitScriedEvent"
+                            ]
+                        }
+                    ]
+                },
+                "descriptionOverride": "you gain 2 life and scry 1."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "16",
+        "artist": "Justyna Dura",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/0/90de84c9-941b-4056-8501-ce8a948b9643.jpg?1712355286"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

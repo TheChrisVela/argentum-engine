@@ -15,6 +15,7 @@ import com.wingedsheep.tooling.coverage.asObj
 import com.wingedsheep.tooling.coverage.asStr
 import com.wingedsheep.tooling.coverage.compact
 import com.wingedsheep.tooling.coverage.field
+import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.asciiIdentifier
 import com.wingedsheep.tooling.coverage.jsonContains
 import com.wingedsheep.tooling.coverage.pascalToUpperSnake
@@ -138,6 +139,7 @@ object Emitter {
                 }
                 rname == "SpellActions" -> block = ctx.spellBlock(card)
                 rname == "TriggerA" -> block = ctx.triggerBlock(rule)
+                rname == "TriggerI" -> block = ctx.triggerIBlock(rule)
                 rname == "TriggerOnceEachTurn" -> block = ctx.triggerBlock(rule, oncePerTurn = true)
                 rname == "PermanentRuleEffect" -> block = ctx.staticBlock(rule)
                 rname == "If" -> block = ctx.ifRuleBlock(rule)
@@ -158,6 +160,11 @@ object Emitter {
                 rname == "Morph" -> block = manaKeywordCost(rule)?.let { listOf(Assign("morph", Lit("\"$it\""))) }
                 rname == "Flashback" -> block = manaKeywordCost(rule)?.let { listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.flashback", arg("\"$it\"")))))) }
                 rname == "Crew" -> block = rule["args"].asInt()?.let { listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.crew", arg("$it")))))) }
+                // Saddle N (CR 702.171) — a numeric keyword ability. mtgish shapes the count as a nested
+                // `_GameNumber: Integer` game number, so dig the integer out of the args (findInteger) rather
+                // than reading args directly as an Int. Renders `keywordAbility(KeywordAbility.saddle(N))`,
+                // exactly like Crew above; the engine synthesises the Saddle special action from the keyword.
+                rname == "Saddle" -> block = (findInteger(rule["args"]) as? Int)?.let { listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.saddle", arg("$it")))))) }
                 rname == "Equip" -> block = equipAbilityLine(rule)
                 rname == "Protection" -> block = protectionScopeDsl(rule)?.let { listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.Protection", arg(Lit(it))))))) }
                 rname != null && (rname in handledRules || Bridge[rname]?.kind == "keyword") -> continue

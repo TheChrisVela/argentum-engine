@@ -288,15 +288,25 @@ private val TRIGGER_SPEC = mapOf(
     "WhenACreatureBecomesBlocked" to "Triggers.BecomesBlocked",
 )
 
-/** A TriggerA rule (self-triggered) -> triggeredAbility { trigger; [target]; effect }.
+/** A TriggerA rule (self-triggered) -> triggeredAbility { trigger; [triggerCondition]; [target]; effect }.
  *  [oncePerTurn] is set by the `TriggerOnceEachTurn` rule envelope, whose body is otherwise shaped
- *  identically to a TriggerA. */
-internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false): List<Stmt>? {
+ *  identically to a TriggerA. [triggerCondition] is an optional intervening-if condition DSL (CR 603.4)
+ *  supplied by an enclosing gate (e.g. the "while saddled" `If` wrapper passes
+ *  `Conditions.SourceIsSaddled`); it renders as a `triggerCondition = …` line. */
+internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false, triggerCondition: String? = null): List<Stmt>? {
     // A modal triggered ability ("When this enters, choose one — …") carries a `Modal_*` envelope; the
     // generic action path would render only the first mode and silently drop the rest, so decline the
     // whole ability rather than emit one arm (mirrors the spell-side modal guard).
     if ("\"Modal_" in compact(rule)) { reasons.add("modal-trigger"); return null }
-    val spec = triggerSpecFor(rule) ?: run { reasons.add("trigger-shape"); return null }
+
+    // A Mount's "while saddled" attack trigger nests the intervening-if (CR 603.4) *inside* the
+    // TriggerA's trigger slot: `args[0]` is an `If { <gate> } <realTrigger>` node rather than a bare
+    // `_Trigger`. Recognise the exact "this permanent is saddled" gate, unwrap it to the inner real
+    // trigger, and thread `Conditions.SourceIsSaddled` as the triggerCondition (Drover Grizzly, Giant
+    // Beaver). Any other `If` gate leaves the rule untouched so triggerSpecFor declines -> SCAFFOLD; we
+    // never silently drop or widen the gate.
+    val (effRule, effTriggerCondition) = unwrapSaddledIfTrigger(rule, triggerCondition)
+    val spec = triggerSpecFor(effRule) ?: run { reasons.add("trigger-shape"); return null }
     val (targets, actions) = extractEnvelope(rule)
     if (actions == null) { reasons.add("trigger-actions"); return null }
     val (tnode, tvar) = spellTargetExpr(targets, actions) ?: return null
@@ -314,11 +324,79 @@ internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false
     val edsl = renderEffectList(effectActions, tvar) ?: return null
 
     val stmts = mutableListOf<Stmt>(Assign("trigger", Lit(spec)))
+    if (effTriggerCondition != null) stmts.add(Assign("triggerCondition", Lit(effTriggerCondition)))
     if (oncePerTurn) stmts.add(Assign("oncePerTurn", Lit("true")))
     if (mayWrapped && !selfOptional) stmts.add(Assign("optional", Lit("true")))
     if (tvar != null) stmts.add(targetLocal(tnode!!))
     stmts.add(Assign("effect", edsl))
     return listOf(Sub(Block("triggeredAbility", stmts)))
+}
+
+/**
+ * The Mount "while saddled" attack trigger nests the intervening-if (CR 603.4) inside the TriggerA's
+ * trigger slot: `args[0]` is an `If` node whose `args` are `[<gate condition>, <real _Trigger>]`. If
+ * that gate is exactly "this permanent is saddled" (`PermanentPassesFilter(ThisPermanent, IsSaddled)`),
+ * return a rule with `args[0]` replaced by the inner real trigger plus `Conditions.SourceIsSaddled` as
+ * the triggerCondition; the actions in `args[1]` are untouched (Drover Grizzly, Giant Beaver). Any
+ * other gate (or no `If`) returns the rule unchanged with the caller's existing condition, so
+ * `triggerSpecFor` then declines an unrecognised `If` -> SCAFFOLD. Never widens the gate.
+ */
+private fun unwrapSaddledIfTrigger(rule: JsonObject, existing: String?): Pair<JsonObject, String?> {
+    val args = rule["args"].asArr ?: return rule to existing
+    val trig = args.getOrNull(0) as? JsonObject ?: return rule to existing
+    if (trig.strField("_Trigger") != "If") return rule to existing
+    val ifArgs = trig["args"].asArr ?: return rule to existing
+    val gate = ifArgs.getOrNull(0) as? JsonObject
+    val innerTrigger = ifArgs.getOrNull(1) as? JsonObject ?: return rule to existing
+    val isSaddledGate = gate?.strField("_Condition") == "PermanentPassesFilter" &&
+        jsonContains(gate, "_Permanent", "ThisPermanent") &&
+        jsonContains(gate, "_Permanents", "IsSaddled")
+    if (!isSaddledGate) return rule to existing
+    val rewritten = buildJsonObject {
+        rule.forEach { (k, v) -> if (k != "args") put(k, v) }
+        put("args", JsonArray(listOf<JsonElement>(innerTrigger) + args.drop(1)))
+    }
+    return rewritten to (existing ?: "Conditions.SourceIsSaddled")
+}
+
+/**
+ * A `TriggerI` rule (triggered ability with an intervening-if) -> triggeredAbility { trigger;
+ * triggerCondition; [target]; effect }. The rule's args are [trigger, condition, actions]: the
+ * trigger reuses [triggerSpecFor], the condition is rendered by [interveningIfDsl] (only the exact
+ * shapes we can express render; anything else declines to a scaffold), and the actions reuse the
+ * normal trigger-body path. Canyon Crab: "At the beginning of your end step, if you haven't cast a
+ * spell from your hand this turn, draw a card, then discard a card."
+ */
+internal fun EmitCtx.triggerIBlock(rule: JsonObject): List<Stmt>? {
+    val args = rule["args"].asArr ?: run { reasons.add("TriggerI"); return null }
+    val cond = args.getOrNull(1) as? JsonObject
+    val condDsl = interveningIfDsl(cond) ?: run { reasons.add("TriggerI"); return null }
+    // Re-key the TriggerI rule's [trigger, condition, actions] into a TriggerA-shaped [trigger, actions]
+    // so the shared triggerBlock recovers the spec + body; the condition is threaded separately.
+    val triggerA = buildJsonObject {
+        put("_Rule", JsonPrimitive("TriggerA"))
+        put("args", JsonArray(listOfNotNull(args.getOrNull(0)) + listOfNotNull(args.getOrNull(2))))
+    }
+    return triggerBlock(triggerA, triggerCondition = condDsl)
+}
+
+/**
+ * An intervening-if condition node -> a `Conditions.*` DSL string, or null (-> SCAFFOLD) for any
+ * condition shape we can't express exactly. Only the shapes the Mount/cast-from-hand cards need are
+ * recognised; declining beats widening. Currently:
+ *  - `PlayerPassesFilter(You, HasntCastASpellThisTurn(WasCastFromTheirHand))` ("you haven't cast a
+ *    spell from your hand this turn") -> `Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND))`.
+ */
+private fun EmitCtx.interveningIfDsl(cond: JsonObject?): String? {
+    if (cond == null) return null
+    if (cond.strField("_Condition") == "PlayerPassesFilter" &&
+        jsonContains(cond, "_Player", "You") &&
+        jsonContains(cond, "_Players", "HasntCastASpellThisTurn") &&
+        jsonContains(cond, "_Spells", "WasCastFromTheirHand")
+    ) {
+        return "Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND))"
+    }
+    return null
 }
 
 /** The triggered-ability trigger spec for a TriggerA / TriggerOnceEachTurn rule, or null (-> SCAFFOLD)

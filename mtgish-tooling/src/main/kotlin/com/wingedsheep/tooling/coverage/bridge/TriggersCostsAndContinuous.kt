@@ -14,6 +14,19 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     supported("AtTheBeginningOfAPlayersEndStep", "trigger: end step (Triggers.YourEndStep / EachEndStep)")
     supported("WhenAPermanentBecomesTheTargetOfASpellOrAbility", "trigger: becomes target (Triggers.BecomesTargetByOpponent / BecomesTarget / CreatureYouControlBecomesTargetByOpponent)")
 
+    // Intervening-if conditions (CR 603.4) gating a TriggerI, plus the Mount "while saddled" gate. The
+    // emitter renders the recognised shapes to `triggerCondition = Conditions.*`; an unrenderable
+    // condition still scaffolds, so these are accepted as supported vocabulary (the emitter is the gate).
+    supported("PermanentPassesFilter", "condition: a permanent matches a filter (e.g. ThisPermanent IsSaddled -> Conditions.SourceIsSaddled)")
+    supported("PlayerPassesFilter", "condition: a player matches a filter (e.g. You HasntCastASpellThisTurn)")
+    supported("IsSaddled", "predicate: this permanent is saddled (CR 702.171b)")
+    supported("HasntCastASpellThisTurn", "predicate: player hasn't cast a (filtered) spell this turn")
+    supported("WasCastFromTheirHand", "predicate: spell cast from the player's hand (fromZone = HAND)")
+    // Source-relative Mount/Vehicle payoff filter: "a creature that crewed/saddled it this turn"
+    // (Giant Beaver) -> GameObjectFilter.Creature.crewedOrSaddledSourceThisTurn().
+    supported("SaddledPermanentThisTurn", "filter: a creature that saddled this permanent this turn (crewedOrSaddledSourceThisTurn)")
+    supported("CrewedPermanentThisTurn", "filter: a creature that crewed this permanent this turn (crewedOrSaddledSourceThisTurn)")
+
     // Costs.
     supported("PayMana", "cost: pay mana (universal)")
     supported("SacrificeAPermanent", "cost: sacrifice")
