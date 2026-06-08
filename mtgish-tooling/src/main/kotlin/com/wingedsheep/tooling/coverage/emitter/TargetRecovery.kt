@@ -131,6 +131,15 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
     // the generic "blocking creature" constant, silently dropping the source relation. Decline so it
     // scaffolds (Cromat's {W}{B} ability).
     if ("IsBlockingAttacker" in blob || "IsBlockedByDefender" in blob) return null
+    // "creature that crewed/saddled it this turn" (CrewedOrSaddledSourceThisTurn) — a source-relative
+    // Mount/Vehicle payoff filter (Giant Beaver: "put a +1/+1 counter on target creature that saddled it
+    // this turn"). mtgish tags it `SaddledPermanentThisTurn` bound to the trigger's permanent. It composes
+    // onto the plain creature filter via .crewedOrSaddledSourceThisTurn(); a controller restriction on top
+    // of it isn't a shape we render, so decline rather than widen.
+    if ("SaddledPermanentThisTurn" in blob || "CrewedPermanentThisTurn" in blob) {
+        if ("ControlledByAPlayer" in blob) return null
+        return Call("TargetFilter", listOf(arg(Lit("GameObjectFilter.Creature").dot("crewedOrSaddledSourceThisTurn"))))
+    }
     // "nonartifact creature" (the Terror template) renders via .nonartifact(); any OTHER non-cardtype
     // restriction has no faithful filter rendering yet, so drop to SCAFFOLD rather than omit it.
     val nonCardtypes = filterNode.argWordsTagged("IsNonCardtype")
