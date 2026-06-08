@@ -726,6 +726,64 @@
     ]
 }
 
+// Take Up the Shield
+{
+    "name": "Take Up the Shield",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Put a +1/+1 counter on target creature. It gains lifelink and indestructible until end of turn. (Damage and effects that say \"destroy\" don't destroy it.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "INDESTRUCTIBLE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "35",
+        "artist": "Manuel Castañón",
+        "flavorText": "\"You are all part of my pride. As long as I live, I will protect you.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/5/851e842e-a497-4c36-90ee-8d64f806c378.jpg?1673306597"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Tolarian Terror
 {
     "name": "Tolarian Terror",
