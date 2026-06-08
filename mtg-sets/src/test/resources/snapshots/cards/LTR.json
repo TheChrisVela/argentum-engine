@@ -8756,6 +8756,51 @@
     ]
 }
 
+// Nasty End
+{
+    "name": "Nasty End",
+    "manaCost": "{1}{B}",
+    "typeLine": "Instant",
+    "oracleText": "As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards. If the sacrificed creature was legendary, draw three cards instead.",
+    "script": {
+        "spellEffect": {
+            "type": "Gated",
+            "gate": {
+                "type": "Gate.WhenCondition",
+                "condition": "SacrificedPermanentWasLegendary"
+            },
+            "then": {
+                "type": "DrawCards",
+                "count": {
+                    "type": "Fixed",
+                    "amount": 3
+                }
+            },
+            "otherwise": {
+                "type": "DrawCards",
+                "count": {
+                    "type": "Fixed",
+                    "amount": 2
+                }
+            }
+        },
+        "additionalCosts": [
+            {
+                "type": "SacrificePermanent",
+                "filter": "creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "99",
+        "artist": "Valera Lutfullina",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c34f88d7-15a1-434f-88d7-3d4fcf406d54.jpg?1686968630"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Nazgûl
 {
     "name": "Nazgûl",
