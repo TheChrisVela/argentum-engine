@@ -10,7 +10,7 @@ Verify status anytime with: `scripts/card-status --set LTR` (and `--list --set L
 
 ## Status
 
-Draft cards at **177/261**. Every remaining unchecked card in `cards.md` (excluding the five
+Draft cards at **178/261**. Every remaining unchecked card in `cards.md` (excluding the five
 basic lands, which `basicLandsFallback` covers) needs at least one new engine primitive — see
 the "Engine gaps blocking the remaining cards" section below. Each card is listed under the
 primitive it is waiting on, with the exact blocking clause. Stop and open a dedicated PR per
@@ -234,8 +234,7 @@ resumer to capture snapshots on edict-driven sacrifices and inject them into the
 "each player sacrifices" can read the per-player history.
 - **Nasty End** — ✅ implemented.
 - **Gríma Wormtongue** — ✅ implemented.
-- **Rise of the Witch-king** — "If you sacrificed a creature this way, you may return another
-  permanent card from your graveyard to the battlefield." (each-player edict + reanimate).
+- **Rise of the Witch-king** — ✅ implemented.
 
 ### Gap 18 — Ring-bearer player-state conditions and statics
 **Engine change:** a player-level "you control a Ring-bearer" condition and a "must be blocked
