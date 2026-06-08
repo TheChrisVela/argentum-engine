@@ -19,6 +19,9 @@ import com.wingedsheep.tooling.coverage.compact
 import com.wingedsheep.tooling.coverage.field
 import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.jsonContains
+import com.wingedsheep.tooling.coverage.nodesTagged
+import com.wingedsheep.tooling.coverage.render
+import com.wingedsheep.tooling.coverage.renderBlock
 import com.wingedsheep.tooling.coverage.strField
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -78,6 +81,7 @@ internal fun EmitCtx.castEffectHandled(rule: JsonObject): Boolean {
     return when (node.strField("_CastEffect")) {
         "CantBeCastUnless" -> castRestrictionLines(listOf(rule)) != null
         "AdditionalCastingCost" -> additionalCostLine(rule) != null
+        "ReduceCastingCostIf" -> costReductionStaticLines(rule) != null
         else -> false
     }
 }
@@ -87,10 +91,46 @@ internal fun EmitCtx.cardLevelCastEffectLines(card: JsonObject): List<String>? {
     for (rule in (card["Rules"].asArr ?: JsonArray(emptyList())).filterIsInstance<JsonObject>()) {
         if (rule.strField("_Rule") != "CastEffect") continue
         val line = additionalCostLine(rule)
-        if (line != null) lines.add(line)
-        else if (!castEffectHandled(rule)) return null
+        if (line != null) { lines.add(line); continue }
+        val reduction = costReductionStaticLines(rule)
+        if (reduction != null) { lines.addAll(reduction); continue }
+        if (!castEffectHandled(rule)) return null
     }
     return lines
+}
+
+/**
+ * `CastEffect(ReduceCastingCostIf([CostReduceGeneric N], PlayerPassesFilter(You, ControlsA(filter))))`
+ * -> a `staticAbility { ability = ModifySpellCost(SelfCast, ReduceGenericBy(FixedIfControlFilter(N,
+ * <filter>))) }` block (Cactarantula: "This spell costs {1} less to cast if you control a Desert").
+ *
+ * Renders only the "if you control a [filter]" conditional generic reduction; any other condition or a
+ * colored/dynamic reduction declines -> SCAFFOLD rather than widening.
+ */
+private fun EmitCtx.costReductionStaticLines(rule: JsonObject): List<String>? {
+    val node = rule["args"] as? JsonObject ?: return null
+    if (node.strField("_CastEffect") != "ReduceCastingCostIf") return null
+    val args = node["args"].asArr ?: return null
+    val symbols = (args.getOrNull(0) as? JsonArray)?.filterIsInstance<JsonObject>() ?: return null
+    // Only a single bare generic reduction renders.
+    if (symbols.size != 1 || symbols[0].strField("_CostReductionSymbol") != "CostReduceGeneric") return null
+    val amount = symbols[0]["args"].asInt() ?: return null
+    val cond = args.getOrNull(1) as? JsonObject ?: return null
+    if (cond.strField("_Condition") != "PlayerPassesFilter") return null
+    val condArgs = cond["args"].asArr ?: return null
+    if ((condArgs.getOrNull(0) as? JsonObject)?.strField("_Player") != "You") return null
+    val controls = condArgs.getOrNull(1) as? JsonObject ?: return null
+    if (controls.strField("_Players") != "ControlsA") return null
+    val filter = gameObjectFilterDsl(controls["args"]) ?: return null
+    val ability = call(
+        "ModifySpellCost",
+        arg("target", Lit("SpellCostTarget.SelfCast")),
+        arg("modification", call(
+            "CostModification.ReduceGenericBy",
+            arg(call("CostReductionSource.FixedIfControlFilter", arg("amount", "$amount"), arg("filter", Lit(filter)))),
+        )),
+    )
+    return renderBlock(Block("staticAbility", listOf(Assign("ability", ability))), "    ")
 }
 
 private fun EmitCtx.additionalCostLine(rule: JsonObject): String? {
@@ -129,6 +169,82 @@ private fun EmitCtx.conditionalSpell(card: JsonObject): List<Stmt>? {
     if (inner == null) return null
     val edsl = renderEffectList(inner, null) ?: return null
     return listOf(Sub(Block("spell", listOf(Assign("condition", Lit(cond)), Assign("effect", edsl)))))
+}
+
+/**
+ * "you control a [filter]" condition (`PlayerPassesFilter(You, ControlsA(filter))`) -> the
+ * `Conditions.YouControl(<filter>)` DSL string, or null when the player isn't You / the filter isn't
+ * a single `ControlsA` we can render. Used by the [ifRuleBlock] static gates (Bristlepack Sentry's
+ * "as long as you control a creature with power 4 or greater").
+ */
+private fun EmitCtx.youControlConditionDsl(condNode: JsonElement?): String? {
+    val cond = condNode as? JsonObject ?: return null
+    if (cond.strField("_Condition") != "PlayerPassesFilter") return null
+    val args = cond["args"].asArr ?: return null
+    if ((args.getOrNull(0) as? JsonObject)?.strField("_Player") != "You") return null
+    val controls = args.getOrNull(1) as? JsonObject ?: return null
+    if (controls.strField("_Players") != "ControlsA") return null
+    val filter = gameObjectFilterDsl(controls["args"]) ?: return null
+    return render(call("Conditions.YouControl", arg(Lit(filter))))
+}
+
+/**
+ * `If{cond}[rules]` permanent rule -> one or more `staticAbility { ability = ... }` blocks gating a
+ * continuous effect on a condition. Renders only the exact shapes we can express faithfully:
+ *
+ *  - `If(IsAPlayersTurn(Other You))[PlayerEffect(You, DecreaseSpellCost(AnySpell, CostReduceGeneric N))]`
+ *    -> `ModifySpellCost(YouCast(Any), ReduceGeneric(N), gating = OnlyIf(IsNotYourTurn))` (Geyser Drake).
+ *  - `If(PlayerPassesFilter(You, ControlsA(filter)))[PermanentRuleEffect(ThisPermanent,
+ *    CanAttackAsThoughItDidntHaveDefender)]`
+ *    -> `CanAttackDespiteDefender(condition = YouControl(filter))` (Bristlepack Sentry).
+ *
+ * Any other condition/inner-effect combination declines -> SCAFFOLD rather than widening.
+ */
+internal fun EmitCtx.ifRuleBlock(rule: JsonObject): List<Stmt>? {
+    val args = rule["args"].asArr ?: run { reasons.add("If"); return null }
+    val cond = args.getOrNull(0) as? JsonObject ?: run { reasons.add("If"); return null }
+    val inner = (args.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>()
+        ?: run { reasons.add("If"); return null }
+    if (inner.size != 1) { reasons.add("If"); return null }
+    val innerRule = inner[0]
+
+    // Geyser Drake: "During turns other than yours, spells you cast cost {1} less to cast."
+    if (innerRule.strField("_Rule") == "PlayerEffect" &&
+        cond.strField("_Condition") == "IsAPlayersTurn" &&
+        jsonContains(cond, "_Players", "Other") && jsonContains(cond, "_Player", "You")
+    ) {
+        val pe = (innerRule["args"].asArr?.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>()?.singleOrNull()
+        if (pe != null && pe.strField("_PlayerEffect") == "DecreaseSpellCost" &&
+            jsonContains(pe, "_Spells", "AnySpell")
+        ) {
+            val amount = (pe as JsonElement?).nodesTagged("CostReduceGeneric").firstOrNull()?.get("args").asInt()
+            // Only a single bare generic reduction (no colored symbols) renders; otherwise decline.
+            val blob = compact(pe)
+            val onlyGeneric = (pe as JsonElement?).nodesTagged("CostReduceGeneric").size == 1 &&
+                !Regex("CostReduce(?!Generic)").containsMatchIn(blob)
+            if (amount != null && onlyGeneric) {
+                return listOf(staticAbilityStmt(call(
+                    "ModifySpellCost",
+                    arg("target", call("SpellCostTarget.YouCast", arg("GameObjectFilter.Any"))),
+                    arg("modification", call("CostModification.ReduceGeneric", arg("$amount"))),
+                    arg("gating", call("CostGating.OnlyIf", arg("Conditions.IsNotYourTurn"))),
+                )))
+            }
+        }
+        reasons.add("If"); return null
+    }
+
+    // Bristlepack Sentry: "As long as you control a creature with power 4 or greater, this creature
+    // can attack as though it didn't have defender."
+    if (innerRule.strField("_Rule") == "PermanentRuleEffect" &&
+        jsonContains(innerRule, "_PermanentRule", "CanAttackAsThoughItDidntHaveDefender") &&
+        jsonContains(innerRule, "_Permanent", "ThisPermanent")
+    ) {
+        val condDsl = youControlConditionDsl(cond) ?: run { reasons.add("If"); return null }
+        return listOf(staticAbilityStmt(call("CanAttackDespiteDefender", arg("condition", Lit(condDsl)))))
+    }
+
+    reasons.add("If"); return null
 }
 
 internal fun EmitCtx.spellBlock(card: JsonObject): List<Stmt>? {
@@ -252,6 +368,23 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
     // "Whenever a player cycles a card" (any player) — Fleeting Aven, Invigorating Boon.
     if (jsonContains(trig, "_Trigger", "WhenAPlayerCyclesACard") && jsonContains(trig, "_Players", "AnyPlayer"))
         return "Triggers.AnyPlayerCycles"
+
+    // "Whenever this creature becomes the target of a spell or ability an opponent controls"
+    // (Cactarantula). The trigger's args is a 2-tuple [subject, spell/ability-filter]; the subject must
+    // be SinglePermanent(ThisPermanent) and the filter an opponent-controlled spell/ability. Only that
+    // exact self + opponent shape maps to Triggers.BecomesTargetByOpponent; anything else (a filtered
+    // permanent group, your own spells, a count clause) declines -> SCAFFOLD.
+    if (jsonContains(trig, "_Trigger", "WhenAPermanentBecomesTheTargetOfASpellOrAbility")) {
+        val targs = trig["args"].asArr ?: return null
+        val subject = targs.getOrNull(0) as? JsonObject
+        val selfSubject = subject?.strField("_Permanents") == "SinglePermanent" &&
+            subject.field("args").strField("_Permanent") == "ThisPermanent"
+        val filter = targs.getOrNull(1) as? JsonObject
+        val opponentControlled = filter?.strField("_SpellsAndAbilities") == "ControlledByAPlayer" &&
+            filter.field("args").strField("_Players") == "Opponent"
+        if (selfSubject && opponentControlled) return "Triggers.BecomesTargetByOpponent"
+        return null
+    }
 
     // "Whenever a creature attacks" — only the unrestricted any-creature shape (no subtype / controller /
     // count clause), which maps to a filterless ANY-binding attacks trigger (Righteous Cause).

@@ -192,6 +192,52 @@
     ]
 }
 
+// Bristlepack Sentry
+{
+    "name": "Bristlepack Sentry",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Plant Wolf",
+    "oracleText": "Defender\nAs long as you control a creature with power 4 or greater, this creature can attack as though it didn't have defender.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "DEFENDER"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CanAttackDespiteDefender",
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "creature pow>=4"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "156",
+        "artist": "Josiah \"Jo\" Cameron",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/a/6aea6702-16a8-4073-9c83-fbea20a5fd32.jpg?1712355891",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Once Bristlepack Sentry has legally attacked, causing its last ability to not apply by removing other creatures from the battlefield or reducing the power of one or more creatures won't cause Bristlepack Sentry to stop attacking."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "If you raise Bristlepack Sentry's power to 4 or greater, it fulfills its own condition and it can attack as though it didn't have defender."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Bristly Bill, Spine Sower
 {
     "name": "Bristly Bill, Spine Sower",
@@ -265,6 +311,76 @@
         "artist": "Daniel Zrom",
         "flavorText": "\"Wake up, little ones. There's a new day ahead.\"",
         "imageUri": "https://cards.scryfall.io/normal/front/5/2/52eef0d6-24b7-40b7-8403-e8e863d0cd55.jpg?1712355894"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Cactarantula
+{
+    "name": "Cactarantula",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Plant Spider",
+    "oracleText": "This spell costs {1} less to cast if you control a Desert.\nReach\nWhenever this creature becomes the target of a spell or ability an opponent controls, you may draw a card.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "BecomesTargetEvent",
+                    "byOpponent": true
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "optional": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "FixedIfControlFilter",
+                        "amount": 1,
+                        "filter": "land Desert"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "158",
+        "artist": "Filip Burburan",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/e/2e0e27f9-dc2c-4366-b810-3e8d0bdff8c3.jpg?1712355900",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Cactarantula still costs only {1} less to cast if you control multiple Deserts."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "Cactarantula's last ability resolves before the spell or ability that caused it to trigger. It resolves even if that spell is countered."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "If a spell or ability targets Cactarantula more than once, its last ability still triggers only once."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "GREEN"
@@ -571,6 +687,169 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Geyser Drake
+{
+    "name": "Geyser Drake",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Drake",
+    "oracleText": "Flying\nDuring turns other than yours, spells you cast cost {1} less to cast.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": {}
+                },
+                "modification": {
+                    "type": "ReduceGeneric",
+                    "amount": 1
+                },
+                "gating": {
+                    "type": "OnlyIf",
+                    "condition": "IsNotYourTurn"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "artist": "Daniel Romanovsky",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b270377b-33eb-4e5e-9d14-0da2876da74f.jpg?1712355434",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Geyser Drake's last ability doesn't change the mana cost or mana value of any spell. It changes only the total cost you pay to cast spells."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "Geyser Drake's last ability can't reduce the amount of colored mana you pay for a spell. It reduces only the generic mana component of that spell's cost."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Harrier Strix
+{
+    "name": "Harrier Strix",
+    "manaCost": "{U}",
+    "typeLine": "Creature — Bird",
+    "oracleText": "Flying\nWhen this creature enters, tap target permanent.\n{2}{U}: Draw a card, then discard a card.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "permanent to tap"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent"
+                    },
+                    "id": "permanent to tap"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostMana",
+                    "cost": "{2}{U}"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "descriptionOverride": "{2}{U}: Draw a card, then discard a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "52",
+        "artist": "Brian Valeza",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/0/70ca61a9-8938-41bf-bd14-5759f4de6521.jpg?1712355435",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "You may target a permanent that is already tapped with Harrier Strix's second ability."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

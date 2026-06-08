@@ -1162,6 +1162,16 @@ object Triggers {
     )
 
     /**
+     * Whenever this permanent becomes the target of a spell or ability an opponent
+     * controls (Cactarantula). Self-bound counterpart of
+     * [CreatureYouControlBecomesTargetByOpponent].
+     */
+    val BecomesTargetByOpponent: TriggerSpec = TriggerSpec(
+        event = BecomesTargetEvent(byOpponent = true),
+        binding = TriggerBinding.SELF
+    )
+
+    /**
      * Whenever a creature you control with a specific filter becomes the target
      * of a spell or ability.
      */

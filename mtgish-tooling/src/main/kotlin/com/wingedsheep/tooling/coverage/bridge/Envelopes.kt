@@ -19,6 +19,12 @@ internal fun BridgeBuilder.structuralEnvelopes() {
     envelope("MayCost", "gate envelope: 'you may pay' (Lesson 1 cluster)")
     envelope("Unless", "gate envelope: 'unless ...' (Lesson 1 cluster)", composes = listOf("PayOrSuffer"))
 
+    // A controller-scoped continuous static ("spells you cast cost less", "you have shroud"); the real
+    // capability is the nested _PlayerEffect (e.g. DecreaseSpellCost -> ModifySpellCost). The emitter
+    // renders only the exact shapes it can express (Geyser Drake's turn-gated cost reduction) and
+    // scaffolds the rest, so this is a structural envelope, never a blanket capability claim.
+    envelope("PlayerEffect", "envelope: controller-scoped static (cost reduction, shroud, ...)")
+
     // Player-delegation envelopes.
     envelope("PlayerAction", "envelope: 'target player does X'")
     envelope("EachPlayerAction", "envelope: APNAP each-player")

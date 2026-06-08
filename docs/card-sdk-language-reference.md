@@ -1402,6 +1402,9 @@ Triggers.youCastSpell(
 - `CreatureYouControlBecomesTargetByOpponent(filter?, includeSpellTargets = false)` — your creature
   gets targeted by an opponent's spell or ability. Permanent-only unless `includeSpellTargets = true`
   (Surrak), which also fires when an opponent targets a matching creature spell you control.
+- `BecomesTargetByOpponent` — the self-bound counterpart of the above: source becomes the target of a
+  spell or ability **an opponent controls** (Cactarantula's "Whenever this creature becomes the target
+  of a spell or ability an opponent controls, you may draw a card").
 - `Transforms` — source transforms (either direction).
 - `TransformsToFront` — to front face.
 - `TransformsToBack` — to back face.
