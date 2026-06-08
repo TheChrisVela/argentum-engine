@@ -10582,6 +10582,73 @@
     ]
 }
 
+// Samwise the Stouthearted
+{
+    "name": "Samwise the Stouthearted",
+    "manaCost": "{1}{W}",
+    "typeLine": "Legendary Creature — Halfling Peasant",
+    "oracleText": "Flash\nWhen Samwise enters, choose up to one target permanent card in your graveyard that was put there from the battlefield this turn. Return it to your hand. Then the Ring tempts you.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "permanent card in your graveyard that was put there from the battlefield this turn"
+                            },
+                            "destination": "Hand",
+                            "fromZone": "Graveyard"
+                        },
+                        "TheRingTemptsYou"
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsPermanent"
+                            ],
+                            "statePredicates": [
+                                "PutIntoGraveyardFromBattlefieldThisTurn"
+                            ],
+                            "controllerPredicate": "OwnedByYou"
+                        },
+                        "zone": "Graveyard"
+                    },
+                    "id": "permanent card in your graveyard that was put there from the battlefield this turn"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "28",
+        "rarity": "UNCOMMON",
+        "artist": "Irvin Rodriguez",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/1/214c270e-29ca-4d69-bea6-9252ae7707ad.jpg?1686967902"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Saradoc, Master of Buckland
 {
     "name": "Saradoc, Master of Buckland",
