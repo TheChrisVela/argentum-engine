@@ -294,6 +294,67 @@
     ]
 }
 
+// Beastbond Outcaster
+{
+    "name": "Beastbond Outcaster",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Human Druid",
+    "oracleText": "When this creature enters, if you control a creature with power 4 or greater, draw a card.\nPlot {1}{G} (You may pay {1}{G} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "PLOT"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Plot",
+            "cost": "{1}{G}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "triggerCondition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "creature pow>=4"
+                },
+                "descriptionOverride": "When this creature enters, if you control a creature with power 4 or greater, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "154",
+        "rarity": "UNCOMMON",
+        "artist": "Viko Menezes",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/7/073b9ae8-8ac3-4824-aec4-84a80531aa23.jpg?1712355883",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "When Beastbond Outcaster enters the battlefield, its triggered ability will check to see if you control a creature with power 4 or greater. If you don't, the ability won't trigger at all. If the ability does trigger, it will check again as it tries to resolve. If you no longer control a creature with power 4 or greater, the ability won't do anything."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Blacksnag Buzzard
 {
     "name": "Blacksnag Buzzard",
@@ -2378,6 +2439,66 @@
     ]
 }
 
+// Hellspur Brute
+{
+    "name": "Hellspur Brute",
+    "manaCost": "{4}{R}",
+    "typeLine": "Creature — Minotaur Mercenary",
+    "oracleText": "Affinity for outlaws (This spell costs {1} less to cast for each Assassin, Mercenary, Pirate, Rogue, and/or Warlock you control.)\nTrample",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "PermanentsYouControlMatching",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                {
+                                    "type": "HasAnyOfSubtypes",
+                                    "subtypes": [
+                                        "Assassin",
+                                        "Mercenary",
+                                        "Pirate",
+                                        "Rogue",
+                                        "Warlock"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "127",
+        "rarity": "UNCOMMON",
+        "artist": "Caio Monteiro",
+        "flavorText": "The last fool who called him \"cowboy\" earned a free ride to the bottom of Blacksnag Bog.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/b/3b99db5b-cd13-4e69-98b7-753e72c781f8.jpg?1712355767",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "A card, spell, or permanent is an outlaw if it has the Assassin, Mercenary, Pirate, Rogue, or Warlock creature type. It doesn't matter if it has more than one of those creature types; as long as it has at least one, it's an outlaw."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Holy Cow
 {
     "name": "Holy Cow",
@@ -2539,6 +2660,79 @@
     },
     "colorIdentityOverride": [
         "RED",
+        "WHITE"
+    ]
+}
+
+// Inventive Wingsmith
+{
+    "name": "Inventive Wingsmith",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Dwarf Artificer",
+    "oracleText": "At the beginning of your end step, if you haven't cast a spell from your hand this turn and this creature doesn't have a flying counter on it, put a flying counter on it.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "flying",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "triggerCondition": {
+                    "type": "All",
+                    "conditions": [
+                        {
+                            "type": "Not",
+                            "condition": {
+                                "type": "PlayerCastSpellsThisTurn",
+                                "atLeast": 1,
+                                "fromZone": "Hand"
+                            }
+                        },
+                        {
+                            "type": "Not",
+                            "condition": {
+                                "type": "SourceMatches",
+                                "filter": {
+                                    "statePredicates": [
+                                        {
+                                            "type": "HasCounter",
+                                            "counterType": "FLYING"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your end step, if you haven't cast a spell from your hand this turn and this creature doesn't have a flying counter on it, put a flying counter on it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "17",
+        "artist": "David Astruga",
+        "flavorText": "\"We must forge for ourselves the gifts that nature neglected to give us.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b6b36bb3-dacc-44f6-adcd-2c2d65513d8c.jpg?1712355293",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "At the beginning of your end step, Inventive Wingsmith's ability will check to see if you've cast a spell from your hand this turn and if Inventive Wingsmith has a flying counter on it. If either is true, the ability won't trigger at all. If the ability does trigger, it will check again as it tries to resolve. If either is true as the ability tries to resolve, the ability won't do anything."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
         "WHITE"
     ]
 }
@@ -3026,6 +3220,78 @@
             {
                 "date": "2024-04-12",
                 "text": "The number of noncreature spells is counted as Magebane Lizard's ability resolves, so a noncreature spell cast in response will be counted."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Mine Raider
+{
+    "name": "Mine Raider",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Human Rogue",
+    "oracleText": "Trample\nWhen this creature enters, if you control another outlaw, create a Treasure token. (Assassins, Mercenaries, Pirates, Rogues, and Warlocks are outlaws. A Treasure token is an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                {
+                                    "type": "HasAnyOfSubtypes",
+                                    "subtypes": [
+                                        "Assassin",
+                                        "Mercenary",
+                                        "Pirate",
+                                        "Rogue",
+                                        "Warlock"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "descriptionOverride": "When this creature enters, if you control another outlaw, create a Treasure token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "135",
+        "artist": "Warren Mahy",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/9/19cfacff-e884-4954-aa6b-ed56ca942bf2.jpg?1712355800",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "A card, spell, or permanent is an outlaw if it has the Assassin, Mercenary, Pirate, Rogue, or Warlock creature type. It doesn't matter if it has more than one of those creature types; as long as it has at least one, it's an outlaw."
             }
         ]
     },

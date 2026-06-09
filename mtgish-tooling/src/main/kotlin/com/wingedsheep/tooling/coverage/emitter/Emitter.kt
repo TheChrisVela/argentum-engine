@@ -186,6 +186,13 @@ object Emitter {
                 rname == "Plot" -> block = manaKeywordCost(rule)?.let {
                     listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.plot", arg("\"$it\""))))))
                 }
+                // Affinity for <group> (cost-reduction keyword, CR 702.41) — "this spell costs {1} less
+                // to cast for each <filter> you control." The engine has no Keyword.AFFINITY card-keyword
+                // path for arbitrary group affinity, so render a self-cast ModifySpellCost whose
+                // per-permanent generic reduction counts the matching permanents you control (the general
+                // PermanentsYouControlMatching primitive). Only the group filters we can render exactly
+                // produce a block; anything else declines -> scaffold.
+                rname == "Affinity" -> block = ctx.affinityBlock(rule)
                 // Station keyword ability (CR 702.184a) — fully fixed, renders the no-arg builder.
                 rname == "Station" -> block = listOf(Eval(call("station")))
                 // {N+} station symbol that animates into a creature (CR 721.2b). Non-animating

@@ -150,6 +150,26 @@ private fun EmitCtx.costReductionStaticLines(rule: JsonObject): List<String>? {
     return renderBlock(Block("staticAbility", listOf(Assign("ability", ability))), "    ")
 }
 
+/**
+ * An `Affinity(<group filter>)` rule -> a self-cast `ModifySpellCost` whose generic reduction counts
+ * the permanents you control matching the group ("Affinity for outlaws", "Affinity for artifacts").
+ * The reduction reuses [CostReductionSource.PermanentsYouControlMatching], the general per-permanent
+ * primitive. Only the group filters [gameObjectFilterDsl] can render exactly produce a block; any
+ * other affinity group declines -> SCAFFOLD rather than guess (Hellspur Brute: "Affinity for outlaws").
+ */
+internal fun EmitCtx.affinityBlock(rule: JsonObject): List<Stmt>? {
+    val filter = gameObjectFilterDsl(rule["args"]) ?: run { reasons.add("Affinity"); return null }
+    val ability = call(
+        "ModifySpellCost",
+        arg("target", Lit("SpellCostTarget.SelfCast")),
+        arg("modification", call(
+            "CostModification.ReduceGenericBy",
+            arg(call("CostReductionSource.PermanentsYouControlMatching", arg(Lit(filter)))),
+        )),
+    )
+    return listOf(staticAbilityStmt(ability))
+}
+
 private fun EmitCtx.additionalCostLine(rule: JsonObject): String? {
     val node = rule["args"] as? JsonObject ?: return null
     if (node.strField("_CastEffect") != "AdditionalCastingCost") return null
@@ -442,13 +462,35 @@ internal fun EmitCtx.triggerIBlock(rule: JsonObject): List<Stmt>? {
 
 /**
  * An intervening-if condition node -> a `Conditions.*` DSL string, or null (-> SCAFFOLD) for any
- * condition shape we can't express exactly. Only the shapes the Mount/cast-from-hand cards need are
- * recognised; declining beats widening. Currently:
+ * condition shape we can't express exactly. Only the shapes our calibrated cards need are
+ * recognised; declining beats widening. A top-level `And` composes its arms with `Conditions.All`
+ * (each arm must itself render). The single-condition shapes:
  *  - `PlayerPassesFilter(You, HasntCastASpellThisTurn(WasCastFromTheirHand))` ("you haven't cast a
- *    spell from your hand this turn") -> `Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND))`.
+ *    spell from your hand this turn") -> `Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND))`
+ *    (Canyon Crab).
+ *  - `PermanentPassesFilter(ThisPermanent, HasNoCountersOfType(<counter>))` ("this creature doesn't
+ *    have a <counter> counter on it") -> `Conditions.Not(Conditions.SourceHasCounter(CounterTypeFilter.Named("<counter>")))`
+ *    (Inventive Wingsmith).
+ *  - `PlayerPassesFilter(You, ControlsA(And(Other(ThatEnteringPermanent), IsAnOutlaw)))` ("you
+ *    control another outlaw") -> `Conditions.YouControlAtLeast(2, <outlaw filter>)` — the entering
+ *    permanent is itself an outlaw, so "another outlaw" = "two or more outlaws" (Mine Raider).
+ *  - `PlayerPassesFilter(You, ControlsA(<filter>))` ("you control a <filter>") ->
+ *    `Conditions.YouControl(<filter>)` (Beastbond Outcaster's "a creature with power 4 or greater").
  */
 private fun EmitCtx.interveningIfDsl(cond: JsonObject?): String? {
     if (cond == null) return null
+    // Top-level And -> Conditions.All(arm, arm, ...); every arm must render or the whole declines.
+    if (cond.strField("_Condition") == "And") {
+        val arms = cond["args"].asArr?.filterIsInstance<JsonObject>() ?: return null
+        if (arms.size < 2) return null
+        val rendered = arms.map { interveningIfDsl(it) ?: return null }
+        return "Conditions.All(${rendered.joinToString(", ")})"
+    }
+    return singleInterveningIfDsl(cond)
+}
+
+/** One non-And intervening-if condition node -> its `Conditions.*` DSL, or null (-> SCAFFOLD). */
+private fun EmitCtx.singleInterveningIfDsl(cond: JsonObject): String? {
     if (cond.strField("_Condition") == "PlayerPassesFilter" &&
         jsonContains(cond, "_Player", "You") &&
         jsonContains(cond, "_Players", "HasntCastASpellThisTurn") &&
@@ -456,7 +498,49 @@ private fun EmitCtx.interveningIfDsl(cond: JsonObject?): String? {
     ) {
         return "Conditions.Not(Conditions.YouCastSpellsThisTurn(1, fromZone = Zone.HAND))"
     }
+    // "this creature doesn't have a <counter> counter on it" — PermanentPassesFilter(ThisPermanent,
+    // HasNoCountersOfType(<counter>)). Only the keyword/named counters we can name render; the source
+    // ref must be ThisPermanent.
+    if (cond.strField("_Condition") == "PermanentPassesFilter" &&
+        jsonContains(cond, "_Permanent", "ThisPermanent") &&
+        jsonContains(cond, "_Permanents", "HasNoCountersOfType")
+    ) {
+        val counter = counterNameForFilter(cond) ?: return null
+        return "Conditions.Not(Conditions.SourceHasCounter(CounterTypeFilter.Named(\"$counter\")))"
+    }
+    // "you control another outlaw" — ControlsA over And(Other(ThatEnteringPermanent), IsAnOutlaw). The
+    // entering permanent is itself an outlaw, so this is exactly "two or more outlaws you control".
+    youControlAnotherOutlawDsl(cond)?.let { return it }
+    // "you control a <filter>" — reuse the static-gate renderer (PlayerPassesFilter(You, ControlsA(filter))).
+    youControlConditionDsl(cond)?.let { return it }
     return null
+}
+
+/** The "<counter> counter" name for a `HasNoCountersOfType(<CounterType>)` node, mapped to the engine's
+ *  `CounterTypeFilter.Named` string, or null for a counter kind we don't name. */
+private fun counterNameForFilter(cond: JsonObject): String? {
+    val noCounters = cond.nodesTagged("HasNoCountersOfType").firstOrNull() ?: return null
+    return when ((noCounters["args"] as? JsonObject)?.strField("_CounterType")) {
+        "FlyingCounter" -> "flying"
+        else -> null
+    }
+}
+
+/** `PlayerPassesFilter(You, ControlsA(And(Other(ThatEnteringPermanent), IsAnOutlaw)))` ("you control
+ *  another outlaw") -> `Conditions.YouControlAtLeast(2, <outlaw filter>)`, else null. The
+ *  Other(ThatEnteringPermanent) self-exclusion + the entering permanent being an outlaw is what makes
+ *  "another outlaw" equivalent to "two or more outlaws you control" (Mine Raider). */
+private fun EmitCtx.youControlAnotherOutlawDsl(cond: JsonObject): String? {
+    if (cond.strField("_Condition") != "PlayerPassesFilter") return null
+    val args = cond["args"].asArr ?: return null
+    if ((args.getOrNull(0) as? JsonObject)?.strField("_Player") != "You") return null
+    val controls = args.getOrNull(1) as? JsonObject ?: return null
+    if (controls.strField("_Players") != "ControlsA") return null
+    val blob = compact(controls)
+    if ("IsAnOutlaw" !in blob) return null
+    // Must be the "another" (Other) self-exclusion shape; a plain "an outlaw" would not be "another".
+    if ("\"Other\"" !in blob) return null
+    return "Conditions.YouControlAtLeast(2, GameObjectFilter.Creature.withAnyOfSubtypes(Subtype.OUTLAW_TYPES))"
 }
 
 /** The triggered-ability trigger spec for a TriggerA / TriggerOnceEachTurn rule, or null (-> SCAFFOLD)

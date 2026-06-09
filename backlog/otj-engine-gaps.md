@@ -174,6 +174,29 @@ the narrower "cast, but for free" sense. Tests: `FreestriderCommandoScenarioTest
   batch "Satoru and/or one or more other nontoken creatures enter" once-per-turn trigger before it's
   buildable.
 
+### 6b. "Whenever one or more creatures you control die" batch trigger (once per batch)
+
+The engine has per-creature dies triggers (`Triggers.YourCreatureDies`, ANY/OTHER binding, fires once
+**per dying creature**) and a once-per-*turn* gate (`oncePerTurn = true`), plus batch detectors for
+*cards put into a graveyard from anywhere* (`CardsPutIntoYourGraveyardEvent`) and for
+leave-battlefield-without-dying / sacrifice / ETB. But there is **no once-per-*batch* trigger
+restricted to creatures you control that *died* (battlefield → graveyard)**. "Whenever one or more
+**other** creatures you control die, put a +1/+1 counter on this creature" must fire exactly once when
+a board wipe kills several of your creatures simultaneously — the per-creature `YourCreatureDies`
+over-counts (one counter per dead creature), and `oncePerTurn` is wrong (it should fire again on a
+*later* batch the same turn). `CardsPutIntoYourGraveyard(Creature.youControl())` is too broad (also
+fires on mill/discard, which aren't "die").
+
+**Needs:** a batch "one or more creatures you control died" trigger event + detector (group the
+battlefield→graveyard zone-change events for creatures you control by controller, fire once per batch),
+with an OTHER-binding variant for "another creature(s)." Mirrors the existing
+`detectAnyToGraveyardBatchTriggers` but scoped to from-battlefield deaths.
+
+→ **Vengeful Townsfolk** ("Whenever one or more other creatures you control die, put a +1/+1 counter
+  on this creature"). Also the right home for other "one or more … die" payoffs (cf. Scavenger's
+  Talent / Spiteful Banditry, which currently lean on the `oncePerTurn` approximation because their
+  printed text *does* say "only once each turn").
+
 ### 6. `CARDS_DRAWN` turn-tracker + characteristic-defining P/T from it
 
 `TurnTracker` has no `CARDS_DRAWN` accumulator, so "power equal to the number of cards you've drawn
