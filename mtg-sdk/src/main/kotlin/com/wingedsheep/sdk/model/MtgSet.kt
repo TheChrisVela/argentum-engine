@@ -41,14 +41,26 @@ interface MtgSet {
     /**
      * Strategy that turns the set's card pool into a single booster pack.
      *
-     * The default follows the set's era, derived from [releaseDate]: sets from
-     * Murders at Karlov Manor (2024-02-09) onward get the 14-card [PlayBooster]
-     * division; earlier sets (and sets without a release date) get the classic
-     * 15-card [StandardBooster] (11C / 3U / 1R-or-mythic). Sets override this to
+     * The default follows the set's era, derived from [releaseDate]:
+     *  - before Shards of Alara: classic 15-card [StandardBooster] (11C / 3U / 1R)
+     *  - Shards of Alara (2008-10-03) to Murders at Karlov Manor: [StandardBooster]
+     *    with 10 commons — paper packs swapped the 11th common for a basic land
+     *    (omitted here; the generator supplies basics at deck building) and
+     *    introduced the mythic upgrade on the rare slot
+     *  - Murders at Karlov Manor (2024-02-09) onward: the [PlayBooster] division
+     *
+     * Sets without a release date get the classic booster. Sets override this to
      * express custom slot rules (guaranteed legendary, commander draft, etc.).
      */
     val boosterStrategy: BoosterStrategy
-        get() = if ((releaseDate ?: "") >= PLAY_BOOSTER_ERA_START) PlayBooster() else StandardBooster()
+        get() {
+            val date = releaseDate ?: ""
+            return when {
+                date >= PLAY_BOOSTER_ERA_START -> PlayBooster()
+                date >= MYTHIC_BOOSTER_ERA_START -> StandardBooster(commons = 10)
+                else -> StandardBooster()
+            }
+        }
 
     /**
      * If this set has no basic lands of its own, the set whose lands should be
@@ -83,8 +95,15 @@ interface MtgSet {
 
     companion object {
         /**
+         * Release date of Shards of Alara, the first set with mythic rares and
+         * the 10-common booster (a basic land took the 11th common's slot).
+         * ISO dates compare correctly as strings.
+         */
+        const val MYTHIC_BOOSTER_ERA_START = "2008-10-03"
+
+        /**
          * Release date of Murders at Karlov Manor, the first set printed as
-         * 14-card Play Boosters. ISO dates compare correctly as strings.
+         * 14-card Play Boosters.
          */
         const val PLAY_BOOSTER_ERA_START = "2024-02-09"
     }

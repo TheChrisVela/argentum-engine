@@ -9,10 +9,11 @@ import kotlin.random.Random
 /**
  * Generates booster packs and sealed pools from card sets.
  *
- * Pack composition is delegated to each set's [BoosterStrategy]: classic sets use
- * the 15-card [StandardBooster] (11C / 3U / 1R-or-mythic), Play-Booster-era sets
- * (Murders at Karlov Manor, 2024, onward) use [com.wingedsheep.sdk.limited.PlayBooster],
- * and sets can override with custom strategies (guaranteed legendary, commander draft).
+ * Pack composition is delegated to each set's [BoosterStrategy], which defaults by
+ * era: classic sets use the 15-card [StandardBooster] (11C / 3U / 1R), mythic-era
+ * sets (Shards of Alara, 2008, onward) drop to 10 commons, and Play-Booster-era sets
+ * (Murders at Karlov Manor, 2024, onward) use [com.wingedsheep.sdk.limited.PlayBooster].
+ * Sets can override with custom strategies (guaranteed legendary, commander draft).
  *
  * ## Scope
  *

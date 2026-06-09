@@ -3,6 +3,7 @@ package com.wingedsheep.mtg.sets.definitions.dom
 import com.wingedsheep.mtg.sets.discovery.CardDiscovery
 import com.wingedsheep.sdk.limited.BoosterStrategy
 import com.wingedsheep.sdk.limited.GuaranteedLegendaryBooster
+import com.wingedsheep.sdk.limited.StandardBooster
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.MtgSet
 import com.wingedsheep.sdk.model.Printing
@@ -23,7 +24,8 @@ object DominariaSet : MtgSet {
     override val displayName = "Dominaria"
     override val releaseDate = "2018-04-27"
     override val sealedSupported = true
-    override val boosterStrategy: BoosterStrategy = GuaranteedLegendaryBooster()
+    // Mythic-era base (10 commons; the paper land slot is supplied at deck building).
+    override val boosterStrategy: BoosterStrategy = GuaranteedLegendaryBooster(StandardBooster(commons = 10))
 
     override val cards: List<CardDefinition> by lazy {
         CardDiscovery.findIn(CARDS_PACKAGE)
