@@ -94,7 +94,7 @@ class InvasionSplitCardsScenarioTest : ScenarioTestBase() {
                 }
                 withClue("Suffering should offer the opponent's land as a valid target") {
                     sufferingAction!!.validTargets.shouldNotBeNull()
-                    sufferingAction.validTargets!! shouldContain targetLand
+                    sufferingAction.validTargets shouldContain targetLand
                 }
             }
 

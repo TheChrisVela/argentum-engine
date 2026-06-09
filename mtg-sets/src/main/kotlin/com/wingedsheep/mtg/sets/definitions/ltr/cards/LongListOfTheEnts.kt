@@ -7,7 +7,6 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TriggerSpec
-import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
 import com.wingedsheep.sdk.scripting.effects.DelayedTriggerExpiry
 import com.wingedsheep.sdk.scripting.effects.Effect
@@ -73,7 +72,7 @@ val LongListOfTheEnts = card("Long List of the Ents") {
  * turn. A fresh instance is built per chapter so each chapter spawns its own
  * `DelayedTriggeredAbility`.
  */
-private fun noteAndBuff(): Effect = CompositeEffect(listOf(
+private fun noteAndBuff(): Effect = Effects.Composite(
     Effects.NoteCreatureType("notedType"),
     CreateDelayedTriggerEffect(
         trigger = TriggerSpec(
@@ -86,4 +85,4 @@ private fun noteAndBuff(): Effect = CompositeEffect(listOf(
         expiry = DelayedTriggerExpiry.EndOfTurn,
         effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, EffectTarget.TriggeringEntity)
     )
-))
+)

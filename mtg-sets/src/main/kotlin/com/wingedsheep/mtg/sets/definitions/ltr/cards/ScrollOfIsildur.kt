@@ -8,7 +8,6 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachTargetEffect
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.references.Player
@@ -56,10 +55,10 @@ val ScrollOfIsildur = card("Scroll of Isildur") {
             "up to one target artifact",
             TargetPermanent(optional = true, filter = TargetFilter.Artifact)
         )
-        effect = CompositeEffect(listOf(
+        effect = Effects.Composite(
             Effects.GainControl(artifact, Duration.WhileYouControlSource("Scroll of Isildur")),
             Effects.TheRingTemptsYou()
-        ))
+        )
     }
 
     sagaChapter(2) {

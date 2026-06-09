@@ -12,7 +12,6 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.SearchDestination
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.TriggeredAbility
-import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
 
@@ -54,10 +53,10 @@ val ThereAndBackAgain = card("There and Back Again") {
             "up to one target creature",
             TargetCreature(optional = true)
         )
-        effect = CompositeEffect(listOf(
+        effect = Effects.Composite(
             Effects.CantBlock(creature, Duration.WhileYouControlSource("There and Back Again")),
             Effects.TheRingTemptsYou()
-        ))
+        )
     }
 
     sagaChapter(2) {

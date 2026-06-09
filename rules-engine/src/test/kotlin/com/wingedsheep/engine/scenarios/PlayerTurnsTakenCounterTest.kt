@@ -38,7 +38,7 @@ class PlayerTurnsTakenCounterTest : FunSpec({
         // player runs as part of initialization, so the active player is already at 1.
         val driver = createDriver()
         val active = driver.activePlayer!!
-        val opponent = driver.player1.takeIf { it != active } ?: driver.player2!!
+        val opponent = driver.player1.takeIf { it != active } ?: driver.player2
         turnsTakenOf(driver, active) shouldBe 1
         turnsTakenOf(driver, opponent) shouldBe 0
     }
