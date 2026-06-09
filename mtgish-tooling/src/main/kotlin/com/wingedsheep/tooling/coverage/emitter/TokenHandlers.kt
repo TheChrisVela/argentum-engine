@@ -60,25 +60,40 @@ internal fun EmitCtx.createTokenDsl(spec: JsonObject, count: Int = 1): Dsl? {
             val subs = ((a.getOrNull(4) as? JsonObject)?.get("args").asArr ?: JsonArray(emptyList()))
                 .mapNotNull { it.asStr() }
             if (subs.isEmpty()) return null
-            // The token's ability list (a[5]). Every entry must be a single BARE keyword we can grant;
-            // a granted triggered/activated ability (e.g. a Pest token's "Whenever this token attacks,
-            // you gain 1 life") or a parameterized keyword carries structure CreateToken can't
-            // reproduce, so scaffold rather than silently drop it.
+            // The token's ability list (a[5]). A bare keyword is granted via `keywords = …`; an
+            // `Activated` / `ActivatedWithModifiers` rule (e.g. Mourner's Surprise's Mercenary token
+            // with "{T}: Target creature you control gets +1/+0 … Activate only as a sorcery.") renders
+            // as an inline `ActivatedAbility(…)` via [grantedActivatedAbilityExpr] and is passed through
+            // `CreateTokenEffect.activatedAbilities`. Any other shape (a granted *triggered* ability, a
+            // parameterized keyword, an activated ability we can't render whole) scaffolds rather than
+            // silently drop it.
             val tokenKeywords = mutableListOf<String>()
+            val tokenActivatedAbilities = mutableListOf<Dsl>()
             for (ability in ((a.getOrNull(5) as? JsonArray) ?: JsonArray(emptyList()))) {
                 val abilityRule = ability as? JsonObject ?: return null
                 val rname = abilityRule.strField("_Rule") ?: return null
+                if (rname == "Activated" || rname == "ActivatedWithModifiers") {
+                    tokenActivatedAbilities.add(grantedActivatedAbilityExpr(abilityRule) ?: return null)
+                    continue
+                }
                 if (abilityRule["args"] != null) return null  // TriggerA / parameterized -> SCAFFOLD
                 val kw = pascalToUpperSnake(rname)
                 if (kw !in keywords) return null
                 tokenKeywords.add(kw)
             }
+            // The `Effects.CreateToken` facade can't carry abilities — only the raw `CreateTokenEffect`
+            // constructor exposes `activatedAbilities`. Use it when an activated ability is present;
+            // otherwise keep the tidier facade.
+            val ctor = if (tokenActivatedAbilities.isEmpty()) "Effects.CreateToken" else "CreateTokenEffect"
             val parts = mutableListOf(arg("power", "$power"), arg("toughness", "$toughness"))
             if (colors.isNotEmpty()) parts.add(arg("colors", "setOf(${colors.joinToString(", ") { "Color.$it" }})"))
             parts.add(arg("creatureTypes", "setOf(${subs.joinToString(", ") { "\"$it\"" }})"))
             if (tokenKeywords.isNotEmpty()) parts.add(arg("keywords", "setOf(${tokenKeywords.joinToString(", ") { "Keyword.$it" }})"))
+            if (tokenActivatedAbilities.isNotEmpty()) {
+                parts.add(arg("activatedAbilities", Call("listOf", tokenActivatedAbilities.map { arg(it) })))
+            }
             if (count != 1) parts.add(arg("count", "$count"))
-            return Call("Effects.CreateToken", parts)
+            return Call(ctor, parts)
         }
     }
     return null

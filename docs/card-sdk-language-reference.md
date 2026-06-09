@@ -466,6 +466,16 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   resolution rather than a fixed integer, pass `dynamicCount = <DynamicAmount>` instead of `count` — the executor
   evaluates it (coerced to ≥ 0) and creates that many tokens (Lobelia Sackville-Baggins, LTR: "create X Treasure
   tokens, where X is the exiled card's power", via `DynamicAmount.EntityProperty(Target(0), Power)`).
+  For an *inline* token (not a registered `CardDefinition`) that has its own abilities, the raw
+  `CreateTokenEffect` constructor exposes `staticAbilities`, `triggeredAbilities`, **and**
+  `activatedAbilities` — each list is granted to every created token at resolution (permanent
+  duration) via `GameState.granted{Static,Triggered,Activated}Abilities`, so the legal-action
+  enumerator and `ActivateAbilityHandler` pick them up like any other granted ability. Example:
+  Mourner's Surprise's "1/1 red Mercenary creature token with \"{T}: Target creature you control
+  gets +1/+0 until end of turn. Activate only as a sorcery.\"" passes a single
+  `ActivatedAbility(cost = AbilityCost.Tap, effect = Effects.ModifyStats(1, 0), targetRequirements =
+  listOf(Targets.CreatureYouControl), timing = TimingRule.SorcerySpeed)`. (Remember a token is a
+  creature, so a `{T}` ability is summoning-sick the turn the token enters.)
 - `CreateDynamicToken(dynamicPower, dynamicToughness, colors?, creatureTypes, keywords?, count?, controller?, imageUri?)` —
   tokens whose P/T is computed at resolution (e.g. Pure Reflection's X/X Reflection where X = the cast spell's mana
   value, via `DynamicAmounts.triggeringManaValue()`). `controller` directs who gets the token (e.g.

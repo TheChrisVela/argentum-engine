@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Supertype
+import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.StaticAbility
 import com.wingedsheep.sdk.scripting.TriggeredAbility
@@ -61,6 +62,16 @@ data class CreateTokenEffect(
     val artifactToken: Boolean = false,
     val staticAbilities: List<StaticAbility> = emptyList(),
     val triggeredAbilities: List<TriggeredAbility> = emptyList(),
+    /**
+     * Activated abilities the token has, e.g. a Mercenary token with
+     * `"{T}: Target creature you control gets +1/+0 until end of turn. Activate only as a sorcery."`
+     * (Mourner's Surprise). Each is granted to every created token at resolution via
+     * `GameState.grantedActivatedAbilities` (permanent duration) — the same path the engine
+     * already uses for granted activated abilities, so the legal-action enumerator and
+     * `ActivateAbilityHandler` pick them up for free. The sibling of [staticAbilities] /
+     * [triggeredAbilities] for the activated-ability shape.
+     */
+    val activatedAbilities: List<ActivatedAbility> = emptyList(),
     val exileAtStep: Step? = null,
     val sacrificeAtStep: Step? = null,
     /** Counters to place on the token when it enters the battlefield. */
@@ -114,12 +125,21 @@ data class CreateTokenEffect(
             append(" with ")
             append(keywords.joinToString(", ") { it.name.lowercase() })
         }
+        // Render granted activated abilities as quoted reminder text, e.g.
+        // `with "{T}: Target creature you control gets +1/+0 until end of turn."`.
+        for (ability in activatedAbilities) {
+            append(if (keywords.isEmpty()) " with " else " and ")
+            append("\"${ability.description}\"")
+        }
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect {
         val newCount = count.applyTextReplacement(replacer)
         val newTypes = creatureTypes.map { replacer.replaceCreatureType(it) }.toSet()
-        return if (newCount !== count || newTypes != creatureTypes) copy(count = newCount, creatureTypes = newTypes) else this
+        val newAbilities = activatedAbilities.map { it.applyTextReplacement(replacer) }
+        val abilitiesChanged = newAbilities.zip(activatedAbilities).any { (a, b) -> a !== b }
+        return if (newCount !== count || newTypes != creatureTypes || abilitiesChanged)
+            copy(count = newCount, creatureTypes = newTypes, activatedAbilities = newAbilities) else this
     }
 }
 

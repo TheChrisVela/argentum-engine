@@ -444,7 +444,7 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
         if (types.isEmpty()) return Call("TargetSpell")
         return null
     }
-    if (ttype == "TargetGraveyardCard") {
+    if (ttype == "TargetGraveyardCard" || ttype == "UptoOneTargetGraveyardCard") {
         val blob = compact(args)
         val types = targetTypes(args)
         val filt: Dsl = when {
@@ -458,7 +458,11 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
             types.size == 1 && types.first() in graveyardSingleTypeFilters -> graveyardFilter(graveyardSingleTypeFilters.getValue(types.first()), blob)
             else -> return null
         }
-        return Call("TargetObject", listOf(arg("filter", filt)))
+        // "Return up to one target … card from your graveyard …" (Mourner's Surprise) — the optional
+        // (zero-or-one) variant renders the same filter under `optional = true`.
+        val parts = mutableListOf(arg("filter", filt))
+        if (ttype == "UptoOneTargetGraveyardCard") parts.add(0, arg("optional", "true"))
+        return Call("TargetObject", parts)
     }
     return null
 }

@@ -27,6 +27,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CreatureStats
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.engine.core.ZoneChangeEvent
+import com.wingedsheep.engine.event.GrantedActivatedAbility
 import com.wingedsheep.engine.event.GrantedTriggeredAbility
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
@@ -250,6 +251,26 @@ class CreateTokenExecutor(
                     )
                     newState = newState.copy(
                         grantedTriggeredAbilities = newState.grantedTriggeredAbilities + grant
+                    )
+                }
+            }
+        }
+
+        // If activated abilities are specified, grant them permanently to each created token.
+        // Mirrors the triggered-ability path: tokens have no CardDefinition, so their activated
+        // abilities live in GameState.grantedActivatedAbilities, which the legal-action
+        // enumerator and ActivateAbilityHandler already consult for any entity. Models e.g.
+        // Mourner's Surprise's Mercenary token with "{T}: Target creature you control gets +1/+0...".
+        if (effect.activatedAbilities.isNotEmpty()) {
+            for (tokenId in createdTokens) {
+                for (ability in effect.activatedAbilities) {
+                    val grant = GrantedActivatedAbility(
+                        entityId = tokenId,
+                        ability = ability,
+                        duration = Duration.Permanent
+                    )
+                    newState = newState.copy(
+                        grantedActivatedAbilities = newState.grantedActivatedAbilities + grant
                     )
                 }
             }
