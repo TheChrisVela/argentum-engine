@@ -409,6 +409,16 @@ export interface PickScore {
   readonly reason: string
 }
 
+/** Summary of the most recent Auto-build, surfaced in the deck builder. */
+export interface AutoBuildSummary {
+  /** Engine that produced the build (e.g. "draftsim", "heuristic"). */
+  readonly advisorId: string
+  /** Deck score (Draftsim: 0–10; heuristic: sum of card ratings), or null if unscored. */
+  readonly score: number | null
+  /** Targeted archetype / colour label, if the engine identifies one. */
+  readonly archetype: string | null
+}
+
 export interface DeckBuildingState {
   phase: 'waiting' | 'building' | 'submitted'
   setCodes: readonly string[]
@@ -829,6 +839,17 @@ export type GameStore = {
   recommendedPick: readonly string[]
   aiAssistBusy: boolean
   aiAssistError: string | null
+  /** Score/archetype from the most recent Auto-build, or null. */
+  autoBuildResult: AutoBuildSummary | null
+  /** Selected engine for the draft / deckbuild dropdowns; persists across edits and remounts. */
+  draftAdvisorId: string | null
+  deckbuildAdvisorId: string | null
+  setDraftAdvisorId: (advisorId: string | null) => void
+  setDeckbuildAdvisorId: (advisorId: string | null) => void
+  /** Per-card scores for the deck-builder pool (name → score/reason), or null. */
+  deckCardScores: Readonly<Record<string, PickScore>> | null
+  scoreDeckCards: (advisorId?: string) => Promise<void>
+  clearDeckCardScores: () => void
   suggestPick: (advisorId?: string) => Promise<void>
   clearPickSuggestion: () => void
   autoBuildDeck: (advisorId?: string) => Promise<void>

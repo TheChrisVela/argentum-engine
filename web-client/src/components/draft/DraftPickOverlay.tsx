@@ -899,8 +899,10 @@ function SuggestPickControl() {
   const aiAssistError = useGameStore((s) => s.aiAssistError)
   const hasSuggestion = useGameStore((s) => s.pickScores != null)
 
+  // The selected engine lives in the store so it survives this control remounting on every edit.
+  const advisorId = useGameStore((s) => s.draftAdvisorId)
+  const setAdvisorId = useGameStore((s) => s.setDraftAdvisorId)
   const [advisors, setAdvisors] = useState<readonly AdvisorInfo[]>([])
-  const [advisorId, setAdvisorId] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     let cancelled = false
@@ -908,7 +910,11 @@ function SuggestPickControl() {
       .then((r) => {
         if (cancelled) return
         setAdvisors(r.draft)
-        setAdvisorId(r.draft[0]?.id)
+        // Keep the player's saved choice; only fall back to the default if it's unset or stale.
+        const saved = useGameStore.getState().draftAdvisorId
+        if (saved == null || !r.draft.some((a) => a.id === saved)) {
+          setAdvisorId(r.draft[0]?.id ?? null)
+        }
       })
       .catch(() => {
         // Dropdown stays empty; the button still works using the server's default engine.
@@ -916,7 +922,7 @@ function SuggestPickControl() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [setAdvisorId])
 
   const buttonStyle: React.CSSProperties = {
     padding: '6px 14px',
@@ -934,7 +940,7 @@ function SuggestPickControl() {
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       {advisors.length > 1 && (
         <select
-          value={advisorId}
+          value={advisorId ?? ''}
           onChange={(e) => setAdvisorId(e.target.value)}
           title="AI engine"
           style={{
@@ -954,7 +960,7 @@ function SuggestPickControl() {
         </select>
       )}
       <button
-        onClick={() => void suggestPick(advisorId)}
+        onClick={() => void suggestPick(advisorId ?? undefined)}
         disabled={aiAssistBusy}
         title="Score every card in this pack and highlight the best pick"
         style={buttonStyle}

@@ -121,6 +121,7 @@ function WaitingForOpponent({ setName }: { setName: string }) {
 function DeckBuilder({ state }: { state: DeckBuildingState }) {
   const responsive = useResponsive()
   const addCardToDeck = useGameStore((s) => s.addCardToDeck)
+  const deckCardScores = useGameStore((s) => s.deckCardScores)
   const removeCardFromDeck = useGameStore((s) => s.removeCardFromDeck)
   const clearDeck = useGameStore((s) => s.clearDeck)
   const setLandCount = useGameStore((s) => s.setLandCount)
@@ -1031,6 +1032,8 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
                             onHover={handleHover}
                             disabled={isSubmitted}
                             highlighted={highlightedCards != null ? highlightedCards.has(card.name) : undefined}
+                            score={deckCardScores?.[card.name]?.score ?? null}
+                            reason={deckCardScores?.[card.name]?.reason}
                           />
                         ))}
                       </div>
@@ -1060,6 +1063,8 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
                     onHover={handleHover}
                     disabled={isSubmitted}
                     highlighted={highlightedCards != null ? highlightedCards.has(card.name) : undefined}
+                    score={deckCardScores?.[card.name]?.score ?? null}
+                    reason={deckCardScores?.[card.name]?.reason}
                   />
                 ))}
               </div>
@@ -1392,9 +1397,15 @@ function AutoBuildControl({
   const autoBuildDeck = useGameStore((s) => s.autoBuildDeck)
   const aiAssistBusy = useGameStore((s) => s.aiAssistBusy)
   const aiAssistError = useGameStore((s) => s.aiAssistError)
+  const autoBuildResult = useGameStore((s) => s.autoBuildResult)
+  const scoreDeckCards = useGameStore((s) => s.scoreDeckCards)
+  const clearDeckCardScores = useGameStore((s) => s.clearDeckCardScores)
+  const hasCardScores = useGameStore((s) => s.deckCardScores != null)
+  // The selected engine lives in the store so it survives this control remounting on every edit.
+  const advisorId = useGameStore((s) => s.deckbuildAdvisorId)
+  const setAdvisorId = useGameStore((s) => s.setDeckbuildAdvisorId)
 
   const [advisors, setAdvisors] = useState<readonly AdvisorInfo[]>([])
-  const [advisorId, setAdvisorId] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     let cancelled = false
@@ -1402,7 +1413,11 @@ function AutoBuildControl({
       .then((r) => {
         if (cancelled) return
         setAdvisors(r.deckbuild)
-        setAdvisorId(r.deckbuild[0]?.id)
+        // Keep the player's saved choice; only fall back to the default if it's unset or stale.
+        const saved = useGameStore.getState().deckbuildAdvisorId
+        if (saved == null || !r.deckbuild.some((a) => a.id === saved)) {
+          setAdvisorId(r.deckbuild[0]?.id ?? null)
+        }
       })
       .catch(() => {
         // Dropdown stays empty; the button still works using the server's default engine.
@@ -1410,13 +1425,13 @@ function AutoBuildControl({
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [setAdvisorId])
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       {advisors.length > 1 && (
         <select
-          value={advisorId}
+          value={advisorId ?? ''}
           onChange={(e) => setAdvisorId(e.target.value)}
           title="AI engine"
           style={{
@@ -1436,7 +1451,7 @@ function AutoBuildControl({
         </select>
       )}
       <button
-        onClick={() => void autoBuildDeck(advisorId)}
+        onClick={() => void autoBuildDeck(advisorId ?? undefined)}
         disabled={aiAssistBusy}
         title={
           hasCards
@@ -1457,9 +1472,71 @@ function AutoBuildControl({
       >
         {aiAssistBusy ? 'Building…' : hasCards ? '🪄 Complete Deck' : '🪄 Auto-build'}
       </button>
+      <button
+        onClick={() => void scoreDeckCards(advisorId ?? undefined)}
+        disabled={aiAssistBusy}
+        title="Score every card in your pool (badge on each card); uses your current deck for colour context"
+        style={{
+          padding: responsive.isMobile ? '6px 12px' : '8px 16px',
+          fontSize: responsive.fontSize.normal,
+          backgroundColor: '#5e7ec2',
+          color: 'white',
+          border: 'none',
+          borderRadius: 6,
+          cursor: aiAssistBusy ? 'wait' : 'pointer',
+          fontWeight: 600,
+          opacity: aiAssistBusy ? 0.7 : 1,
+        }}
+      >
+        {aiAssistBusy ? 'Scoring…' : hasCardScores ? 'Re-score cards' : '✨ Score cards'}
+      </button>
+      {hasCardScores && !aiAssistBusy && (
+        <button
+          onClick={clearDeckCardScores}
+          title="Hide the per-card score badges"
+          style={{
+            padding: '6px 10px',
+            fontSize: 13,
+            backgroundColor: '#444',
+            color: '#ccc',
+            border: 'none',
+            borderRadius: 6,
+            cursor: 'pointer',
+          }}
+        >
+          Hide scores
+        </button>
+      )}
+      {!aiAssistBusy && autoBuildResult && autoBuildResult.score != null && (
+        <span
+          title="Score of the most recent Auto-build"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '4px 10px',
+            fontSize: 13,
+            fontWeight: 600,
+            color: '#e8d9ff',
+            backgroundColor: 'rgba(126, 87, 194, 0.25)',
+            border: '1px solid #7e57c2',
+            borderRadius: 6,
+          }}
+        >
+          {`Deck score: ${formatBuildScore(autoBuildResult.advisorId, autoBuildResult.score)}`}
+          {autoBuildResult.archetype && (
+            <span style={{ color: '#b9a6e0', fontWeight: 500 }}>· {autoBuildResult.archetype}</span>
+          )}
+        </span>
+      )}
       {aiAssistError && <span style={{ color: '#ff6b6b', fontSize: 12 }}>{aiAssistError}</span>}
     </div>
   )
+}
+
+/** Draftsim reports a 0–10 deck score; the heuristic engine a raw rating sum. */
+function formatBuildScore(advisorId: string, score: number): string {
+  return advisorId === 'draftsim' ? `${score.toFixed(1)}/10` : score.toFixed(1)
 }
 
 function AnimatedDots() {
@@ -1497,6 +1574,8 @@ function PoolCard({
   onHover,
   disabled,
   highlighted,
+  score = null,
+  reason,
 }: {
   card: SealedCardInfo
   count: number
@@ -1504,11 +1583,17 @@ function PoolCard({
   onHover: (card: SealedCardInfo | null, e?: React.MouseEvent) => void
   disabled: boolean
   highlighted?: boolean | undefined
+  /** AI per-card score 0–100, or null when scoring is off. */
+  score?: number | null
+  /** Tooltip justification for the score. */
+  reason?: string | undefined
 }) {
   const cardWidth = 110
   const cardHeight = Math.round(cardWidth * 1.4)
   const imageUrl = getCardImageUrl(card.name, card.imageUri, 'small')
   const defaultBorder = highlighted ? '2px solid #a78bfa' : '2px solid #444'
+  // Score badge colour: green (great) → amber → grey (weak).
+  const scoreColor = score == null ? '#555' : score >= 70 ? '#4caf50' : score >= 45 ? '#ff9800' : '#777'
 
   return (
     <div
@@ -1516,6 +1601,7 @@ function PoolCard({
       onMouseEnter={(e) => onHover(card, e)}
       onMouseMove={(e) => onHover(card, e)}
       onMouseLeave={() => onHover(null)}
+      title={score != null && reason ? `AI score ${score}/100 — ${reason}` : undefined}
       style={{
         position: 'relative',
         width: cardWidth,
@@ -1564,6 +1650,24 @@ function PoolCard({
           }}
         >
           x{count}
+        </div>
+      )}
+      {score != null && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 4,
+            left: 4,
+            backgroundColor: scoreColor,
+            color: '#fff',
+            borderRadius: 4,
+            padding: '1px 5px',
+            fontSize: 12,
+            fontWeight: 700,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.5)',
+          }}
+        >
+          {score}
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 /**
  * Draft slice - handles sealed deck building and drafting logic.
  */
-import type { SliceCreator, DeckBuildingState, PickScore } from './types'
+import type { SliceCreator, DeckBuildingState, PickScore, AutoBuildSummary } from './types'
 import {
   createCreateSealedGameMessage,
   createJoinSealedGameMessage,
@@ -34,6 +34,17 @@ export interface DraftSliceState {
   aiAssistBusy: boolean
   /** Last AI-assist error message (e.g. assistance disabled), or null. */
   aiAssistError: string | null
+  /** Score/archetype from the most recent Auto-build, or null until one runs. */
+  autoBuildResult: AutoBuildSummary | null
+  /** Engine the player selected in the draft "Suggest Pick" dropdown; persists across edits. */
+  draftAdvisorId: string | null
+  /** Engine the player selected in the deckbuild "Auto-build" dropdown; persists across edits. */
+  deckbuildAdvisorId: string | null
+  /**
+   * Per-card AI scores for the deck builder pool: card name → score/reason. Null until the player
+   * asks for them; persists across edits (re-score to refresh) so the badges stay visible.
+   */
+  deckCardScores: Readonly<Record<string, PickScore>> | null
 }
 
 export interface DraftSliceActions {
@@ -59,6 +70,14 @@ export interface DraftSliceActions {
   clearPickSuggestion: () => void
   /** Build (empty deck) or complete (partial deck) the deck from the pool with the chosen engine. */
   autoBuildDeck: (advisorId?: string) => Promise<void>
+  /** Remember the selected draft "Suggest Pick" engine. */
+  setDraftAdvisorId: (advisorId: string | null) => void
+  /** Remember the selected deckbuild "Auto-build" engine. */
+  setDeckbuildAdvisorId: (advisorId: string | null) => void
+  /** Score every card in the deck-builder pool with the chosen engine (deck = colour context). */
+  scoreDeckCards: (advisorId?: string) => Promise<void>
+  /** Hide the deck-builder per-card score badges. */
+  clearDeckCardScores: () => void
 }
 
 export type DraftSlice = DraftSliceState & DraftSliceActions
@@ -70,6 +89,10 @@ export const createDraftSlice: SliceCreator<DraftSlice> = (set, get) => ({
   recommendedPick: [],
   aiAssistBusy: false,
   aiAssistError: null,
+  autoBuildResult: null,
+  draftAdvisorId: null,
+  deckbuildAdvisorId: null,
+  deckCardScores: null,
 
   // Actions
   createSealedGame: (setCode) => {
@@ -97,6 +120,7 @@ export const createDraftSlice: SliceCreator<DraftSlice> = (set, get) => ({
           ...state.deckBuildingState,
           deck: newDeck,
         },
+        autoBuildResult: null,
       }
     })
   },
@@ -117,6 +141,7 @@ export const createDraftSlice: SliceCreator<DraftSlice> = (set, get) => ({
           ...state.deckBuildingState,
           deck: newDeck,
         },
+        autoBuildResult: null,
       }
     })
   },
@@ -136,6 +161,7 @@ export const createDraftSlice: SliceCreator<DraftSlice> = (set, get) => ({
           deck: [],
           landCounts: emptyLandCounts,
         },
+        autoBuildResult: null,
       }
     })
   },
@@ -155,6 +181,7 @@ export const createDraftSlice: SliceCreator<DraftSlice> = (set, get) => ({
           ...state.deckBuildingState,
           landCounts: newLandCounts,
         },
+        autoBuildResult: null,
       }
     })
   },
@@ -370,12 +397,57 @@ export const createDraftSlice: SliceCreator<DraftSlice> = (set, get) => ({
         }
       }
       get().setDeck(newDeck, newLandCounts)
-      set({ aiAssistBusy: false })
+      set({
+        aiAssistBusy: false,
+        autoBuildResult: {
+          advisorId: result.advisorId,
+          score: result.score,
+          archetype: result.archetype,
+        },
+      })
     } catch (e) {
       set({
         aiAssistBusy: false,
         aiAssistError: e instanceof Error ? e.message : 'Auto-build failed',
+        autoBuildResult: null,
       })
     }
   },
+
+  setDraftAdvisorId: (advisorId) => set({ draftAdvisorId: advisorId }),
+  setDeckbuildAdvisorId: (advisorId) => set({ deckbuildAdvisorId: advisorId }),
+
+  scoreDeckCards: async (advisorId) => {
+    const { deckBuildingState, lobbyState } = get()
+    if (!deckBuildingState) return
+
+    trackEvent('deckbuild_score_cards', { advisor: advisorId ?? 'default' })
+    set({ aiAssistBusy: true, aiAssistError: null })
+    try {
+      // Score every distinct pool card via the per-card scorer, using the current deck as colour
+      // context (the suggest-pick endpoint returns a score for every card in `pack`).
+      const poolNames = Array.from(new Set(deckBuildingState.cardPool.map((c) => c.name)))
+      const advice = await apiSuggestPick({
+        lobbyId: lobbyState?.lobbyId ?? null,
+        advisorId: advisorId ?? null,
+        pack: poolNames,
+        pickedSoFar: deckBuildingState.deck,
+        packNumber: 1,
+        pickNumber: 1,
+        picksRequired: 1,
+        setCodes: lobbyState?.settings.setCodes ?? [],
+      })
+      const scores: Record<string, PickScore> = {}
+      for (const s of advice.scores) scores[s.cardName] = { score: s.score, reason: s.reason }
+      set({ deckCardScores: scores, aiAssistBusy: false })
+    } catch (e) {
+      set({
+        aiAssistBusy: false,
+        aiAssistError: e instanceof Error ? e.message : 'Scoring failed',
+        deckCardScores: null,
+      })
+    }
+  },
+
+  clearDeckCardScores: () => set({ deckCardScores: null }),
 })
