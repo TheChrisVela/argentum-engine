@@ -2076,6 +2076,56 @@
     ]
 }
 
+// Metamorphosis
+{
+    "name": "Metamorphosis",
+    "manaCost": "{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "As an additional cost to cast this spell, sacrifice a creature.\nAdd X mana of any one color, where X is 1 plus the sacrificed creature's mana value. Spend this mana only to cast creature spells.",
+    "script": {
+        "spellEffect": {
+            "type": "AddManaOfChoice",
+            "amount": {
+                "type": "Add",
+                "left": {
+                    "type": "Fixed",
+                    "amount": 1
+                },
+                "right": {
+                    "type": "EntityProperty",
+                    "entity": "Sacrificed",
+                    "numericProperty": "ManaValue"
+                }
+            },
+            "restriction": "CreatureSpellsOnly"
+        },
+        "additionalCosts": [
+            {
+                "type": "SacrificePermanent",
+                "filter": "creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "artist": "Christopher Rush",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/b/fbc6cfc3-b232-40bf-bc0c-4618f6f5c9a5.jpg?1562942451",
+        "rulings": [
+            {
+                "date": "2013-04-15",
+                "text": "You must sacrifice exactly one creature to cast this spell; you cannot cast it without sacrificing a creature, and you cannot sacrifice additional creatures."
+            },
+            {
+                "date": "2004-10-04",
+                "text": "This mana may be used on additional costs to cast the spell, such as Kicker."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Mijae Djinn
 {
     "name": "Mijae Djinn",
