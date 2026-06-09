@@ -188,4 +188,52 @@ class DelayedTriggerFromNotedTypeTest : FunSpec({
             ?.getCount(CounterType.PLUS_ONE_PLUS_ONE) ?: 0
         secondCounters shouldBe 0
     }
+
+    test("Two activations on the same source — two independent one-shot triggers, one per noted type") {
+        // The multi-chapter Long List of the Ents shape: each activation notes a different type and
+        // installs its own delayed trigger. Casting one creature of each type adds a counter to each.
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Forest" to 40))
+        val active = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val source = driver.putPermanentOnBattlefield(active, "Chapter Mimic")
+
+        // First activation — note Elf.
+        driver.submit(ActivateAbility(playerId = active, sourceId = source, abilityId = abilityId))
+        driver.bothPass()
+        var choice = driver.pendingDecision as ChooseOptionDecision
+        driver.submitDecision(active, OptionChosenResponse(choice.id, choice.options.indexOf("Elf")))
+
+        // Untap the source so it can be activated again this turn.
+        driver.state.updateEntity(source) {
+            it.without<com.wingedsheep.engine.state.components.battlefield.TappedComponent>()
+        }.let { driver.replaceState(it) }
+
+        // Second activation — note Goblin (Elf is excluded from the option list).
+        driver.submit(ActivateAbility(playerId = active, sourceId = source, abilityId = abilityId))
+        driver.bothPass()
+        choice = driver.pendingDecision as ChooseOptionDecision
+        driver.submitDecision(active, OptionChosenResponse(choice.id, choice.options.indexOf("Goblin")))
+
+        // Cast one of each type — each spell trips its own type's one-shot trigger. Drain the whole
+        // stack (the creature spell plus its delayed trigger) before the second sorcery-speed cast.
+        val elf = driver.putCardInHand(active, "Elf Warrior Test")
+        driver.giveMana(active, Color.GREEN, 1)
+        driver.giveColorlessMana(active, 1)
+        driver.castSpell(active, elf)
+        while (driver.state.stack.isNotEmpty()) driver.bothPass()
+
+        val goblin = driver.putCardInHand(active, "Goblin Scout Test")
+        driver.giveMana(active, Color.RED, 1)
+        driver.castSpell(active, goblin)
+        while (driver.state.stack.isNotEmpty()) driver.bothPass()
+
+        driver.state.getEntity(elf)
+            ?.get<CountersComponent>()
+            ?.getCount(CounterType.PLUS_ONE_PLUS_ONE) shouldBe 1
+        driver.state.getEntity(goblin)
+            ?.get<CountersComponent>()
+            ?.getCount(CounterType.PLUS_ONE_PLUS_ONE) shouldBe 1
+    }
 })

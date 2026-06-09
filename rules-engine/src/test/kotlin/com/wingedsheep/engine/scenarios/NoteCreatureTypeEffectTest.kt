@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
@@ -29,7 +30,8 @@ import io.kotest.matchers.shouldBe
  *     decision's option list and accumulates the new pick.
  *  3. Two different source permanents keep independent noted sets (component is per-source,
  *     not per-controller or global).
- *  4. The component disappears with the source when it leaves the battlefield (CR 122.2-style).
+ *  4. The component disappears with the source when it leaves the battlefield, and a permanent
+ *     that re-enters starts with a fresh (empty) noted set (CR 400.7 — new object, no memory).
  */
 class NoteCreatureTypeEffectTest : FunSpec({
 
@@ -154,15 +156,26 @@ class NoteCreatureTypeEffectTest : FunSpec({
         driver.state.getEntity(source)
             ?.get<NotedCreatureTypesComponent>()?.types shouldBe setOf("Elf")
 
-        // Move the source off the battlefield to its graveyard. The component travels with the
-        // entity by virtue of being on its container; once the entity is in the graveyard zone it
-        // is no longer queryable as a battlefield permanent. The container is preserved for LKI,
-        // but downstream battlefield-only lookups won't see the noted set.
+        // Move the source off the battlefield to its graveyard, then back onto the battlefield as a
+        // fresh object. Per CR 400.7 the returning permanent has no memory of its previous existence,
+        // so its noted set must start empty again — Elf must be selectable once more.
         val moved = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.moveCardToZone(
             driver.state, source, Zone.GRAVEYARD
         )
         driver.replaceState(moved.state)
-
         driver.state.getBattlefield().contains(source) shouldBe false
+
+        val reentered = driver.putPermanentOnBattlefield(active, "Note Tester")
+        driver.state.getEntity(reentered)
+            ?.get<NotedCreatureTypesComponent>() shouldBe null
+
+        driver.submit(ActivateAbility(playerId = active, sourceId = reentered, abilityId = abilityId))
+        driver.bothPass()
+        val freshDecision = driver.pendingDecision as ChooseOptionDecision
+        // Fresh object — Elf is available again (the old noted set did not carry over).
+        freshDecision.options shouldContain "Elf"
+        driver.submitDecision(active, OptionChosenResponse(freshDecision.id, freshDecision.options.indexOf("Elf")))
+        driver.state.getEntity(reentered)
+            ?.get<NotedCreatureTypesComponent>()?.types shouldBe setOf("Elf")
     }
 })
