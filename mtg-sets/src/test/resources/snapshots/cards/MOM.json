@@ -65,3 +65,35 @@
         "BLUE"
     ]
 }
+
+// Corrupted Conviction
+{
+    "name": "Corrupted Conviction",
+    "manaCost": "{B}",
+    "typeLine": "Instant",
+    "oracleText": "As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards.",
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            }
+        },
+        "additionalCosts": [
+            {
+                "type": "SacrificePermanent",
+                "filter": "creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "98",
+        "artist": "Joseph Weston",
+        "flavorText": "\"For the good of all, those who stand against the harmony of Phyrexia must be cut down.\"\n—Ajani Goldmane",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/e/ce133ad5-8748-4a3d-ae8c-7b2a5938927d.jpg?1682203658"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}

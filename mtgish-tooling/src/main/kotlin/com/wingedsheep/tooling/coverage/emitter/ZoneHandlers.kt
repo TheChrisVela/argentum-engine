@@ -9,6 +9,7 @@ import com.wingedsheep.tooling.coverage.Registry
 import com.wingedsheep.tooling.coverage.amountNode
 import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.asArr
+import com.wingedsheep.tooling.coverage.asInt
 import com.wingedsheep.tooling.coverage.asStr
 import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.compact
@@ -16,6 +17,7 @@ import com.wingedsheep.tooling.coverage.field
 import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.jsonContains
 import com.wingedsheep.tooling.coverage.strField
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
@@ -51,6 +53,11 @@ internal val zoneHandlers: Map<String, ActionHandler> = actionHandlers {
             arg(call("Effects.Move", arg("EffectTarget.Self"), arg("Zone.GRAVEYARD"), arg("byDestruction", "true"))),
             arg("noRegenerate", noregen),
         )
+    }
+
+    on("ExilePermanent") { _, args, tvar ->  // "Exile target permanent" -> the atomic Exile facade
+        val tgt = refTarget(args, tvar) ?: return@on null
+        call("Effects.Exile", arg(Lit(tgt)))
     }
 
     on("PutPermanentIntoItsOwnersHand") { _, args, tvar ->  // bounce
@@ -91,6 +98,34 @@ internal val zoneHandlers: Map<String, ActionHandler> = actionHandlers {
 
     on("Surveil") { _, args, _ ->  // "Surveil N" -> the look-top / keep-or-bin pipeline
         (findInteger(args) as? Int)?.let { call("Patterns.Library.surveil", arg("$it")) }
+    }
+
+    // Inline `If{cond}[effects]` action (inside an ActionList) -> a `ConditionalEffect`. Renders only the
+    // one condition shape we can express faithfully: "if [the targeted permanent] had mana value N or
+    // less" (`PermanentPassesFilter(Ref_TargetPermanent, ManaValueIs(LessThanOrEqualTo Integer N))`),
+    // mapped to `Conditions.TargetSpellManaValueAtMost(DynamicAmount.Fixed(N))` — Consuming Ashes'
+    // "Exile target creature. If it had mana value 3 or less, surveil 2." Any other condition / target
+    // index / comparator declines (-> SCAFFOLD) rather than widening.
+    on("If") { node, args, tvar ->
+        val a = args.asArr ?: return@on null
+        val cond = a.getOrNull(0) as? JsonObject ?: return@on null
+        if (cond.strField("_Condition") != "PermanentPassesFilter") return@on null
+        val condArgs = cond["args"].asArr ?: return@on null
+        // Subject must be the first targeted permanent (Ref_TargetPermanent / Ref_TargetPermanent1).
+        val subject = (condArgs.getOrNull(0) as? JsonObject)?.strField("_Permanent")
+        if (subject != "Ref_TargetPermanent" && subject != "Ref_TargetPermanent1") return@on null
+        val filter = condArgs.getOrNull(1) as? JsonObject ?: return@on null
+        if (filter.strField("_Permanents") != "ManaValueIs") return@on null
+        val cmp = filter["args"] as? JsonObject ?: return@on null
+        if (cmp.strField("_Comparison") != "LessThanOrEqualTo") return@on null
+        val n = (cmp["args"].asInt()) ?: ((cmp["args"] as? JsonObject)?.get("args").asInt()) ?: return@on null
+        val inner = (a.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>() ?: return@on null
+        val edsl = renderEffectList(inner, tvar) ?: return@on null
+        call(
+            "ConditionalEffect",
+            arg("condition", call("Conditions.TargetSpellManaValueAtMost", arg(call("DynamicAmount.Fixed", arg("$n"))))),
+            arg("effect", edsl),
+        )
     }
 
     on("Scry") { _, args, _ ->  // "Scry N" -> look-top, reorder/bottom pipeline

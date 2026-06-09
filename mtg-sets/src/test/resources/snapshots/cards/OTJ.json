@@ -1232,6 +1232,115 @@
     ]
 }
 
+// Consuming Ashes
+{
+    "name": "Consuming Ashes",
+    "manaCost": "{2}{B}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Exile target creature. If it had mana value 3 or less, surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature"
+                    },
+                    "destination": "Exile"
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "EntityProperty",
+                                "entity": "Target",
+                                "numericProperty": "ManaValue"
+                            },
+                            "operator": "LTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 3
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    }
+                                },
+                                "storeAs": "surveiled"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "surveiled",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    }
+                                },
+                                "storeSelected": "toGraveyard",
+                                "storeRemainder": "toTop",
+                                "selectedLabel": "Put in graveyard",
+                                "remainderLabel": "Put on top"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "toGraveyard",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                }
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "toTop",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Library",
+                                    "placement": "Top"
+                                },
+                                "order": "ControllerChooses"
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "83",
+        "artist": "Campbell White",
+        "flavorText": "The enforcer only got halfway through the arrest warrant before it—and he—went up in smoke.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/4/54f96be9-60fc-4e2f-9172-4cc53c9a095a.jpg?1712355566"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Creosote Heath
 {
     "name": "Creosote Heath",
@@ -1473,6 +1582,75 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Desert's Due
+{
+    "name": "Desert's Due",
+    "manaCost": "{1}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets -2/-2 until end of turn. It gets an additional -1/-1 until end of turn for each Desert you control.",
+    "script": {
+        "spellEffect": {
+            "type": "ModifyStats",
+            "powerModifier": {
+                "type": "Multiply",
+                "amount": {
+                    "type": "Add",
+                    "left": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "right": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Battlefield",
+                        "filter": "land Desert"
+                    }
+                },
+                "multiplier": -1
+            },
+            "toughnessModifier": {
+                "type": "Multiply",
+                "amount": {
+                    "type": "Add",
+                    "left": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "right": {
+                        "type": "Count",
+                        "player": "You",
+                        "zone": "Battlefield",
+                        "filter": "land Desert"
+                    }
+                },
+                "multiplier": -1
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "85",
+        "artist": "David Palumbo",
+        "flavorText": "He was glad when the mirages appeared. At least he wouldn't die alone.",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/35e899e4-e2de-44cf-b6f4-cace8d3770cb.jpg?1712355575"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -4727,6 +4905,96 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Throw from the Saddle
+{
+    "name": "Throw from the Saddle",
+    "manaCost": "{1}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Target creature you control gets +1/+1 until end of turn. Put a +1/+1 counter on it instead if it's a Mount. Then it deals damage equal to its power to target creature you don't control.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "TargetMatchesFilter",
+                            "filter": "creature Mount"
+                        }
+                    },
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "creature you control"
+                        }
+                    },
+                    "otherwise": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "creature you control"
+                        }
+                    }
+                },
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "EntityProperty",
+                        "entity": "Target",
+                        "numericProperty": "Power"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature you don't control"
+                    },
+                    "damageSource": {
+                        "type": "BoundVariable",
+                        "name": "creature you control"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "creature you control"
+            },
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                },
+                "id": "creature you don't control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "185",
+        "artist": "Eilene Cherie",
+        "flavorText": "\"A little kindness would've carried you a lot farther than those spurs.\"\n—Miriam, herd whisperer",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/7/775874cc-4b78-4904-9c97-431c2e400c64.jpg?1712356011"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
