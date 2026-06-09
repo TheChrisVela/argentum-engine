@@ -210,6 +210,34 @@ object SetArchetypes {
                     "Self-mill and renew to recur threats from the graveyard, then pile on +1/+1 counters with endure. A grindy value deck that goes long."),
             )
         ),
+        "EOE" to SetSynergies(
+            setCode = "EOE",
+            setName = "Edge of Eternities",
+            archetypes = listOf(
+                Archetype("Second Spell", listOf(Color.WHITE, Color.BLUE),
+                    "Cast two spells in a single turn to fire off a stream of payoffs. Cheap interaction and artifacts keep the spells flowing while flyers and tokens reward every double-spell turn. A consistent tempo-value deck."),
+                Archetype("Sacrifice", listOf(Color.WHITE, Color.BLACK),
+                    "Field a wide board of efficient creatures and feed them to sacrifice payoffs. Warp lets your threats land early and return later, fueling drain, removal, and relentless pressure."),
+                Archetype("Spacecraft", listOf(Color.WHITE, Color.RED),
+                    "Tap your creatures to station up Spacecraft into enormous artifact threats, then back the assault with aggressive bodies. Go fast on the ground while your ships charge toward liftoff.",
+                    creatureTypes = listOf("Spacecraft")),
+                Archetype("Artifact Value", listOf(Color.BLUE, Color.BLACK),
+                    "An artifact 'good stuff' value deck. Stock up on two-for-ones and removal, trigger void as permanents leave, and grind the game out before pulling ahead on cards."),
+                Archetype("Artifact Aggro", listOf(Color.BLUE, Color.RED),
+                    "Aggressively deploy artifacts to snowball +1/+1 counters and station triggers. Each artifact entering powers up your team for a fast, synergy-driven beatdown."),
+                Archetype("Lander Ramp", listOf(Color.BLUE, Color.GREEN),
+                    "Crack Lander tokens for mana and fixing, ramping into the format's biggest threats. The premier two-for-one ramp deck that out-resources the table and splashes bombs."),
+                Archetype("Void", listOf(Color.BLACK, Color.RED),
+                    "Sacrifice your own creatures to switch on void payoffs, turning every permanent that dies into value. A grindy sacrifice-aggro deck that controls the board while bleeding the opponent."),
+                Archetype("Graveyard Midrange", listOf(Color.BLACK, Color.GREEN),
+                    "Fill your graveyard and bring key creatures back, leaning on void and sacrifice for incidental value. A resilient midrange that trades all day and rebuilds from the yard."),
+                Archetype("Landfall", listOf(Color.RED, Color.GREEN),
+                    "Lands entering trigger landfall payoffs, and Landers let you set them off on demand. Ramp, sacrifice your Landers, and crash in with an ever-growing board.",
+                    creatureTypes = listOf("Lander")),
+                Archetype("Counters", listOf(Color.GREEN, Color.WHITE),
+                    "Take the board early with cheap creatures and pile on +1/+1 counters. Station synergies and counter payoffs build a sticky, go-tall-and-wide deck that's hard to climb back against."),
+            )
+        ),
     )
 
     /** Get archetypes for a specific set code, or null if not found. */

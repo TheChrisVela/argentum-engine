@@ -512,6 +512,64 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
       },
     ],
   },
+  EOE: {
+    setCode: 'EOE',
+    setName: 'Edge of Eternities',
+    archetypes: [
+      {
+        name: 'Second Spell',
+        colors: ['W', 'U'],
+        description: 'Cast two spells in a single turn to fire off a stream of payoffs. Cheap interaction and artifacts keep the spells flowing while flyers and tokens reward every double-spell turn. A consistent tempo-value deck.',
+      },
+      {
+        name: 'Sacrifice',
+        colors: ['W', 'B'],
+        description: 'Field a wide board of efficient creatures and feed them to sacrifice payoffs. Warp lets your threats land early and return later, fueling drain, removal, and relentless pressure.',
+      },
+      {
+        name: 'Spacecraft',
+        colors: ['W', 'R'],
+        creatureTypes: ['Spacecraft'],
+        description: 'Tap your creatures to station up Spacecraft into enormous artifact threats, then back the assault with aggressive bodies. Go fast on the ground while your ships charge toward liftoff.',
+      },
+      {
+        name: 'Artifact Value',
+        colors: ['U', 'B'],
+        description: "An artifact 'good stuff' value deck. Stock up on two-for-ones and removal, trigger void as permanents leave, and grind the game out before pulling ahead on cards.",
+      },
+      {
+        name: 'Artifact Aggro',
+        colors: ['U', 'R'],
+        description: 'Aggressively deploy artifacts to snowball +1/+1 counters and station triggers. Each artifact entering powers up your team for a fast, synergy-driven beatdown.',
+      },
+      {
+        name: 'Lander Ramp',
+        colors: ['U', 'G'],
+        description: "Crack Lander tokens for mana and fixing, ramping into the format's biggest threats. The premier two-for-one ramp deck that out-resources the table and splashes bombs.",
+      },
+      {
+        name: 'Void',
+        colors: ['B', 'R'],
+        description: 'Sacrifice your own creatures to switch on void payoffs, turning every permanent that dies into value. A grindy sacrifice-aggro deck that controls the board while bleeding the opponent.',
+      },
+      {
+        name: 'Graveyard Midrange',
+        colors: ['B', 'G'],
+        description: 'Fill your graveyard and bring key creatures back, leaning on void and sacrifice for incidental value. A resilient midrange that trades all day and rebuilds from the yard.',
+      },
+      {
+        name: 'Landfall',
+        colors: ['R', 'G'],
+        creatureTypes: ['Lander'],
+        description: 'Lands entering trigger landfall payoffs, and Landers let you set them off on demand. Ramp, sacrifice your Landers, and crash in with an ever-growing board.',
+      },
+      {
+        name: 'Counters',
+        colors: ['G', 'W'],
+        description: "Take the board early with cheap creatures and pile on +1/+1 counters. Station synergies and counter payoffs build a sticky, go-tall-and-wide deck that's hard to climb back against.",
+      },
+    ],
+  },
 }
 
 /**
