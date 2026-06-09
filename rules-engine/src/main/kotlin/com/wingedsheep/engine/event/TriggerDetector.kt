@@ -297,7 +297,7 @@ class TriggerDetector(
         val matching = state.delayedTriggers.filter { delayed ->
             delayed.trigger == null &&
                 delayed.fireAtStep == step &&
-                (!delayed.fireOnlyOnControllersTurn || delayed.controllerId == activePlayer) &&
+                (delayed.fireOnPlayerId == null || delayed.fireOnPlayerId == activePlayer) &&
                 (delayed.notBeforeTurn == null || state.turnNumber >= delayed.notBeforeTurn)
         }
         if (matching.isEmpty()) return emptyList<PendingTrigger>() to emptySet()
@@ -313,7 +313,11 @@ class TriggerDetector(
                 sourceId = delayed.sourceId,
                 sourceName = delayed.sourceName,
                 controllerId = delayed.controllerId,
-                triggerContext = TriggerContext(step = step)
+                triggerContext = TriggerContext(
+                    step = step,
+                    triggeringEntityId = delayed.fireOnPlayerId,
+                    triggeringPlayerId = delayed.fireOnPlayerId
+                )
             )
         }
         val consumedIds = matching.map { it.id }.toSet()

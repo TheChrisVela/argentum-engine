@@ -1501,10 +1501,19 @@ Triggers.youCastSpell(
 - `DelayedTriggeredAbility` — registered now, fires at a specific future step (Astral Slide).
 - `Effects.GrantTriggeredAbilityEffect` — grant a triggered ability for a duration; `GrantTriggeredAbilityExecutor` uses
   projected state and supports leaves-battlefield-to-zone triggers.
-- `CreateDelayedTriggerEffect(step, effect, fireOnlyOnControllersTurn, timing, …)` —
-  the data-side facade. Two orthogonal axes control *when* the trigger may first fire:
-  - `fireOnlyOnControllersTurn` — gates *whose* turn: only matches when the active player equals
-    the controller.
+- `CreateDelayedTriggerEffect(step, effect, fireOnPlayer, timing, …)` —
+  the data-side facade. Two orthogonal axes control *whose / which* turn fires the trigger:
+  - `fireOnPlayer: EffectTarget?` — the single "whose turn" gate. Resolved to a concrete player
+    at scheduling time; only matches when that player is active. Defaults to `null` (no player
+    gate — fires on the next matching step of *any* turn). Two common shapes:
+    - `EffectTarget.PlayerRef(Player.You)` — only the controller's turn ("at the beginning of
+      *your* next end step"; Dragonhawk, Kav Landseeker, Meandering Towershell).
+    - `EffectTarget.PlayerRef(Player.TriggeringPlayer)` — the triggering/damaged player's turn
+      ("at the beginning of *their* next [step]"; Nafs Asp's "that player loses 1 life at the
+      beginning of their next draw step unless they pay {1}").
+    The resolved player id is also re-exposed to the inner `effect` as `triggeringPlayerId` /
+    `triggeringEntityId` when the trigger fires, so `Player.TriggeringPlayer` inside the inner
+    effect resolves to the same player.
   - `timing: DelayedTriggerTiming` — gates *which* turn is the earliest eligible one:
     - `CURRENT_TURN_OR_LATER` (default) — no turn floor; the next upcoming occurrence of `step`,
       which may be the current turn. (Astral Slide exile-until-end-step.)
@@ -1512,8 +1521,8 @@ Triggers.youCastSpell(
       controller's current-turn end step has already begun (END/CLEANUP); otherwise the current
       turn's end step qualifies. (Dragonhawk, Fate's Tempest.)
     - `NEXT_TURN` — stricter "on your next turn"-style timing: the current turn never qualifies
-      regardless of step. Pair with `fireOnlyOnControllersTurn = true` to land on the controller's
-      upcoming own turn rather than an intervening opponent turn. (Kav Landseeker.)
+      regardless of step. Pair with `fireOnPlayer = PlayerRef(Player.You)` to land on the
+      controller's upcoming own turn rather than an intervening opponent turn. (Kav Landseeker.)
 - **Event-based delayed triggers** — pass `trigger = <TriggerSpec>` (instead of `step`) and the
   delayed ability fires whenever a matching *event* occurs, staying resident until `expiry`
   (`DelayedTriggerExpiry.EndOfTurn`) removes it. Supported events include `DealsDamageEvent`,

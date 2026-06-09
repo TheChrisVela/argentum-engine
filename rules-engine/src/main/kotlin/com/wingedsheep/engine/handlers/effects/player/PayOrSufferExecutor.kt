@@ -135,7 +135,9 @@ class PayOrSufferExecutor(
             filter = cost.filter,
             random = false,
             targets = context.targets,
-            namedTargets = context.pipeline.namedTargets
+            namedTargets = context.pipeline.namedTargets,
+            triggeringEntityId = context.triggeringEntityId,
+            triggeringPlayerId = context.triggeringPlayerId
         )
 
         val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
@@ -195,7 +197,9 @@ class PayOrSufferExecutor(
             filter = cost.filter,
             random = true,
             targets = context.targets,
-            namedTargets = context.pipeline.namedTargets
+            namedTargets = context.pipeline.namedTargets,
+            triggeringEntityId = context.triggeringEntityId,
+            triggeringPlayerId = context.triggeringPlayerId
         )
 
         val stateWithDecision = state.withPendingDecision(decision)
@@ -264,7 +268,9 @@ class PayOrSufferExecutor(
             filter = cost.filter,
             random = false,
             targets = context.targets,
-            namedTargets = context.pipeline.namedTargets
+            namedTargets = context.pipeline.namedTargets,
+            triggeringEntityId = context.triggeringEntityId,
+            triggeringPlayerId = context.triggeringPlayerId
         )
 
         val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
@@ -330,7 +336,9 @@ class PayOrSufferExecutor(
             filter = cost.filter,
             random = false,
             targets = context.targets,
-            namedTargets = context.pipeline.namedTargets
+            namedTargets = context.pipeline.namedTargets,
+            triggeringEntityId = context.triggeringEntityId,
+            triggeringPlayerId = context.triggeringPlayerId
         )
 
         val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
@@ -391,7 +399,9 @@ class PayOrSufferExecutor(
             filter = GameObjectFilter.Any, // Not used for life payment
             random = false,
             targets = context.targets,
-            namedTargets = context.pipeline.namedTargets
+            namedTargets = context.pipeline.namedTargets,
+            triggeringEntityId = context.triggeringEntityId,
+            triggeringPlayerId = context.triggeringPlayerId
         )
 
         val stateWithDecision = state.withPendingDecision(decision)
@@ -456,6 +466,8 @@ class PayOrSufferExecutor(
             random = false,
             targets = context.targets,
             namedTargets = context.pipeline.namedTargets,
+            triggeringEntityId = context.triggeringEntityId,
+            triggeringPlayerId = context.triggeringPlayerId,
             zone = cost.zone
         )
 
@@ -516,6 +528,8 @@ class PayOrSufferExecutor(
             random = false,
             targets = context.targets,
             namedTargets = context.pipeline.namedTargets,
+            triggeringEntityId = context.triggeringEntityId,
+            triggeringPlayerId = context.triggeringPlayerId,
             manaCost = cost.cost
         )
 
@@ -589,7 +603,9 @@ class PayOrSufferExecutor(
             options = availableOptions.map { cost.options[it.first] },
             sufferEffect = effect.suffer,
             targets = context.targets,
-            namedTargets = context.pipeline.namedTargets
+            namedTargets = context.pipeline.namedTargets,
+            triggeringEntityId = context.triggeringEntityId,
+            triggeringPlayerId = context.triggeringPlayerId
         )
 
         val stateWithDecision = state.withPendingDecision(decision)

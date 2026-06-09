@@ -2,7 +2,7 @@
 
 **Set Size:** 78 cards
 **Release Date:** December 17, 1993
-**Implemented:** 62 / 78
+**Implemented:** 63 / 78
 | Color | Count |
 |-------|-------|
 | White | 11 |
@@ -66,7 +66,7 @@
 - [x] Ghazbán Ogre
 - [x] Ifh-Bíff Efreet
 - [ ] Metamorphosis
-- [ ] Nafs Asp
+- [x] Nafs Asp
 - [x] Sandstorm
 - [x] Singing Tree
 - [x] Wyluli Wolf

@@ -220,7 +220,9 @@ class SacrificeAndPayContinuationResumer(
                 controllerId = continuation.playerId,
                 opponentId = null,
                 targets = continuation.targets,
-                pipeline = PipelineState(namedTargets = continuation.namedTargets)
+                pipeline = PipelineState(namedTargets = continuation.namedTargets),
+                triggeringEntityId = continuation.triggeringEntityId,
+                triggeringPlayerId = continuation.triggeringPlayerId
             )
             val result = services.effectExecutorRegistry.execute(state, continuation.sufferEffect, context).toExecutionResult()
             return if (result.isPaused) result else checkForMore(result.state, result.events.toList())
@@ -237,7 +239,9 @@ class SacrificeAndPayContinuationResumer(
             controllerId = continuation.playerId,
             opponentId = null,
             targets = continuation.targets,
-            pipeline = PipelineState(namedTargets = continuation.namedTargets)
+            pipeline = PipelineState(namedTargets = continuation.namedTargets),
+            triggeringEntityId = continuation.triggeringEntityId,
+            triggeringPlayerId = continuation.triggeringPlayerId
         )
         val result = services.effectExecutorRegistry.execute(state, singleCostEffect, context).toExecutionResult()
         return if (result.isPaused) result else checkForMore(result.state, result.events.toList())
@@ -576,13 +580,17 @@ class SacrificeAndPayContinuationResumer(
         val playerId = continuation.playerId
         val sufferEffect = continuation.sufferEffect
 
-        // Create context for executing the suffer effect, preserving targets from the original trigger
+        // Create context for executing the suffer effect, preserving targets AND the original
+        // trigger context. Without the latter, effects like LoseLifeEffect(1, PlayerRef(TriggeringPlayer))
+        // (Nafs Asp's bite when the damaged player declines to pay {1}) silently fizzle.
         val context = EffectContext(
             sourceId = sourceId,
             controllerId = playerId,
             opponentId = null,
             targets = continuation.targets,
-            pipeline = PipelineState(namedTargets = continuation.namedTargets)
+            pipeline = PipelineState(namedTargets = continuation.namedTargets),
+            triggeringEntityId = continuation.triggeringEntityId,
+            triggeringPlayerId = continuation.triggeringPlayerId
         )
 
         // Execute the suffer effect using the registry
@@ -682,7 +690,9 @@ class SacrificeAndPayContinuationResumer(
             sourceId = continuation.sourceId,
             controllerId = continuation.controllerId,
             opponentId = null,
-            pipeline = PipelineState(storedCollections = continuation.storedCollections)
+            pipeline = PipelineState(storedCollections = continuation.storedCollections),
+            triggeringEntityId = continuation.triggeringEntityId,
+            triggeringPlayerId = continuation.triggeringPlayerId
         )
         val result = services.effectExecutorRegistry.execute(state, consequence, context).toExecutionResult()
         val allEvents = priorEvents + result.events

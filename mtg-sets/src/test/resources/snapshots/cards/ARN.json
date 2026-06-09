@@ -2142,6 +2142,81 @@
     ]
 }
 
+// Nafs Asp
+{
+    "name": "Nafs Asp",
+    "manaCost": "{G}",
+    "typeLine": "Creature — Snake",
+    "oracleText": "Whenever this creature deals damage to a player, that player loses 1 life at the beginning of their next draw step unless they pay {1} before that draw step.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "CreateDelayedTrigger",
+                    "step": "DRAW",
+                    "effect": {
+                        "type": "PayOrSuffer",
+                        "cost": {
+                            "type": "PayMana",
+                            "cost": "{1}"
+                        },
+                        "suffer": {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "TriggeringPlayer"
+                            }
+                        },
+                        "player": {
+                            "type": "PlayerRef",
+                            "player": "TriggeringPlayer"
+                        }
+                    },
+                    "fireOnPlayer": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "52",
+        "artist": "Christopher Rush",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/965f722c-2b18-4c22-8c30-12552def5940.jpg?1562922939",
+        "rulings": [
+            {
+                "date": "2004-10-04",
+                "text": "If its damage gets redirected to its controller, it will still trigger the ability."
+            },
+            {
+                "date": "2004-10-04",
+                "text": "If it damages a player twice, they get to pay or take damage twice during their next draw step."
+            },
+            {
+                "date": "2004-10-04",
+                "text": "The ability does not cause itself to trigger again. It causes loss of life, not damage."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Oasis
 {
     "name": "Oasis",

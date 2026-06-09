@@ -56,6 +56,26 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
         // entity id so matching later is cheap and doesn't need the original context.
         val watchedEntityId = effect.watchedTarget?.let { context.resolveTarget(it) }
 
+        // For step-based delayed triggers that restrict to a specific player's turn (e.g.
+        // Nafs Asp's "at the beginning of their next draw step"): resolve the player target
+        // now, while the trigger context still knows who it is, and bake the entity id in.
+        // resolvePlayerTarget covers PlayerRef shapes; the generic resolveTarget fallback
+        // covers pre-baked SpecificEntity/TriggeringEntity ids. Either way, the resolved id
+        // must point at a player — anything else (e.g. SpecificEntity(creatureId)) would
+        // never match state.activePlayerId and the trigger would silently never fire, so we
+        // fail loudly at scheduling time instead.
+        val fireOnPlayerId = effect.fireOnPlayer?.let { target ->
+            val resolved = context.resolvePlayerTarget(target) ?: context.resolveTarget(target)
+                ?: return EffectResult.error(state, "CreateDelayedTrigger fireOnPlayer did not resolve: $target")
+            if (resolved !in state.turnOrder) {
+                return EffectResult.error(
+                    state,
+                    "CreateDelayedTrigger fireOnPlayer resolved to non-player entity $resolved (from $target)"
+                )
+            }
+            resolved
+        }
+
         // The earliest turn this delayed trigger may fire, derived from effect.timing:
         //  - NEXT_END_STEP ("at the beginning of your next end step"): fires at the next
         //    upcoming end step on the controller's turn. If we're still before the end step
@@ -63,7 +83,7 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
         //    following turn. Only bump notBeforeTurn when the current turn's end step has
         //    already begun (or passed), i.e. we're in END or CLEANUP on the controller's turn.
         //  - NEXT_TURN ("on your next turn") is stricter: the current turn never qualifies,
-        //    regardless of step. Combine with fireOnlyOnControllersTurn = true to land on the
+        //    regardless of step. Combine with fireOnPlayer = PlayerRef(You) to land on the
         //    controller's upcoming turn.
         //  - CURRENT_TURN_OR_LATER: no turn floor.
         val notBeforeTurn = when (effect.timing) {
@@ -83,13 +103,13 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
             sourceId = sourceId,
             sourceName = sourceName,
             controllerId = context.controllerId,
-            fireOnlyOnControllersTurn = effect.fireOnlyOnControllersTurn,
             trigger = effect.trigger,
             watchedEntityId = watchedEntityId,
             expiry = if (effect.trigger != null) effect.expiry else null,
             fireOnce = effect.trigger != null && effect.fireOnce,
             notBeforeTurn = notBeforeTurn,
-            targetRequirement = effect.targetRequirement
+            targetRequirement = effect.targetRequirement,
+            fireOnPlayerId = fireOnPlayerId
         )
 
         return EffectResult.success(state.addDelayedTrigger(delayedTrigger))
