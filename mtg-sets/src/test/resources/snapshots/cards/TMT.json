@@ -6224,6 +6224,79 @@
         "GREEN"
     ]
 }
+// The Last Ronin's Technique
+{
+    "name": "The Last Ronin's Technique",
+    "manaCost": "{3}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Sneak {1}{W} (You may cast this spell for {1}{W} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nCreate three 1/1 white Ninja Turtle Spirit creature tokens. If this spell's sneak cost was paid, they enter tapped and attacking.",
+    "keywords": [
+        "SNEAK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Sneak",
+            "cost": "{1}{W}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Gated",
+            "gate": {
+                "type": "Gate.WhenCondition",
+                "condition": "SneakCostWasPaid"
+            },
+            "then": {
+                "type": "CreateToken",
+                "count": {
+                    "type": "Fixed",
+                    "amount": 3
+                },
+                "power": 1,
+                "toughness": 1,
+                "colors": [
+                    "WHITE"
+                ],
+                "creatureTypes": [
+                    "Ninja",
+                    "Turtle",
+                    "Spirit"
+                ],
+                "imageUri": "https://cards.scryfall.io/normal/front/9/8/98c32288-8676-44d0-b480-7eddcac1a0e4.jpg?1771590416",
+                "tapped": true,
+                "attacking": true
+            },
+            "otherwise": {
+                "type": "CreateToken",
+                "count": {
+                    "type": "Fixed",
+                    "amount": 3
+                },
+                "power": 1,
+                "toughness": 1,
+                "colors": [
+                    "WHITE"
+                ],
+                "creatureTypes": [
+                    "Ninja",
+                    "Turtle",
+                    "Spirit"
+                ],
+                "imageUri": "https://cards.scryfall.io/normal/front/9/8/98c32288-8676-44d0-b480-7eddcac1a0e4.jpg?1771590416"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "12",
+        "rarity": "UNCOMMON",
+        "artist": "Adam Volker",
+        "flavorText": "They stood beside him. Whether they were figments or true spirits no longer mattered.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/f/dfb18239-d373-4795-8598-c82abae2cb62.jpg?1771342217"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
 // Transdimensional Bovine
 {
     "name": "Transdimensional Bovine",

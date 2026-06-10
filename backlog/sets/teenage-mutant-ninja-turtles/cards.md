@@ -173,7 +173,7 @@
 - [x] Tenderize
 - [ ] The Cloning of Shredder
 - [ ] The Last Ronin
-- [ ] The Last Ronin's Technique
+- [x] The Last Ronin's Technique
 - [ ] The Neutrinos
 - [ ] The Ooze
 - [ ] Tokka & Rahzar, Terrible Twos
