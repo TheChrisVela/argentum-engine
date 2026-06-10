@@ -77,6 +77,18 @@ object CombatMath {
         // We return true here — menace is handled at the assignment level
         // since a single canBeBlockedBy check can't express "needs 2 blockers"
 
+        // Ring-bearer evasion (CR 701.54c): a Ring-bearer can't be blocked by creatures with power
+        // greater than the Ring-bearer's power, while still controlled by its designator. Driven by
+        // RingBearerComponent rather than a card static, so it's invisible to the static-ability
+        // checks below — mirror the engine's RingBearerCantBeBlockedByGreaterPowerRule here.
+        val ringBearer = state.getEntity(attacker)
+            ?.get<com.wingedsheep.engine.state.components.identity.RingBearerComponent>()
+        if (ringBearer != null && projected.getController(attacker) == ringBearer.ownerId) {
+            val bearerPower = projected.getPower(attacker) ?: 0
+            val blockerPower = projected.getPower(blocker) ?: 0
+            if (blockerPower > bearerPower) return false
+        }
+
         // Landwalk checks (approximate — check if opponent controls matching land)
         val attackerController = projected.getController(attacker)
         val blockerController = projected.getController(blocker)

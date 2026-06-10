@@ -958,28 +958,60 @@ class GamePlayHandler(
                     broadcastStateUpdate(gameSession, result.events)
                 }
                 is GameSession.ActionResult.Failure -> {
-                    logger.warn("AI action failed: {} — falling back to PassPriority", result.reason)
-                    // Action failed (e.g., can't afford, invalid target) — pass priority
-                    // so the game doesn't get stuck
-                    val passResult = gameSession.executeAction(aiPlayerId, com.wingedsheep.engine.core.PassPriority(aiPlayerId))
-                    when (passResult) {
-                        is GameSession.ActionResult.Success -> {
-                            broadcastStateUpdate(gameSession, passResult.events)
-                            if (gameSession.isGameOver()) handleGameOver(gameSession, events = passResult.events)
+                    // The chosen action was rejected (e.g. an illegal block the AI's combat model
+                    // didn't foresee, like Ring-bearer "can't be blocked by greater power"). Try a
+                    // sequence of step-appropriate, always-legal fallbacks so the game can't get
+                    // stuck. During DECLARE_BLOCKERS/DECLARE_ATTACKERS, PassPriority is itself
+                    // illegal ("you must declare blockers before passing priority"), so a do-nothing
+                    // declaration must come first — otherwise the AI re-receives the same state and
+                    // loops forever.
+                    logger.warn("AI action failed: {} — trying safe fallbacks", result.reason)
+                    var recovered = false
+                    for (fallback in safeFallbackActions(gameSession, aiPlayerId)) {
+                        when (val fb = gameSession.executeAction(aiPlayerId, fallback)) {
+                            is GameSession.ActionResult.Success -> {
+                                broadcastStateUpdate(gameSession, fb.events)
+                                if (gameSession.isGameOver()) handleGameOver(gameSession, events = fb.events)
+                                recovered = true
+                            }
+                            is GameSession.ActionResult.PausedForDecision -> {
+                                broadcastStateUpdate(gameSession, fb.events)
+                                recovered = true
+                            }
+                            is GameSession.ActionResult.Failure -> {
+                                logger.warn("AI fallback {} also failed: {}", fallback::class.simpleName, fb.reason)
+                            }
                         }
-                        is GameSession.ActionResult.PausedForDecision -> {
-                            broadcastStateUpdate(gameSession, passResult.events)
-                        }
-                        is GameSession.ActionResult.Failure -> {
-                            logger.warn("AI fallback PassPriority also failed: {}", passResult.reason)
-                            // Last resort: broadcast current state so AI gets another chance
-                            broadcastStateUpdate(gameSession, emptyList())
-                        }
+                        if (recovered) break
+                    }
+                    if (!recovered) {
+                        // Last resort: broadcast current state so the AI gets another chance.
+                        broadcastStateUpdate(gameSession, emptyList())
                     }
                 }
             }
         } catch (e: Exception) {
             logger.error("Error handling AI action", e)
+        }
+    }
+
+    /**
+     * Step-appropriate, always-legal recovery actions to try (in order) when an AI's chosen action
+     * is rejected. During the declare steps a "do nothing" declaration (no blockers / no attackers)
+     * is always legal and advances combat; `PassPriority` is NOT legal there, so it can only be the
+     * last resort. Outside combat declaration, passing priority is the safe no-op.
+     */
+    private fun safeFallbackActions(
+        gameSession: GameSession,
+        aiPlayerId: EntityId
+    ): List<com.wingedsheep.engine.core.GameAction> {
+        val pass = com.wingedsheep.engine.core.PassPriority(aiPlayerId)
+        return when (gameSession.getStateForTesting()?.step) {
+            com.wingedsheep.sdk.core.Step.DECLARE_BLOCKERS ->
+                listOf(com.wingedsheep.engine.core.DeclareBlockers(aiPlayerId, emptyMap()), pass)
+            com.wingedsheep.sdk.core.Step.DECLARE_ATTACKERS ->
+                listOf(com.wingedsheep.engine.core.DeclareAttackers(aiPlayerId, emptyMap()), pass)
+            else -> listOf(pass)
         }
     }
 

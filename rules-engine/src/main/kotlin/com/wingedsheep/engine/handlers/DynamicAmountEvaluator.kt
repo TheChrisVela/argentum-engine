@@ -209,7 +209,7 @@ class DynamicAmountEvaluator(
                 // has detached: the enchanted creature (and the aura) can leave the battlefield
                 // before the ability resolves — e.g. removed in response to the aura's ETB
                 // trigger — and "deals damage equal to its power" must use the power as it last
-                // existed on the battlefield (CR 608.2g). Captured at trigger time.
+                // existed on the battlefield (CR 608.2h). Captured at trigger time.
                 if (amount.entity is EntityReference.EnchantedCreature &&
                     amount.numericProperty is EntityNumericProperty.Power &&
                     (entityId == null || entityId !in state.getBattlefield())

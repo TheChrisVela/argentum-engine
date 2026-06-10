@@ -19,7 +19,7 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
  *
  * The token count reads the destroyed enchantment's mana value via
  * [DynamicAmount.EntityProperty]; mana value is a card characteristic that survives the move to
- * the graveyard, so the count resolves correctly after [Effects.Destroy] (CR 608.2g — last-known
+ * the graveyard, so the count resolves correctly after [Effects.Destroy] (CR 608.2h — last-known
  * information). If the enchantment is an illegal target on resolution the whole spell is countered
  * by the rules and no Saprolings are created.
  */

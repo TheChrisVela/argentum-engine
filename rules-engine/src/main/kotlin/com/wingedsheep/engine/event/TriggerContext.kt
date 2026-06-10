@@ -64,7 +64,7 @@ data class TriggerContext(
     val modesChosenCount: Int? = null,
     /**
      * Power of the creature the trigger's source (an Aura/Equipment) was attached to, captured
-     * when the trigger fired. Carried as last-known information (CR 608.2g) so that an
+     * when the trigger fired. Carried as last-known information (CR 608.2h) so that an
      * "enchanted creature deals damage equal to its power" ability still uses the right power
      * if the creature — and the aura — leave before the ability resolves. Null for non-attached
      * sources. Populated by [TriggerDetector], not [fromEvent] (which has no game state).
