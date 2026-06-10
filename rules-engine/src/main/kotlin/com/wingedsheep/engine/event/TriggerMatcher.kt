@@ -27,6 +27,7 @@ import com.wingedsheep.engine.core.UntappedEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.state.GameState
@@ -41,6 +42,7 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.EventPattern
+import com.wingedsheep.sdk.scripting.events.ControllerFilter
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.events.DamageType
@@ -353,7 +355,9 @@ class TriggerMatcher(
             // Replacement-effect-only events never match as triggers
             is EventPattern.DamageEvent -> false
             is EventPattern.CounterPlacementEvent -> false
-            is EventPattern.TokenCreationEvent -> false
+            // "Whenever you create a token" (Mirkwood Bats) — fires per token created (CR's
+            // singular templating), matched against each token-creation ZoneChangeEvent.
+            is EventPattern.TokenCreationEvent -> matchesTokenCreationTrigger(trigger, event, controllerId, state)
             is EventPattern.LifeLossEvent -> {
                 event is LifeChangedEvent &&
                     event.reason != com.wingedsheep.engine.core.LifeChangeReason.LIFE_GAIN &&
@@ -440,6 +444,45 @@ class TriggerMatcher(
         return event.cardIds.count { cardId ->
             predicateEvaluator.matches(state, projected, cardId, filter, predicateContext)
         }
+    }
+
+    /**
+     * "Whenever you create a token" (Mirkwood Bats). A token is *created* when it enters the
+     * battlefield from nowhere — its [ZoneChangeEvent] has `fromZone == null`. A token that's a
+     * copy of a permanent spell enters from [Zone.STACK] instead and is explicitly **not** created
+     * (CR 608.3f / 111.13), so the `fromZone == null` gate excludes it. One event is emitted per
+     * token, so this fires once per token created (the singular "a token" templating), e.g. each
+     * Soldier from Horn of Gondor's `{3},{T}` drains separately.
+     */
+    private fun matchesTokenCreationTrigger(
+        trigger: EventPattern.TokenCreationEvent,
+        event: EngineGameEvent,
+        controllerId: EntityId,
+        state: GameState
+    ): Boolean {
+        if (event !is ZoneChangeEvent) return false
+        if (event.fromZone != null || event.toZone != Zone.BATTLEFIELD) return false
+        val entity = state.getEntity(event.entityId) ?: return false
+        if (!entity.has<com.wingedsheep.engine.state.components.identity.TokenComponent>()) return false
+
+        // Controller of the freshly-created token (owner == controller at creation; prefer projected).
+        val tokenController = state.projectedState.getController(event.entityId) ?: event.ownerId
+        val controllerMatches = when (trigger.controller) {
+            is ControllerFilter.You -> tokenController == controllerId
+            is ControllerFilter.Opponent -> tokenController != controllerId
+            is ControllerFilter.Any -> true
+        }
+        if (!controllerMatches) return false
+
+        val filter = trigger.tokenFilter
+        if (filter != null && !predicateEvaluator.matches(
+                state, state.projectedState, event.entityId, filter,
+                PredicateContext(controllerId = controllerId)
+            )
+        ) {
+            return false
+        }
+        return true
     }
 
     fun matchesZoneChangeTrigger(

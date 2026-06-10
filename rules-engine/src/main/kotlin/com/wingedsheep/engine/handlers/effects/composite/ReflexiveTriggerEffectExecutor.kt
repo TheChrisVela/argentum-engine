@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.TargetFinder
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -12,6 +13,7 @@ import com.wingedsheep.sdk.scripting.effects.ChooseActionEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.ReflexiveTriggerEffect
+import com.wingedsheep.sdk.scripting.effects.SacrificeEffect
 import com.wingedsheep.sdk.scripting.effects.SelectTargetEffect
 import com.wingedsheep.sdk.scripting.targets.TargetPlayer
 import com.wingedsheep.sdk.scripting.targets.TargetOpponent
@@ -139,6 +141,8 @@ class ReflexiveTriggerEffectExecutor(
      *
      * Walks the action effect tree looking for gating sub-effects:
      *  - [SelectTargetEffect] with no legal targets → infeasible
+     *  - [SacrificeEffect] with fewer controlled matches than its count → infeasible
+     *    (e.g. Shire Shirriff's "you may sacrifice a token" when you control no token)
      *  - [ChooseActionEffect] with no feasible choice → infeasible
      *  - [CompositeEffect] → feasible iff every step is feasible (top-level sequencing)
      *  - any other effect → assumed feasible (don't gate on shapes we don't recognize)
@@ -154,6 +158,14 @@ class ReflexiveTriggerEffectExecutor(
             controllerId = context.controllerId,
             sourceId = context.sourceId
         ).isNotEmpty()
+        is SacrificeEffect -> {
+            // You can only sacrifice permanents you control that match the filter (mirrors
+            // SacrificeExecutor.findValidPermanents). Fewer than `count` → can't pay → infeasible.
+            val excludeId = if (action.excludeSource) context.sourceId else null
+            BattlefieldFilterUtils.findMatchingOnBattlefield(
+                state, action.filter.youControl(), context, excludeSelfId = excludeId
+            ).size >= action.count
+        }
         is ChooseActionEffect -> action.choices.any { choice ->
             checkFeasibility(state, context.controllerId, choice.feasibilityCheck)
         }

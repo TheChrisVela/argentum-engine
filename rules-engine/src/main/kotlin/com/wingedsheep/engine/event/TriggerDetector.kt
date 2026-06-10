@@ -980,7 +980,7 @@ class TriggerDetector(
                         // read "enchanted/equipped creature ... its power" (e.g. Pain for All). The
                         // creature — and the aura — may leave before the ability resolves (removed in
                         // response to the aura's ETB trigger), in which case the resolver falls back to
-                        // this last-known value (CR 608.2g).
+                        // this last-known value (CR 608.2h).
                         val enchantedPower = state.getEntity(entityId)
                             ?.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
                             ?.targetId

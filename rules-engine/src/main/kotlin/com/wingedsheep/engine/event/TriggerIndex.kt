@@ -157,6 +157,10 @@ class TriggerIndex(
 
             return when (trigger) {
                 is SdkGameEvent.ZoneChangeEvent -> listOf(TriggerCategory.ZONE_CHANGE)
+                // "Whenever you create a token" matches token-creation ZoneChangeEvents (fromZone ==
+                // null), so it indexes under the same category as those events (TriggerMatcher.
+                // matchesTokenCreationTrigger does the create-specific filtering).
+                is SdkGameEvent.TokenCreationEvent -> listOf(TriggerCategory.ZONE_CHANGE)
                 is SdkGameEvent.DrawEvent -> listOf(TriggerCategory.DRAW)
                 is SdkGameEvent.NthCardDrawnEvent -> listOf(TriggerCategory.DRAW)
                 is SdkGameEvent.CardRevealedFromDrawEvent -> listOf(TriggerCategory.CARD_REVEALED)

@@ -2309,6 +2309,71 @@ class CombatAdvisorTest : FunSpec({
         // Must attack — free damage with no risk
         result.attackers shouldContainKey attacker
     }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // Ring-bearer evasion (CR 701.54c): a Ring-bearer can't be blocked by a
+    // creature with greater power. This is driven by RingBearerComponent, not a
+    // card static, so the AI's block-legality model must account for it — else it
+    // proposes an illegal block that the engine rejects (regression: the AI then
+    // looped forever re-declaring the same illegal block).
+    // ═════════════════════════════════════════════════════════════════════
+
+    test("does not assign a greater-power blocker to a Ring-bearer attacker") {
+        val (driver, registry, advisor) = setup(emptyList())
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Grizzly Bears") // 2/2 Ring-bearer
+        driver.removeSummoningSickness(attacker)
+        driver.addComponent(attacker, com.wingedsheep.engine.state.components.identity.RingBearerComponent(p1))
+
+        val bigBlocker = driver.putCreatureOnBattlefield(p2, "Hill Giant") // 3/3, power 3 > 2
+        driver.removeSummoningSickness(bigBlocker)
+
+        // Face lethal so the AI is strongly motivated to (chump-)block — proving the
+        // restriction holds even when blocking is desirable.
+        driver.replaceState(driver.state.withLifeTotal(p2, 2))
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        // The block-legality model reflects the Ring-bearer restriction.
+        CombatMath.canBeBlockedBy(
+            driver.state, driver.state.projectedState, attacker, bigBlocker, registry
+        ) shouldBe false
+
+        // ...so the advisor never proposes the illegal block.
+        val result = advisor.chooseBlockers(
+            driver.state, buildBlockAction(p2, listOf(bigBlocker)), p2
+        ) as DeclareBlockers
+        result.blockers.shouldNotContainKey(bigBlocker)
+    }
+
+    test("allows an equal-or-lesser-power blocker to block a Ring-bearer attacker") {
+        val (driver, registry, _) = setup(emptyList())
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Grizzly Bears") // 2/2 Ring-bearer
+        driver.removeSummoningSickness(attacker)
+        driver.addComponent(attacker, com.wingedsheep.engine.state.components.identity.RingBearerComponent(p1))
+
+        val smallBlocker = driver.putCreatureOnBattlefield(p2, "Eager Cadet") // 1/1, power 1 <= 2
+        driver.removeSummoningSickness(smallBlocker)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        CombatMath.canBeBlockedBy(
+            driver.state, driver.state.projectedState, attacker, smallBlocker, registry
+        ) shouldBe true
+    }
 })
 
 /**

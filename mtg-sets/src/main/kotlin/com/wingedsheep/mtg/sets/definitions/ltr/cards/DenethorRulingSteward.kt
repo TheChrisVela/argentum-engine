@@ -31,7 +31,9 @@ val DenethorRulingSteward = card("Denethor, Ruling Steward") {
 
     triggeredAbility {
         trigger = Triggers.YourEndStep
-        triggerCondition = Conditions.CreatureDiedThisTurn
+        // "if a creature died under your control this turn" — scoped to Denethor's controller,
+        // not any player (CreatureDiedThisTurn would wrongly fire on an opponent's creature dying).
+        triggerCondition = Conditions.ControlledCreatureDiedThisTurn
         effect = Effects.CreateToken(
             power = 1,
             toughness = 1,

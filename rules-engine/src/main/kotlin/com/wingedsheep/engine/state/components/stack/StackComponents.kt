@@ -107,7 +107,7 @@ data class TriggeredAbilityOnStackComponent(
     /** Number of mode picks recorded by the spell-cast that fired this trigger (Riku of Many Paths). */
     val triggerModesChosenCount: Int? = null,
     /** Power of the aura/equipment's attached creature, captured at trigger time; LKI for
-     *  "enchanted creature ... its power" reads when the creature has left (CR 608.2g). */
+     *  "enchanted creature ... its power" reads when the creature has left (CR 608.2h). */
     val enchantedCreatureLastKnownPower: Int? = null,
     /** Cards looked at by the scry that fired this trigger (CR 701.18). Null for non-scry triggers. */
     val triggerScryCount: Int? = null,

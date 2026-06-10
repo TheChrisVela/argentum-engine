@@ -30,7 +30,10 @@ section; do not let SDK additions land without a corresponding doc update.
   Phyrexian (`{W/P}` — colour or 2 life), and monocolored hybrid / "twobrid" (`{2/B}` — two
   generic **or** one mana of the colour; mana value counts the generic side per CR 202.3f).
   Gurmag Nightwatch's `{2/B}{2/G}{2/U}` is the canonical twobrid example.
-- `typeLine: String` — full type line including supertypes and subtypes.
+- `typeLine: String` — full type line including supertypes and subtypes. A `Legendary Instant` /
+  `Legendary Sorcery` automatically gets the CR 205.4e casting restriction (can be cast only while
+  its controller controls a legendary creature or legendary planeswalker) — the engine enforces this
+  from the type line in both legal-action enumeration and the cast handler; no per-card opt-in needed.
 - `oracleText: String` — rules text; auto-generated from abilities if omitted.
 - `power: Int?`, `toughness: Int?` — base P/T for creatures.
 - `dynamicPower`, `dynamicToughness` — characteristic-defining P/T (e.g. `*/*` Tarmogoyf).
@@ -1182,6 +1185,16 @@ for any other (filter, binding, to/excludeTo) combination.
   gives a "dies" variant scoped beyond the named constants (other tribal deaths,
   any-controller deaths); `excludeTo = GRAVEYARD` gives "leaves without dying"
   (Three Tree Scribe shape); leaving both null gives "leaves to any zone."
+
+**Token creation**
+
+- `EventPattern.TokenCreationEvent(controller = ControllerFilter.You, tokenFilter? = null)` — used as
+  a trigger, "Whenever you create a token" (Mirkwood Bats). **Per-token**: fires once for *each* token
+  created, so an effect that creates three tokens at once fires it three times. Matched against each
+  token-creation `ZoneChangeEvent` (`fromZone == null`); a token that's a copy of a permanent spell
+  enters from the stack and is **not** "created" (CR 608.3f / 111.13), so it doesn't fire this. The
+  same `EventPattern` also serves as a replacement-effect filter (token doublers); the two uses don't
+  conflict.
 
 ### Combat
 

@@ -133,7 +133,7 @@ data class EffectContext(
     /**
      * Power of the creature an Aura/Equipment was attached to, captured when its triggered
      * ability fired. Read by [EntityReference.EnchantedCreature] power reads as last-known
-     * information (CR 608.2g) when the attached creature — and the aura — have left the
+     * information (CR 608.2h) when the attached creature — and the aura — have left the
      * battlefield before the ability resolves (e.g. the creature is removed in response to
      * the aura's enters-the-battlefield trigger). Null for non-attached sources.
      */

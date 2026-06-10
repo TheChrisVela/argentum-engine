@@ -19,7 +19,7 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
  *
  * The token count reads the destroyed artifact's mana value via [DynamicAmount.EntityProperty];
  * mana value is a card characteristic that survives the move to the graveyard, so the count
- * resolves correctly after [Effects.Destroy] (CR 608.2g — last-known information). Mirrors
+ * resolves correctly after [Effects.Destroy] (CR 608.2h — last-known information). Mirrors
  * [AuraMutation]. If the artifact is an illegal target on resolution the whole spell is countered
  * by the rules and no Saprolings are created.
  *
