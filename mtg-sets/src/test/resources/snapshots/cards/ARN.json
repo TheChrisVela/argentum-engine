@@ -2047,7 +2047,14 @@
                             "chooser": "TriggeringPlayer",
                             "storeSelected": "chosen",
                             "prompt": "Choose any number of tapped blue creatures to untap (pay {4} for each)",
-                            "useTargetingUI": true
+                            "useTargetingUI": true,
+                            "restrictions": [
+                                {
+                                    "type": "MaxAffordablePayment",
+                                    "manaPerSelected": 4,
+                                    "payer": "TriggeringPlayer"
+                                }
+                            ]
                         },
                         {
                             "type": "ConditionalOnCollection",

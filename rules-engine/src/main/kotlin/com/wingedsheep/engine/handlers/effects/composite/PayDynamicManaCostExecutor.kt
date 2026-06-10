@@ -17,7 +17,7 @@ import kotlin.reflect.KClass
  * [PayManaCostExecutor]. It evaluates the effect's [PayDynamicManaCostEffect.amount] at resolution
  * to a count of generic mana, resolves [PayDynamicManaCostEffect.payer] to an actual player
  * (defaulting to the ability controller), then auto-taps that player's mana sources and deducts the
- * generic cost from their pool via the shared [payGenericFromPool] core.
+ * generic cost from their pool via the shared [payManaCostFromPool] core.
  *
  * A computed amount of `<= 0` pays nothing and succeeds (the "you chose zero creatures" tail of a
  * "pay {N} for each X" composition). Insufficient mana is a recoverable error — paired with a
@@ -46,6 +46,6 @@ class PayDynamicManaCostExecutor(
             .resolvePlayerTarget(EffectTarget.PlayerRef(effect.payer), context, state)
             ?: context.controllerId
 
-        return payGenericFromPool(state, playerId, ManaCost.parse("{$amount}"), cardRegistry)
+        return payManaCostFromPool(state, playerId, ManaCost.parse("{$amount}"), cardRegistry)
     }
 }

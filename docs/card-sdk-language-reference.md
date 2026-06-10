@@ -460,9 +460,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   pipeline selection and read the selection size via `DynamicAmount.Multiply(DynamicAmount.VariableReference("<collection>_count"), N)`
   — and for **"that player pays"** on each-player triggers (`payer = Player.TriggeringPlayer`, the only effect that
   charges a player other than the ability's controller). Affordability is recognized by `Gate.MayPay`, so wrapping
-  it in a may-pay gate skips the prompt when the payer can't afford the computed cost. Magnetic Mountain ("pay {4}
-  for each tapped blue creature chosen, untap them") composes it as the cost of a `Gate.MayPay` whose `decisionMaker`
-  is the same `Player.TriggeringPlayer`.
+  it in a may-pay gate skips the prompt when the payer can't afford the computed cost, and the gate's "yes" button
+  renders the *computed* total ("Pay {8}"), not the formula. When the amount scales with an upstream selection,
+  put `SelectionRestriction.MaxAffordablePayment(manaPerSelected, payer)` on the selection so the player can't pick
+  a set they can't pay for. Magnetic Mountain ("pay {4} for each tapped blue creature chosen, untap them") composes
+  all three: the capped selection, then the dynamic cost in a `Gate.MayPay` whose `decisionMaker` is the same
+  `Player.TriggeringPlayer`.
 
 ### Tokens & emblems
 
@@ -659,7 +662,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     `CompositeEffect` of them). An unaffordable cost (fixed mana, dynamic mana, and life are
     recognized — the dynamic-mana amount is checked against its own `payer`; other shapes are
     assumed payable) skips the prompt straight to `otherwise`. On "yes", the cost is paid then `then`
-    runs (`stopOnError`: an unpayable cost aborts the payoff). When the cost is a
+    runs (`stopOnError`: an unpayable cost aborts the payoff). For a recognized mana cost the "yes"
+    button is labeled with the concrete amount — a dynamic cost shows its computed total ("Pay {8}"),
+    not the formula. When the cost is a
     `PayDynamicManaCostEffect` with a non-default `payer` (e.g. the "each player's upkeep, that player
     may pay …" shape — Magnetic Mountain), set `decisionMaker` to that same player so the one who is
     charged is the one prompted; affordability is already gauged against the `payer` regardless.
@@ -3031,12 +3036,17 @@ Counter effects live in §4 (`AddCounters`, `RemoveCounters`, `Proliferate`, `Mo
   split are unaffected).
 - `SelectFromCollectionEffect(from, into, selectCount?, allowZero?, alwaysPrompt?, restrictions?)` — let a player pick
   from a collection. `restrictions` (`List<SelectionRestriction>`) cap and trim the picks server-side: `OnePerCardType`,
-  `OnePerColor(matchControllerPermanentColors?)`, `OnePerCardName`, `TotalManaValueAtMost(max)`, and
-  `OnePerBasicLandType`. `OnePerBasicLandType` keeps at most one land of each basic land type (a kept land claims
+  `OnePerColor(matchControllerPermanentColors?)`, `OnePerCardName`, `TotalManaValueAtMost(max)`,
+  `OnePerBasicLandType`, and `MaxAffordablePayment(manaPerSelected, payer?)`. `OnePerBasicLandType` keeps at most one
+  land of each basic land type (a kept land claims
   *every* basic type it has) and — unlike `OnePerColor`, where a colourless card is unconstrained — a land with no
   basic land type can't be kept at all (Global Ruin: "chooses a land of each basic land type, then sacrifices the
   rest"). Each restriction also exposes a boolean flag on `SelectCardsDecision` (`onePerBasicLandType`, …) so the UI
-  can disable redundant picks.
+  can disable redundant picks. `MaxAffordablePayment` caps the selection at
+  `floor(payer's available mana / manaPerSelected)` (floating + untapped sources) — pair it with a downstream
+  `Gate.MayPay` over `PayDynamicMana` at the same rate so a player can never select a set whose total cost is
+  unpayable and silently forfeit the payoff; a cap of zero (under `ChooseAnyNumber`) skips the selection prompt
+  entirely (Magnetic Mountain: "choose any number … and pay {4} for each creature chosen this way").
   - `chooser` (`Chooser`, default `Controller`) — who makes the selection: `Controller`, `Opponent`, `TargetPlayer`
     (`context.targets[0]` treated as the player), `TriggeringPlayer`, `SourceController` (the source's controller,
     ignoring per-iteration swaps), `ControllerOfSelection` (the controller of the cards in `from` — resolved from the

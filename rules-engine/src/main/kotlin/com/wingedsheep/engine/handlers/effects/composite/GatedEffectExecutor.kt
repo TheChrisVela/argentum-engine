@@ -144,6 +144,11 @@ class GatedEffectExecutor(
             is Gate.MayPayX -> effect.hint // unreachable: handled by the number-chooser branch above
         }
 
+        // For a pay-gate, label the "yes" button with the concrete cost — a dynamic cost
+        // ("pay {4} for each chosen creature") renders its *computed* total ("Pay {8}") so the
+        // player confirms a number, not a formula.
+        val payLabel = (gate as? Gate.MayPay)?.let { computedCostLabel(state, it.cost, context) }
+
         val decisionId = UUID.randomUUID().toString()
         val decision = YesNoDecision(
             id = decisionId,
@@ -156,8 +161,8 @@ class GatedEffectExecutor(
                 triggeringEntityId = context.triggeringEntityId,
                 inlineOnTrigger = (gate as? Gate.MayDecide)?.inlineOnTrigger ?: false
             ),
-            yesText = "Yes",
-            noText = "No",
+            yesText = payLabel ?: "Yes",
+            noText = if (payLabel != null) "Don't pay" else "No",
             hint = hint
         )
 
@@ -319,6 +324,21 @@ class GatedEffectExecutor(
      * fail open (assumed payable) so exotic cost pipelines still prompt and abort later via the
      * resumer's `stopOnError` composite.
      */
+    /**
+     * Render a [Gate.MayPay] cost as a concrete "Pay …" button label, or null for shapes with no
+     * single obvious rendering (life, sacrifice, composites) — those keep the plain "Yes". A
+     * [PayDynamicManaCostEffect] shows its resolution-computed total, not the formula.
+     */
+    private fun computedCostLabel(state: GameState, cost: Effect, context: EffectContext): String? =
+        when (cost) {
+            is PayManaCostEffect -> "Pay ${cost.cost}"
+            is PayDynamicManaCostEffect -> {
+                val amount = dynamicAmountEvaluator.evaluate(state, cost.amount, context)
+                "Pay {$amount}"
+            }
+            else -> null
+        }
+
     private fun canAfford(state: GameState, playerId: EntityId, cost: Effect, context: EffectContext): Boolean =
         when (cost) {
             is PayManaCostEffect -> manaSolver.canPay(state, playerId, cost.cost)

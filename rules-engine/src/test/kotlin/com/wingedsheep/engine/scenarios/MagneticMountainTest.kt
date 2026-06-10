@@ -1,7 +1,10 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.SelectCardsDecision
+import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
+import io.kotest.matchers.types.shouldBeInstanceOf
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
@@ -134,6 +137,11 @@ class MagneticMountainTest : FunSpec({
         resolveUpkeepTriggerDecision(driver)
 
         driver.submitCardSelection(player2, listOf(blue1, blue2)) // choose both
+
+        // The confirmation shows the computed total, not the per-creature formula.
+        val payDecision = driver.pendingDecision.shouldBeInstanceOf<YesNoDecision>()
+        payDecision.yesText shouldBe "Pay {8}"
+
         driver.submitYesNo(player2, true)                         // pay {8} (chosen_count * 4)
 
         driver.isTapped(blue1) shouldBe false                     // both untapped
@@ -141,7 +149,7 @@ class MagneticMountainTest : FunSpec({
         lands.count { driver.isTapped(it) } shouldBe 8            // {4} for each = {8}, not {4}
     }
 
-    test("scaled cost is gated: two chosen with only {7} available is never offered the payment") {
+    test("selection is capped by affordability: with {7} available only one of two creatures can be chosen") {
         val driver = createDriver()
         driver.initMirrorMatch(deck = Deck.of("Mountain" to 40), startingLife = 20)
 
@@ -154,18 +162,23 @@ class MagneticMountainTest : FunSpec({
         val blue2 = driver.putPermanentOnBattlefield(player2, "Storm Crow")
         driver.tapPermanent(blue1)
         driver.tapPermanent(blue2)
-        // Seven lands — enough for {4} on one creature, short of the {8} two require.
+        // Seven lands — enough for {4} on one creature, short of the {8} two would require.
         val lands = (1..7).map { driver.putLandOnBattlefield(player2, "Mountain") }
 
         driver.passPriorityUntil(Step.UPKEEP, maxPasses = 200)
         resolveUpkeepTriggerDecision(driver)
 
-        driver.submitCardSelection(player2, listOf(blue1, blue2)) // choose both → {8}
+        // MaxAffordablePayment folds floor({7} / {4}) = 1 into the selection's maximum, so the
+        // player can never select an unpayable set and silently forfeit the whole untap.
+        val selectDecision = driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()
+        selectDecision.maxSelections shouldBe 1
 
-        driver.pendingDecision shouldBe null                      // unaffordable scaled cost, no prompt
-        driver.isTapped(blue1) shouldBe true                      // both stay tapped
-        driver.isTapped(blue2) shouldBe true
-        lands.count { driver.isTapped(it) } shouldBe 0            // no mana spent
+        driver.submitCardSelection(player2, listOf(blue1)) // the one affordable creature
+        driver.submitYesNo(player2, true)                  // pay {4}
+
+        driver.isTapped(blue1) shouldBe false              // the chosen one untaps
+        driver.isTapped(blue2) shouldBe true               // the other stays tapped
+        lands.count { driver.isTapped(it) } shouldBe 4     // exactly {4} was paid
     }
 
     test("declining the payment leaves the chosen creature tapped") {
@@ -191,7 +204,7 @@ class MagneticMountainTest : FunSpec({
         lands.count { driver.isTapped(it) } shouldBe 0    // no mana spent
     }
 
-    test("a player who cannot afford the cost is never offered the payment") {
+    test("a player who cannot afford even one untap is never prompted at all") {
         val driver = createDriver()
         driver.initMirrorMatch(deck = Deck.of("Mountain" to 40), startingLife = 20)
 
@@ -202,15 +215,14 @@ class MagneticMountainTest : FunSpec({
         driver.putPermanentOnBattlefield(player1, "Magnetic Mountain")
         val blue = driver.putPermanentOnBattlefield(player2, "Storm Crow")
         driver.tapPermanent(blue)
-        // Only three lands — short of the {4} required to untap one creature.
+        // Only three lands — short of the {4} required to untap even one creature.
         val lands = (1..3).map { driver.putLandOnBattlefield(player2, "Mountain") }
 
         driver.passPriorityUntil(Step.UPKEEP, maxPasses = 200)
         resolveUpkeepTriggerDecision(driver)
 
-        // Choosing the creature is allowed, but the unaffordable payment is skipped — no "pay" prompt.
-        driver.submitCardSelection(player2, listOf(blue))
-
+        // The affordability cap is zero, so the trigger resolves without ever prompting —
+        // neither a selection nor a payment question.
         driver.pendingDecision shouldBe null
         driver.isTapped(blue) shouldBe true
         lands.count { driver.isTapped(it) } shouldBe 0

@@ -11,7 +11,7 @@ import kotlin.reflect.KClass
 /**
  * Executor for PayManaCostEffect.
  * Non-optional mana payment from the ability's controller: auto-taps lands and deducts the cost.
- * Shares the auto-tap/deduct core with [PayDynamicManaCostExecutor] via [payGenericFromPool].
+ * Shares the auto-tap/deduct core with [PayDynamicManaCostExecutor] via [payManaCostFromPool].
  */
 class PayManaCostExecutor(
     private val cardRegistry: CardRegistry
@@ -24,5 +24,5 @@ class PayManaCostExecutor(
         effect: PayManaCostEffect,
         context: EffectContext
     ): EffectResult =
-        payGenericFromPool(state, context.controllerId, effect.cost, cardRegistry)
+        payManaCostFromPool(state, context.controllerId, effect.cost, cardRegistry)
 }

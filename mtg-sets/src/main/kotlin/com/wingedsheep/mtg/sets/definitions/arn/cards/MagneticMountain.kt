@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.scripting.effects.GatedEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectionMode
+import com.wingedsheep.sdk.scripting.effects.SelectionRestriction
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -67,13 +68,22 @@ val MagneticMountain = card("Magnetic Mountain") {
                     storeAs = "eligible"
                 ),
                 // The upkeep player chooses any number of them on the battlefield (0 = decline).
+                // MaxAffordablePayment caps the choice at what they can actually pay {4} each for,
+                // so an over-selection can never silently forfeit the whole untap; with no mana
+                // available the prompt is skipped entirely.
                 SelectFromCollectionEffect(
                     from = "eligible",
                     selection = SelectionMode.ChooseAnyNumber,
                     chooser = Chooser.TriggeringPlayer,
                     storeSelected = "chosen",
                     useTargetingUI = true,
-                    prompt = "Choose any number of tapped blue creatures to untap (pay {4} for each)"
+                    prompt = "Choose any number of tapped blue creatures to untap (pay {4} for each)",
+                    restrictions = listOf(
+                        SelectionRestriction.MaxAffordablePayment(
+                            manaPerSelected = 4,
+                            payer = Player.TriggeringPlayer
+                        )
+                    )
                 ),
                 // Only prompt for payment when at least one creature was chosen — so a player with no
                 // tapped blue creatures (or who declines) is never asked to "pay {0}".

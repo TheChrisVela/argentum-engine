@@ -13,14 +13,14 @@ import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.EntityId
 
 /**
- * Non-optional mana payment shared by [PayManaCostExecutor] (fixed cost) and
- * [PayDynamicManaCostExecutor] (resolution-computed amount + cross-player payer): spend whatever
- * [player] already has floating, auto-tap their mana sources for the remainder, and deduct [cost]
- * from their pool. Auto-tapped sources emit [TappedEvent]s. Insufficient mana is a recoverable
- * [EffectResult.error] — callers that pre-gate affordability (e.g. `Gate.MayPay`) only hit it on
- * genuinely degenerate input.
+ * Non-optional payment of an arbitrary [ManaCost] (colored pips included) shared by
+ * [PayManaCostExecutor] (fixed cost) and [PayDynamicManaCostExecutor] (resolution-computed
+ * generic amount + cross-player payer): spend whatever [player] already has floating, auto-tap
+ * their mana sources for the remainder, and deduct [cost] from their pool. Auto-tapped sources
+ * emit [TappedEvent]s. Insufficient mana is a recoverable [EffectResult.error] — callers that
+ * pre-gate affordability (e.g. `Gate.MayPay`) only hit it on genuinely degenerate input.
  */
-fun payGenericFromPool(
+fun payManaCostFromPool(
     state: GameState,
     player: EntityId,
     cost: ManaCost,
