@@ -456,12 +456,18 @@ class TriggerMatcher(
      * That exempt card is the one drawn when the player's cards-drawn-this-turn count equals the
      * draw-step-start snapshot ([GameState.drawStepStartDrawCountByPlayer]); it's contained in this
      * batch iff `countBefore <= snapshot < countAfter`. Used by Orcish Bowmasters.
+     *
+     * [state] is the POST-execution state, so [CardsDrawnThisTurnComponent] already includes every
+     * draw of the whole event batch. When one execution emitted several [CardsDrawnEvent]s for the
+     * same player ("Draw a card" twice in one resolution), [samePlayerDrawsLaterInBatch] backs the
+     * component count off to this event's own boundary so the exemption lands on the right card.
      */
     fun drawTriggerFiringCount(
         trigger: EventPattern.DrawEvent,
         event: CardsDrawnEvent,
         controllerId: EntityId,
-        state: GameState
+        state: GameState,
+        samePlayerDrawsLaterInBatch: Int = 0
     ): Int {
         if (!matchesPlayer(trigger.player, event.playerId, controllerId)) return 0
         val total = event.count
@@ -472,7 +478,8 @@ class TriggerMatcher(
         val inOwnDrawStep = state.activePlayerId == drawer && state.step == Step.DRAW
         if (!inOwnDrawStep) return total
 
-        val countAfter = state.getEntity(drawer)?.get<CardsDrawnThisTurnComponent>()?.count ?: 0
+        val countAfter = (state.getEntity(drawer)?.get<CardsDrawnThisTurnComponent>()?.count ?: 0) -
+            samePlayerDrawsLaterInBatch
         val countBefore = countAfter - total
         val snapshot = state.drawStepStartDrawCountByPlayer[drawer] ?: 0
         val exemptInBatch = if (countBefore <= snapshot && snapshot < countAfter) 1 else 0

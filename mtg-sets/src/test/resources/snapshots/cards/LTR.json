@@ -52,7 +52,8 @@
         "collectorNumber": "A-103",
         "rarity": "RARE",
         "artist": "Maxim Kostin",
-        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff7c57ab-f07d-4653-9451-42821cb431c0.jpg?1730837116"
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff7c57ab-f07d-4653-9451-42821cb431c0.jpg?1730837116",
+        "inBooster": false
     },
     "colorIdentityOverride": [
         "BLACK"

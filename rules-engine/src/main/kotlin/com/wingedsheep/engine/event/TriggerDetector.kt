@@ -191,8 +191,19 @@ class TriggerDetector(
         val index = buildTriggerIndex(state)
         val triggers = mutableListOf<PendingTrigger>()
 
-        for (event in events) {
-            triggers.addAll(detectTriggersForEvent(state, event, index))
+        for ((eventIndex, event) in events.withIndex()) {
+            // DrawEvent firing counts are derived from CardsDrawnThisTurnComponent, which `state`
+            // holds at its POST-batch value. When one execution emits several CardsDrawnEvents for
+            // the same player, each event needs to know how many of those draws happened after it
+            // so the matcher can reconstruct the count as of that event (exceptFirstInDrawStep
+            // exemption boundary).
+            val samePlayerDrawsLaterInBatch = if (event is CardsDrawnEvent) {
+                events.subList(eventIndex + 1, events.size)
+                    .filterIsInstance<CardsDrawnEvent>()
+                    .filter { it.playerId == event.playerId }
+                    .sumOf { it.count }
+            } else 0
+            triggers.addAll(detectTriggersForEvent(state, event, index, samePlayerDrawsLaterInBatch))
         }
 
         // Rule 603.10: "Look back in time" for simultaneous deaths.
@@ -684,7 +695,8 @@ class TriggerDetector(
     private fun detectTriggersForEvent(
         state: GameState,
         event: EngineGameEvent,
-        index: TriggerIndex
+        index: TriggerIndex,
+        samePlayerDrawsLaterInBatch: Int = 0
     ): List<PendingTrigger> {
         val triggers = mutableListOf<PendingTrigger>()
         val projected = state.projectedState
@@ -929,7 +941,8 @@ class TriggerDetector(
                     // card exempted by CR 504.1 — the matcher computes the final firing count.
                     else if (ability.trigger is EventPattern.DrawEvent && event is CardsDrawnEvent) {
                         val firings = matcher.drawTriggerFiringCount(
-                            ability.trigger as EventPattern.DrawEvent, event, controllerId, state
+                            ability.trigger as EventPattern.DrawEvent, event, controllerId, state,
+                            samePlayerDrawsLaterInBatch
                         )
                         repeat(firings) {
                             triggers.add(

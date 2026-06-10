@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
@@ -33,6 +34,10 @@ import io.kotest.matchers.shouldBe
  *  - The printed card's combined "enters / opponent draws" ability fires on enter; the Alchemy
  *    rebalance (A-) drops the enter trigger.
  *  - The effect is "deal 1 damage to any target. Then amass Orcs 1." per firing.
+ *  - Batch boundary: when one resolution emits several CardsDrawnEvents for the same player
+ *    while the exempt slot is open, the exemption lands on the first card, not on none of them.
+ *  - The plain [com.wingedsheep.sdk.dsl.Triggers.OpponentDraws] variant has no exemption — the
+ *    for-turn draw fires it.
  */
 class OrcishBowmastersTest : FunSpec({
 
@@ -53,11 +58,35 @@ class OrcishBowmastersTest : FunSpec({
         spell { effect = Effects.DrawCards(1) }
         metadata { rarity = Rarity.COMMON; collectorNumber = "T02" }
     }
+    // Two SEPARATE draw effects in one resolution → two CardsDrawnEvents in one trigger-detection
+    // batch (unlike DrawTwo's single count-2 event). Exercises the batch-boundary exemption math.
+    val DrawTwiceSeparately = card("Draw Twice Test") {
+        manaCost = "{0}"
+        typeLine = "Instant"
+        oracleText = "Draw a card. Draw a card."
+        spell { effect = Effects.Composite(Effects.DrawCards(1), Effects.DrawCards(1)) }
+        metadata { rarity = Rarity.COMMON; collectorNumber = "T03" }
+    }
+    // Plain OpponentDraws (no draw-step exemption) — the for-turn draw fires it too.
+    val DrawWatcher = card("Draw Watcher Test") {
+        manaCost = "{B}"
+        typeLine = "Creature — Spirit"
+        power = 1
+        toughness = 1
+        oracleText = "Whenever an opponent draws a card, you gain 1 life."
+        triggeredAbility {
+            trigger = Triggers.OpponentDraws
+            effect = Effects.GainLife(1)
+        }
+        metadata { rarity = Rarity.COMMON; collectorNumber = "T04" }
+    }
 
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
         driver.registerCards(
-            TestCards.all + listOf(OrcishBowmasters, AOrcishBowmasters, DrawTwo, DrawInstant)
+            TestCards.all + listOf(
+                OrcishBowmasters, AOrcishBowmasters, DrawTwo, DrawInstant, DrawTwiceSeparately, DrawWatcher
+            )
         )
         return driver
     }
@@ -165,6 +194,48 @@ class OrcishBowmastersTest : FunSpec({
         driver.getLifeTotal(p2) shouldBe 18
         val army = driver.armiesControlledBy(p1).single()
         driver.plusOneCounters(army) shouldBe 2
+    }
+
+    test("two separate draw effects in one resolution: the draw-step exemption still lands on the first card") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Swamp" to 40, "Draw Twice Test" to 10))
+        val p1 = driver.activePlayer!!
+        val p2 = driver.getOpponent(p1)
+
+        // Bowmasters for p2 before p1's turn-1 draw step. The first player's turn-based draw is
+        // skipped on turn 1, so the exempt "first card drawn this draw step" slot is still open
+        // when the spell below resolves.
+        driver.putCreatureOnBattlefield(p2, "Orcish Bowmasters")
+        driver.setLifeTotal(p1, 20)
+        driver.passPriorityUntil(Step.DRAW)
+
+        // One resolution, two separate DrawCards(1) effects → two CardsDrawnEvents detected
+        // against the same post-resolution state. The first card is the exempt one; only the
+        // second may fire.
+        val spell = driver.putCardInHand(p1, "Draw Twice Test")
+        driver.castSpell(p1, spell)
+        val pings = driver.resolveStackPinging(p2, p1)
+
+        pings shouldBe 1
+        driver.getLifeTotal(p1) shouldBe 19
+    }
+
+    test("plain OpponentDraws fires on every opponent draw, including the for-turn draw") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Swamp" to 40))
+        val p1 = driver.activePlayer!!
+        val p2 = driver.getOpponent(p1)
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        driver.putCreatureOnBattlefield(p1, "Draw Watcher Test")
+        driver.setLifeTotal(p1, 20)
+
+        // Into p2's turn: their turn-based draw is NOT exempt for the plain variant — gain 1 life.
+        driver.passPriorityUntil(Step.END)
+        driver.bothPass()
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        driver.getLifeTotal(p1) shouldBe 21
     }
 
     test("an opponent drawing on YOUR turn fires (not their draw step)") {

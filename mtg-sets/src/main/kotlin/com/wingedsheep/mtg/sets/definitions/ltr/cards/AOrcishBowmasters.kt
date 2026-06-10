@@ -48,5 +48,7 @@ val AOrcishBowmasters = card("A-Orcish Bowmasters") {
         collectorNumber = "A-103"
         artist = "Maxim Kostin"
         imageUri = "https://cards.scryfall.io/normal/front/f/f/ff7c57ab-f07d-4653-9451-42821cb431c0.jpg?1730837116"
+        // Alchemy rebalance — Scryfall booster:false; keep it out of the LTR draft/sealed pool.
+        inBooster = false
     }
 }
