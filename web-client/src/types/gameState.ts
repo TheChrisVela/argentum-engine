@@ -436,6 +436,21 @@ export interface ClientPlayerEffect {
    * in place of the emoji icon.
    */
   readonly imageUri?: string
+  /**
+   * Optional progression for cumulative effects that climb toward a cap
+   * (e.g. The Ring's four temptations). Rendered as filled/empty pips.
+   */
+  readonly progress?: ClientEffectProgress
+}
+
+/**
+ * A staged progression for a cumulative player effect: `current` steps reached
+ * out of `total` meaningful steps. `current` may exceed `total`.
+ * Matches backend ClientEffectProgress.
+ */
+export interface ClientEffectProgress {
+  readonly current: number
+  readonly total: number
 }
 
 /**

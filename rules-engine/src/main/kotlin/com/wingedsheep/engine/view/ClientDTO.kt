@@ -505,7 +505,24 @@ data class ClientPlayerEffect(
      * (e.g., the "City's Blessing" marker). When present, the UI shows the image
      * in place of the emoji-style [icon].
      */
-    val imageUri: String? = null
+    val imageUri: String? = null,
+    /**
+     * Optional progression for cumulative effects that climb toward a cap — e.g.
+     * The Ring's four-step temptation (CR 701.54c). The UI can render this as
+     * filled/empty pips so the player sees how far the effect has advanced.
+     */
+    val progress: ClientEffectProgress? = null
+)
+
+/**
+ * A staged progression for a cumulative player effect: [current] steps reached out
+ * of [total] meaningful steps. [current] may exceed [total] (e.g. the Ring can tempt
+ * more than four times); consumers cap the visualization at [total].
+ */
+@Serializable
+data class ClientEffectProgress(
+    val current: Int,
+    val total: Int
 )
 
 /**

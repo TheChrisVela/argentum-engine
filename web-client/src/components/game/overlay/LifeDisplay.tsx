@@ -4,6 +4,7 @@ import type { EntityId, ClientPlayerEffect, ClientCommanderDamage } from '@/type
 import { useResponsiveContext, getEffectIcon } from '../board/shared'
 import { styles } from '../board/styles'
 import { HoverCardPreview } from '../../ui/HoverCardPreview'
+import { TheRingBadge } from './TheRingBadge'
 
 /**
  * Life total display - interactive when in targeting mode or when a pending decision requires player targeting.
@@ -414,6 +415,10 @@ export function ActiveEffectsBadges({ effects }: { effects: readonly ClientPlaye
   return (
     <div style={styles.effectBadgesContainer}>
       {effects.map((effect) => (
+        // The Ring (CR 701.54) gets a dedicated gilded badge instead of the generic chip.
+        effect.effectId === 'the_ring' ? (
+          <TheRingBadge key={effect.effectId} effect={effect} />
+        ) : (
         <div
           key={effect.effectId}
           style={{
@@ -441,6 +446,7 @@ export function ActiveEffectsBadges({ effects }: { effects: readonly ClientPlaye
             </div>
           )}
         </div>
+        )
       ))}
       {showCardPreview && (
         <HoverCardPreview

@@ -1837,13 +1837,15 @@ class ClientStateTransformer(
             val bearerName = state.getBattlefield()
                 .firstOrNull { state.getEntity(it)?.get<RingBearerComponent>()?.ownerId == playerId }
                 ?.let { state.getEntity(it)?.get<CardComponent>()?.name }
-            val bearerSuffix = bearerName?.let { " Ring-bearer: $it." } ?: ""
+            val bearerLine = bearerName?.let { "Your Ring-bearer is $it." } ?: "You have no Ring-bearer."
             effects.add(
                 ClientPlayerEffect(
                     effectId = "the_ring",
                     name = "The Ring",
-                    description = "The Ring has tempted you ${ring.temptCount} time(s).$bearerSuffix",
-                    icon = "emblem"
+                    description = "The Ring has tempted you ${ring.temptCount} time(s). $bearerLine",
+                    icon = "the-ring",
+                    // current = raw tempt count (may exceed 4); total = the four cumulative abilities.
+                    progress = ClientEffectProgress(current = ring.temptCount, total = 4)
                 )
             )
         }
