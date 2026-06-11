@@ -5,6 +5,8 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
+import com.wingedsheep.engine.state.components.stack.ChosenTarget
+import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.MtgSetCatalog
@@ -459,5 +461,77 @@ class AIPlayerTest : FunSpec({
 
         // The decisive anti-loop guarantee: the AI's chosen action is actually legal.
         driver.submit(chosen).isSuccess shouldBe true
+    }
+
+    // Regression: given two "target creature can't block" abilities and two opponent blockers,
+    // the AI used to aim BOTH at the same creature. Activated-ability targets are filled by a
+    // static heuristic (highest board value); while the first ability is still ON THE STACK the
+    // first blocker looks just as valuable as the second, so the heuristic re-picked it. The
+    // committed target now goes through simulation — which resolves the pending ability — and
+    // BoardPresence prices a creature that already can't block lower, so neutralizing a second,
+    // still-able blocker strictly wins. This reproduces the hard case: the first ability is left
+    // unresolved on the stack when the second one's target is chosen.
+    test("AI targets a distinct blocker with a second can't-block ability") {
+        val stopper = card("Test Stopper") {
+            manaCost = "{1}"
+            typeLine = "Creature — Wizard"
+            power = 1
+            toughness = 1
+            activatedAbility {
+                cost = Costs.Tap
+                val t = target("target creature", Targets.Creature)
+                effect = Effects.CantBlock(t)
+            }
+        }
+        // Big blockers so neutralizing one is clearly worth a tap — keeps the AI activating
+        // (rather than passing) in the main phase, isolating the target-choice behavior we test.
+        val ogre = card("Test Ogre") {
+            manaCost = "{4}{G}"
+            typeLine = "Creature — Ogre"
+            power = 5
+            toughness = 5
+        }
+
+        val driver = GameTestDriver()
+        driver.registerCards(TestCards.all + listOf(stopper, ogre))
+        driver.initMirrorMatch(deck = Deck.of("Forest" to 40), startingLife = 20)
+        val aiId = driver.activePlayer!!
+        val opp = driver.getOpponent(aiId)
+
+        val stopper1 = driver.putCreatureOnBattlefield(aiId, "Test Stopper")
+        val stopper2 = driver.putCreatureOnBattlefield(aiId, "Test Stopper")
+        driver.removeSummoningSickness(stopper1)
+        driver.removeSummoningSickness(stopper2)
+        val ogreA = driver.putCreatureOnBattlefield(opp, "Test Ogre")
+        val ogreB = driver.putCreatureOnBattlefield(opp, "Test Ogre")
+        driver.passPriorityUntil(Phase.PRECOMBAT_MAIN)
+
+        val simulator = GameSimulator(driver.cardRegistry)
+        val ai = AIPlayer.create(driver.cardRegistry, aiId)
+
+        fun targetOf(action: GameAction): EntityId {
+            (action is ActivateAbility).shouldBeTrue() // AI should activate the stopper, not pass
+            return ((action as ActivateAbility).targets.single() as ChosenTarget.Permanent).entityId
+        }
+
+        // First activation: the AI picks one blocker. Leave it UNRESOLVED on the stack.
+        val act1 = simulator.getLegalActions(driver.state, aiId)
+            .first { (it.action as? ActivateAbility)?.sourceId == stopper1 }
+        val pass = simulator.getLegalActions(driver.state, aiId).first { it.actionType == "PassPriority" }
+        val chosen1 = ai.chooseFrom(driver.state, listOf(act1, pass)).action
+        val firstTarget = targetOf(chosen1)
+        (firstTarget == ogreA || firstTarget == ogreB).shouldBeTrue()
+        driver.submitSuccess(chosen1)
+        // The first ability is on the stack but has not resolved — bearA/bearB can both still block.
+        driver.state.stack.shouldNotBeEmpty()
+        driver.state.projectedState.cantBlock(firstTarget) shouldBe false
+
+        // Second activation while the first is still pending: the AI must hit the OTHER blocker.
+        val act2 = simulator.getLegalActions(driver.state, aiId)
+            .first { (it.action as? ActivateAbility)?.sourceId == stopper2 }
+        val pass2 = simulator.getLegalActions(driver.state, aiId).first { it.actionType == "PassPriority" }
+        val chosen2 = ai.chooseFrom(driver.state, listOf(act2, pass2)).action
+        val secondTarget = targetOf(chosen2)
+        (secondTarget != firstTarget).shouldBeTrue()
     }
 })

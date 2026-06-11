@@ -86,11 +86,12 @@ class Strategist(
 
         val best = finalScored.maxByOrNull { it.second }
         return if (best != null && best.second > adjustedPassScore) {
-            // Fill in targets on the returned action so the processor can execute it
+            // Fill in targets on the returned action so the processor can execute it.
+            // The committed target is chosen by simulation (not just the heuristic) so the
+            // AI sees the real resolved board, including effects already on the stack.
             val chosen = best.first
             if (chosen.requiresTargets) {
-                val resolvedAction = resolveTargetsForSimulation(state, chosen, playerId)
-                chosen.copy(action = resolvedAction)
+                chosen.copy(action = chooseCommittedTargets(state, chosen, playerId))
             } else {
                 chosen
             }
@@ -142,10 +143,13 @@ class Strategist(
     }
 
     private fun evaluate1Ply(state: GameState, action: LegalAction, playerId: EntityId, passScore: Double? = null): Double {
-        // For targeted spells, fill in heuristic targets before simulating.
-        // Without this, the CastSpellHandler rejects the action ("No valid targets")
-        // and the spell always scores the same as passing.
-        val simulationAction = resolveTargetsForSimulation(state, action, playerId)
+        // For targeted spells, fill in the best target by simulation before scoring. Without a
+        // target the CastSpellHandler rejects the action ("No valid targets") and the spell always
+        // scores the same as passing; with only a *heuristic* target, an ability whose ideal target
+        // is already taken by something on the stack (e.g. a second "can't block" when the first is
+        // still resolving) would be scored at that redundant target and look worthless — so the AI
+        // would never play it. Scoring at the best target makes the action's real upside visible.
+        val simulationAction = chooseCommittedTargets(state, action, playerId)
         val result = simulator.simulate(state, simulationAction)
         val defaultScore = evaluator.evaluate(result.state, result.state.projectedState, playerId)
 
@@ -173,8 +177,9 @@ class Strategist(
      * opponent creature (or lowest-value own creature, depending on context).
      * Single-target spells: pick the best target by creature value.
      *
-     * The advisor's [CardAdvisor.respondToDecision] refines target selection
-     * during actual gameplay — this is just for scoring purposes.
+     * This is the cheap path used while *scoring* candidate actions (one heuristic target
+     * per requirement, no extra simulation). The action the AI actually commits routes through
+     * [chooseCommittedTargets], which refines the target by simulation.
      */
     private fun resolveTargetsForSimulation(
         state: GameState,
@@ -187,17 +192,82 @@ class Strategist(
         // here is submitted with no target, rejected by the engine ("requires a target"), and the
         // AI re-picks it forever — an infinite loop.
         val baseAction = action.action
-        val existingTargets = when (baseAction) {
-            is CastSpell -> baseAction.targets
-            is ActivateAbility -> baseAction.targets
-            else -> return action.action
+        if (targetsAlreadyFilled(baseAction) != false) return action.action
+        val targetInfos = targetInfosFor(action) ?: return action.action
+        if (targetInfos.any { it.validTargets.isEmpty() }) return action.action
+
+        val chosenTargets = targetInfos.map { info ->
+            val best = info.validTargets.maxByOrNull { heuristicTargetRank(state, it, playerId) }
+                ?: info.validTargets.first()
+            toChosenTarget(state, info, best, playerId)
         }
-        if (existingTargets.isNotEmpty()) return action.action
+        return applyTargets(baseAction, chosenTargets)
+    }
 
-        val projected = state.projectedState
+    /**
+     * Pick the targets the AI actually commits to for a chosen targeted action, by simulation
+     * rather than the static [heuristicTargetRank]. Simulating each candidate resolves the stack —
+     * including spells/abilities already on it — so the evaluator scores the *real* board.
+     *
+     * This is what stops the classic blunder of aiming two "target creature can't block" effects
+     * at the same creature: while the first is still on the stack the heuristic sees that creature
+     * at full value and re-picks it, but a simulation that resolves both effects shows re-hitting it
+     * gains nothing over neutralizing a second, still-able blocker (which [BoardPresence] now prices
+     * lower). Requirements are resolved greedily — others held at their heuristic best — and only the
+     * top [MAX_TARGET_CANDIDATES] candidates per requirement are simulated to bound cost. Falls back
+     * to [resolveTargetsForSimulation] when the action carries no usable target metadata.
+     */
+    private fun chooseCommittedTargets(
+        state: GameState,
+        action: LegalAction,
+        playerId: EntityId
+    ): com.wingedsheep.engine.core.GameAction {
+        val baseAction = action.action
+        if (targetsAlreadyFilled(baseAction) != false) return baseAction
+        val targetInfos = targetInfosFor(action)
+            ?: return resolveTargetsForSimulation(state, action, playerId)
+        if (targetInfos.any { it.validTargets.isEmpty() }) {
+            return resolveTargetsForSimulation(state, action, playerId)
+        }
 
-        // Build target info list: prefer targetRequirements (multi-target), fall back to validTargets
-        val targetInfos: List<TargetInfo> = action.targetRequirements
+        // Heuristic baseline for every requirement, then refine each one by simulation.
+        val chosenTargets = targetInfos.map { info ->
+            val best = info.validTargets.maxByOrNull { heuristicTargetRank(state, it, playerId) }
+                ?: info.validTargets.first()
+            toChosenTarget(state, info, best, playerId)
+        }.toMutableList()
+
+        for (i in targetInfos.indices) {
+            val info = targetInfos[i]
+            val candidates = info.validTargets
+                .sortedByDescending { heuristicTargetRank(state, it, playerId) }
+                .take(MAX_TARGET_CANDIDATES)
+            if (candidates.size <= 1) continue
+            val best = candidates.maxByOrNull { candidate ->
+                val trial = chosenTargets.toMutableList()
+                trial[i] = toChosenTarget(state, info, candidate, playerId)
+                val result = simulator.simulate(state, applyTargets(baseAction, trial))
+                evaluator.evaluate(result.state, result.state.projectedState, playerId)
+            } ?: continue
+            chosenTargets[i] = toChosenTarget(state, info, best, playerId)
+        }
+        return applyTargets(baseAction, chosenTargets)
+    }
+
+    /**
+     * Whether [baseAction]'s targets are already filled. `null` = the action type carries no
+     * AI-filled target list (only CastSpell / ActivateAbility do), `true`/`false` otherwise.
+     */
+    private fun targetsAlreadyFilled(baseAction: com.wingedsheep.engine.core.GameAction): Boolean? =
+        when (baseAction) {
+            is CastSpell -> baseAction.targets.isNotEmpty()
+            is ActivateAbility -> baseAction.targets.isNotEmpty()
+            else -> null
+        }
+
+    /** Normalize an action's target metadata into requirements (multi-target or single-target). */
+    private fun targetInfosFor(action: LegalAction): List<TargetInfo>? =
+        action.targetRequirements
             ?: action.validTargets?.let { targets ->
                 listOf(TargetInfo(
                     index = 0,
@@ -208,55 +278,60 @@ class Strategist(
                     targetZone = null
                 ))
             }
-            ?: return action.action
 
-        if (targetInfos.any { it.validTargets.isEmpty() }) return action.action
+    /** Heuristic desirability of a target: higher = better. Opponent removal targets rank highest. */
+    private fun heuristicTargetRank(state: GameState, entityId: EntityId, playerId: EntityId): Double {
+        val projected = state.projectedState
+        val controller = projected.getController(entityId)
+        val isOpponent = controller != null && controller != playerId
+        val isPlayer = state.getEntity(entityId)
+            ?.get<com.wingedsheep.engine.state.components.identity.PlayerComponent>() != null
 
-        // For each requirement, pick the best target using a heuristic
-        val chosenTargets = targetInfos.map { info ->
-            val best = info.validTargets.maxByOrNull { entityId ->
-                val controller = projected.getController(entityId)
-                val isOpponent = controller != null && controller != playerId
-                val isPlayer = state.getEntity(entityId)?.get<com.wingedsheep.engine.state.components.identity.PlayerComponent>() != null
-
-                if (isPlayer) {
-                    // Player target — prefer opponent
-                    if (isOpponent) 5.0 else -5.0
-                } else if (projected.isCreature(entityId)) {
-                    val card = state.getEntity(entityId)?.get<CardComponent>()
-                    val value = if (card != null) {
-                        BoardPresence.permanentValue(state, projected, entityId, card)
-                    } else 0.0
-                    // Opponent creatures: higher value = better target for removal
-                    // Own creatures: higher value = better target for pump/bite source
-                    if (isOpponent) value + 10.0 else -value
-                } else {
-                    0.0
-                }
-            } ?: info.validTargets.first()
-
-            // Build the right ChosenTarget variant based on zone
-            when (info.targetZone) {
-                "GRAVEYARD" -> {
-                    val ownerId = state.getEntity(best)
-                        ?.get<com.wingedsheep.engine.state.components.identity.OwnerComponent>()?.playerId
-                        ?: playerId
-                    ChosenTarget.Card(best, ownerId, Zone.GRAVEYARD)
-                }
-                "STACK" -> ChosenTarget.Spell(best)
-                else -> {
-                    val isPlayer = state.getEntity(best)?.get<com.wingedsheep.engine.state.components.identity.PlayerComponent>() != null
-                    if (isPlayer) ChosenTarget.Player(best)
-                    else ChosenTarget.Permanent(best)
-                }
-            }
+        return if (isPlayer) {
+            // Player target — prefer opponent
+            if (isOpponent) 5.0 else -5.0
+        } else if (projected.isCreature(entityId)) {
+            val card = state.getEntity(entityId)?.get<CardComponent>()
+            val value = if (card != null) {
+                BoardPresence.permanentValue(state, projected, entityId, card)
+            } else 0.0
+            // Opponent creatures: higher value = better target for removal
+            // Own creatures: higher value = better target for pump/bite source
+            if (isOpponent) value + 10.0 else -value
+        } else {
+            0.0
         }
+    }
 
-        return when (baseAction) {
-            is CastSpell -> baseAction.copy(targets = chosenTargets)
-            is ActivateAbility -> baseAction.copy(targets = chosenTargets)
-            else -> action.action
+    /** Build the right [ChosenTarget] variant for [entityId] given the requirement's zone. */
+    private fun toChosenTarget(
+        state: GameState,
+        info: TargetInfo,
+        entityId: EntityId,
+        playerId: EntityId
+    ): ChosenTarget = when (info.targetZone) {
+        "GRAVEYARD" -> {
+            val ownerId = state.getEntity(entityId)
+                ?.get<com.wingedsheep.engine.state.components.identity.OwnerComponent>()?.playerId
+                ?: playerId
+            ChosenTarget.Card(entityId, ownerId, Zone.GRAVEYARD)
         }
+        "STACK" -> ChosenTarget.Spell(entityId)
+        else -> {
+            val isPlayer = state.getEntity(entityId)
+                ?.get<com.wingedsheep.engine.state.components.identity.PlayerComponent>() != null
+            if (isPlayer) ChosenTarget.Player(entityId) else ChosenTarget.Permanent(entityId)
+        }
+    }
+
+    /** Return [baseAction] with its target list replaced. */
+    private fun applyTargets(
+        baseAction: com.wingedsheep.engine.core.GameAction,
+        targets: List<ChosenTarget>
+    ): com.wingedsheep.engine.core.GameAction = when (baseAction) {
+        is CastSpell -> baseAction.copy(targets = targets)
+        is ActivateAbility -> baseAction.copy(targets = targets)
+        else -> baseAction
     }
 
     /**
@@ -297,5 +372,10 @@ class Strategist(
             else -> return null
         }
         return state.getEntity(entityId)?.get<CardComponent>()?.name
+    }
+
+    private companion object {
+        /** Cap on candidate targets simulated per requirement when committing a targeted action. */
+        const val MAX_TARGET_CANDIDATES = 8
     }
 }

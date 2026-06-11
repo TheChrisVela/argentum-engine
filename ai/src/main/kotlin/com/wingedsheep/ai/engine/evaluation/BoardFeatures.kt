@@ -147,6 +147,15 @@ object BoardPresence : BoardFeature {
         // ── Drawbacks ──
         if (Keyword.DEFENDER.name in keywords) value -= power * 0.8 // can't attack, power mostly wasted
 
+        // ── Combat restrictions (Pacifism, "can't block this turn", etc.) ──
+        // A creature that can't block has lost its defensive value; one that can't attack can't
+        // pressure. Pricing these keeps the AI from stacking redundant "target creature can't
+        // block / can't attack" effects on a creature already under that restriction: hitting a
+        // fresh target strictly lowers the opponent's board value, re-hitting a restricted one
+        // does not. (DEFENDER's can't-attack is already priced just above — don't double-count.)
+        if (projected.cantBlock(entityId)) value *= 0.85
+        if (projected.cantAttack(entityId) && Keyword.DEFENDER.name !in keywords) value *= 0.85
+
         // ── Speed ──
         if (Keyword.HASTE.name in keywords && container.has<SummoningSicknessComponent>()) {
             value += 0.5 // haste is most valuable the turn it enters
