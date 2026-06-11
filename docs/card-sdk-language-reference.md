@@ -678,9 +678,13 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
     success → `then`, failure → `otherwise`. This is "[action]. If you do, [then]" (a declined or
     no-op action runs `otherwise`, not `then`), distinct from `MayDecide` (gates on the yes/no) and
     `MayPay` (gates on paying a cost). `successCriterion` defaults to `SuccessCriterion.Auto`, which
-    infers success from the action's terminal zone-move (a pipeline `MoveCollection`, or a single
-    `MoveToZone` of the source itself) growing its destination zone; non-zone-move actions fall
-    through to fail-open. The executor pre-pushes a `GatedActionContinuation` so a paused action
+    infers success from the action's terminal zone-move (a pipeline `MoveCollection` to a zone, or a
+    single `MoveToZone` of the source itself) growing its destination zone. **Auto is only legal on
+    shapes it can infer** (`SuccessCriterion.Auto.canInfer`): card-load validation (`CardValidator`,
+    enforced corpus-wide by `SuccessCriterionValidationTest`) rejects an Auto criterion on any other
+    action — non-zone-move actions (deal damage, gain life, …) must state `SuccessCriterion.Always`
+    or `CollectionNonEmpty(name, min)` explicitly instead of silently inheriting a fail-open
+    "it happened". The executor pre-pushes a `GatedActionContinuation` so a paused action
     auto-resumes and evaluates after its own continuations drain. Replaces `IfYouDoEffect` (see
     "Sequencing & conditional" below).
   - `Gate.MayPayX` — **not a yes/no, a number chooser.** "You may pay {X}. If you do, [then]." The
@@ -748,9 +752,10 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   preserved for existing cards; it now **lowers to `GatedEffect(Gate.DoAction(action,
   successCriterion), then = ifYouDo, otherwise = ifYouDont)`** (compiled form is `Gated`, not a
   distinct `IfYouDo` type or executor). `successCriterion` defaults to `SuccessCriterion.Auto` (infer
-  from the action's terminal zone-move); use `SuccessCriterion.Always` / `CollectionNonEmpty(name, min)`
-  when that inference is wrong. Wrap with `MayEffect` for the optional "You may [action]. If you do,
-  [effect]" shape.
+  from the action's terminal zone-move); an action shape Auto *can't* infer from is a card-load
+  validation error — state `SuccessCriterion.Always` / `CollectionNonEmpty(name, min)` explicitly
+  there (and use them whenever the inference is wrong). Wrap with `MayEffect` for the optional
+  "You may [action]. If you do, [effect]" shape.
 - `ReflexiveTriggerEffect(action, reflexive, optional)` — same shape but the reflexive effect goes on the stack.
 
 ### Modal & choice
@@ -1007,6 +1012,16 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
 - `.targetPlayerControls(target)` — controlled by a referenced player. Resolves `EffectTarget`
   bindings/context targets, plus `EffectTarget.ControllerOfTriggeringEntity` (controller of the
   entity that fired the trigger — e.g. Tectonic Instability "tap all lands its controller controls").
+- `.ownedByYou()` / `.ownedByOpponent()` — owner predicates (for graveyard/exile cards without a
+  controller, and "you own" battlefield wordings).
+- `.withControllerPredicate(p)` — set any `ControllerPredicate` directly; the entry point for the
+  **composed** predicates `ControllerPredicate.And(list)` / `Or(list)` / `Not(p)`, which express
+  heterogeneous controller/owner relationships in one filter — e.g. "creatures you own but don't
+  control" = `withControllerPredicate(And(listOf(OwnedByYou, Not(ControlledByYou))))`. Every engine
+  evaluation site (live projection, zone-change last-known-controller, grant fast paths) shares the
+  combinator recursion via the `evaluateWith` fold next to `ControllerPredicate`. Note that
+  `GameObjectFilter.and` **rejects** two sides carrying *different* controller predicates (it used
+  to silently keep only one) — state the intent with a composed predicate instead.
 - `.withSubtype(s)` / `.withKeyword(k)` — type/ability predicate.
 - `.ofColor(c)` / `.ofColors(set)` — color predicate.
 - `.withColor(c)` / `.withAnyColor(c…)` / `.notColor(c)` — fixed-color predicates (`CardPredicate.HasColor`/`NotColor`).

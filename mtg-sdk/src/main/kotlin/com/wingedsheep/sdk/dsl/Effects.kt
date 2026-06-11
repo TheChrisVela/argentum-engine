@@ -1789,6 +1789,11 @@ object Effects {
      * "[action]. If you do, [ifYouDo]" — gates [ifYouDo] on whether [action] actually
      * accomplished its work, not on a yes/no decision. Wrap with `MayEffect` for the
      * common "You may [action]. If you do, [effect]" pattern.
+     *
+     * The default [SuccessCriterion.Auto] is only legal on action shapes it can infer
+     * success from (a terminal zone move) — card-load validation rejects it elsewhere;
+     * pass [SuccessCriterion.Always] / [SuccessCriterion.CollectionNonEmpty] explicitly
+     * for actions whose outcome isn't a zone-size delta.
      */
     fun IfYouDo(
         action: Effect,
