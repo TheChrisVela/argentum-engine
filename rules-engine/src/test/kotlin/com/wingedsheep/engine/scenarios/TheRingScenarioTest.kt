@@ -8,6 +8,7 @@ import com.wingedsheep.engine.state.components.identity.RingBearerComponent
 import com.wingedsheep.engine.state.components.player.TheRingComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
+import com.wingedsheep.engine.view.ClientStateTransformer
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.dsl.Effects
@@ -100,6 +101,22 @@ class TheRingScenarioTest : FunSpec({
         driver.state.getEntity(active)?.get<TheRingComponent>()?.temptCount shouldBe 1
         driver.state.getEntity(bear)?.get<RingBearerComponent>()?.ownerId shouldBe active
         projector.project(driver.state).isLegendary(bear) shouldBe true
+    }
+
+    test("the Ring-bearer is surfaced to the client as isRingBearer; a non-bearer is not") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Mountain" to 40))
+        val active = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val bear = driver.putCreatureOnBattlefield(active, "Ring Bear")
+        val ogre = driver.putCreatureOnBattlefield(active, "Big Ogre")
+        driver.tempt(active, bear)
+
+        val view = ClientStateTransformer(cardRegistry = driver.cardRegistry)
+            .transform(driver.state, viewingPlayerId = active)
+        view.cards[bear]?.isRingBearer shouldBe true
+        view.cards[ogre]?.isRingBearer shouldBe false
     }
 
     test("CR 701.54a: another player gaining control ends the Ring-bearer designation permanently") {

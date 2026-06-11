@@ -190,6 +190,14 @@ data class ClientCard(
      */
     val isCommander: Boolean = false,
 
+    /**
+     * True iff this permanent carries `RingBearerComponent` — i.e. it is its controller's
+     * Ring-bearer (CR 701.54). Battlefield only; the designation is stripped on a real control
+     * change so a token/stolen permanent never falsely shows it. Lets the UI render a prominent
+     * golden Ring icon on the bearer.
+     */
+    val isRingBearer: Boolean = false,
+
     /** Zone this card is currently in */
     val zone: ZoneKey?,
 

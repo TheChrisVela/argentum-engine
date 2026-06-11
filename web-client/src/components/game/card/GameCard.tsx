@@ -1264,6 +1264,51 @@ function GameCardImpl({
         </div>
       )}
 
+      {/* Ring-bearer badge (CR 701.54) — a prominent golden Ring marker pinned to the top-left of
+          the creature a player designated as their Ring-bearer. Gold fill + glow makes the bearer
+          unmistakable at a glance across the battlefield. mana-font 1.18.0 ships the
+          `ms-ability-ring-bearer` CSS class but its woff lacks the glyph (renders as tofu), so we
+          draw the One Ring inline as a golden band instead. */}
+      {battlefield && !faceDown && card.isRingBearer && (() => {
+        const badge = responsive.badges.ptFontSize * 1.7
+        const ring = responsive.badges.ptFontSize * 1.15
+        return (
+          <div
+            aria-label="Ring-bearer"
+            title="Ring-bearer"
+            style={{
+              position: 'absolute',
+              top: 3,
+              left: 3,
+              width: badge,
+              height: badge,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle at 35% 30%, #3a2c00 0%, #1a1206 80%)',
+              border: '1px solid rgba(212, 175, 55, 0.85)',
+              boxShadow: '0 0 6px 1px rgba(212, 175, 55, 0.65), inset 0 1px 1px rgba(0, 0, 0, 0.5)',
+              zIndex: 7,
+              pointerEvents: 'none',
+            }}
+          >
+            {/* The One Ring — a gold band drawn as a vertical ellipse so it reads as a ring. */}
+            <svg
+              width={ring}
+              height={ring}
+              viewBox="0 0 24 24"
+              fill="none"
+              style={{ filter: 'drop-shadow(0 0 1.5px rgba(212, 175, 55, 0.9))' }}
+              aria-hidden
+            >
+              <ellipse cx="12" cy="12" rx="6" ry="8.5" stroke="#f2d472" strokeWidth="2.6" />
+              <ellipse cx="12" cy="12" rx="6" ry="8.5" stroke="#9c7b1e" strokeWidth="0.8" />
+            </svg>
+          </div>
+        )
+      })()}
+
       {/* P/T overlay for creatures on battlefield (server sends 2/2 for face-down creatures) */}
       {battlefield && card.power !== null && card.toughness !== null && (
         <div style={{

@@ -871,6 +871,12 @@ class ClientStateTransformer(
         // (CR 903.10a) so this is naturally false on token clones.
         val isCommander = container.has<com.wingedsheep.engine.state.components.identity.CommanderComponent>()
 
+        // Ring-bearer flag — surfaced so the UI can render a prominent golden Ring icon on the
+        // creature a player designated as their Ring-bearer (CR 701.54). The designation is stripped
+        // on a real control change (see RingBearerComponent), so the presence of the component is
+        // enough — a stolen permanent or token copy never falsely carries it.
+        val isRingBearer = container.has<com.wingedsheep.engine.state.components.identity.RingBearerComponent>()
+
         // Get targets for spells/abilities on stack (for targeting arrows)
         val targetsComponent = container.get<TargetsComponent>()
         val targets = targetsComponent?.targets?.mapNotNull { chosenTarget ->
@@ -1059,6 +1065,7 @@ class ClientStateTransformer(
             ownerId = ownerId,
             isToken = isToken,
             isCommander = isCommander,
+            isRingBearer = isRingBearer,
             zone = zoneKey,
             attachedTo = attachedTo,
             attachments = attachments,

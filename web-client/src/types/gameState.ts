@@ -180,6 +180,13 @@ export interface ClientCard {
    */
   readonly isCommander?: boolean
 
+  /**
+   * True when this permanent is its controller's Ring-bearer (CR 701.54). Battlefield only — the
+   * designation is stripped on a real control change, so a stolen permanent / token copy never
+   * carries it. Drives the prominent golden Ring badge on the card.
+   */
+  readonly isRingBearer?: boolean
+
   /** Zone this card is currently in */
   readonly zone: ZoneId | null
 
