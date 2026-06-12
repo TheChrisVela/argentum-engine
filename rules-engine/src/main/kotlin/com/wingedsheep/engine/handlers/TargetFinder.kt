@@ -398,7 +398,13 @@ class TargetFinder(
         val filter = requirement.filter
         val predicateContext = PredicateContext(controllerId = controllerId)
         return state.stack.filter { spellId ->
-            predicateEvaluator.matches(state, state.projectedState, spellId, filter.baseFilter, predicateContext)
+            // "Target spell" only matches actual spells — never triggered/activated abilities
+            // on the stack. A spell is a card on the stack (CR 112.1); an ability on the stack
+            // is an ability, not a spell (CR 113.3b/c, 113.7a). The base filter is `Any`
+            // (zone = STACK), which would otherwise pass ability entities too — so an
+            // empty-targets counterspell could be offered while only an ability is on the stack.
+            state.isSpellOnStack(spellId) &&
+                predicateEvaluator.matches(state, state.projectedState, spellId, filter.baseFilter, predicateContext)
         }
     }
 
@@ -458,10 +464,9 @@ class TargetFinder(
             targets.add(entityId)
         }
 
-        // Add all spells on the stack
-        targets.addAll(state.stack.filter { spellId ->
-            state.getEntity(spellId)?.get<CardComponent>() != null
-        })
+        // Add all spells on the stack — only actual spells (CR 112.1), never abilities
+        // on the stack (CR 113.3b/c, 113.7a), consistent with findSpellTargets above.
+        targets.addAll(state.stack.filter { spellId -> state.isSpellOnStack(spellId) })
 
         return targets
     }

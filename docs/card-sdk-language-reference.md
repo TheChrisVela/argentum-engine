@@ -330,6 +330,13 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   one dies (Drop of Honey). Backed by the `GameObjectFilter.Creature.hasLeastPowerAmongAllCreatures()` filter
   (`StatePredicate.HasLeastPowerAmongAllCreatures`) gathered, then a `ChooseExactly(1)` selection that
   auto-resolves when the minimum is unique.
+- `DestroyCreaturesBlockingOrBlockedBySource(noRegenerate?)` — destroy the creatures blocking, or blocked by,
+  the effect's source (CR 509 combat pairing), using the pairing **last known when the source left the
+  battlefield**. For "when ~ dies, destroy all creatures blocking or blocked by it" (Abu Ja'far): the live
+  combat cross-references are already torn down by the time a dies trigger resolves, so the pairing is read
+  from the leaves-battlefield snapshot (`ZoneChangeEvent.lastKnownBlockingOrBlockedByIds` →
+  `EffectContext.triggerLastKnownBlockingOrBlockedByIds`) via `CardSource.LastKnownCombatPairedWithSource`,
+  restricted to creatures still on the battlefield.
 - `DestroyAllEquipmentOnTarget(target)` — wreck the gear attached to a creature.
 - `Exile(target)` — exile target.
 - `ExileAndGrantOwnerPlayPermission(target, until?)` — exile + owner may play it (Garth-style).

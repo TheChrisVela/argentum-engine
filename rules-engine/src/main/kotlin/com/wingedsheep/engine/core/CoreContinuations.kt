@@ -58,6 +58,8 @@ data class TriggeredAbilityContinuation(
     val triggerTotalCounterCount: Int? = null,
     val triggerLastKnownCounters: Map<String, Int>? = null,
     val triggerLastKnownDamageDealtByPlayers: Map<EntityId, Int>? = null,
+    /** Creatures blocking/blocked by the trigger's source on leave-battlefield (CR 509 LKI, Abu Ja'far). */
+    val triggerLastKnownBlockingOrBlockedByIds: List<EntityId>? = null,
     val lastKnownPower: Int? = null,
     val lastKnownToughness: Int? = null,
     val triggerModesChosenCount: Int? = null,
@@ -101,6 +103,8 @@ data class TriggerDamageDistributionContinuation(
     val triggerTotalCounterCount: Int? = null,
     val triggerLastKnownCounters: Map<String, Int>? = null,
     val triggerLastKnownDamageDealtByPlayers: Map<EntityId, Int>? = null,
+    /** Creatures blocking/blocked by the trigger's source on leave-battlefield (CR 509 LKI, Abu Ja'far). */
+    val triggerLastKnownBlockingOrBlockedByIds: List<EntityId>? = null,
     val selectedTargets: List<ChosenTarget>,
     val targetRequirements: List<TargetRequirement>,
     val totalDamage: Int,

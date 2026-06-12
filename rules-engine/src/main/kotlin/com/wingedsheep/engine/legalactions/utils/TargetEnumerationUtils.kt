@@ -218,7 +218,13 @@ class TargetEnumerationUtils(
     ): List<EntityId> {
         val context = PredicateContext(controllerId = playerId)
         return state.stack.filter { spellId ->
-            predicateEvaluator.matches(state, state.projectedState, spellId, filter.baseFilter, context)
+            // "Target spell" only matches actual spells — never triggered/activated abilities on
+            // the stack. A spell is a card on the stack (CR 112.1); an ability on the stack is an
+            // ability, not a spell (CR 113.3b/c, 113.7a). The base filter is `Any` (zone = STACK)
+            // and would otherwise pass ability entities, surfacing a castable counterspell whenever
+            // anything is on the stack — which previously left the AI in an infinite re-pick loop.
+            state.isSpellOnStack(spellId) &&
+                predicateEvaluator.matches(state, state.projectedState, spellId, filter.baseFilter, context)
         }
     }
 

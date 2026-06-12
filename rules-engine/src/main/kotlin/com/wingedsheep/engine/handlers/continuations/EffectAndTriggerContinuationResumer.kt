@@ -93,6 +93,7 @@ class EffectAndTriggerContinuationResumer(
                 triggerTotalCounterCount = continuation.triggerTotalCounterCount,
                 triggerLastKnownCounters = continuation.triggerLastKnownCounters,
                 triggerLastKnownDamageDealtByPlayers = continuation.triggerLastKnownDamageDealtByPlayers,
+                triggerLastKnownBlockingOrBlockedByIds = continuation.triggerLastKnownBlockingOrBlockedByIds,
                 lastKnownPower = continuation.lastKnownPower,
                 lastKnownToughness = continuation.lastKnownToughness,
                 triggerScryCount = continuation.triggerScryCount,
@@ -137,6 +138,7 @@ class EffectAndTriggerContinuationResumer(
             triggerTotalCounterCount = continuation.triggerTotalCounterCount,
             triggerLastKnownCounters = continuation.triggerLastKnownCounters,
             triggerLastKnownDamageDealtByPlayers = continuation.triggerLastKnownDamageDealtByPlayers,
+            triggerLastKnownBlockingOrBlockedByIds = continuation.triggerLastKnownBlockingOrBlockedByIds,
             lastKnownPower = continuation.lastKnownPower,
             lastKnownToughness = continuation.lastKnownToughness,
             triggerModesChosenCount = continuation.triggerModesChosenCount,
@@ -208,6 +210,7 @@ class EffectAndTriggerContinuationResumer(
             triggerTotalCounterCount = continuation.triggerTotalCounterCount,
             triggerLastKnownCounters = continuation.triggerLastKnownCounters,
             triggerLastKnownDamageDealtByPlayers = continuation.triggerLastKnownDamageDealtByPlayers,
+            triggerLastKnownBlockingOrBlockedByIds = continuation.triggerLastKnownBlockingOrBlockedByIds,
             selectedTargets = selectedTargets,
             targetRequirements = continuation.targetRequirements,
             totalDamage = totalDamage
@@ -256,6 +259,7 @@ class EffectAndTriggerContinuationResumer(
             triggerTotalCounterCount = continuation.triggerTotalCounterCount,
             triggerLastKnownCounters = continuation.triggerLastKnownCounters,
             triggerLastKnownDamageDealtByPlayers = continuation.triggerLastKnownDamageDealtByPlayers,
+            triggerLastKnownBlockingOrBlockedByIds = continuation.triggerLastKnownBlockingOrBlockedByIds,
             lastKnownPower = continuation.lastKnownPower,
             lastKnownToughness = continuation.lastKnownToughness,
             damageDistribution = response.distribution
