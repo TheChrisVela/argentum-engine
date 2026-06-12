@@ -429,7 +429,7 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
             controller?.let { f = f.dot(it) }
             val parts = mutableListOf(arg("filter", f))
             if (ttype in setOf("NumberTargetPermanents", "UptoNumberTargetPermanents") && countInt is Int) parts.add(0, arg("count", "$countInt"))
-            if (ttype == "UptoNumberTargetPermanents") parts.add(0, arg("optional", "true"))
+            if (ttype == "UptoNumberTargetPermanents" || isUpToOne) parts.add(0, arg("optional", "true"))
             return Call("TargetPermanent", parts)
         }
         // "non-<creature-type>, nonland permanent you control" (Nurturing Pixie: "non-Faerie, nonland
@@ -475,7 +475,7 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
             if (manaValueX) f = f.dot("manaValueEqualsX")
             val parts = mutableListOf(arg("filter", f))
             if (ttype in setOf("NumberTargetPermanents", "UptoNumberTargetPermanents") && countInt is Int) parts.add(0, arg("count", "$countInt"))
-            if (ttype == "UptoNumberTargetPermanents") parts.add(0, arg("optional", "true"))
+            if (ttype == "UptoNumberTargetPermanents" || isUpToOne) parts.add(0, arg("optional", "true"))
             return Call("TargetPermanent", parts)
         }
         if (types.isEmpty() && "IsCardtype" !in blob && "IsCreatureType" !in blob && "IsNonCardtype" !in blob &&
