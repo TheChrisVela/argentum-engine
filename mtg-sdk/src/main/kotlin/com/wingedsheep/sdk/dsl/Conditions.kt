@@ -24,7 +24,8 @@ import com.wingedsheep.sdk.scripting.conditions.SneakCostWasPaid as SneakCostWas
 import com.wingedsheep.sdk.scripting.conditions.CastChoiceMade as CastChoiceMadeCondition
 import com.wingedsheep.sdk.scripting.conditions.CastChoiceIs as CastChoiceIsCondition
 import com.wingedsheep.sdk.scripting.conditions.CastTimeFlagSet as CastTimeFlagSetCondition
-import com.wingedsheep.sdk.scripting.conditions.SourceMatches
+import com.wingedsheep.sdk.scripting.conditions.EntityMatches
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.conditions.SourceIsRingBearer as SourceIsRingBearerCondition
 import com.wingedsheep.sdk.scripting.conditions.YouChoseOtherCreatureAsRingBearer as YouChoseOtherCreatureAsRingBearerCondition
 import com.wingedsheep.sdk.scripting.predicates.StatePredicate
@@ -273,11 +274,12 @@ object Conditions {
         Compare(DynamicAmount.EntityProperty(EntityReference.Target(targetIndex), EntityNumericProperty.CounterCount(counterType)), ComparisonOperator.GTE, DynamicAmount.Fixed(1))
 
     /**
-     * If the target matches a GameObjectFilter.
-     * Used for cards like Blessing of Belzenlok: "If it's legendary, it also gains lifelink."
+     * If the chosen target at [targetIndex] matches a GameObjectFilter. Resolution-only; a player
+     * target never matches a game-object filter (use [TargetIsPlayer] for that). Used for cards
+     * like Blessing of Belzenlok: "If it's legendary, it also gains lifelink."
      */
     fun TargetMatchesFilter(filter: GameObjectFilter, targetIndex: Int = 0): ConditionInterface =
-        com.wingedsheep.sdk.scripting.conditions.TargetMatchesFilter(filter, targetIndex)
+        EntityMatches(EffectTarget.ContextTarget(targetIndex), filter)
 
     /**
      * If the context target at [targetIndex] is a player (not a permanent/spell/card).
@@ -340,7 +342,7 @@ object Conditions {
      * for Essence Leak's "as long as enchanted permanent is red or green".
      */
     fun EnchantedPermanentMatches(filter: com.wingedsheep.sdk.scripting.GameObjectFilter): ConditionInterface =
-        com.wingedsheep.sdk.scripting.conditions.EnchantedPermanentMatches(filter)
+        EntityMatches(EffectTarget.EnchantedPermanent, filter)
 
     // =========================================================================
     // Life Total Conditions (via Compare)
@@ -554,46 +556,68 @@ object Conditions {
         requiredGreen = requiredGreen
     )
 
+    /**
+     * The unified "an entity matches a filter" primitive: the [entity] (named via the shared
+     * [EffectTarget] vocabulary) matches [filter]. Subsumes the older near-clones — `SourceMatches`,
+     * `EnchantedPermanentMatches`, `TargetMatchesFilter`, `TriggeringSpellMatchesFilter` — which are
+     * now the named [SourceMatches] / [EnchantedPermanentMatches] / [TargetMatchesFilter] /
+     * [TriggeringSpellMatches] helpers below. Prefer those helpers for the common roles; reach for
+     * `EntityMatches` directly when you need a role they don't name (e.g. the equipped creature).
+     *
+     * `Self` and the enchanted/equipped attachment roles evaluate in both resolution and
+     * projection; `ContextTarget` and `TriggeringEntity` are resolution-only.
+     */
+    fun EntityMatches(entity: EffectTarget, filter: GameObjectFilter): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.EntityMatches(entity, filter)
+
+    /**
+     * If the source permanent matches [filter]. The general source-state primitive behind the
+     * `SourceIs*` / `SourceHas*` helpers; `EntityMatches(EffectTarget.Self, filter)`. Works in both
+     * resolution and static-ability projection.
+     */
+    fun SourceMatches(filter: GameObjectFilter): ConditionInterface =
+        EntityMatches(EffectTarget.Self, filter)
+
     /** If this creature is attacking. */
     val SourceIsAttacking: ConditionInterface =
-        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.attacking())
+        EntityMatches(EffectTarget.Self, com.wingedsheep.sdk.scripting.GameObjectFilter.Any.attacking())
 
     /** If this creature is blocking. */
     val SourceIsBlocking: ConditionInterface =
-        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.blocking())
+        EntityMatches(EffectTarget.Self, com.wingedsheep.sdk.scripting.GameObjectFilter.Any.blocking())
 
     /** If this permanent is tapped. */
     val SourceIsTapped: ConditionInterface =
-        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.tapped())
+        EntityMatches(EffectTarget.Self, com.wingedsheep.sdk.scripting.GameObjectFilter.Any.tapped())
 
     /** If this permanent is untapped. */
     val SourceIsUntapped: ConditionInterface =
-        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.untapped())
+        EntityMatches(EffectTarget.Self, com.wingedsheep.sdk.scripting.GameObjectFilter.Any.untapped())
 
     /** If this creature has dealt damage at least once since entering the battlefield. */
     val SourceHasDealtDamage: ConditionInterface =
-        SourceMatches(
+        EntityMatches(EffectTarget.Self,
             com.wingedsheep.sdk.scripting.GameObjectFilter.Any
                 .copy(statePredicates = listOf(StatePredicate.HasDealtDamage))
         )
 
     /** If this creature has dealt combat damage to a player (Saboteur-style payoffs). */
     val SourceHasDealtCombatDamageToPlayer: ConditionInterface =
-        SourceMatches(
+        EntityMatches(EffectTarget.Self,
             com.wingedsheep.sdk.scripting.GameObjectFilter.Any
                 .copy(statePredicates = listOf(StatePredicate.HasDealtCombatDamageToPlayer))
         )
 
     /** If this permanent entered the battlefield this turn. */
     val SourceEnteredThisTurn: ConditionInterface =
-        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.enteredThisTurn())
+        EntityMatches(EffectTarget.Self, com.wingedsheep.sdk.scripting.GameObjectFilter.Any.enteredThisTurn())
 
     /**
      * If this permanent is saddled (CR 702.171b). Gates Mount payoffs on "while saddled" /
      * "as long as it's saddled" — evaluates identically at resolution and during projection.
      */
     val SourceIsSaddled: ConditionInterface =
-        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.saddled())
+        EntityMatches(EffectTarget.Self, com.wingedsheep.sdk.scripting.GameObjectFilter.Any.saddled())
 
     /**
      * If this creature was declared as an attacker at least once during the current turn.
@@ -601,21 +625,21 @@ object Conditions {
      * turn, deal 2 damage to you" (negate via [com.wingedsheep.sdk.scripting.conditions.NotCondition]).
      */
     val SourceAttackedThisTurn: ConditionInterface =
-        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.attackedThisTurn())
+        EntityMatches(EffectTarget.Self, com.wingedsheep.sdk.scripting.GameObjectFilter.Any.attackedThisTurn())
 
     /**
      * As long as this creature is a specific subtype.
      * Used for conditional static abilities like "has defender as long as it's a Wall."
      */
     fun SourceHasSubtype(subtype: Subtype): ConditionInterface =
-        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.withSubtype(subtype))
+        EntityMatches(EffectTarget.Self, com.wingedsheep.sdk.scripting.GameObjectFilter.Any.withSubtype(subtype))
 
     /**
      * As long as this creature has a specific keyword.
      * Used for conditional effects like "If this creature has flying, it gets +1/+1."
      */
     fun SourceHasKeyword(keyword: Keyword): ConditionInterface =
-        SourceMatches(com.wingedsheep.sdk.scripting.GameObjectFilter.Any.withKeyword(keyword))
+        EntityMatches(EffectTarget.Self, com.wingedsheep.sdk.scripting.GameObjectFilter.Any.withKeyword(keyword))
 
     /**
      * While this creature has a counter of the given type on it.
@@ -631,7 +655,8 @@ object Conditions {
                 counterType.name.uppercase().replace(' ', '_')
             )
         }
-        return SourceMatches(
+        return EntityMatches(
+            EffectTarget.Self,
             com.wingedsheep.sdk.scripting.GameObjectFilter.Any
                 .copy(statePredicates = listOf(predicate))
         )
@@ -1036,7 +1061,7 @@ object Conditions {
      * General intervening-if guard for "whenever you cast a spell, if it's a/an X ..." cards.
      */
     fun TriggeringSpellMatches(filter: com.wingedsheep.sdk.scripting.GameObjectFilter): ConditionInterface =
-        com.wingedsheep.sdk.scripting.conditions.TriggeringSpellMatchesFilter(filter)
+        EntityMatches(EffectTarget.TriggeringEntity, filter)
 
     /**
      * If the spell that triggered this ability is the first spell matching [filter] you've cast

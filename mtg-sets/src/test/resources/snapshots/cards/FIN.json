@@ -700,7 +700,8 @@
             {
                 "type": "CanAttackDespiteDefender",
                 "condition": {
-                    "type": "SourceMatches",
+                    "type": "EntityMatches",
+                    "entity": "Self",
                     "filter": {
                         "statePredicates": [
                             "HasAnyCounter"

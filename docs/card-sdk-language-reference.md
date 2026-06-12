@@ -2381,6 +2381,34 @@ keywordAbilities(KeywordAbility.Protection(Color.BLUE), KeywordAbility.Annihilat
 
 ## 12. Conditions (`Conditions.*`)
 
+**One "entity matches a filter" primitive.** "Does *some entity* match a `GameObjectFilter`" is a
+single condition — `EntityMatches(entity: EffectTarget, filter)` — that names *which* entity via the
+shared `EffectTarget` vocabulary. It subsumes the four former near-clones; each is now a facade
+helper over it:
+
+| Helper | Desugars to |
+|---|---|
+| `Conditions.SourceMatches(f)` (and every `SourceIs*` / `SourceHas*`) | `EntityMatches(EffectTarget.Self, f)` |
+| `Conditions.EnchantedPermanentMatches(f)` | `EntityMatches(EffectTarget.EnchantedPermanent, f)` |
+| `Conditions.TargetMatchesFilter(f, i)` | `EntityMatches(EffectTarget.ContextTarget(i), f)` |
+| `Conditions.TriggeringSpellMatches(f)` | `EntityMatches(EffectTarget.TriggeringEntity, f)` |
+
+The entity role fixes *when* the condition can be answered: `Self` and the enchanted/equipped
+attachment roles evaluate in both resolution and static-ability projection; `ContextTarget` and
+`TriggeringEntity` are resolution-only (false under projection). Use `Conditions.EntityMatches`
+directly only for a role the helpers don't name (e.g. the equipped creature). It is deliberately
+*not* a player check (`TargetIsPlayer`) nor a numeric/tracker check (`Compare`).
+
+**Two anti-patterns to avoid when adding conditions:**
+
+- **Tracker-shaped conditions route through `Compare` + a tracked amount**, not a new condition
+  class. "You gained 3+ life this turn" is `Compare(TurnTracking(You, LIFE_GAINED), GTE, 3)`. When
+  the tracker the comparison needs doesn't exist yet, add the *tracker enum value* (data) and reach
+  for `Compare` — don't mint a bespoke `You…ThisTurn` condition.
+- **Set-mechanic conditions are quarantined** in mechanic-named files (next to the mechanic's other
+  SDK surface), never added to the general condition files. The `add-feature` checklist asks this
+  placement question explicitly.
+
 ### Battlefield state
 
 - `YouControl(filter)` — you control ≥1 matching permanent.
@@ -2412,6 +2440,7 @@ keywordAbilities(KeywordAbility.Protection(Color.BLUE), KeywordAbility.Annihilat
 - `TargetControlsCreature(target)` — target player has a creature.
 - `TargetControlsLand(target)` — target player has a land.
 - `TargetMatchesFilter(filter, targetIndex = 0)` — the context target matches a `GameObjectFilter`.
+  Resolution-only; backed by `EntityMatches(EffectTarget.ContextTarget(targetIndex), filter)`.
 - `TargetIsPlayer(targetIndex = 0)` — the context target is a player (not a permanent/spell/card).
   `TargetMatchesFilter` matches only game objects and returns false for a player target, so this is
   the dedicated check for "any target" effects with a player-only follow-up. Used by Sonic Shrieker
@@ -2447,9 +2476,11 @@ keywordAbilities(KeywordAbility.Protection(Color.BLUE), KeywordAbility.Annihilat
 - `EnchantedPermanentMatches(filter)` — true when the permanent the source Aura is attached to
   matches a `GameObjectFilter` (color, type, etc.), evaluated in projected state via the Aura's
   `AttachedToComponent`. General-purpose counterpart to the narrow `EnchantedCreatureIsLegendary` /
-  `EnchantedCreatureHasSubtype` conditions. Works as a `ConditionalStaticAbility` gate (also in the
-  trigger resolver for conditionally-granted abilities). Used by Essence Leak ("as long as enchanted
-  permanent is red or green…", `GameObjectFilter.Permanent.withAnyColor(Color.RED, Color.GREEN)`).
+  `EnchantedCreatureHasSubtype` conditions. Backed by
+  `EntityMatches(EffectTarget.EnchantedPermanent, filter)`; works as a `ConditionalStaticAbility`
+  gate (also in the trigger resolver for conditionally-granted abilities). Used by Essence Leak ("as
+  long as enchanted permanent is red or green…", `GameObjectFilter.Permanent.withAnyColor(Color.RED,
+  Color.GREEN)`).
 - `YouHaveCitysBlessing` — you have City's Blessing (10+ permanents).
 - `SourceIsRingBearer` — the source permanent is your Ring-bearer (CR 701.54e).
 - `YouChoseOtherCreatureAsRingBearer` — intervening-if for `Triggers.RingTemptsYou` payoffs that fire
@@ -2501,11 +2532,12 @@ keywordAbilities(KeywordAbility.Protection(Color.BLUE), KeywordAbility.Annihilat
 
 ### Source state
 
-All "source matches X" conditions desugar to `SourceMatches(filter)` — a generic predicate
-check against the source entity that works in both resolution and static-ability (projection)
-contexts.
+All "source matches X" conditions desugar to `Conditions.SourceMatches(filter)`, the facade over
+`EntityMatches(EffectTarget.Self, filter)` — a generic predicate check against the source entity
+that works in both resolution and static-ability (projection) contexts.
 
-- `SourceMatches(filter)` — primitive: source entity matches a `GameObjectFilter`.
+- `SourceMatches(filter)` — source entity matches a `GameObjectFilter`
+  (`EntityMatches(EffectTarget.Self, filter)`).
 - `SourceIsAttacking` — source is attacking.
 - `SourceIsBlocking` — source is blocking.
 - `SourceIsTapped` — source is tapped.
@@ -2520,7 +2552,7 @@ contexts.
 - `SourceHasDealtCombatDamageToPlayer` — saboteur-style payoff gate.
 - `SourceIsModified` — has counters, attached Equipment, or controller-owned Aura
   attached (CR 700.4). Kept as a dedicated condition because the controller-of-Aura
-  match isn't expressible via the generic `SourceMatches` machinery.
+  match isn't expressible via the generic `EntityMatches` filter machinery.
 - `SourceHasSubtype(subtype)` — `SourceMatches(GameObjectFilter.Any.withSubtype(...))`;
   Changeling is honored.
 - `SourceHasKeyword(keyword)` — `SourceMatches(GameObjectFilter.Any.withKeyword(...))`.
@@ -2566,7 +2598,7 @@ default to "you" so card authors don't need to pass it explicitly.
 - `TriggeringSpellMatches(filter)` — intervening-if guard: the spell that triggered this ability
   matches `filter`. Reads the triggering entity's static card characteristics (so it stays correct
   after the spell leaves the stack). General "whenever you cast a spell, if it's a/an X ..." gate.
-  Backed by `TriggeringSpellMatchesFilter(filter)`.
+  Backed by `EntityMatches(EffectTarget.TriggeringEntity, filter)`.
 - `YouCastFirstSpellOfTypeThisTurn(filter)` — true when the triggering spell is the *first* spell
   matching `filter` you've cast this turn. Pure composition, no bespoke counting:
   `All(TriggeringSpellMatches(filter), Not(YouCastSpellsThisTurn(atLeast = 2, filter)))`. The

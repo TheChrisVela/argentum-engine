@@ -647,7 +647,8 @@
                     "imageUri": "https://cards.scryfall.io/normal/front/d/c/dccb30d0-b491-43be-8aa0-2ee7da86343e.jpg?1712469939"
                 },
                 "triggerCondition": {
-                    "type": "SourceMatches",
+                    "type": "EntityMatches",
+                    "entity": "Self",
                     "filter": {
                         "statePredicates": [
                             "IsSaddled"
@@ -1281,7 +1282,8 @@
                     "target": "Self"
                 },
                 "triggerCondition": {
-                    "type": "SourceMatches",
+                    "type": "EntityMatches",
+                    "entity": "Self",
                     "filter": {
                         "statePredicates": [
                             "IsSaddled"
@@ -1884,7 +1886,8 @@
                     }
                 },
                 "triggerCondition": {
-                    "type": "SourceMatches",
+                    "type": "EntityMatches",
+                    "entity": "Self",
                     "filter": {
                         "statePredicates": [
                             "IsSaddled"
@@ -2564,7 +2567,8 @@
                     "id": "target creature that saddled it this turn"
                 },
                 "triggerCondition": {
-                    "type": "SourceMatches",
+                    "type": "EntityMatches",
+                    "entity": "Self",
                     "filter": {
                         "statePredicates": [
                             "IsSaddled"
@@ -3102,7 +3106,8 @@
                         {
                             "type": "Not",
                             "condition": {
-                                "type": "SourceMatches",
+                                "type": "EntityMatches",
+                                "entity": "Self",
                                 "filter": {
                                     "statePredicates": [
                                         {
@@ -4142,7 +4147,8 @@
                     ]
                 },
                 "triggerCondition": {
-                    "type": "SourceMatches",
+                    "type": "EntityMatches",
+                    "entity": "Self",
                     "filter": {
                         "statePredicates": [
                             "IsSaddled"
@@ -4795,7 +4801,8 @@
                     ]
                 },
                 "triggerCondition": {
-                    "type": "SourceMatches",
+                    "type": "EntityMatches",
+                    "entity": "Self",
                     "filter": {
                         "statePredicates": [
                             "IsSaddled"
@@ -6026,7 +6033,11 @@
                     "gate": {
                         "type": "Gate.WhenCondition",
                         "condition": {
-                            "type": "TargetMatchesFilter",
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
                             "filter": "creature Mount"
                         }
                     },
@@ -6188,7 +6199,8 @@
                     ]
                 },
                 "triggerCondition": {
-                    "type": "SourceMatches",
+                    "type": "EntityMatches",
+                    "entity": "Self",
                     "filter": {
                         "statePredicates": [
                             "IsSaddled"

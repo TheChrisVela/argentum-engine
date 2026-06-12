@@ -1,11 +1,11 @@
 package com.wingedsheep.mtg.sets.definitions.tmt.cards
 
+import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.conditions.TargetMatchesFilter
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
@@ -34,7 +34,7 @@ val ShreddersTechnique = card("Shredder's Technique") {
     spell {
         val t = target("target creature or enchantment", Targets.CreatureOrEnchantment)
         effect = ConditionalEffect(
-            condition = TargetMatchesFilter(GameObjectFilter.Enchantment),
+            condition = Conditions.TargetMatchesFilter(GameObjectFilter.Enchantment),
             effect = Effects.Destroy(t).then(Effects.LoseLife(2, EffectTarget.Controller)),
             elseEffect = Effects.Destroy(t)
         )

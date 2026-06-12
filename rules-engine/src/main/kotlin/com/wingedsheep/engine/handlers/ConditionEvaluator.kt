@@ -51,8 +51,10 @@ import com.wingedsheep.sdk.scripting.conditions.Compare
 import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.conditions.EnchantedCreatureHasSubtype
-import com.wingedsheep.sdk.scripting.conditions.EnchantedPermanentMatches
 import com.wingedsheep.sdk.scripting.conditions.EnchantedCreatureIsLegendary
+import com.wingedsheep.sdk.scripting.conditions.EntityMatches
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.conditions.Exists
 import com.wingedsheep.sdk.scripting.conditions.IsInPhase
 import com.wingedsheep.sdk.scripting.conditions.IsInStep
@@ -67,7 +69,6 @@ import com.wingedsheep.sdk.scripting.conditions.SourceChosenModeIs
 import com.wingedsheep.sdk.scripting.conditions.CastChoiceMade
 import com.wingedsheep.sdk.scripting.conditions.CastChoiceIs
 import com.wingedsheep.sdk.scripting.conditions.CastTimeFlagSet
-import com.wingedsheep.sdk.scripting.conditions.SourceMatches
 import com.wingedsheep.engine.state.components.battlefield.CastForImpendingComponent
 import com.wingedsheep.sdk.scripting.ChoiceSlot
 import com.wingedsheep.sdk.scripting.conditions.WasCast
@@ -80,7 +81,6 @@ import com.wingedsheep.sdk.scripting.conditions.YouSacrificedPermanentThisWay
 import com.wingedsheep.sdk.scripting.conditions.AnotherPermanentWithSameNameAsTarget
 import com.wingedsheep.sdk.scripting.conditions.TargetMarkedDamageExceedsToughness
 import com.wingedsheep.sdk.scripting.conditions.TargetIsPlayer
-import com.wingedsheep.sdk.scripting.conditions.TargetMatchesFilter
 import com.wingedsheep.sdk.scripting.conditions.TargetSharesMostCommonColor
 import com.wingedsheep.sdk.scripting.conditions.ColorIsMostCommon
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
@@ -91,7 +91,6 @@ import com.wingedsheep.sdk.scripting.conditions.TriggeringEntityWasHistoric
 import com.wingedsheep.sdk.scripting.conditions.TriggeringEntityWasCast
 import com.wingedsheep.sdk.scripting.conditions.TriggeringEntityWasNotPutByThisSource
 import com.wingedsheep.sdk.scripting.conditions.TriggeringSpellHasSingleTarget
-import com.wingedsheep.sdk.scripting.conditions.TriggeringSpellMatchesFilter
 import com.wingedsheep.sdk.scripting.conditions.CollectionContainsMatch
 import com.wingedsheep.sdk.scripting.conditions.IsFirstSpellPaidWithTreasureManaCastThisTurn
 import com.wingedsheep.sdk.scripting.conditions.SourceAbilityResolvedNTimesThisTurn
@@ -201,8 +200,10 @@ class ConditionEvaluator(
                 sourceId != null && state.getEntity(sourceId)?.has<CastForImpendingComponent>() == true
             }
 
-            // Generic source-state primitive — predicate-evaluator against the source entity.
-            is SourceMatches -> evaluateSourceMatchesCtx(state, condition, ctx)
+            // The unified "an entity matches a filter" primitive. Dispatches on the entity role:
+            // Self / enchanted-or-equipped are dual-mode (resolution + projection); a chosen target
+            // or the triggering spell are resolution-only.
+            is EntityMatches -> evaluateEntityMatches(state, condition, ctx)
 
             // CR 701.54e: the source is your Ring-bearer — it carries your Ring-bearer designation
             // and you still control it. The control half reads the projected controller so a
@@ -242,7 +243,6 @@ class ConditionEvaluator(
 
             is EnchantedCreatureHasSubtype -> evaluateEnchantedCreatureHasSubtypeCtx(state, condition, ctx)
             is EnchantedCreatureIsLegendary -> evaluateEnchantedCreatureIsLegendaryCtx(state, ctx)
-            is EnchantedPermanentMatches -> evaluateEnchantedPermanentMatchesCtx(state, condition, ctx)
 
             // Player-relative trackers (resolve [Player] against the current context).
             is PlayerAttackedWithCreaturesThisTurn -> evaluateAttackedWithCreaturesCtx(state, condition, ctx)
@@ -339,8 +339,6 @@ class ConditionEvaluator(
             is TriggeringEntityWasNotPutByThisSource ->
                 ifResolution { evaluateTriggeringEntityWasNotPutByThisSource(state, it) }
             is TriggeringSpellHasSingleTarget -> ifResolution { evaluateTriggeringSpellHasSingleTarget(state, it) }
-            is TriggeringSpellMatchesFilter -> ifResolution { evaluateTriggeringSpellMatchesFilter(state, condition, it) }
-            is TargetMatchesFilter -> ifResolution { evaluateTargetMatchesFilter(state, condition, it) }
             is TargetIsPlayer -> ifResolution { evaluateTargetIsPlayer(condition, it) }
             is TargetMarkedDamageExceedsToughness ->
                 ifResolution { evaluateTargetMarkedDamageExceedsToughness(state, condition, it) }
@@ -395,9 +393,46 @@ class ConditionEvaluator(
         }
     }
 
-    private fun evaluateSourceMatchesCtx(
+    /**
+     * The unified `EntityMatches(entity, filter)` evaluator. Resolves [EntityMatches.entity] and
+     * matches it against [EntityMatches.filter], routing to the matching strategy each entity role
+     * requires:
+     * - [EffectTarget.Self]: live predicate match against the source; dual-mode (resolution +
+     *   static-ability projection).
+     * - [EffectTarget.EnchantedPermanent] / [EffectTarget.EnchantedCreature] /
+     *   [EffectTarget.EquippedCreature]: live match against the source's attachment; dual-mode.
+     * - [EffectTarget.ContextTarget]: resolution-only; resolve the chosen target to a game object
+     *   (false for a player target) and match live.
+     * - [EffectTarget.TriggeringEntity]: resolution-only; match the triggering spell by its static
+     *   cast characteristics so the answer survives the spell leaving the stack (CR 603.4).
+     *
+     * Other entity roles are unsupported and evaluate to `false`.
+     */
+    private fun evaluateEntityMatches(
         state: GameState,
-        condition: SourceMatches,
+        condition: EntityMatches,
+        ctx: ConditionEvaluationContext
+    ): Boolean = when (val entity = condition.entity) {
+        is EffectTarget.Self ->
+            evaluateSourceFilterMatch(state, condition.filter, ctx)
+        is EffectTarget.EnchantedPermanent,
+        is EffectTarget.EnchantedCreature,
+        is EffectTarget.EquippedCreature ->
+            evaluateAttachmentFilterMatch(state, condition.filter, ctx)
+        is EffectTarget.ContextTarget ->
+            (ctx as? Resolution)?.let {
+                evaluateTargetFilterMatch(state, condition.filter, entity.index, it.effectContext)
+            } ?: false
+        is EffectTarget.TriggeringEntity ->
+            (ctx as? Resolution)?.let {
+                evaluateTriggeringSpellFilterMatch(state, condition.filter, it.effectContext)
+            } ?: false
+        else -> false
+    }
+
+    private fun evaluateSourceFilterMatch(
+        state: GameState,
+        filter: GameObjectFilter,
         ctx: ConditionEvaluationContext
     ): Boolean {
         val sourceId = ctx.sourceId ?: return false
@@ -407,7 +442,7 @@ class ConditionEvaluator(
             is Projection -> ctx.controllerId?.let { PredicateContext(controllerId = it) }
                 ?: PredicateContext(controllerId = sourceId)
         }
-        return PredicateEvaluator().matches(state, projected, sourceId, condition.filter, predicateContext)
+        return PredicateEvaluator().matches(state, projected, sourceId, filter, predicateContext)
     }
 
     private fun evaluateExistsCtx(
@@ -517,9 +552,9 @@ class ConditionEvaluator(
         return "LEGENDARY" in ctx.projectedStateFor(state).getTypes(creatureId)
     }
 
-    private fun evaluateEnchantedPermanentMatchesCtx(
+    private fun evaluateAttachmentFilterMatch(
         state: GameState,
-        condition: EnchantedPermanentMatches,
+        filter: GameObjectFilter,
         ctx: ConditionEvaluationContext
     ): Boolean {
         val sourceId = ctx.sourceId ?: return false
@@ -539,7 +574,7 @@ class ConditionEvaluator(
                 PredicateContext(controllerId = controller)
             }
         }
-        return PredicateEvaluator().matches(state, projected, permanentId, condition.filter, predicateContext)
+        return PredicateEvaluator().matches(state, projected, permanentId, filter, predicateContext)
     }
 
     /**
@@ -894,12 +929,13 @@ class ConditionEvaluator(
         return targets.size == 1
     }
 
-    private fun evaluateTargetMatchesFilter(
+    private fun evaluateTargetFilterMatch(
         state: GameState,
-        condition: TargetMatchesFilter,
+        filter: GameObjectFilter,
+        targetIndex: Int,
         context: EffectContext
     ): Boolean {
-        val target = context.positionalTarget(condition.targetIndex) ?: return false
+        val target = context.positionalTarget(targetIndex) ?: return false
         val entityId = when (target) {
             is com.wingedsheep.engine.state.components.stack.ChosenTarget.Permanent -> target.entityId
             is com.wingedsheep.engine.state.components.stack.ChosenTarget.Player -> return false
@@ -909,7 +945,7 @@ class ConditionEvaluator(
         val predicateEvaluator = PredicateEvaluator()
         val predicateContext = PredicateContext.fromEffectContext(context)
         val projected = state.projectedState
-        return predicateEvaluator.matches(state, projected, entityId, condition.filter, predicateContext)
+        return predicateEvaluator.matches(state, projected, entityId, filter, predicateContext)
     }
 
     /**
@@ -1018,9 +1054,9 @@ class ConditionEvaluator(
         return colorCounts.filterValues { it == maxCount }.keys
     }
 
-    private fun evaluateTriggeringSpellMatchesFilter(
+    private fun evaluateTriggeringSpellFilterMatch(
         state: GameState,
-        condition: TriggeringSpellMatchesFilter,
+        filter: GameObjectFilter,
         context: EffectContext
     ): Boolean {
         // Match the triggering spell by its static card characteristics so the check stays correct
@@ -1036,7 +1072,7 @@ class ConditionEvaluator(
             colors = card.colors,
             isFaceDown = entity.has<com.wingedsheep.engine.state.components.identity.FaceDownComponent>()
         )
-        return PredicateEvaluator().matchesFilter(triggeringRecord, condition.filter)
+        return PredicateEvaluator().matchesFilter(triggeringRecord, filter)
     }
 
     private fun evaluateFirstSpellPaidWithTreasureMana(

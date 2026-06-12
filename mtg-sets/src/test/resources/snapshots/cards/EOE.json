@@ -2724,7 +2724,11 @@
             "amount": {
                 "type": "Conditional",
                 "condition": {
-                    "type": "TargetMatchesFilter",
+                    "type": "EntityMatches",
+                    "entity": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    },
                     "filter": "creature kw:flying"
                 },
                 "ifTrue": {
@@ -3412,7 +3416,11 @@
                     "gate": {
                         "type": "Gate.WhenCondition",
                         "condition": {
-                            "type": "TargetMatchesFilter",
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
                             "filter": "permanent attacking"
                         }
                     },
@@ -5222,7 +5230,11 @@
                             "gate": {
                                 "type": "Gate.WhenCondition",
                                 "condition": {
-                                    "type": "TargetMatchesFilter",
+                                    "type": "EntityMatches",
+                                    "entity": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    },
                                     "filter": {
                                         "cardPredicates": [
                                             "IsCreature"
@@ -5898,7 +5910,11 @@
                     "gate": {
                         "type": "Gate.WhenCondition",
                         "condition": {
-                            "type": "TargetMatchesFilter",
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
                             "filter": {
                                 "cardPredicates": [
                                     "IsCreature"
@@ -16855,7 +16871,11 @@
                     "gate": {
                         "type": "Gate.WhenCondition",
                         "condition": {
-                            "type": "TargetMatchesFilter",
+                            "type": "EntityMatches",
+                            "entity": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
                             "filter": "Spacecraft"
                         }
                     },
@@ -17528,7 +17548,11 @@
                             "gate": {
                                 "type": "Gate.WhenCondition",
                                 "condition": {
-                                    "type": "TargetMatchesFilter",
+                                    "type": "EntityMatches",
+                                    "entity": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    },
                                     "filter": "artifact creature"
                                 }
                             },
@@ -17633,7 +17657,11 @@
                                     "gate": {
                                         "type": "Gate.WhenCondition",
                                         "condition": {
-                                            "type": "TargetMatchesFilter",
+                                            "type": "EntityMatches",
+                                            "entity": {
+                                                "type": "ContextTarget",
+                                                "index": 0
+                                            },
                                             "filter": "noncreature"
                                         }
                                     },

@@ -555,7 +555,8 @@
                     "conditions": [
                         "SourceCastForImpending",
                         {
-                            "type": "SourceMatches",
+                            "type": "EntityMatches",
+                            "entity": "Self",
                             "filter": {
                                 "statePredicates": [
                                     {
@@ -747,7 +748,8 @@
                     "conditions": [
                         "SourceCastForImpending",
                         {
-                            "type": "SourceMatches",
+                            "type": "EntityMatches",
+                            "entity": "Self",
                             "filter": {
                                 "statePredicates": [
                                     {
@@ -855,7 +857,8 @@
                     "keyword": "HEXPROOF"
                 },
                 "condition": {
-                    "type": "SourceMatches",
+                    "type": "EntityMatches",
+                    "entity": "Self",
                     "filter": {
                         "statePredicates": [
                             "EnteredThisTurn"
@@ -1406,7 +1409,8 @@
                     "id": "card in a graveyard"
                 },
                 "triggerCondition": {
-                    "type": "SourceMatches",
+                    "type": "EntityMatches",
+                    "entity": "Self",
                     "filter": "tapped"
                 }
             }
