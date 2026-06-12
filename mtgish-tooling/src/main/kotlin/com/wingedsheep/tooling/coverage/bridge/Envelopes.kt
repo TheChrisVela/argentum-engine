@@ -15,6 +15,10 @@ internal fun BridgeBuilder.structuralEnvelopes() {
     envelope("TriggerOnceEachTurn", "envelope: triggered ability that triggers only once each turn")
     envelope("Activated", "envelope: activated ability")
     envelope("ActivatedWithModifiers", "envelope: activated ability")
+    // Zone-scoped activated abilities: the inner Activated rule carries the real capability; the
+    // wrapper only sets the ability's `activateFromZone` (Zone.HAND / Zone.GRAVEYARD).
+    envelope("FromHand", "envelope: activated ability used from hand (activateFromZone = Zone.HAND)")
+    envelope("FromGraveyard", "envelope: activated ability used from graveyard (activateFromZone = Zone.GRAVEYARD)")
     envelope("And", "envelope: cost/action conjunction")
     envelope("If", "conditional envelope")
 

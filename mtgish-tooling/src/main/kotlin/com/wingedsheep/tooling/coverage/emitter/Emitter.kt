@@ -151,6 +151,7 @@ object Emitter {
                 rname == "EachPermanentLayerEffect" -> block = ctx.staticLordBlock(rule)
                 rname == "FromAnyZone" -> block = ctx.fromAnyZoneBlock(rule)
                 rname == "FromGraveyard" -> block = ctx.fromGraveyardBlock(rule)
+                rname == "FromHand" -> block = ctx.fromHandBlock(rule)
                 rname == "CDA_Power" -> block = ctx.cdaStatsBlock(card, rule)
                 rname == "CDA_Toughness" ->
                     if (jsonContains(card["Rules"], "_Rule", "CDA_Power")) continue  // emitted with CDA_Power

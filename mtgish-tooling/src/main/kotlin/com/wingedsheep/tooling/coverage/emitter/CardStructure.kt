@@ -1072,6 +1072,20 @@ internal fun EmitCtx.fromGraveyardBlock(rule: JsonObject): List<Stmt>? {
     }
 }
 
+/**
+ * `FromHand[Activated]` -> an `activatedAbility { … }` whose `activateFromZone = Zone.HAND` ("{cost},
+ * Discard this card: …", Spinewoods Armadillo's land-fetch). The same shape as [fromGraveyardBlock] but
+ * scoped to the hand zone; the self-discard cost renders via [abilityCostDsl]'s `DiscardCard`/
+ * `Costs.DiscardSelf` case. Only a plain Activated inner renders; anything else scaffolds.
+ */
+internal fun EmitCtx.fromHandBlock(rule: JsonObject): List<Stmt>? {
+    val inner = rule["args"] as? JsonObject
+    return when (inner?.strField("_Rule")) {
+        "Activated", "ActivatedWithModifiers" -> activatedBlock(inner, activateFromZone = "Zone.HAND")
+        else -> { reasons.add("FromHand"); return null }
+    }
+}
+
 /** An Activated / ActivatedWithModifiers rule -> activatedAbility { cost; [target]; effect }. */
 internal fun EmitCtx.activatedBlock(rule: JsonObject, activateFromZone: String? = null): List<Stmt>? {
     val args = rule["args"].asArr
@@ -1198,6 +1212,11 @@ internal fun EmitCtx.abilityCostDsl(node: JsonElement?): String? {
         // (ManaCostX -> "{X}") as the mana cost (Silklash Spider).
         "PayManaX" -> renderMana((obj["args"].asArr)?.getOrNull(0)).ifEmpty { null }?.let { "Costs.Mana(\"$it\")" }
         "DiscardACard" -> "Costs.DiscardCard"  // "Discard a card" (Patchwork Gnomes)
+        // "Discard this card" — the self-discard cost of a from-hand activated ability (Spinewoods
+        // Armadillo's land-fetch). Only the ThisCardInHand subject maps to Costs.DiscardSelf; any other
+        // discarded card declines so we never render a self-discard as a generic one.
+        "DiscardCard" ->
+            if (jsonContains(obj.field("args"), "_CardInHand", "ThisCardInHand")) "Costs.DiscardSelf" else null
         "DiscardHand" -> "Costs.DiscardHand"  // "Discard your hand" (Slate of Ancestry)
         // "Discard a card at random" — a fixed, no-choice cost (the engine picks): Costs.DiscardAtRandom(1).
         // It carries no value selection / X / inherited choice, so it is safe to render exactly (Canyon Drake).

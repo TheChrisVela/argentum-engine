@@ -13,6 +13,7 @@ import com.wingedsheep.tooling.coverage.asInt
 import com.wingedsheep.tooling.coverage.asStr
 import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.compact
+import com.wingedsheep.tooling.coverage.dot
 import com.wingedsheep.tooling.coverage.firstArgWordTagged
 import com.wingedsheep.tooling.coverage.firstWordAtKey
 import com.wingedsheep.tooling.coverage.hasTag
@@ -155,6 +156,63 @@ internal fun EmitCtx.staticLordBlock(rule: JsonObject): List<Stmt>? {
 private fun EmitCtx.scaffoldLord(): List<Stmt>? { reasons.add("EachPermanentLayerEffect"); return null }
 
 /**
+ * A self-buff `PermanentLayerEffect(ThisPermanent, [AdjustPTForEach])` -> one
+ * `staticAbility { ability = GrantDynamicStatsEffect(filter = GroupFilter.source(), powerBonus = …,
+ * toughnessBonus = …) }`. `AdjustPTForEach`'s args are `[powerMult, toughnessMult, countNode]`:
+ * "this creature gets +powerMult/+toughnessMult for each [countNode]". The per-permanent count is
+ * rendered as a resolution-time `DynamicAmount.Count` over the You battlefield with the recovered
+ * filter (matching the `Count(Player.You, Zone.BATTLEFIELD, …)` convention used by hand-authored
+ * "for each [type] you control" cards, e.g. Desert's Due). A multiplier other than 1 wraps the count
+ * in `DynamicAmount.Multiply`.
+ *
+ * Only the You-controlled-battlefield count shape renders; any other count scope, a non-AdjustPTForEach
+ * layer effect, or a filter the count path can't express exactly returns null so the card scaffolds
+ * rather than emit a wrong buff. ("Crusading Knight" — Swamps your *opponents* control — therefore still
+ * scaffolds here; the You case is the common Outlaws Desert pattern.)
+ */
+private fun EmitCtx.selfDynamicStatsBlock(rule: JsonObject): List<Stmt>? {
+    val args = rule["args"] as? JsonArray ?: return null
+    val layerEffects = (args.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>() ?: return null
+    if (layerEffects.isEmpty()) return null
+    val stmts = mutableListOf<Stmt>()
+    for (le in layerEffects) {
+        if (le.strField("_StaticLayerEffect") != "AdjustPTForEach") return null
+        val pt = le["args"] as? JsonArray ?: return null
+        if (pt.size != 3) return null
+        val powerMult = pt[0].asInt() ?: return null
+        val toughnessMult = pt[1].asInt() ?: return null
+        // The count must be a You-controlled battlefield tally; decline anything else (opponent /
+        // each-player scope, or a filter the count path widens) so we never misrender the buff.
+        val countNode = pt[2] as? JsonObject ?: return null
+        if (countNode.strField("_GameNumber") != "TheNumberOfPermanentsOnTheBattlefield") return null
+        if (!jsonContains(countNode, "_Player", "You")) return null
+        // Reject the predicates the land/type count filter path can't render faithfully (it silently
+        // widens to GameObjectFilter.Any) — mirror dynamicAmountExpr's guards.
+        val blob = compact(countNode)
+        if ("IsArtifactType" in blob || "SharesACreatureTypeWithPermanent" in blob) return null
+        if (countNode.firstArgWordTagged("IsEnchantmentType") != null &&
+            countNode.firstArgWordTagged("IsCreatureType") == null) return null
+        val subtype = countNode.firstArgWordTagged("IsCreatureType")
+        val filter = if (subtype != null) Lit("GameObjectFilter.Creature").dot("withSubtype", arg("\"$subtype\""))
+                     else landSearchFilterExpr(countNode)
+        val count: Dsl = call("DynamicAmount.Count", arg("Player.You"), arg("Zone.BATTLEFIELD"), arg(filter))
+        fun bonus(mult: Int): Dsl =
+            if (mult == 1) count else call("DynamicAmount.Multiply", arg(count), arg("$mult"))
+        stmts.add(
+            staticAbilityStmt(
+                call(
+                    "GrantDynamicStatsEffect",
+                    arg("filter", call("GroupFilter.source")),
+                    arg("powerBonus", bonus(powerMult)),
+                    arg("toughnessBonus", bonus(toughnessMult)),
+                )
+            )
+        )
+    }
+    return stmts
+}
+
+/**
  * An `Activated` / `ActivatedWithModifiers` rule granted to a group ("All Slivers have '{cost}: …'") ->
  * an `ActivatedAbility(id = AbilityId.generate(), cost = …, [timing = …], effect = …, [targetRequirement
  * = …])` constructor expression for wrapping in `GrantActivatedAbility`. Reuses the same cost / target /
@@ -250,6 +308,13 @@ private fun auraYouControlTarget(filter: JsonObject): String? {
  */
 internal fun EmitCtx.staticHostBlock(rule: JsonObject): List<Stmt>? {
     val args = rule["args"] as? JsonArray
+    // "This creature gets +X/+Y for each [permanents you control]" (Outcaster Greenblade, Crusading
+    // Knight): a self-targeting layer effect whose subject is ThisPermanent, not an aura's host. Route
+    // to the dynamic self-buff renderer; only the AdjustPTForEach shape renders there, everything else
+    // falls through to the scaffold below.
+    if (jsonContains(args?.getOrNull(0), "_Permanent", "ThisPermanent")) {
+        selfDynamicStatsBlock(rule)?.let { return it }
+    }
     if (args == null || !jsonContains(args.getOrNull(0), "_Permanent", "HostPermanent")) {
         reasons.add("PermanentLayerEffect"); return null
     }
