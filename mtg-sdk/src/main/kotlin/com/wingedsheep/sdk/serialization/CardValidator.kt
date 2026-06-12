@@ -246,4 +246,15 @@ sealed interface CardValidationError {
         override val cardName: String,
         override val message: String
     ) : CardValidationError
+
+    /**
+     * A `TargetChooser.Opponent` ("… of an opponent's choice") target requirement in a context
+     * that doesn't route the selection to an opponent. Only activated abilities honor the chooser
+     * today; anywhere else (a spell, a triggered ability, a kicker target) the controller would
+     * silently pick the target instead. Fail at card load rather than mis-resolve.
+     */
+    data class UnsupportedOpponentChooser(
+        override val cardName: String,
+        override val message: String
+    ) : CardValidationError
 }

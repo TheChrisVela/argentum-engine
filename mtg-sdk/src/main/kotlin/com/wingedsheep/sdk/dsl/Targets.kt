@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.targets.AnyTarget
+import com.wingedsheep.sdk.scripting.targets.TargetChooser
 import com.wingedsheep.sdk.scripting.targets.TargetOther
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import com.wingedsheep.sdk.scripting.targets.TargetCreatureOrPlaneswalker
@@ -185,6 +186,14 @@ object Targets {
      * Any target (creature, player, or planeswalker).
      */
     val Any: TargetRequirement = AnyTarget()
+
+    /**
+     * "Any target of an opponent's choice" — a real target of your spell/ability that an
+     * opponent selects (Cuombajj Witches). Announced and resolved like any target, with
+     * legality (hexproof/protection) measured relative to you, the controller. List it after
+     * the controller-chosen targets in a script. See [com.wingedsheep.sdk.scripting.targets.TargetChooser].
+     */
+    val AnyChosenByOpponent: TargetRequirement = AnyTarget(chooser = TargetChooser.Opponent)
 
     /**
      * Any target other than the creature the source is attached to — for Aura/Equipment

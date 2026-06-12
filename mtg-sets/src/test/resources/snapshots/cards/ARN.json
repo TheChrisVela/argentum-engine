@@ -679,6 +679,82 @@
     "colorIdentityOverride": []
 }
 
+// Cuombajj Witches
+{
+    "name": "Cuombajj Witches",
+    "manaCost": "{B}{B}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "{T}: This creature deals 1 damage to any target and 1 damage to any target of an opponent's choice.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "controller target"
+                            }
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "opponent target"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "controller target"
+                    },
+                    {
+                        "type": "AnyTarget",
+                        "id": "opponent target",
+                        "chooser": "Opponent"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "23",
+        "artist": "Kaja Foglio",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/9/7995c3f9-a147-43c9-9f82-470924818a4c.jpg?1562917470",
+        "rulings": [
+            {
+                "date": "2020-11-10",
+                "text": "You choose which opponent chooses the second target. It doesn't have to be the opponent who controls (or is) the first target."
+            },
+            {
+                "date": "2020-11-10",
+                "text": "Even though the opponent chooses a target, you control the ability. An opponent can't target a creature they control with hexproof."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Dancing Scimitar
 {
     "name": "Dancing Scimitar",

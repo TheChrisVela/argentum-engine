@@ -209,7 +209,17 @@ data class ActivateAbility(
     val xValue: Int? = null,
     val repeatCount: Int = 1,
     val paymentStrategy: PaymentStrategy = PaymentStrategy.AutoPay,
-    val alternativePayment: AlternativePaymentChoice? = null
+    val alternativePayment: AlternativePaymentChoice? = null,
+    /**
+     * Internal resume marker for "… of an opponent's choice" targets (Cuombajj Witches). On the
+     * first pass the handler pauses to let an opponent pick the opponent-chosen target(s); the
+     * resumer re-enters [com.wingedsheep.engine.handlers.actions.ability.ActivateAbilityHandler.execute]
+     * with those targets merged into [targets] and this flag set, so the opponent-target pause is
+     * not raised a second time. Only the engine's resumer sets it (re-entering via execute()
+     * directly); ActivateAbilityHandler.validate() rejects any client-submitted action that carries
+     * it, so it can't be used to skip the opponent-target pause.
+     */
+    val opponentTargetsChosen: Boolean = false
 ) : GameAction
 
 // =============================================================================

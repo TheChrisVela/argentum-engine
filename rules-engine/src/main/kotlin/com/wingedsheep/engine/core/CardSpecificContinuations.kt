@@ -439,3 +439,35 @@ data class ActivateAbilityExileFromGraveyardContinuation(
     val exileCandidates: List<EntityId>,
     val exileCount: Int
 ) : ContinuationFrame
+
+/**
+ * Resume after an opponent picks the target(s) for an activated ability's "… of an opponent's
+ * choice" requirement (Cuombajj Witches: "{T}: This creature deals 1 damage to any target and 1
+ * damage to any target of an opponent's choice").
+ *
+ * The activating player chose their own (controller) targets up front; those ride on [action].
+ * The handler then paused and raised a [com.wingedsheep.engine.core.ChooseTargetsDecision] routed
+ * to [deciderId] (the opponent) for the [opponentRequirements]. The resumer converts that response
+ * into [ChosenTarget]s, interleaves them with the controller's targets according to
+ * [fullRequirements] (preserving script order, so [com.wingedsheep.engine.handlers.EffectContext.buildNamedTargets]
+ * maps each to the right requirement), and re-enters the handler with
+ * `opponentTargetsChosen = true` so cost payment + stack placement proceed exactly once.
+ *
+ * The pause happens before any cost is paid, so cancellation pops this frame and restores priority
+ * with no side effects.
+ *
+ * @property action Original [ActivateAbility] carrying the controller's already-chosen targets.
+ * @property opponentRequirements The opponent-chosen requirements, in script order; aligned 1:1
+ *   with the indices in the [com.wingedsheep.engine.core.TargetsResponse].
+ * @property fullRequirements All target requirements (controller + opponent), in script order,
+ *   used to interleave the two target lists back into one aligned list.
+ * @property deciderId The opponent who makes the selection.
+ */
+@Serializable
+data class ActivateAbilityOpponentTargetContinuation(
+    override val decisionId: String,
+    val action: ActivateAbility,
+    val opponentRequirements: List<com.wingedsheep.sdk.scripting.targets.TargetRequirement>,
+    val fullRequirements: List<com.wingedsheep.sdk.scripting.targets.TargetRequirement>,
+    val deciderId: EntityId
+) : ContinuationFrame

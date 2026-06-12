@@ -681,11 +681,22 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                 } else null
 
                 // Check for target requirements (apply text-changing effects to filter)
-                val targetReqs = if (textReplacement != null) {
+                val allTargetReqs = if (textReplacement != null) {
                     ability.targetRequirements.map { it.applyTextReplacement(textReplacement) }
                 } else {
                     ability.targetRequirements
                 }
+                // "… of an opponent's choice" requirements (Cuombajj Witches) are picked by an
+                // opponent at announcement, not by the activating player. Gate activation on them
+                // being satisfiable, but surface only the controller-chosen requirements for this
+                // player to select; the handler routes the opponent's pick. Satisfiability is
+                // computed relative to the controller (playerId), matching how the handler finds
+                // legal targets for the opponent.
+                if (allTargetReqs.any { it.chooser != com.wingedsheep.sdk.scripting.targets.TargetChooser.Controller }) {
+                    val allReqInfos = context.targetUtils.buildTargetInfos(state, playerId, allTargetReqs, sourceId = entityId)
+                    if (!context.targetUtils.allRequirementsSatisfied(allReqInfos)) continue
+                }
+                val targetReqs = allTargetReqs.filter { it.chooser == com.wingedsheep.sdk.scripting.targets.TargetChooser.Controller }
                 if (targetReqs.isNotEmpty()) {
                     // Build target info for each requirement (same pattern as spells)
                     val targetReqInfos = context.targetUtils.buildTargetInfos(state, playerId, targetReqs, sourceId = entityId)

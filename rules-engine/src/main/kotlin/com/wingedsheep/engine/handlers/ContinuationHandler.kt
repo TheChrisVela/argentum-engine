@@ -51,6 +51,7 @@ class ContinuationHandler(
         registerModule(AmassContinuationResumer(services))
         registerModule(LeylineContinuationResumer(services))
         registerModule(ActivateAbilityXCostContinuationResumer(services))
+        registerModule(com.wingedsheep.engine.handlers.continuations.ActivateAbilityOpponentTargetResumer(services))
     }
 
     /**

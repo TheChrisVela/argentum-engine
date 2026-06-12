@@ -11,6 +11,29 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
+ * Who chooses the target(s) for a [TargetRequirement].
+ *
+ * Defaults to [Controller] — the player casting the spell or activating the ability picks the
+ * target, as in the overwhelming majority of cards. [Opponent] models the rare "… of an
+ * opponent's choice" wording (Cuombajj Witches): the target is still a real target of the
+ * controller's spell/ability — announced at the same time, equally respondable, and its legality
+ * (hexproof/protection/shroud) is evaluated relative to the *controller*, per CR 115 — but it is
+ * an opponent who selects which legal object/player it is. In a multiplayer game the controller
+ * first chooses which opponent makes the selection (CR 601.6a / 602.3a), and that selection happens
+ * after the controller's own choices (CR 601.6b / 602.3b: the controller goes first, then the other
+ * player).
+ *
+ * The chooser is orthogonal to legality: target-finding and validation ignore it (they always run
+ * relative to the controller). Only the announcement layer reads it, to route the selection
+ * decision to the right player.
+ */
+@Serializable
+enum class TargetChooser {
+    Controller,
+    Opponent
+}
+
+/**
  * Defines what can be targeted by a spell or ability.
  * Each TargetRequirement specifies the valid targets and any restrictions.
  *
@@ -33,6 +56,14 @@ sealed interface TargetRequirement : TextReplaceable<TargetRequirement> {
     val count: Int get() = 1  // Maximum targets
     val minCount: Int get() = count  // Minimum targets (defaults to count)
     val optional: Boolean get() = false  // If true, minCount becomes 0
+    /**
+     * Who selects this requirement's target(s). Defaults to [TargetChooser.Controller]; set to
+     * [TargetChooser.Opponent] for "… of an opponent's choice" wording. See [TargetChooser].
+     * Currently honored at announcement for activated abilities (the only printed use, Cuombajj
+     * Witches); a requirement whose chooser is an opponent should appear after the
+     * controller-chosen requirements in a script.
+     */
+    val chooser: TargetChooser get() = TargetChooser.Controller
     /**
      * If true, the target count has no upper bound — "any number of target ...".
      * The practical maximum is the number of legal targets, which the engine surfaces
@@ -175,10 +206,14 @@ data class AnyTarget(
     override val minCount: Int = count,
     override val optional: Boolean = false,
     override val id: String? = null,
+    override val chooser: TargetChooser = TargetChooser.Controller,
     private val descriptionOverride: String? = null
 ) : TargetRequirement {
     override val description: String = descriptionOverride
-        ?: if (count == 1) "any target" else "$count targets"
+        ?: buildString {
+            append(if (count == 1) "any target" else "$count targets")
+            if (chooser == TargetChooser.Opponent) append(" of an opponent's choice")
+        }
 }
 
 /**

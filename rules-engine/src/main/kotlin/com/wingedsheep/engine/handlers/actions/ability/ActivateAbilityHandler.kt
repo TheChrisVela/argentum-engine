@@ -57,6 +57,7 @@ import com.wingedsheep.sdk.scripting.DampLandManaProduction
 import com.wingedsheep.sdk.scripting.ExtraLoyaltyActivation
 import com.wingedsheep.sdk.scripting.GrantActivatedAbility
 import com.wingedsheep.sdk.scripting.filters.unified.Scope
+import com.wingedsheep.sdk.scripting.targets.TargetChooser
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.effects.LevelUpClassEffect
 import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaSpendOnChosenTypeEffect
@@ -103,6 +104,15 @@ class ActivateAbilityHandler(
     override val actionType: KClass<ActivateAbility> = ActivateAbility::class
 
     override fun validate(state: GameState, action: ActivateAbility): String? {
+        // `opponentTargetsChosen` is an internal resume marker for "… of an opponent's choice"
+        // targets (Cuombajj Witches). Only the engine's resumer sets it, and the resumer re-enters
+        // via execute() directly — never through validate() — so any action carrying it here came
+        // from a player/client. Reject it: otherwise a client could set it to skip the
+        // opponent-target pause and resolve the opponent-chosen damage with no target. See
+        // [com.wingedsheep.sdk.scripting.targets.TargetChooser].
+        if (action.opponentTargetsChosen) {
+            return "Internal resume flag cannot be set by a player"
+        }
         if (state.priorityPlayerId != action.playerId) {
             return "You don't have priority"
         }
@@ -328,12 +338,17 @@ class ActivateAbilityHandler(
             if (error != null) return error
         }
 
-        // Validate targets
-        if (effectiveTargetReqs.isNotEmpty() && action.targets.isNotEmpty()) {
+        // Validate targets. Only the controller-chosen requirements are validated here — any
+        // "… of an opponent's choice" requirement (Cuombajj Witches) is picked by an opponent in
+        // a separate decision the handler raises at announcement, so it isn't on `action.targets`
+        // yet at submission time (the opponent's pick is validated when it's made). See
+        // [com.wingedsheep.sdk.scripting.targets.TargetChooser].
+        val controllerTargetReqs = effectiveTargetReqs.filter { it.chooser == TargetChooser.Controller }
+        if (controllerTargetReqs.isNotEmpty() && action.targets.isNotEmpty()) {
             val targetError = targetValidator.validateTargets(
                 state,
                 action.targets,
-                effectiveTargetReqs,
+                controllerTargetReqs,
                 action.playerId,
                 sourceColors = cardComponent.colors,
                 sourceSubtypes = cardComponent.typeLine.subtypes.map { it.value }.toSet(),
@@ -345,7 +360,7 @@ class ActivateAbilityHandler(
             if (targetError != null) {
                 return targetError
             }
-        } else if (effectiveTargetReqs.isNotEmpty() && action.targets.isEmpty()) {
+        } else if (controllerTargetReqs.isNotEmpty() && action.targets.isEmpty()) {
             return "This ability requires a target"
         }
 
@@ -392,6 +407,29 @@ class ActivateAbilityHandler(
             applyGenericCostReduction(rawCost, ability, state, action.sourceId, action.playerId, action.targets),
             ability, state, action.playerId
         )
+
+        // -------------------------------------------------------------------
+        // "… of an opponent's choice" target selection (Cuombajj Witches).
+        //
+        // CR 601.2c (choose targets) precedes 601.2g–h (pay costs), so this runs before any cost
+        // work. The controller's own targets already ride on `action.targets`; any opponent-chosen
+        // requirement is selected here by routing a ChooseTargetsDecision to an opponent. The
+        // resumer merges that pick into `action.targets` and re-enters with
+        // `opponentTargetsChosen = true`, so this block is skipped on the second pass.
+        // -------------------------------------------------------------------
+        if (!action.opponentTargetsChosen) {
+            val fullTargetReqs = if (textReplacement != null) {
+                ability.targetRequirements.map { it.applyTextReplacement(textReplacement) }
+            } else {
+                ability.targetRequirements
+            }
+            val opponentReqs = fullTargetReqs.filter { it.chooser == TargetChooser.Opponent }
+            if (opponentReqs.isNotEmpty()) {
+                return pauseForOpponentChosenTargets(
+                    state, action, cardComponent.name, fullTargetReqs, opponentReqs
+                )
+            }
+        }
 
         // -------------------------------------------------------------------
         // TapXPermanents two-step UI flow (legal-actions submission path).
@@ -1167,6 +1205,98 @@ class ActivateAbilityHandler(
         }
 
         return ExecutionResult.success(currentState, allEvents)
+    }
+
+    /**
+     * Raise a [com.wingedsheep.engine.core.ChooseTargetsDecision] routed to an opponent for an
+     * activated ability's "… of an opponent's choice" target requirement(s) (Cuombajj Witches),
+     * and push the continuation that resumes the activation once the opponent has chosen.
+     *
+     * Legal targets are computed relative to [action].playerId (the ability's controller), so
+     * hexproof/protection/shroud are measured against the controller — exactly the printed ruling
+     * ("an opponent can't target a creature they control with hexproof"). The pause happens before
+     * any cost is paid; cancellation simply pops the frame.
+     */
+    private fun pauseForOpponentChosenTargets(
+        state: GameState,
+        action: ActivateAbility,
+        sourceName: String,
+        fullTargetReqs: List<com.wingedsheep.sdk.scripting.targets.TargetRequirement>,
+        opponentReqs: List<com.wingedsheep.sdk.scripting.targets.TargetRequirement>
+    ): ExecutionResult {
+        // The resumer interleaves the controller's and opponent's targets back into one list by
+        // consuming exactly `count` targets per requirement (the positional model
+        // EffectContext.buildNamedTargets uses on resolution). That holds only for fixed-count
+        // requirements; an optional/variable/unlimited one would misalign the cursors. Cuombajj is
+        // the only printed use and is fixed-count — reject the unsupported shape here, before
+        // bothering an opponent with a decision, rather than after the pick on the resume path.
+        if (fullTargetReqs.any { it.minCount != it.count || it.optional || it.unlimited }) {
+            return ExecutionResult.error(
+                state,
+                "Opponent-chosen targets are only supported with fixed-count requirements"
+            )
+        }
+
+        // The controller chooses which opponent makes the selection (per the card's own ruling:
+        // "You choose which opponent chooses the second target"). In a two-player game that's the
+        // sole opponent; choosing among several opponents in multiplayer is a future extension —
+        // default to the first opponent in turn order so the ability still functions.
+        val deciderId = state.turnOrder.firstOrNull { it != action.playerId && state.hasEntity(it) }
+            ?: return ExecutionResult.error(state, "No opponent available to choose a target")
+
+        val finder = com.wingedsheep.engine.handlers.TargetFinder()
+        val legalTargets = mutableMapOf<Int, List<EntityId>>()
+        val requirementInfos = opponentReqs.mapIndexed { index, req ->
+            val legal = finder.findLegalTargets(state, req, action.playerId, action.sourceId)
+            if (legal.isEmpty() && req.effectiveMinCount > 0) {
+                // A required target with no legal choice means the ability can't be activated
+                // (the enumerator gates on this; guard the engine-direct path too).
+                return ExecutionResult.error(state, "No legal target for opponent's choice")
+            }
+            legalTargets[index] = legal
+            com.wingedsheep.engine.core.TargetRequirementInfo(
+                index = index,
+                description = req.description,
+                minTargets = req.effectiveMinCount,
+                maxTargets = req.count
+            )
+        }
+
+        val decisionId = java.util.UUID.randomUUID().toString()
+        // The prompt is shown to the opponent who is making the choice, so the "of an opponent's
+        // choice" suffix the requirement description carries is redundant noise here — strip it.
+        val prompt = "Choose ${opponentReqs.joinToString(" and ") {
+            it.description.removeSuffix(" of an opponent's choice")
+        }} for $sourceName"
+        val decision = com.wingedsheep.engine.core.ChooseTargetsDecision(
+            id = decisionId,
+            playerId = deciderId,
+            prompt = prompt,
+            context = com.wingedsheep.engine.core.DecisionContext(
+                sourceId = action.sourceId,
+                sourceName = sourceName,
+                phase = com.wingedsheep.engine.core.DecisionPhase.CASTING
+            ),
+            targetRequirements = requirementInfos,
+            legalTargets = legalTargets
+        )
+        val continuation = com.wingedsheep.engine.core.ActivateAbilityOpponentTargetContinuation(
+            decisionId = decisionId,
+            action = action,
+            opponentRequirements = opponentReqs,
+            fullRequirements = fullTargetReqs,
+            deciderId = deciderId
+        )
+        val pausedState = state
+            .withPendingDecision(decision)
+            .pushContinuation(continuation)
+        val event = com.wingedsheep.engine.core.DecisionRequestedEvent(
+            decisionId = decisionId,
+            playerId = deciderId,
+            decisionType = "CHOOSE_TARGETS",
+            prompt = prompt
+        )
+        return ExecutionResult.paused(pausedState, decision, listOf(event))
     }
 
     /**
