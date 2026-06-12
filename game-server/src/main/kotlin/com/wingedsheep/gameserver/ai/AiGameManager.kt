@@ -33,7 +33,8 @@ class AiGameManager(
     private val gameProperties: GameProperties,
     private val sessionRegistry: SessionRegistry,
     private val deckGenerator: SealedDeckGenerator,
-    private val cardRegistry: CardRegistry
+    private val cardRegistry: CardRegistry,
+    private val llmCostTracker: com.wingedsheep.gameserver.tournament.llm.LlmCostTracker
 ) {
     private val activeSessions = ConcurrentHashMap<String, AiWebSocketSession>()
 
@@ -127,7 +128,12 @@ class AiGameManager(
                 playerId = aiPlayerId,
                 gameStateProvider = { gameSession?.getStateSnapshot() }
             )
-            val llmClient = LlmClient(aiConfig)
+            // Attribute in-game LLM token usage + cost to this game session, so the LLM-tournament
+            // can report cost per game. No-op when there's no game (e.g. placeholder identities).
+            val gameId = gameSession?.sessionId
+            val usageSink: ((com.wingedsheep.ai.llm.LlmUsage) -> Unit)? =
+                if (gameId != null) { usage -> llmCostTracker.record(gameId, usage) } else null
+            val llmClient = LlmClient(aiConfig, usageSink)
             LlmAiPlayerController(aiConfig, llmClient, aiPlayerId, fallback = engineFallback)
         }
     }
@@ -451,6 +457,18 @@ class AiGameManager(
 
         activeSessions[gameSession.sessionId] = newSession
         logger.info("Wired AI {} for game {} [mode={}]", aiPlayerId.value, gameSession.sessionId, aiProperties.mode)
+    }
+
+    /**
+     * Adjust the per-decision thinking delay of an AI player's live session. Used by the
+     * LLM-tournament pacing control to speed up / slow down an in-progress AI-vs-AI game.
+     * No-op if the player isn't an AI or has no live session.
+     */
+    fun setThinkingDelay(aiPlayerId: EntityId, thinkingDelayMs: Long) {
+        val ws = sessionRegistry.getAllIdentities()
+            .firstOrNull { it.playerId == aiPlayerId }
+            ?.webSocketSession as? AiWebSocketSession
+        ws?.thinkingDelayMs = thinkingDelayMs
     }
 
     /** Set of all AI player IDs (persists across matches within a tournament). */

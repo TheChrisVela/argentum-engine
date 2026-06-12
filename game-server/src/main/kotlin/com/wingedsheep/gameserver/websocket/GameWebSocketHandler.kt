@@ -21,7 +21,8 @@ class GameWebSocketHandler(
     private val gamePlayHandler: GamePlayHandler,
     private val lobbyHandler: LobbyHandler,
     private val quickGameLobbyHandler: QuickGameLobbyHandler,
-    private val sender: MessageSender
+    private val sender: MessageSender,
+    private val llmTournamentService: com.wingedsheep.gameserver.tournament.llm.LlmTournamentService
 ) : TextWebSocketHandler() {
 
     private val logger = LoggerFactory.getLogger(GameWebSocketHandler::class.java)
@@ -32,6 +33,9 @@ class GameWebSocketHandler(
         gamePlayHandler.broadcastActiveMatchesCallback = { lobbyId -> lobbyHandler.broadcastActiveMatchesToWaitingPlayers(lobbyId) }
         gamePlayHandler.handleMatchResultCallback = { lobbyId, gameSessionId, winnerId, winnerLife ->
             lobbyHandler.handleMatchResult(lobbyId, gameSessionId, winnerId, winnerLife)
+        }
+        gamePlayHandler.llmTournamentGameOverCallback = { gameSessionId, winnerId, winnerLife ->
+            llmTournamentService.onGameComplete(gameSessionId, winnerId, winnerLife)
         }
         gamePlayHandler.joinSealedGameCallback = { session, msg -> lobbyHandler.handleJoinSealedGame(session, msg) }
         gamePlayHandler.joinLobbyCallback = { session, msg -> lobbyHandler.handleJoinLobby(session, msg) }

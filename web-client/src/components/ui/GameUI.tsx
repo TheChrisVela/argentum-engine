@@ -412,6 +412,14 @@ function ConnectionOverlay({
                 >
                   Scenario Builder
                 </button>
+                {import.meta.env.DEV && (
+                  <button
+                    onClick={() => navigate('/llm-tournament')}
+                    className={styles.secondaryButton}
+                  >
+                    LLM Tournament
+                  </button>
+                )}
                 <button
                   onClick={() => setShowReplays(true)}
                   className={styles.secondaryButton}

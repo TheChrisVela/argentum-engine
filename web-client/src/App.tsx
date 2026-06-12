@@ -44,7 +44,16 @@ export default function App() {
   const matchIntro = useGameStore((state) => state.matchIntro)
   const startCombat = useGameStore((state) => state.startCombat)
   const connect = useGameStore((state) => state.connect)
+  const spectateGame = useGameStore((state) => state.spectateGame)
   const hasConnectedRef = useRef(false)
+
+  // Dev deep-link: /?spectate=<gameSessionId> connects and auto-spectates that game,
+  // used by the LLM-tournament page's "Watch" links to watch a live AI-vs-AI match.
+  const spectateParam = useMemo(
+    () => new URLSearchParams(window.location.search).get('spectate'),
+    []
+  )
+  const hasSpectatedRef = useRef(false)
 
   const viewingPlayer = useViewingPlayer()
   const battlefieldCards = useBattlefieldCards()
@@ -59,13 +68,23 @@ export default function App() {
 
   useEffect(() => {
     // Only auto-connect if we already have a stored player name (returning user)
-    // Otherwise, GameUI will show the name entry screen first
+    // Otherwise, GameUI will show the name entry screen first. A spectate deep-link
+    // connects under a throwaway name so a fresh dev browser can watch immediately.
     const storedName = localStorage.getItem('argentum-player-name')
-    if (storedName && connectionStatus === 'disconnected' && !hasConnectedRef.current) {
+    const name = storedName ?? (spectateParam ? `Spectator-${Math.floor(Math.random() * 9000 + 1000)}` : null)
+    if (name && connectionStatus === 'disconnected' && !hasConnectedRef.current) {
       hasConnectedRef.current = true
-      connect(storedName)
+      connect(name)
     }
-  }, [connectionStatus, connect])
+  }, [connectionStatus, connect, spectateParam])
+
+  // Once connected, honor a /?spectate=<gameId> deep-link (fire once).
+  useEffect(() => {
+    if (spectateParam && connectionStatus === 'connected' && !hasSpectatedRef.current && !spectatingState) {
+      hasSpectatedRef.current = true
+      spectateGame(spectateParam)
+    }
+  }, [spectateParam, connectionStatus, spectatingState, spectateGame])
 
   // Keep the URL bar in sync with tournament state so the link is shareable
   useEffect(() => {

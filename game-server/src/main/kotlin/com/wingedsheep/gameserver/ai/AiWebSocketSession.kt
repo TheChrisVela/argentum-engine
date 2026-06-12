@@ -41,7 +41,12 @@ private val logger = LoggerFactory.getLogger(AiWebSocketSession::class.java)
 class AiWebSocketSession(
     private val aiPlayerId: EntityId,
     private val controller: AiPlayerController,
-    private val thinkingDelayMs: Long = 500,
+    /**
+     * Per-decision artificial delay so a human can follow along. Mutable + volatile so the
+     * LLM-tournament pacing control can speed up / slow down a live AI-vs-AI game; it's re-read
+     * on every decision, so a change takes effect on the AI's next move.
+     */
+    @Volatile var thinkingDelayMs: Long = 500,
     private val onActionReady: (EntityId, GameAction) -> Unit,
     private val onMulliganKeep: (EntityId) -> Unit,
     private val onMulliganTake: (EntityId) -> Unit,

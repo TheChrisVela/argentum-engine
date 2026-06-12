@@ -17,8 +17,23 @@ import java.time.Duration
 
 private val logger = LoggerFactory.getLogger(LlmClient::class.java)
 
+/**
+ * Token usage + dollar cost for one LLM call. [costUsd] is null when the endpoint doesn't report
+ * it (only OpenRouter does, and only when the request asks for `usage.include=true`).
+ */
+data class LlmUsage(
+    val model: String,
+    val generationId: String?,
+    val promptTokens: Int,
+    val completionTokens: Int,
+    val totalTokens: Int,
+    val costUsd: Double?
+)
+
 class LlmClient(
-    private val properties: AiConfig
+    private val properties: AiConfig,
+    /** Optional callback invoked with token usage + cost after each successful response. */
+    private val usageSink: ((LlmUsage) -> Unit)? = null
 ) {
     private val json = Json {
         ignoreUnknownKeys = true
@@ -60,6 +75,7 @@ class LlmClient(
                     logger.warn("LLM API error (attempt {}, status {}): {}", attempt, response.statusCode(), body)
                 } else if (body != null) {
                     val parsed = json.decodeFromString<ChatCompletionResponse>(body)
+                    reportUsage(parsed, effectiveModel)
                     val content = parsed.choices.firstOrNull()?.message?.content
                     if (content != null) {
                         logger.info("LLM response (attempt {}):\n{}", attempt, content)
@@ -90,6 +106,11 @@ class LlmClient(
         val jsonObj = buildJsonObject {
             put("model", model)
             put("temperature", 0.8)
+            // OpenRouter returns the actual dollar cost in `usage.cost` only when asked. Other
+            // OpenAI-compatible endpoints may reject the unknown field, so gate on the provider.
+            if (properties.baseUrl.contains("openrouter", ignoreCase = true)) {
+                putJsonObject("usage") { put("include", true) }
+            }
             reasoningEffort?.let { put("reasoning_effort", it) }
             cacheControl?.let {
                 putJsonObject("cache_control") {
@@ -119,6 +140,21 @@ class LlmClient(
         }
         return jsonObj.toString()
     }
+
+    private fun reportUsage(parsed: ChatCompletionResponse, model: String) {
+        val sink = usageSink ?: return
+        val usage = parsed.usage ?: return
+        sink(
+            LlmUsage(
+                model = parsed.model ?: model,
+                generationId = parsed.id,
+                promptTokens = usage.promptTokens,
+                completionTokens = usage.completionTokens,
+                totalTokens = usage.totalTokens,
+                costUsd = usage.cost
+            )
+        )
+    }
 }
 
 @Serializable
@@ -136,7 +172,22 @@ data class CacheControl(
 
 @Serializable
 data class ChatCompletionResponse(
-    val choices: List<Choice> = emptyList()
+    val id: String? = null,
+    val model: String? = null,
+    val choices: List<Choice> = emptyList(),
+    val usage: Usage? = null
+)
+
+@Serializable
+data class Usage(
+    @SerialName("prompt_tokens")
+    val promptTokens: Int = 0,
+    @SerialName("completion_tokens")
+    val completionTokens: Int = 0,
+    @SerialName("total_tokens")
+    val totalTokens: Int = 0,
+    /** OpenRouter-only: total cost of this generation in USD (present when usage.include=true). */
+    val cost: Double? = null
 )
 
 @Serializable

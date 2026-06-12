@@ -68,6 +68,11 @@ class GamePlayHandler(
     // Callback for full match result handling (report result + notify + check round complete, all under lock)
     var handleMatchResultCallback: ((String, String, EntityId?, Int) -> Unit)? = null
 
+    // Callback fired when ANY game ends, used by the dev-only LLM tournament orchestrator to
+    // advance its bracket. Args: (gameSessionId, winnerId, winnerLifeRemaining). The orchestrator
+    // ignores game ids it doesn't own, so this is safe to fire unconditionally.
+    var llmTournamentGameOverCallback: ((String, EntityId?, Int) -> Unit)? = null
+
     fun handle(session: WebSocketSession, message: ClientMessage) {
         when (message) {
             is ClientMessage.CreateGame -> handleCreateGame(session, message)
@@ -296,6 +301,78 @@ class GamePlayHandler(
     private fun sendMulliganDecision(gameSession: GameSession, playerSession: PlayerSession) {
         val decision = gameSession.getMulliganDecision(playerSession.playerId)
         sender.send(playerSession.webSocketSession, decision)
+    }
+
+    /**
+     * Create and start a fresh AI-vs-AI [GameSession] with no human seats, for the dev-only
+     * LLM tournament orchestrator. Both players must already be registered AI identities (minted
+     * via [AiGameManager.createAiIdentity]); each gets its own pre-built deck and model. Mirrors
+     * the AI-wiring half of [TournamentMatchHandler.startSingleMatch] without any lobby plumbing.
+     *
+     * @return the new game session id (use it to spectate / locate the replay).
+     */
+    fun createAndStartAiVsAiGame(
+        player1Id: EntityId,
+        player1Deck: Map<String, Int>,
+        player2Id: EntityId,
+        player2Deck: Map<String, Int>,
+        setCode: String?,
+        thinkingDelayMs: Long
+    ): String {
+        val gameSession = GameSession(
+            cardRegistry = cardRegistry,
+            useHandSmoother = gameProperties.handSmoother.enabled,
+            debugMode = gameProperties.debugMode,
+            printingRegistry = printingRegistry,
+        )
+        gameSession.quickGameSetCode = setCode
+
+        wireAiSeat(gameSession, player1Id, player1Deck, thinkingDelayMs)
+        wireAiSeat(gameSession, player2Id, player2Deck, thinkingDelayMs)
+
+        gameRepository.save(gameSession)
+        startGame(gameSession)
+        logger.info("Started AI-vs-AI game {} ({} vs {})",
+            gameSession.sessionId, player1Id.value, player2Id.value)
+        return gameSession.sessionId
+    }
+
+    private fun wireAiSeat(
+        gameSession: GameSession,
+        aiPlayerId: EntityId,
+        deck: Map<String, Int>,
+        thinkingDelayMs: Long
+    ) {
+        val identity = sessionRegistry.getAllIdentities().firstOrNull { it.playerId == aiPlayerId }
+            ?: error("AI identity not found for ${aiPlayerId.value} — create it via AiGameManager.createAiIdentity first")
+
+        gameSession.addPlayer(identity.toPlayerSession(), deck)
+        gameSession.setPlayerPersistenceInfo(
+            aiPlayerId, identity.playerName, identity.token,
+            isAi = true, aiModelOverride = identity.aiModelOverride
+        )
+
+        aiGameManager.wireAiForGame(
+            gameSession = gameSession,
+            aiPlayerId = aiPlayerId,
+            deckList = deck,
+            onActionReady = { id, action -> handleAiAction(gameSession, id, action) },
+            onMulliganKeep = { id -> handleAiMulliganKeep(gameSession, id) },
+            onMulliganTake = { id -> handleAiMulliganTake(gameSession, id) },
+            onBottomCards = { id, cardIds -> handleAiBottomCards(gameSession, id, cardIds) }
+        )
+
+        // wireAiForGame swapped in a fresh AiWebSocketSession; point the game session's player
+        // slot at it so broadcasts reach the wired session, then apply the pacing speed.
+        identity.webSocketSession?.let { newWs ->
+            gameSession.replacePlayerSession(aiPlayerId, PlayerSession(
+                webSocketSession = newWs,
+                playerId = aiPlayerId,
+                playerName = identity.playerName,
+                currentGameSessionId = gameSession.sessionId
+            ))
+        }
+        aiGameManager.setThinkingDelay(aiPlayerId, thinkingDelayMs)
     }
 
     private fun handleKeepHand(session: WebSocketSession) {
@@ -552,6 +629,16 @@ class GamePlayHandler(
             )
             gameHistoryRepository.save(record)
             logger.info("Saved replay for game $gameSessionId ($frameCount frames)")
+        }
+
+        // Notify the dev LLM-tournament orchestrator (no-op for games it doesn't own).
+        // Fired before cleanup so it can launch the next bracket game off its own coroutine.
+        llmTournamentGameOverCallback?.let { callback ->
+            val winnerLife = if (winnerId != null) {
+                gameSession.getStateForTesting()?.getEntity(winnerId)
+                    ?.get<LifeTotalComponent>()?.life ?: 0
+            } else 0
+            callback(gameSessionId, winnerId, winnerLife)
         }
 
         gameRepository.remove(gameSessionId)
