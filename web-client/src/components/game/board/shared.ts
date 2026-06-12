@@ -26,6 +26,20 @@ const SLOT_MAX_CARD_WIDTH = 200
 // realistic slot height; a larger bound only adds search work.
 const MAX_LINES_PER_ROW = 3
 
+// Preferred readability floor for battlefield cards. When a board is so
+// crowded that respecting it would make the layout taller than the slot
+// (overlapping the center HUD), cards shrink further — fitting beats size.
+const PREFERRED_MIN_CARD_WIDTH = 60
+
+// Below this, cards are unrecognizable; clamp here and accept overflow for
+// pathological boards (20+ permanents on a phone).
+const ABSOLUTE_MIN_CARD_WIDTH = 40
+
+// Minimum gap kept toward the center HUD when the comfortable `breathing`
+// margin has been sacrificed for card size. Just clears the StepStrip's
+// active-player chevron (~9px).
+const TIGHT_HUD_GAP = 10
+
 /**
  * Slot-derived battlefield layout: the card sizes to render with, plus the
  * number of wrap lines each row was budgeted for (used by Battlefield.tsx to
@@ -145,55 +159,79 @@ export function useSlotSizedResponsive(
     // the optimum depends on slot aspect ratio and card counts. Strict `>`
     // with ascending iteration means fewer lines win ties — a board that fits
     // comfortably on single lines keeps the flat layout.
+    //
+    // The vertical budget also reserves the two rows' minHeight padding
+    // (battlefieldRowPadding = 0.08 × cardHeight each, hence the 0.224·cw
+    // term folded into the divisor).
     const maxFrontLines = Math.min(MAX_LINES_PER_ROW, Math.max(1, frontRowCount))
     const maxBackLines = Math.min(MAX_LINES_PER_ROW, Math.max(1, backRowCount))
-    let bestWidth = 0
-    let frontRowLines = 1
-    let backRowLines = 1
-    for (let front = 1; front <= maxFrontLines; front++) {
-      for (let back = 1; back <= maxBackLines; back++) {
-        const totalLines = front + back
-        // Vertical-fit cap: every line costs one cardHeight, and wrapped lines
-        // within a row are separated by the flex `gap` (cardGap).
-        const heightBudget =
-          slotSize.height - dividerSpace - breathing - (totalLines - 2) * base.cardGap
-        const widthFromHeight = Math.floor(heightBudget / totalLines / 1.4)
-        const candidate = Math.min(
-          SLOT_MAX_CARD_WIDTH,
-          widthFromHeight,
-          widthCapForRow(frontRowCount, frontRowTappedCount, frontRowStackedExtra, front),
-          widthCapForRow(backRowCount, backRowTappedCount, backRowStackedExtra, back),
-        )
-        if (candidate > bestWidth) {
-          bestWidth = candidate
-          frontRowLines = front
-          backRowLines = back
+    const search = (hudGap: number, maxWidth: number) => {
+      let width = 0
+      let frontLines = 1
+      let backLines = 1
+      for (let front = 1; front <= maxFrontLines; front++) {
+        for (let back = 1; back <= maxBackLines; back++) {
+          const totalLines = front + back
+          // Vertical-fit cap: every line costs one cardHeight, and wrapped
+          // lines within a row are separated by the flex `gap` (cardGap).
+          const heightBudget =
+            slotSize.height - dividerSpace - hudGap - (totalLines - 2) * base.cardGap
+          const widthFromHeight = Math.floor(heightBudget / (totalLines * 1.4 + 0.224))
+          const candidate = Math.min(
+            maxWidth,
+            widthFromHeight,
+            widthCapForRow(frontRowCount, frontRowTappedCount, frontRowStackedExtra, front),
+            widthCapForRow(backRowCount, backRowTappedCount, backRowStackedExtra, back),
+          )
+          if (candidate > width) {
+            width = candidate
+            frontLines = front
+            backLines = back
+          }
         }
       }
+      return { width, frontLines, backLines }
     }
 
-    const slotCardWidth = Math.max(60, bestWidth)
-    if (bestWidth < 60) {
-      // The 60px readability floor overrode the fit math, so the planned line
-      // counts no longer hold — at the floor width, rows wrap into more lines
-      // than budgeted and some overflow is unavoidable. Re-derive each row's
-      // line count from what greedy flex-wrap actually produces at the floor
-      // width, so the minHeight reservations in Battlefield.tsx track reality
-      // instead of the impossible plan.
-      const linesAtFloor = (count: number, tappedCount: number, stackedExtra: number): number => {
-        if (count <= 0) return 1
-        const contentWidth =
-          count * (slotCardWidth + base.cardGap) +
-          tappedCount * (0.4 * slotCardWidth + 8) +
-          stackedExtra * stackOffset
-        const lineCapacity = slotSize.width + base.cardGap
-        return Math.min(
-          MAX_LINES_PER_ROW,
-          Math.max(1, Math.ceil(contentWidth / lineCapacity)),
-        )
+    // Pass 1: comfortable layout — full breathing gap toward the center HUD.
+    let { width: slotCardWidth, frontLines: frontRowLines, backLines: backRowLines } =
+      search(breathing, SLOT_MAX_CARD_WIDTH)
+
+    if (slotCardWidth < PREFERRED_MIN_CARD_WIDTH) {
+      // Crowded board: cards would drop below the preferred readability
+      // floor. Re-search with the breathing margin sacrificed (keeping just
+      // enough to clear the StepStrip chevron) and the floor as the ceiling —
+      // trading the comfort gap for card size, but never letting the layout
+      // grow taller than the slot, which is what used to push cards over the
+      // center HUD on phones.
+      const tight = search(TIGHT_HUD_GAP, PREFERRED_MIN_CARD_WIDTH)
+      slotCardWidth = tight.width
+      frontRowLines = tight.frontLines
+      backRowLines = tight.backLines
+
+      if (slotCardWidth < ABSOLUTE_MIN_CARD_WIDTH) {
+        // Even unreadably small cards can't fit this board (20+ permanents on
+        // a phone). Clamp to the absolute minimum and re-derive each row's
+        // line count from what greedy flex-wrap actually produces at that
+        // width, so the minHeight reservations in Battlefield.tsx track
+        // reality instead of the impossible plan. Some overflow is now
+        // unavoidable.
+        slotCardWidth = ABSOLUTE_MIN_CARD_WIDTH
+        const linesAtFloor = (count: number, tappedCount: number, stackedExtra: number): number => {
+          if (count <= 0) return 1
+          const contentWidth =
+            count * (slotCardWidth + base.cardGap) +
+            tappedCount * (0.4 * slotCardWidth + 8) +
+            stackedExtra * stackOffset
+          const lineCapacity = slotSize.width + base.cardGap
+          return Math.min(
+            MAX_LINES_PER_ROW,
+            Math.max(1, Math.ceil(contentWidth / lineCapacity)),
+          )
+        }
+        frontRowLines = linesAtFloor(frontRowCount, frontRowTappedCount, frontRowStackedExtra)
+        backRowLines = linesAtFloor(backRowCount, backRowTappedCount, backRowStackedExtra)
       }
-      frontRowLines = linesAtFloor(frontRowCount, frontRowTappedCount, frontRowStackedExtra)
-      backRowLines = linesAtFloor(backRowCount, backRowTappedCount, backRowStackedExtra)
     }
     const slotCardHeight = Math.round(slotCardWidth * 1.4)
 

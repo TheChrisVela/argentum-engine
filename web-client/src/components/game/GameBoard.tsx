@@ -700,9 +700,11 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
               style={{
                 ...styles.floatingBarButton,
                 ...(passEnabled ? getPassButtonStyle() : {}),
-                width: 170,
-                height: 42,
-                padding: '0 24px',
+                // On phones the desktop-sized button dwarfs the other
+                // controls and covers the hand — let the label size it.
+                width: responsive.isMobile ? 'auto' : 170,
+                height: responsive.isMobile ? 32 : 42,
+                padding: responsive.isMobile ? '0 14px' : '0 24px',
                 color: passEnabled ? 'white' : '#555',
                 fontWeight: 600,
                 fontSize: responsive.fontSize.normal,
@@ -722,7 +724,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       {!spectatorMode && viewingPlayer && !isInManaSelectionMode && !isInCounterDistMode && (
         <div style={{
           position: 'fixed',
-          bottom: responsive.isMobile ? 64 : 66,
+          bottom: responsive.isMobile ? 54 : 66,
           right: 16,
           display: 'flex',
           gap: 4,
