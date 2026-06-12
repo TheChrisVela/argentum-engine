@@ -42,36 +42,35 @@ const ATTACHMENT_COLLAPSE_THRESHOLD = 3
  */
 export function Battlefield({ isOpponent, spectatorMode = false }: { isOpponent: boolean; spectatorMode?: boolean }) {
   const slotRef = useRef<HTMLDivElement>(null)
-  // Largest card count across the two rows for this side. Drives the
-  // horizontal-fit constraint in useSlotSizedResponsive — cards shrink so
-  // they all sit side-by-side without wrapping to a second physical line.
+  // Per-row card counts for this side drive the fit constraints in
+  // useSlotSizedResponsive — it picks card sizes plus how many wrap lines
+  // each row gets, trading unused vertical space for larger cards when a
+  // row is crowded (or the viewport is a narrow portrait phone).
   const cards = useBattlefieldCards()
   // Tapped cards are rotated 90° on the battlefield — their horizontal footprint
   // is cardHeight (≈1.4×cardWidth) rather than cardWidth. Count per row so the
   // horizontal-fit constraint in useSlotSizedResponsive reserves the rotated
-  // width; otherwise many tapped creatures on a narrow viewport overflow and
-  // wrap to a second physical row, which pushes the row up into the center HUD.
+  // width; otherwise many tapped creatures on a narrow viewport overflow into
+  // an unbudgeted wrap line, which pushes the row up into the center HUD.
   const countTapped = (groups: readonly { isTapped: boolean }[]) =>
     groups.reduce((sum, c) => sum + (c.isTapped ? 1 : 0), 0)
-  const maxRowCount = isOpponent
-    ? Math.max(
-        cards.opponentLands.length + cards.opponentOther.length,
-        cards.opponentCreatures.length + cards.opponentPlaneswalkers.length,
-      )
-    : Math.max(
-        cards.playerLands.length + cards.playerOther.length,
-        cards.playerCreatures.length + cards.playerPlaneswalkers.length,
-      )
-  const maxRowTappedCount = isOpponent
-    ? Math.max(
-        countTapped(cards.opponentLands) + countTapped(cards.opponentOther),
-        countTapped(cards.opponentCreatures) + countTapped(cards.opponentPlaneswalkers),
-      )
-    : Math.max(
-        countTapped(cards.playerLands) + countTapped(cards.playerOther),
-        countTapped(cards.playerCreatures) + countTapped(cards.playerPlaneswalkers),
-      )
-  const slotResponsive = useSlotSizedResponsive(slotRef, maxRowCount, maxRowTappedCount)
+  const frontGroups = isOpponent
+    ? [cards.opponentCreatures, cards.opponentPlaneswalkers]
+    : [cards.playerCreatures, cards.playerPlaneswalkers]
+  const backGroups = isOpponent
+    ? [cards.opponentLands, cards.opponentOther]
+    : [cards.playerLands, cards.playerOther]
+  const countAll = (groups: readonly (readonly { isTapped: boolean }[])[]) =>
+    groups.reduce((sum, g) => sum + g.length, 0)
+  const countAllTapped = (groups: readonly (readonly { isTapped: boolean }[])[]) =>
+    groups.reduce((sum, g) => sum + countTapped(g), 0)
+  const { sizes, frontRowLines, backRowLines } = useSlotSizedResponsive(
+    slotRef,
+    countAll(frontGroups),
+    countAllTapped(frontGroups),
+    countAll(backGroups),
+    countAllTapped(backGroups),
+  )
   return (
     <div
       ref={slotRef}
@@ -85,14 +84,29 @@ export function Battlefield({ isOpponent, spectatorMode = false }: { isOpponent:
         minHeight: 0,
       }}
     >
-      <ResponsiveContext.Provider value={slotResponsive}>
-        <BattlefieldContent isOpponent={isOpponent} spectatorMode={spectatorMode} />
+      <ResponsiveContext.Provider value={sizes}>
+        <BattlefieldContent
+          isOpponent={isOpponent}
+          spectatorMode={spectatorMode}
+          frontRowLines={frontRowLines}
+          backRowLines={backRowLines}
+        />
       </ResponsiveContext.Provider>
     </div>
   )
 }
 
-function BattlefieldContent({ isOpponent, spectatorMode = false }: { isOpponent: boolean; spectatorMode?: boolean }) {
+function BattlefieldContent({
+  isOpponent,
+  spectatorMode = false,
+  frontRowLines,
+  backRowLines,
+}: {
+  isOpponent: boolean
+  spectatorMode?: boolean
+  frontRowLines: number
+  backRowLines: number
+}) {
   const {
     playerLands,
     playerCreatures,
@@ -448,21 +462,26 @@ function BattlefieldContent({ isOpponent, spectatorMode = false }: { isOpponent:
     />
   ) : null
 
-  // Both rows must reserve at least one cardHeight + padding worth of vertical
-  // space. Without this, when one row wraps (its inner column grows to 2 ×
-  // cardHeight), flex shrinking lets the other row's container collapse to 0
-  // — but the cards inside don't shrink, so they visually overflow into the
-  // divider / wrapped row's territory. Equal floors keep the rows honest.
-  const rowMinHeight = responsive.battlefieldCardHeight + responsive.battlefieldRowPadding
+  // Each row reserves the vertical space its budgeted wrap lines need
+  // (cardHeight per line + the flex gap between lines, + padding). Without
+  // this, when one row wraps, flex shrinking lets the other row's container
+  // collapse to 0 — but the cards inside don't shrink, so they visually
+  // overflow into the divider / wrapped row's territory. The line counts come
+  // from useSlotSizedResponsive, which already sized cards so the combined
+  // reservation fits the slot.
+  const rowMinHeight = (lines: number) =>
+    lines * responsive.battlefieldCardHeight +
+    (lines - 1) * responsive.cardGap +
+    responsive.battlefieldRowPadding
   const frontRow = renderGridRow(
     groupedCreatures,
     groupedPlaneswalkers,
-    { minHeight: rowMinHeight },
+    { minHeight: rowMinHeight(frontRowLines) },
   )
   const backRow = renderGridRow(
     groupedLands,
     groupedOther,
-    { minHeight: rowMinHeight },
+    { minHeight: rowMinHeight(backRowLines) },
   )
 
   return (
