@@ -20,6 +20,7 @@ internal fun BridgeBuilder.zoneMovement() {
     composed("PutGraveyardCardOntoBattlefield", "MoveCollection graveyard->battlefield (reanimate)", composes = listOf("MoveToZone"))
     composed("ShuffleGraveyardCardIntoLibrary", "MoveCollection + ShuffleLibrary", composes = listOf("MoveToZone", "ShuffleLibrary"))
     composed("ReturnDeadGraveyardCardToTopOfLibrary", "MoveCollection -> library top", composes = listOf("MoveToZone"))
+    composed("PutGraveyardCardOnBottomOfLibrary", "MoveCollection -> library bottom (Tomb Trawler)", composes = listOf("MoveToZone"))
     composed("ReturnGraveyardCardToHand", UNIVERSAL, composes = listOf("MoveToZone"))
     composed("PutEachGraveyardCardIntoHand", UNIVERSAL, composes = listOf("MoveCollection"))
     composed("ExileGraveyardCard", UNIVERSAL, composes = listOf("MoveToZone"))

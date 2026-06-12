@@ -849,6 +849,14 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
         val category = spellCastCategory(argv?.getOrNull(1) as? JsonObject) ?: return null
         return castTriggerDsl(scope, category)
     }
+
+    // "Whenever you commit a crime" — WhenAPlayerCommitsACrime scoped to SinglePlayer(You). Only the
+    // You scope maps to Triggers.YouCommitCrime; any other player scope (AnyPlayer / Opponent) has no
+    // matching Triggers.* constant yet, so it declines -> SCAFFOLD. Pairs with the TriggerOnceEachTurn
+    // envelope for "this ability triggers only once each turn" (Marauding Sphinx).
+    if (jsonContains(trig, "_Trigger", "WhenAPlayerCommitsACrime") && jsonContains(trig, "_Player", "You"))
+        return "Triggers.YouCommitCrime"
+
     return null
 }
 

@@ -196,6 +196,14 @@ internal val zoneHandlers: Map<String, ActionHandler> = actionHandlers {
     on("SearchLibrary") { _, args, _ -> renderSearch(args) }
     on("LookAtTheTopNumberCardsOfLibrary", "LookAtTheTopNumberCardsOfPlayersLibrary") { node, args, tvar -> renderLook(node, args, tvar) }
 
+    on("PutGraveyardCardOnBottomOfLibrary") { _, args, tvar ->
+        // "Put target card from your graveyard on the bottom of your library" (Tomb Trawler). The
+        // target graveyard card is already recovered into the bound `tvar`; a plain Move to the bottom
+        // of the library expresses it. Self ("this card from your graveyard") falls back to Self.
+        val tgt = refTarget(args, tvar) ?: "EffectTarget.Self"
+        call("Effects.Move", arg(Lit(tgt)), arg("Zone.LIBRARY"), arg("ZonePlacement.Bottom"))
+    }
+
     on("PutGraveyardCardOntoBattlefield", "PutGraveyardCardIntoHand",
         "ReturnDeadGraveyardCardToTopOfLibrary", "PutPermanentOnTopOfOwnersLibrary") { node, args, tvar ->
         val a = node.strField("_Action")

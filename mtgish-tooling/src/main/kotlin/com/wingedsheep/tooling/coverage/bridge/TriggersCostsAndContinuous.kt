@@ -15,6 +15,8 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // OTJ Plot (CR 718) — "When this card becomes plotted, …" (Triggers.BecomesPlotted, Aloe Alchemist).
     supported("WhenACardBecomesPlotted", "trigger: this card becomes plotted (Triggers.BecomesPlotted)")
     supported("WhenAPermanentBecomesTheTargetOfASpellOrAbility", "trigger: becomes target (Triggers.BecomesTargetByOpponent / BecomesTarget / CreatureYouControlBecomesTargetByOpponent)")
+    // OTJ crime (CR 700.10) — "Whenever you commit a crime, …" (Triggers.YouCommitCrime, Marauding Sphinx).
+    supported("WhenAPlayerCommitsACrime", "trigger: you commit a crime (Triggers.YouCommitCrime)")
 
     // Intervening-if conditions (CR 603.4) gating a TriggerI, plus the Mount "while saddled" gate. The
     // emitter renders the recognised shapes to `triggerCondition = Conditions.*`; an unrenderable
