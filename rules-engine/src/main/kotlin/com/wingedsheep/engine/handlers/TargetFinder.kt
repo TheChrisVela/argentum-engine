@@ -10,7 +10,6 @@ import com.wingedsheep.engine.state.components.player.PlayerHexproofComponent
 import com.wingedsheep.engine.state.components.player.PlayerShroudComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
-import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.targeting.PlayerTargetRestriction
 import com.wingedsheep.sdk.core.Keyword
@@ -400,10 +399,11 @@ class TargetFinder(
         val predicateContext = PredicateContext(controllerId = controllerId)
         return state.stack.filter { spellId ->
             // "Target spell" only matches actual spells — never triggered/activated abilities
-            // on the stack. The base filter is `Any` (zone = STACK), which would otherwise pass
-            // ability entities too, offering an illegal cast that TargetValidator then rejects
-            // ("Target must be a spell on the stack") — see CR 115.4.
-            state.getEntity(spellId)?.has<SpellOnStackComponent>() == true &&
+            // on the stack. A spell is a card on the stack (CR 112.1); an ability on the stack
+            // is an ability, not a spell (CR 113.3b/c, 113.7a). The base filter is `Any`
+            // (zone = STACK), which would otherwise pass ability entities too — so an
+            // empty-targets counterspell could be offered while only an ability is on the stack.
+            state.isSpellOnStack(spellId) &&
                 predicateEvaluator.matches(state, state.projectedState, spellId, filter.baseFilter, predicateContext)
         }
     }
@@ -464,10 +464,9 @@ class TargetFinder(
             targets.add(entityId)
         }
 
-        // Add all spells on the stack
-        targets.addAll(state.stack.filter { spellId ->
-            state.getEntity(spellId)?.get<CardComponent>() != null
-        })
+        // Add all spells on the stack — only actual spells (CR 112.1), never abilities
+        // on the stack (CR 113.3b/c, 113.7a), consistent with findSpellTargets above.
+        targets.addAll(state.stack.filter { spellId -> state.isSpellOnStack(spellId) })
 
         return targets
     }

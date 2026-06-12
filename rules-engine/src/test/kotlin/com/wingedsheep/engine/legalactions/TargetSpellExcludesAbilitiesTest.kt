@@ -1,7 +1,6 @@
 package com.wingedsheep.engine.legalactions
 
 import com.wingedsheep.engine.core.ActivateAbility
-import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.legalactions.support.EnumerationTestDriver
 import com.wingedsheep.engine.legalactions.support.shouldContainCastOf
 import com.wingedsheep.engine.legalactions.support.shouldNotContainCastOf
@@ -18,6 +17,7 @@ import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
 
 /**
  * Regression test for the "target spell" enumeration loop.
@@ -25,14 +25,14 @@ import io.kotest.core.spec.style.FunSpec
  * A counterspell's target requirement is `TargetSpell()`, whose filter is
  * `Any` with `zone = STACK`. The enumerator's stack-target finders used to
  * return *every* stack object — including triggered/activated abilities — so a
- * counterspell was offered as a legal cast whenever ANYTHING was on the stack.
- * [com.wingedsheep.engine.mechanics.targeting.TargetValidator] then rejected the
- * chosen ability ("Target must be a spell on the stack"), and an AI that re-picked
- * the same enumerated action looped forever.
+ * counterspell was offered as a legal cast whenever ANYTHING was on the stack,
+ * and an AI that re-picked the same (ultimately illegal) enumerated action
+ * looped forever.
  *
- * "Target spell" must match only actual spells (entities with a
- * `SpellOnStackComponent`), never abilities on the stack (CR 115.4 — a spell or
- * ability that targets a spell can't target an ability).
+ * "Target spell" must match only actual spells (a spell is a card on the stack,
+ * CR 112.1), never abilities on the stack — an activated or triggered ability on
+ * the stack is an ability, not a spell (CR 113.3b/c, 113.7a). The canonical marker
+ * is `SpellOnStackComponent`, surfaced via `GameState.isSpellOnStack`.
  */
 class TargetSpellExcludesAbilitiesTest : FunSpec({
 
@@ -71,7 +71,7 @@ class TargetSpellExcludesAbilitiesTest : FunSpec({
 
         // P1 controls the artifact and holds Counterspell with mana up.
         val pinger = driver.game.putPermanentOnBattlefield(p1, "Life Pinger")
-        val counterspell = driver.game.putCardInHand(p1, "Counterspell")
+        driver.game.putCardInHand(p1, "Counterspell")
         driver.game.giveMana(p1, Color.BLUE, 2)
 
         // Sanity: with an empty stack, Counterspell has no legal target → not castable.
@@ -79,7 +79,7 @@ class TargetSpellExcludesAbilitiesTest : FunSpec({
 
         // Activate the artifact's non-mana ability — it goes on the stack.
         driver.game.submitSuccess(ActivateAbility(p1, pinger, pingerAbility))
-        driver.game.stackSize == 1 || error("expected the ability on the stack")
+        driver.game.stackSize shouldBe 1
 
         // The only stack object is an ability, not a spell. Counterspell must NOT be
         // offered — this is the case that previously looped.
@@ -91,7 +91,7 @@ class TargetSpellExcludesAbilitiesTest : FunSpec({
         val p1 = driver.player1
         val p2 = driver.player2
 
-        val counterspell = driver.game.putCardInHand(p1, "Counterspell")
+        driver.game.putCardInHand(p1, "Counterspell")
         driver.game.giveMana(p1, Color.BLUE, 2)
 
         // Put a real spell on the stack: P1 casts Lightning Bolt at P2.

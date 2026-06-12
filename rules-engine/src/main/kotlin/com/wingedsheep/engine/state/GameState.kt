@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.engine.state.components.battlefield.GraveyardEntryTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.PhasedOutComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
+import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.StateProjector
@@ -370,6 +371,15 @@ data class GameState(
      * Get the top entity on the stack, or null if empty.
      */
     fun getTopOfStack(): EntityId? = stack.lastOrNull()
+
+    /**
+     * True if the stack entity is a *spell* (a card on the stack, CR 112.1), as opposed
+     * to an activated/triggered ability on the stack (CR 113.3b/c, 113.7a). The canonical
+     * marker is [SpellOnStackComponent]; ability entities never carry it. Use this for
+     * "target spell" enumeration/validation so abilities aren't offered as spell targets.
+     */
+    fun isSpellOnStack(entityId: EntityId): Boolean =
+        getEntity(entityId)?.has<SpellOnStackComponent>() == true
 
     /**
      * Remove a specific entity from the stack (for countering).

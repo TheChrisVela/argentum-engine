@@ -16,7 +16,6 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.player.PlayerHexproofComponent
 import com.wingedsheep.engine.state.components.player.PlayerShroudComponent
-import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
@@ -220,11 +219,11 @@ class TargetEnumerationUtils(
         val context = PredicateContext(controllerId = playerId)
         return state.stack.filter { spellId ->
             // "Target spell" only matches actual spells — never triggered/activated abilities on
-            // the stack. The base filter is `Any` (zone = STACK) and would otherwise pass ability
-            // entities, surfacing a castable counterspell with an illegal target that
-            // TargetValidator then rejects ("Target must be a spell on the stack") — leaving the
-            // AI in an infinite re-pick loop (CR 115.4).
-            state.getEntity(spellId)?.has<SpellOnStackComponent>() == true &&
+            // the stack. A spell is a card on the stack (CR 112.1); an ability on the stack is an
+            // ability, not a spell (CR 113.3b/c, 113.7a). The base filter is `Any` (zone = STACK)
+            // and would otherwise pass ability entities, surfacing a castable counterspell whenever
+            // anything is on the stack — which previously left the AI in an infinite re-pick loop.
+            state.isSpellOnStack(spellId) &&
                 predicateEvaluator.matches(state, state.projectedState, spellId, filter.baseFilter, context)
         }
     }
