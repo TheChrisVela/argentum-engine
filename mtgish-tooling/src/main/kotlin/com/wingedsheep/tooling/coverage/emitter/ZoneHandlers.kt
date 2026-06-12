@@ -128,6 +128,28 @@ internal val zoneHandlers: Map<String, ActionHandler> = actionHandlers {
         )
     }
 
+    // Inline `IfElse{cond}[thenEffects][elseEffects]` action -> a `ConditionalEffect(cond, then, else)`.
+    // The condition resolves via [actionConditionDsl] (only the exact shapes we can express render);
+    // both branches reuse the normal action-list renderer (sharing the spell's bound `tvar`). Take the
+    // Fall: "Target creature gets -1/-0 …. It gets -4/-0 … instead if you control an outlaw." — the
+    // "instead" makes this an either/or branch, exactly a ConditionalEffect (never both arms). Anything
+    // the condition or a branch can't render declines -> SCAFFOLD rather than dropping a clause.
+    on("IfElse") { _, args, tvar ->
+        val a = args.asArr ?: return@on null
+        val cond = a.getOrNull(0) as? JsonObject ?: return@on null
+        val condDsl = actionConditionDsl(cond) ?: return@on null
+        val thenActions = (a.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>() ?: return@on null
+        val elseActions = (a.getOrNull(2) as? JsonArray)?.filterIsInstance<JsonObject>() ?: return@on null
+        val thenEffect = renderEffectList(thenActions, tvar) ?: return@on null
+        val elseEffect = renderEffectList(elseActions, tvar) ?: return@on null
+        call(
+            "ConditionalEffect",
+            arg("condition", Lit(condDsl)),
+            arg("effect", thenEffect),
+            arg("elseEffect", elseEffect),
+        )
+    }
+
     on("Scry") { _, args, _ ->  // "Scry N" -> look-top, reorder/bottom pipeline
         (findInteger(args) as? Int)?.let { call("Patterns.Library.scry", arg("$it")) }
     }

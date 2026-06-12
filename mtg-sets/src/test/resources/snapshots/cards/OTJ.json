@@ -552,6 +552,62 @@
     ]
 }
 
+// Bovine Intervention
+{
+    "name": "Bovine Intervention",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Destroy target artifact or creature. Its controller creates a 2/2 white Ox creature token.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "permanent"
+                    },
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Ox"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/c/e/cee3ecef-4566-4164-af39-89cb0bbbffeb.jpg?1712316060",
+                    "controller": "TargetController"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature|artifact"
+                },
+                "id": "permanent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "6",
+        "rarity": "UNCOMMON",
+        "artist": "Julia Metzger",
+        "flavorText": "No one could prove the ox did it, but no one tried to harness it again either.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/6/26c36742-456f-4618-99bc-793ef20b31b0.jpg?1712355244"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Bridled Bighorn
 {
     "name": "Bridled Bighorn",
@@ -5505,6 +5561,102 @@
                 "text": "If the affected permanent gains an ability after Stop Cold becomes attached to it, it will keep that ability."
             }
         ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Take the Fall
+{
+    "name": "Take the Fall",
+    "manaCost": "{U}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets -1/-0 until end of turn. It gets -4/-0 until end of turn instead if you control an outlaw. (Assassins, Mercenaries, Pirates, Rogues, and Warlocks are outlaws.)\nDraw a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Exists",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": {
+                                "cardPredicates": [
+                                    "IsCreature",
+                                    {
+                                        "type": "HasAnyOfSubtypes",
+                                        "subtypes": [
+                                            "Assassin",
+                                            "Mercenary",
+                                            "Pirate",
+                                            "Rogue",
+                                            "Warlock"
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": -4
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "creature"
+                        }
+                    },
+                    "otherwise": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": -1
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "creature"
+                        }
+                    }
+                },
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "73",
+        "artist": "Eduardo Francisco",
+        "flavorText": "Dewey had been briefed on every aspect of the plan... except the bit where he was left holding the bag.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/f/9fea80c4-923c-40a1-9363-bfa4c267a024.jpg?1712355525"
     },
     "colorIdentityOverride": [
         "BLUE"

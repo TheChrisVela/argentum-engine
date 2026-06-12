@@ -69,6 +69,30 @@ internal fun EmitCtx.spellTargetExpr(targets: List<JsonObject>?, actions: List<J
 /** `val t = target("target", <node>)` — the bound-target local statement. */
 private fun targetLocal(node: Dsl): Stmt = Local("t", call("target", arg("\"target\""), arg(node)))
 
+/** `val <varName> = target("<targetName>", <node>)` — a named bound-target local (multi-target spells). */
+private fun targetLocalNamed(varName: String, targetName: String, node: Dsl): Stmt =
+    Local(varName, call("target", arg("\"$targetName\""), arg(node)))
+
+/**
+ * The (target-local statements, per-target var list) for a MULTI-target spell envelope — one
+ * `target("tN", …)` local per chosen target, with stable `t1`/`t2`/… var names that
+ * [EmitCtx.refTargetFromRef] resolves the suffixed `Ref_TargetPermanentN` refs against. Null if any
+ * target can't be rendered exactly (-> SCAFFOLD). Each target is rendered in isolation by [targetExpr],
+ * exactly as the single-target path does (Skulduggery: "target creature you control … and target
+ * creature an opponent controls …").
+ */
+private fun EmitCtx.multiTargetLocals(targets: List<JsonObject>, actions: List<JsonObject>?): Pair<List<Stmt>, List<String>>? {
+    val stmts = mutableListOf<Stmt>()
+    val vars = mutableListOf<String>()
+    targets.forEachIndexed { i, t ->
+        val node = targetExpr(t, actions) ?: run { reasons.add("target:${t.strField("_Target")}"); return null }
+        val varName = "t${i + 1}"
+        stmts.add(targetLocalNamed(varName, varName, node))
+        vars.add(varName)
+    }
+    return stmts to vars
+}
+
 private fun EmitCtx.conditionDsl(ifNode: JsonElement?): String? {
     val blob = compact(ifNode)
     if ("ControlsMorePermanentThanPlayer" in blob && "\"Land\"" in blob) return "Conditions.OpponentControlsMoreLands"
@@ -415,6 +439,28 @@ internal fun EmitCtx.spellBlock(card: JsonObject): List<Stmt>? {
 
     val (targets, actions) = extractEnvelope(card["Rules"])
     if (actions == null) return null
+
+    // MULTI-target spell (two or more chosen targets, e.g. Skulduggery's "target creature you control …
+    // and target creature an opponent controls …"). Render one `target("tN", …)` local per chosen
+    // target and thread the per-target var list so the effects' suffixed `Ref_TargetPermanentN` refs
+    // resolve to the right local. Any target the renderer can't express declines -> SCAFFOLD.
+    if (targets != null && targets.size > 1) {
+        val multi = multiTargetLocals(targets, actions) ?: run { reasons.add("multi-target"); return null }
+        val (targetStmts, vars) = multi
+        targetVars = vars
+        try {
+            val edsl = renderEffectList(actions, vars.firstOrNull()) ?: run { reasons.add("multi-target"); return null }
+            val restrictions = castRestrictionLines((card["Rules"].asArr ?: JsonArray(emptyList())).filterIsInstance<JsonObject>()) ?: return null
+            val stmts = mutableListOf<Stmt>()
+            restrictions.forEach { stmts.add(RawLine(it)) }
+            targetStmts.forEach { stmts.add(it) }
+            stmts.add(Assign("effect", edsl))
+            return listOf(Sub(Block("spell", stmts)))
+        } finally {
+            targetVars = emptyList()
+        }
+    }
+
     val (tnode, tvar) = spellTargetExpr(targets, actions) ?: return null
     val edsl = renderEffectList(actions, tvar) ?: return null
     val restrictions = castRestrictionLines((card["Rules"].asArr ?: JsonArray(emptyList())).filterIsInstance<JsonObject>()) ?: return null
