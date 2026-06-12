@@ -40,4 +40,48 @@ class EffectHandlerTest : StringSpec({
     "an unrecognised action declines (-> SCAFFOLD)" {
         effect("""{"_Action":"SomeActionWeDoNotModel"}""").shouldBeNull()
     }
+
+    // --- SetPT layer effect ("target creature becomes a P/T until end of turn") -------------------
+    fun layer(json: String, tvar: String?): String? = ctx.renderAction(obj(json), tvar)?.let(::render)
+
+    "SetPT sets base P/T, and the end-of-turn case emits an EXPLICIT Duration.EndOfTurn" {
+        // SetBasePowerToughnessEffect defaults to Duration.Permanent, so the EOT layer effect must spell
+        // the duration out — relying on the default would set the creature's P/T forever.
+        layer(
+            """{"_Action":"CreatePermanentLayerEffectUntil","args":[{"_Permanent":"Ref_TargetPermanent"},""" +
+                """[{"_LayerEffect":"SetPT","args":{"_PT":"PT","args":[5,1]}}],{"_Expiration":"UntilEndOfTurn"}]}""",
+            "t",
+        ) shouldBe "SetBasePowerToughnessEffect(t, 5, 1, Duration.EndOfTurn)"
+    }
+
+    "SetPT carries a non-default expiration verbatim (for as long as it remains tapped)" {
+        layer(
+            """{"_Action":"CreatePermanentLayerEffectUntil","args":[{"_Permanent":"Ref_TargetPermanent"},""" +
+                """[{"_LayerEffect":"SetPT","args":{"_PT":"PT","args":[0,2]}}],""" +
+                """{"_Expiration":"ForAsLongAsPermanentRemainsTapped"}]}""",
+            "t",
+        ) shouldBe "SetBasePowerToughnessEffect(t, 0, 2, Duration.WhileSourceTapped())"
+    }
+
+    "the each-permanent SetPT form wraps the set over a group" {
+        layer(
+            """{"_Action":"CreateEachPermanentLayerEffectUntil","args":[""" +
+                """{"_Permanents":"And","args":[{"_Permanents":"IsCardtype","args":"Creature"},""" +
+                """{"_Permanents":"ControlledByAPlayer","args":{"_Players":"SinglePlayer","args":{"_Player":"You"}}}]},""" +
+                """[{"_LayerEffect":"SetPT","args":{"_PT":"PT","args":[1,1]}}],{"_Expiration":"UntilEndOfTurn"}]}""",
+            null,
+        ) shouldBe "Effects.ForEachInGroup(GroupFilter(GameObjectFilter.Creature.youControl()), " +
+            "SetBasePowerToughnessEffect(EffectTarget.Self, 1, 1, Duration.EndOfTurn))"
+    }
+
+    "a SetPT riding an unsupported AddCardtype still scaffolds (no silently-dropped 'becomes an artifact')" {
+        // "It becomes a 0/0 artifact creature": AddCardtype isn't rendered here, so the whole card must
+        // scaffold rather than emit just the P/T set and drop the type change.
+        layer(
+            """{"_Action":"CreatePermanentLayerEffectUntil","args":[{"_Permanent":"Ref_TargetPermanent"},""" +
+                """[{"_LayerEffect":"SetPT","args":{"_PT":"PT","args":[0,0]}},""" +
+                """{"_LayerEffect":"AddCardtype","args":"Artifact"}],{"_Expiration":"UntilEndOfTurn"}]}""",
+            "t",
+        ).shouldBeNull()
+    }
 })

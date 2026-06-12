@@ -153,13 +153,14 @@ internal val tapLayerStateHandlers: Map<String, ActionHandler> = actionHandlers 
     }
 }
 
-/** CreatePermanentLayerEffectUntil / its each-permanent form -> ModifyStats / GrantKeyword,
- *  optionally over a group (ForEachInGroup). The `args` are always `[target/filter, [layerEffects],
- *  expiration]`; EVERY entry in the layer-effects list must render, or the whole card scaffolds — a
- *  layer effect we silently drop (e.g. an AddAbility granting a triggered ability alongside a P/T
- *  buff) would emit a confidently-wrong card. The `_Expiration` is honoured exactly: end-of-turn uses
- *  the default-duration facade; "for as long as it remains tapped" carries an explicit
- *  Duration.WhileSourceTapped(); any other expiration scaffolds rather than emit a wrong duration. */
+/** CreatePermanentLayerEffectUntil / its each-permanent form -> ModifyStats / SetBasePowerToughness /
+ *  GrantKeyword, optionally over a group (ForEachInGroup). The `args` are always `[target/filter,
+ *  [layerEffects], expiration]`; EVERY entry in the layer-effects list must render, or the whole card
+ *  scaffolds — a layer effect we silently drop (e.g. an AddAbility granting a triggered ability
+ *  alongside a P/T buff, or an AddCardtype riding a SetPT "becomes a 0/0 artifact") would emit a
+ *  confidently-wrong card. The `_Expiration` is honoured exactly: end-of-turn uses the default-duration
+ *  facade; "for as long as it remains tapped" carries an explicit Duration.WhileSourceTapped(); any
+ *  other expiration scaffolds rather than emit a wrong duration. */
 internal fun EmitCtx.renderLayerEffect(node: JsonObject, action: String, tvar: String?): Dsl? {
     val mass = action == "CreateEachPermanentLayerEffectUntil"
     val target = if (mass) "EffectTarget.Self" else refTarget(node["args"], tvar)
@@ -181,6 +182,18 @@ internal fun EmitCtx.renderLayerEffect(node: JsonObject, action: String, tvar: S
                     if (duration.isEmpty()) call("Effects.ModifyStats", arg("${pt[0].asInt()}"), arg("${pt[1].asInt()}"), arg(Lit(target)))
                     else call("ModifyStatsEffect", arg("${pt[0].asInt()}"), arg("${pt[1].asInt()}"), arg(Lit(target)), arg(Lit(duration))),
                 )
+            }
+            "SetPT" -> {
+                // "becomes a P/T" — set base power and toughness (CR 613.4b, layer 7b). The IR nests the
+                // values one level deeper than AdjustPT: args is `{_PT: PT, args: [p, t]}`. Unlike ModifyStats,
+                // SetBasePowerToughnessEffect defaults to Duration.Permanent, so the end-of-turn case MUST emit
+                // an explicit Duration.EndOfTurn rather than relying on the default (which would set it forever).
+                val pt = (leObj["args"] as? JsonObject)?.get("args").asArr
+                if (pt == null || pt.size != 2) return null
+                val p = pt[0].asInt() ?: return null
+                val t = pt[1].asInt() ?: return null
+                val dur = if (duration.isEmpty()) "Duration.EndOfTurn" else duration
+                inner.add(call("SetBasePowerToughnessEffect", arg(Lit(target)), arg("$p"), arg("$t"), arg(Lit(dur))))
             }
             "AdjustPTX" -> {
                 // "+X/+X" / "-X/-X" where X is a dynamic game number (Wirewood Pride: +Elf-count, Feeding
@@ -214,7 +227,7 @@ internal fun EmitCtx.renderLayerEffect(node: JsonObject, action: String, tvar: S
                 if (duration.isNotEmpty()) gkArgs.add(arg(Lit(duration)))
                 inner.add(Call("Effects.GrantKeyword", gkArgs))
             }
-            else -> return null  // any other layer effect (e.g. set base P/T, lose abilities) -> SCAFFOLD
+            else -> return null  // any other layer effect (e.g. add card type, lose abilities) -> SCAFFOLD
         }
     }
     if (inner.isEmpty()) return null
