@@ -6,6 +6,9 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.model.CreatureStats
+import com.wingedsheep.sdk.scripting.AbilityCost
+import com.wingedsheep.sdk.scripting.AbilityId
+import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.EventPattern
 import com.wingedsheep.sdk.scripting.TriggeredAbility
@@ -23,6 +26,7 @@ import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.SelectionMode
 import com.wingedsheep.sdk.scripting.targets.AnyTarget
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.targets.TargetChooser
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -272,6 +276,61 @@ class CardLinterTest : DescribeSpec({
                 ),
             )
             CardLinter.lint(card).shouldBeEmpty()
+        }
+    }
+
+    describe("opponent-chosen targets") {
+
+        it("flags a TargetChooser.Opponent target on a spell — the controller would pick it") {
+            val card = instant(
+                "Wrongly Opponent-Chosen",
+                CardScript(
+                    spellEffect = DealDamageEffect(DynamicAmount.Fixed(1), EffectTarget.ContextTarget(0)),
+                    targetRequirements = listOf(AnyTarget(chooser = TargetChooser.Opponent)),
+                ),
+            )
+            val findings = CardLinter.lint(card)
+            findings.shouldHaveSize(1)
+            findings[0].shouldBeInstanceOf<CardValidationError.UnsupportedOpponentChooser>()
+                .message shouldContain "opponent's choice"
+        }
+
+        it("flags a TargetChooser.Opponent target on a triggered ability") {
+            val card = instant(
+                "Triggered Opponent-Chosen",
+                CardScript(
+                    triggeredAbilities = listOf(
+                        TriggeredAbility(
+                            id = AbilityId.generate(),
+                            trigger = EventPattern.CastThisSpellEvent,
+                            effect = DealDamageEffect(DynamicAmount.Fixed(1), EffectTarget.ContextTarget(0)),
+                            targetRequirement = AnyTarget(chooser = TargetChooser.Opponent),
+                        )
+                    ),
+                ),
+            )
+            val findings = CardLinter.lint(card)
+            findings.filterIsInstance<CardValidationError.UnsupportedOpponentChooser>().shouldHaveSize(1)
+        }
+
+        it("accepts a TargetChooser.Opponent target on an activated ability (Cuombajj Witches)") {
+            val card = instant(
+                "Rightly Opponent-Chosen",
+                CardScript(
+                    activatedAbilities = listOf(
+                        ActivatedAbility(
+                            cost = AbilityCost.Tap,
+                            effect = DealDamageEffect(DynamicAmount.Fixed(1), EffectTarget.ContextTarget(0)),
+                            targetRequirements = listOf(
+                                AnyTarget(),
+                                AnyTarget(chooser = TargetChooser.Opponent),
+                            ),
+                        )
+                    ),
+                ),
+            )
+            CardLinter.lint(card).filterIsInstance<CardValidationError.UnsupportedOpponentChooser>()
+                .shouldBeEmpty()
         }
     }
 })

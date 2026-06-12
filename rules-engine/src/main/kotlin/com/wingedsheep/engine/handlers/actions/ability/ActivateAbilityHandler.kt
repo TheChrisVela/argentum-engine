@@ -1224,6 +1224,19 @@ class ActivateAbilityHandler(
         fullTargetReqs: List<com.wingedsheep.sdk.scripting.targets.TargetRequirement>,
         opponentReqs: List<com.wingedsheep.sdk.scripting.targets.TargetRequirement>
     ): ExecutionResult {
+        // The resumer interleaves the controller's and opponent's targets back into one list by
+        // consuming exactly `count` targets per requirement (the positional model
+        // EffectContext.buildNamedTargets uses on resolution). That holds only for fixed-count
+        // requirements; an optional/variable/unlimited one would misalign the cursors. Cuombajj is
+        // the only printed use and is fixed-count — reject the unsupported shape here, before
+        // bothering an opponent with a decision, rather than after the pick on the resume path.
+        if (fullTargetReqs.any { it.minCount != it.count || it.optional || it.unlimited }) {
+            return ExecutionResult.error(
+                state,
+                "Opponent-chosen targets are only supported with fixed-count requirements"
+            )
+        }
+
         // The controller chooses which opponent makes the selection (per the card's own ruling:
         // "You choose which opponent chooses the second target"). In a two-player game that's the
         // sole opponent; choosing among several opponents in multiplayer is a future extension —
@@ -1250,7 +1263,11 @@ class ActivateAbilityHandler(
         }
 
         val decisionId = java.util.UUID.randomUUID().toString()
-        val prompt = "Choose ${opponentReqs.joinToString(" and ") { it.description }} for $sourceName"
+        // The prompt is shown to the opponent who is making the choice, so the "of an opponent's
+        // choice" suffix the requirement description carries is redundant noise here — strip it.
+        val prompt = "Choose ${opponentReqs.joinToString(" and ") {
+            it.description.removeSuffix(" of an opponent's choice")
+        }} for $sourceName"
         val decision = com.wingedsheep.engine.core.ChooseTargetsDecision(
             id = decisionId,
             playerId = deciderId,

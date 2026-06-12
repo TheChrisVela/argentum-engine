@@ -73,7 +73,58 @@ object CardLinter {
 
         lintDefinition(card.name, fullTree, explicitTree, slots, findings)
         checkSlots(card.name, slots, findings)
+        checkOpponentChoosers(card.name, explicitTree, withinActivatedAbility = false, findings)
         return findings
+    }
+
+    /**
+     * Flag a [com.wingedsheep.sdk.scripting.targets.TargetChooser.Opponent] requirement
+     * ("… of an opponent's choice") in a context the engine doesn't route to an opponent. Only
+     * activated abilities (including loyalty and granted activated abilities) honor the chooser at
+     * announcement; on a spell, triggered ability, kicker target, or saga chapter the controller
+     * would silently choose the target instead. Catch it at card load rather than mis-resolve.
+     *
+     * Walks the JSON tree carrying whether we're inside an `"activatedAbilities"` subtree, so the
+     * check covers every container structurally (granted abilities, class levels, token abilities)
+     * regardless of which field name holds the requirement (`targetRequirement`,
+     * `targetRequirements`, `additionalTargetRequirements`, …). The match is anchored on the
+     * `AnyTarget` type discriminator: it's the only [TargetRequirement] that carries a
+     * `TargetChooser`, so this can't collide with the unrelated `chooser` field on pipeline
+     * selection steps (`Chooser`, which has its own honored `Opponent` value).
+     */
+    private fun checkOpponentChoosers(
+        cardName: String,
+        element: JsonElement,
+        withinActivatedAbility: Boolean,
+        findings: MutableList<CardValidationError>
+    ) {
+        when (element) {
+            is JsonObject -> {
+                val type = (element["type"] as? JsonPrimitive)?.contentOrNull
+                val chooser = (element["chooser"] as? JsonPrimitive)?.contentOrNull
+                if (!withinActivatedAbility && type == "AnyTarget" && chooser == "Opponent") {
+                    findings.add(
+                        CardValidationError.UnsupportedOpponentChooser(
+                            cardName = cardName,
+                            message = "'$cardName' uses a TargetChooser.Opponent (\"… of an " +
+                                "opponent's choice\") target outside an activated ability. Only " +
+                                "activated abilities route the selection to an opponent; here the " +
+                                "controller would silently choose it. Move it to an activated " +
+                                "ability or drop the chooser."
+                        )
+                    )
+                }
+                for ((key, value) in element) {
+                    checkOpponentChoosers(
+                        cardName, value, withinActivatedAbility || key == "activatedAbilities", findings
+                    )
+                }
+            }
+            is JsonArray -> element.forEach {
+                checkOpponentChoosers(cardName, it, withinActivatedAbility, findings)
+            }
+            else -> {}
+        }
     }
 
     // =========================================================================================

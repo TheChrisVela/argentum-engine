@@ -1137,12 +1137,14 @@ Every `TargetRequirement` carries count semantics (defaults shown):
   `TargetChooser.Opponent` for "**… of an opponent's choice**" wording (Cuombajj Witches). The chosen
   target is still a real target of *your* spell/ability — announced together with your own targets,
   equally respondable, legality measured relative to **you** — but an opponent picks which legal
-  object/player it is (the controller chooses *which* opponent in multiplayer; CR 601.6b/602.3b run the
-  controller's own choices first, then the opponent's). Orthogonal to legality: target-finding and
+  object/player it is (the controller chooses *which* opponent in multiplayer per CR 601.6a/602.3a, and
+  that pick follows the controller's own choices per CR 601.6b/602.3b). Orthogonal to legality: target-finding and
   validation ignore `chooser` (always relative to the controller); only the announcement layer reads it
   to route the selection decision. Honored for **activated abilities** today; list the opponent-chosen
   requirement after the controller-chosen ones. `Targets.AnyChosenByOpponent` is the ready-made
-  "any target of an opponent's choice".
+  "any target of an opponent's choice". `CardLinter` (§21) fails any card that puts a
+  `TargetChooser.Opponent` target outside an activated ability — a spell or triggered ability would
+  silently let the *controller* choose it instead.
 
 ### Player-target restrictions (`TargetPlayer.restriction` / `TargetOpponent.restriction`)
 

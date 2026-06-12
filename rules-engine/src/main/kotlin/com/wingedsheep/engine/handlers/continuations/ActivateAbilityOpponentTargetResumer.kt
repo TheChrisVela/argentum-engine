@@ -71,8 +71,9 @@ class ActivateAbilityOpponentTargetResumer(
         // The interleave below relies on each requirement consuming exactly `count` targets
         // (the positional model buildNamedTargets uses on resolution). That holds only for
         // fixed-count requirements; an optional/variable requirement would misalign the cursors.
-        // Cuombajj is the only printed use and is fixed-count — guard the generalization explicitly
-        // rather than silently producing a wrong target mapping.
+        // ActivateAbilityHandler.pauseForOpponentChosenTargets already rejects non-fixed-count
+        // shapes before raising the decision; re-assert here as defense-in-depth so a wrong target
+        // mapping can never be produced on the resume path.
         if (continuation.fullRequirements.any { it.minCount != it.count || it.optional || it.unlimited }) {
             return ExecutionResult.error(
                 state,

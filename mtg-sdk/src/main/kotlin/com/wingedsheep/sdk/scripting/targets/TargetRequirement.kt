@@ -19,8 +19,9 @@ import kotlinx.serialization.Serializable
  * controller's spell/ability — announced at the same time, equally respondable, and its legality
  * (hexproof/protection/shroud) is evaluated relative to the *controller*, per CR 115 — but it is
  * an opponent who selects which legal object/player it is. In a multiplayer game the controller
- * first chooses which opponent makes the selection (CR 601.6b / 602.3b: the controller's own
- * choices are made first, then the chosen opponent's).
+ * first chooses which opponent makes the selection (CR 601.6a / 602.3a), and that selection happens
+ * after the controller's own choices (CR 601.6b / 602.3b: the controller goes first, then the other
+ * player).
  *
  * The chooser is orthogonal to legality: target-finding and validation ignore it (they always run
  * relative to the controller). Only the announcement layer reads it, to route the selection
