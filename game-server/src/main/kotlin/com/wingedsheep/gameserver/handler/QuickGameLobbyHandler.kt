@@ -382,17 +382,24 @@ class QuickGameLobbyHandler(
         if (lobby.format?.isCommanderShape == true) {
             gameSession.engineFormat = com.wingedsheep.sdk.core.Format.Commander()
         }
-        // Each player can pick their own set for a Random pool; the AI uses the lobby-level
-        // setCode (or any human player's choice as a default) when its random deck is generated.
+        // Each player can pick their own set for a Random pool. For a vs-AI lobby the AI mirrors
+        // the (single) human's set so both sides play the same set. Resolve that set ONCE here —
+        // rolling a single random set when the human left the pool on "Random" — and reuse it for
+        // the human's deck and the AI's deck. Previously the human's deck and the AI's deck each
+        // rolled their own random set, so a "Random Set" pool handed them two different sets.
+        val humanPlayers = lobby.players.filter { !it.isAi }
         val aiSetCode = lobby.setCode
-            ?: lobby.players.firstNotNullOfOrNull { it.setCode }
+            ?: humanPlayers.firstOrNull()?.setCode
             ?: deckGenerator.randomSetCode()
         gameSession.quickGameSetCode = aiSetCode
         gameSession.publicSpectate = lobby.isPublic && !lobby.vsAi
 
-        val humanPlayers = lobby.players.filter { !it.isAi }
         for (lobbyPlayer in humanPlayers) {
-            val deckList = resolveDeck(lobbyPlayer)
+            // In a vs-AI lobby, share the resolved set with the single human so a random pool draws
+            // from the same set the AI got; multi-human lobbies keep each player's own set, rolling
+            // an independent random when they didn't pick one.
+            val randomFallbackSet = if (lobby.vsAi) aiSetCode else deckGenerator.randomSetCode()
+            val deckList = resolveDeck(lobbyPlayer, randomFallbackSet)
             val playerSession = sessionRegistry
                 .getAllIdentities()
                 .firstOrNull { it.playerId == lobbyPlayer.playerId }
@@ -484,11 +491,12 @@ class QuickGameLobbyHandler(
         sender.send(session, msg)
     }
 
-    private fun resolveDeck(player: QuickGameLobbyPlayer): Map<String, Int> {
+    private fun resolveDeck(player: QuickGameLobbyPlayer, randomFallbackSet: String): Map<String, Int> {
         val submitted = player.deckList ?: emptyMap()
         if (submitted.isEmpty()) {
-            // Player chose Random — honor their per-player set choice; fall back to a random set.
-            val setCode = player.setCode ?: deckGenerator.randomSetCode()
+            // Player chose Random — honor their per-player set choice; fall back to the caller's
+            // pre-resolved set (shared with the AI in a vs-AI lobby so both play the same set).
+            val setCode = player.setCode ?: randomFallbackSet
             return deckGenerator.generate(setCode)
         }
         return submitted
