@@ -838,6 +838,27 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
             "TriggerBinding.ANY)"
     }
 
+    // "Whenever you cast your Nth spell each turn" — WhenAPlayerCastsTheirNthSpellInATurn. The args are
+    // [caster scope, an `== N` comparison, a spell filter]. Only the exact You + EqualTo + AnySpell shape
+    // maps to Triggers.NthSpellCast(N, Player.You) (Rodeo Pyromancers' "first spell each turn"); any other
+    // caster scope, comparison, or a typed/constrained spell filter declines -> SCAFFOLD rather than
+    // silently widening it.
+    if (jsonContains(trig, "_Trigger", "WhenAPlayerCastsTheirNthSpellInATurn")) {
+        val argv = trig["args"].asArr
+        val scope = castScope(argv?.getOrNull(0) as? JsonObject)
+        val comparison = argv?.getOrNull(1) as? JsonObject
+        val spells = argv?.getOrNull(2) as? JsonObject
+        val n = (comparison?.field("args") as? JsonElement).let { findInteger(it) } as? Int
+        if (scope == CastScope.YOU &&
+            comparison?.strField("_Comparison") == "EqualTo" &&
+            spells?.strField("_Spells") == "AnySpell" &&
+            n != null
+        ) {
+            return "Triggers.NthSpellCast($n, Player.You)"
+        }
+        return null
+    }
+
     // "Whenever {you / a player / an opponent} casts a [type] spell" — WhenAPlayerCastsASpell. The
     // first arg is the caster scope (You / AnyPlayer / Opponent — anything else, e.g. HostPlayer,
     // declines); the second is the spell filter, classified to an EXACT category. A filter carrying

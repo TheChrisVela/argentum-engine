@@ -4271,6 +4271,116 @@
     ]
 }
 
+// Quick Draw
+{
+    "name": "Quick Draw",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature you control gets +1/+1 and gains first strike until end of turn. Creatures target opponent controls lose first strike and double strike until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "FIRST_STRIKE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "controllerPredicate": {
+                                    "type": "ControlledByReferencedPlayer",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target opponent"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "body": {
+                        "type": "RemoveKeyword",
+                        "keyword": "FIRST_STRIKE",
+                        "target": "Self"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "controllerPredicate": {
+                                    "type": "ControlledByReferencedPlayer",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target opponent"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "body": {
+                        "type": "RemoveKeyword",
+                        "keyword": "DOUBLE_STRIKE",
+                        "target": "Self"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "target creature you control"
+            },
+            {
+                "type": "TargetOpponent",
+                "id": "target opponent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "138",
+        "artist": "Lie Setiawan",
+        "flavorText": "The opening of the Omenpaths awoke the wild magic of Thunder Junction. Settlers dubbed it \"thunder\" and put it to use in everything from farming tools to deadly weapons.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/56399cd0-1214-42b6-be38-f2cbd770915f.jpg?1712355816"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Quilled Charger
 {
     "name": "Quilled Charger",
@@ -4725,6 +4835,48 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Rodeo Pyromancers
+{
+    "name": "Rodeo Pyromancers",
+    "manaCost": "{3}{R}",
+    "typeLine": "Creature — Human Mercenary",
+    "oracleText": "Whenever you cast your first spell each turn, add {R}{R}.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthSpellCastEvent",
+                    "nthSpell": 1,
+                    "player": "You"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "artist": "Kim Sokol",
+        "flavorText": "\"My citizens throw good money at them, and for what? Cheap tricks and collateral damage. Damnable Slickshot charlatans.\"\n—Baron Bertram Graywater",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/f/df877a29-06e1-474d-8600-410bbec674ae.jpg?1712355836"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 
@@ -5918,6 +6070,58 @@
         "artist": "David Astruga",
         "flavorText": "\"If you don't want to tell me where the stash is, you'd best start getting comfy in there. You just let me know when you've changed your mind.\"",
         "imageUri": "https://cards.scryfall.io/normal/front/0/1/019d539f-04c2-43f1-8677-6d6fbb0e94f7.jpg"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Sterling Supplier
+{
+    "name": "Sterling Supplier",
+    "manaCost": "{4}{W}",
+    "typeLine": "Creature — Bird Soldier",
+    "oracleText": "Flying\nWhen this creature enters, put a +1/+1 counter on another target creature you control.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    },
+                    "id": "target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "33",
+        "artist": "Camille Alquier",
+        "flavorText": "The Sterling Company can always rely on him to bring the thunder.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/6/b6000be7-67db-440e-87ba-276df20b803e.jpg?1712355360"
     },
     "colorIdentityOverride": [
         "WHITE"

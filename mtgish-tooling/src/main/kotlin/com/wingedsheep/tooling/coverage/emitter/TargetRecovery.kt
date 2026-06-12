@@ -178,6 +178,26 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
     // restriction has no faithful filter rendering yet, so drop to SCAFFOLD rather than omit it.
     val nonCardtypes = filterNode.argWordsTagged("IsNonCardtype")
     if (nonCardtypes.any { it != "Artifact" }) return null
+    // "ANOTHER target creature you control" — `And(Other(<self>), IsCardtype Creature, ControlledByAPlayer
+    // You)`. This exact self-exclusion + you-control shape has a named TargetFilter constant
+    // (OtherCreatureYouControl) that composes excludeSelf, so render it directly (Cunning Coyote, Sterling
+    // Supplier's ETB +1/+1). Guard strictly: only when the sole predicates are Other + Creature + You, with
+    // no extra subtype / colour / power / keyword / state clause that the constant wouldn't carry.
+    run {
+        val otherYouControlExtras = listOf(
+            "IsCreatureType", "IsNonCreatureType", "IsArtifactType", "IsLandType", "IsEnchantmentType",
+            "IsNonCardtype", "IsColor", "IsNonColor", "PowerIs", "ToughnessIs", "ManaValueIs", "HasAbility",
+            "DoesntHaveAbility", "IsTapped", "IsUntapped", "IsAttacking", "IsBlocking", "IsFaceDown",
+            "IsNonToken", "HasACounterOfType", "WasDealtDamageThisTurn",
+        )
+        if (jsonContains(filterNode, "_Permanents", "Other") &&
+            "Creature" in filterNode.argWordsTagged("IsCardtype") &&
+            "\"You\"" in blob && "ControlledByAPlayer" in blob &&
+            otherYouControlExtras.none { it in blob }
+        ) {
+            return Lit("TargetFilter.OtherCreatureYouControl")
+        }
+    }
     // "ANOTHER target creature you control" — an `Other(ThisPermanent)` self-exclusion. The TargetFilter
     // surface built here doesn't compose excludeSelf, so silently dropping it would let the source target
     // itself (an illegal target). Decline (-> SCAFFOLD) rather than emit a target missing the "another"
