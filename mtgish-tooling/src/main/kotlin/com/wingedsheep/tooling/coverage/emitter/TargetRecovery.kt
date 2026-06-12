@@ -337,9 +337,18 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
         if (actionContext != null && actionContext.consumesOnlyTargetPlayer()) return Call("TargetPlayer")
         return Call("AnyTarget")
     }
-    if (ttype in setOf("TargetPermanent", "NumberTargetPermanents", "UptoNumberTargetPermanents", "OneOrTwoTargetPermanents")) {
+    if (ttype in setOf("TargetPermanent", "NumberTargetPermanents", "UptoNumberTargetPermanents", "OneOrTwoTargetPermanents", "UptoOneTargetPermanent")) {
         val types = targetTypes(args)
         val blob = compact(args)
+        // "up to one target …" — a single optional permanent target (Peerless Ropemaster, Nurturing
+        // Pixie). It renders the same filter as a plain TargetPermanent/TargetCreature with `optional =
+        // true` (no count: "up to one" is exactly one-or-zero). The flag is appended in every sub-branch
+        // below via [optionalArg].
+        val isUpToOne = ttype == "UptoOneTargetPermanent"
+        // A creature-subtype clause (IsCreatureType) must be matched as a whole token, not a substring of
+        // IsNonCreatureType ("non-Faerie permanent"): the latter is a NEGATED subtype on a non-creature
+        // permanent target, and a naive `"IsCreatureType" in blob` would mis-route it to the creature path.
+        val hasCreatureSubtype = args.argWordsTagged("IsCreatureType").isNotEmpty()
         // "the permanent with the lowest/highest mana value" (Culling Scales) is a global superlative the
         // SDK has no target filter for. Dropping it would let the spell hit ANY matching permanent, so
         // decline -> SCAFFOLD rather than emit an unrestricted target.
@@ -350,7 +359,7 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
         // anything else declines (Rustspore Ram, Turn to Dust).
         val artifactSubtype = args.firstArgWordTagged("IsArtifactType")
         if (artifactSubtype != null) {
-            if (types.isNotEmpty() || "IsNonCardtype" in blob || "IsCreatureType" in blob) return null
+            if (types.isNotEmpty() || "IsNonCardtype" in blob || hasCreatureSubtype) return null
             val controller: Link? = when {
                 "ControlledByAPlayer" !in blob -> null
                 "\"You\"" in blob -> Link("youControl")
@@ -361,18 +370,18 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
             controller?.let { base = base.dot(it) }
             val parts = mutableListOf(arg("filter", Call("TargetFilter", listOf(arg(base)))))
             if (ttype in setOf("NumberTargetPermanents", "UptoNumberTargetPermanents") && countInt is Int) parts.add(0, arg("count", "$countInt"))
-            if (ttype == "UptoNumberTargetPermanents") parts.add(0, arg("optional", "true"))
+            if (ttype == "UptoNumberTargetPermanents" || isUpToOne) parts.add(0, arg("optional", "true"))
             return Call("TargetPermanent", parts)
         }
         // A creature-subtype restriction ("target Wall") implies a creature target even with no explicit
         // IsCardtype Creature; route it through the creature filter so the subtype isn't dropped (Tunnel).
-        val creatureTarget = types == setOf("Creature") || (types.isEmpty() && "IsCreatureType" in blob)
+        val creatureTarget = types == setOf("Creature") || (types.isEmpty() && hasCreatureSubtype)
         if (creatureTarget) {
             val filter = creatureFilterExpr(args) ?: return null
             val parts = mutableListOf(arg("filter", filter))
             if (ttype in setOf("NumberTargetPermanents", "UptoNumberTargetPermanents") && countInt is Int) parts.add(0, arg("count", "$countInt"))
             if (ttype == "OneOrTwoTargetPermanents") { parts.add(0, arg("minCount", "1")); parts.add(0, arg("count", "2")) }
-            if (ttype == "UptoNumberTargetPermanents") parts.add(0, arg("optional", "true"))
+            if (ttype == "UptoNumberTargetPermanents" || isUpToOne) parts.add(0, arg("optional", "true"))
             return Call("TargetCreature", parts)
         }
         // "target Spirit or enchantment" (Urgent Exorcism): an Or unioning a creature subtype with a
@@ -423,11 +432,42 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
             if (ttype == "UptoNumberTargetPermanents") parts.add(0, arg("optional", "true"))
             return Call("TargetPermanent", parts)
         }
+        // "non-<creature-type>, nonland permanent you control" (Nurturing Pixie: "non-Faerie, nonland
+        // permanent you control") — an IsNonCardtype "Land" + a single negated creature subtype
+        // (IsNonCreatureType), optionally a controller clause. There's no named TargetFilter constant for
+        // it, so render GameObjectFilter.NonlandPermanent.notSubtype(Subtype(...))[.youControl()] wrapped
+        // in TargetFilter. Only this exact shape (one negated subtype, optional You/Opponent controller,
+        // nothing else) renders; any extra predicate declines rather than silently dropping it.
+        run {
+            val negSubs = args.argWordsTagged("IsNonCreatureType")
+            if (types.isEmpty() && args.argWordsTagged("IsNonCardtype") == listOf("Land") && negSubs.size == 1) {
+                val extras = listOf(
+                    "IsTapped", "IsUntapped", "IsAttacking", "IsBlocking", "PowerIs", "ToughnessIs",
+                    "ManaValueIs", "IsColor", "IsNonColor", "HasAbility", "DoesntHaveAbility", "IsNonToken",
+                    "IsCreatureType", "IsArtifactType", "IsLandType", "IsEnchantmentType", "Other",
+                    "HasACounterOfType",
+                )
+                if (extras.any { it in blob }) return null
+                val controller: Link? = when {
+                    "ControlledByAPlayer" !in blob -> null
+                    "\"You\"" in blob -> Link("youControl")
+                    "\"Opponent\"" in blob -> Link("opponentControls")
+                    else -> return null
+                }
+                var g: Dsl = Lit("GameObjectFilter.NonlandPermanent").dot("notSubtype", arg("Subtype(\"${negSubs[0]}\")"))
+                controller?.let { g = g.dot(it) }
+                val parts = mutableListOf(arg("filter", Call("TargetFilter", listOf(arg(g)))))
+                if (ttype in setOf("NumberTargetPermanents", "UptoNumberTargetPermanents") && countInt is Int) parts.add(0, arg("count", "$countInt"))
+                if (ttype == "UptoNumberTargetPermanents" || isUpToOne) parts.add(0, arg("optional", "true"))
+                return Call("TargetPermanent", parts)
+            }
+        }
         // "target nonland permanent" — an IsNonCardtype "Land" with no positive cardtype restriction
         // (Thistledown Players' "untap target nonland permanent"). An optional "with mana value X"
         // clause (ManaValueIs EqualTo ValueX, from an {X}… cast cost) renders as .manaValueEqualsX()
         // (Repeal). A ManaValueIs clause we DON'T render (any other shape) must decline rather than
-        // silently drop the restriction — an unrestricted bounce would hit any permanent.
+        // silently drop the restriction — an unrestricted bounce would hit any permanent. (The
+        // IsCreatureType substring guard also excludes IsNonCreatureType, which the branch above handles.)
         if (types.isEmpty() && args.argWordsTagged("IsNonCardtype") == listOf("Land") && "IsCreatureType" !in blob) {
             val manaValueX = manaValueEqualsXClause(args)
             if ("ManaValueIs" in blob && !manaValueX) return null  // unrendered MV restriction -> SCAFFOLD
@@ -491,6 +531,29 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
     }
     if (ttype == "TargetGraveyardCard" || ttype == "UptoOneTargetGraveyardCard") {
         val blob = compact(args)
+        // "target permanent card with mana value N or less from your graveyard" (Shepherd of the Clouds):
+        // an IsPermanent type check + an optional ManaValueIs <= N cap + an ownership clause. There's no
+        // named graveyard TargetFilter constant for "permanent card", so compose
+        // GameObjectFilter.Permanent[.ownedBy…].manaValueAtMost(N) in the GRAVEYARD zone. Only this exact
+        // shape (IsPermanent, at most one `<=` MV cap, optional You/Opponent ownership, no creature
+        // subtype or other predicate) renders; anything else falls through to the branches below or
+        // declines, so we never silently drop a restriction.
+        if ("IsPermanent" in blob && "IsCreatureType" !in blob && targetTypes(args).isEmpty()) {
+            val mvCap = FilterPredicates.manaValueAtMost(args)
+            // A ManaValueIs clause we couldn't render as a `<=` cap (any other comparison/X) must decline
+            // rather than widen the target to any permanent card in the graveyard.
+            if ("ManaValueIs" in blob && mvCap == null) return null
+            var g: Dsl = Lit("GameObjectFilter.Permanent")
+            when {
+                "\"You\"" in blob -> g = g.dot("ownedByYou")
+                "\"Opponent\"" in blob -> g = g.dot("ownedByOpponent")
+            }
+            mvCap?.let { g = g.dot(it) }
+            val filt = Call("TargetFilter", listOf(arg(g), arg("zone", "Zone.GRAVEYARD")))
+            val parts = mutableListOf(arg("filter", filt))
+            if (ttype == "UptoOneTargetGraveyardCard") parts.add(0, arg("optional", "true"))
+            return Call("TargetObject", parts)
+        }
         // "target artifact card WITH MANA VALUE 1 OR LESS from your graveyard" (Auriok Salvagers, Leonin
         // Squire): a ManaValueIs cap the graveyard filters below don't compose — emitting without it would
         // widen the target to any artifact in the graveyard. Decline (-> SCAFFOLD) rather than drop it.

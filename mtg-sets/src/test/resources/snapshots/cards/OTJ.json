@@ -4334,6 +4334,94 @@
     ]
 }
 
+// Nurturing Pixie
+{
+    "name": "Nurturing Pixie",
+    "manaCost": "{W}",
+    "typeLine": "Creature — Faerie Rogue",
+    "oracleText": "Flying\nWhen this creature enters, return up to one target non-Faerie, nonland permanent you control to its owner's hand. If a permanent was returned this way, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "permanent"
+                            },
+                            "destination": "Hand"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "EntityMatches",
+                                    "entity": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    },
+                                    "filter": "permanent"
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 1,
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsNonland",
+                                "IsPermanent",
+                                {
+                                    "type": "NotSubtype",
+                                    "subtype": "Faerie"
+                                }
+                            ],
+                            "controllerPredicate": "ControlledByYou"
+                        }
+                    },
+                    "id": "permanent"
+                },
+                "descriptionOverride": "When this creature enters, return up to one target non-Faerie, nonland permanent you control to its owner's hand. If a permanent was returned this way, put a +1/+1 counter on this creature."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "20",
+        "rarity": "UNCOMMON",
+        "artist": "Iris Compiet",
+        "flavorText": "\"Count yourself lucky I came upon you. This is not a world of second chances.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/f/0fe155f6-888b-41a0-a9a0-be7bea998718.jpg?1712355304"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Oasis Gardener
 {
     "name": "Oasis Gardener",
@@ -4738,6 +4826,55 @@
     ]
 }
 
+// Peerless Ropemaster
+{
+    "name": "Peerless Ropemaster",
+    "manaCost": "{4}{U}",
+    "typeLine": "Creature — Human Rogue",
+    "oracleText": "When this creature enters, return up to one target tapped creature to its owner's hand.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature tapped"
+                    },
+                    "id": "creature"
+                },
+                "descriptionOverride": "When this creature enters, return up to one target tapped creature to its owner's hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "60",
+        "artist": "Wayne Wu",
+        "flavorText": "\"Murder someone and you'll have a gaggle of folks lining up for revenge. Humiliate them, and they won't dare bother you again.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/e/ae044509-2f31-4506-a124-0e445b7181a2.jpg?1712355469"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Pillage the Bog
 {
     "name": "Pillage the Bog",
@@ -5071,6 +5208,64 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Raven of Fell Omens
+{
+    "name": "Raven of Fell Omens",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Bird",
+    "oracleText": "Flying\nWhenever you commit a crime, each opponent loses 1 life and you gain 1 life. This ability triggers only once each turn. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CommitCrimeEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "PlayerRef",
+                                "player": "EachOpponent"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever you commit a crime, each opponent loses 1 life and you gain 1 life. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "101",
+        "artist": "Justin Cornell",
+        "flavorText": "A raven sighted at midnight often means there's unkindness on the way.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/2/e2df3cb4-1658-450a-912a-df336706acdc.jpg?1712355645"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -5913,6 +6108,80 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Shepherd of the Clouds
+{
+    "name": "Shepherd of the Clouds",
+    "manaCost": "{4}{W}",
+    "typeLine": "Creature — Pegasus",
+    "oracleText": "Flying, vigilance\nWhen this creature enters, return target permanent card with mana value 3 or less from your graveyard to your hand. Return that card to the battlefield instead if you control a Mount.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Exists",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": "creature Mount"
+                        }
+                    },
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "card"
+                        },
+                        "destination": "Battlefield"
+                    },
+                    "otherwise": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "card"
+                        },
+                        "destination": "Hand"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent mv<=3 own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "card"
+                },
+                "descriptionOverride": "When this creature enters, return target permanent card with mana value 3 or less from your graveyard to your hand. Return that card to the battlefield instead if you control a Mount."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "28",
+        "rarity": "UNCOMMON",
+        "artist": "Valera Lutfullina",
+        "flavorText": "It catches those who are not ready to fall.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c2245f36-2138-4f01-9b70-151137a5ac59.jpg?1712355336"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

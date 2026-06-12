@@ -106,7 +106,7 @@ private fun EmitCtx.multiTargetLocals(targets: List<JsonObject>, actions: List<J
 
 private fun refKindForTarget(target: JsonObject): String? = when (target.strField("_Target")) {
     "TargetPlayer" -> "Ref_TargetPlayer"
-    "TargetPermanent", "NumberTargetPermanents", "UptoNumberTargetPermanents", "OneOrTwoTargetPermanents" -> "Ref_TargetPermanent"
+    "TargetPermanent", "NumberTargetPermanents", "UptoNumberTargetPermanents", "OneOrTwoTargetPermanents", "UptoOneTargetPermanent" -> "Ref_TargetPermanent"
     "TargetGraveyardCard", "UptoOneTargetGraveyardCard" -> "Ref_TargetGraveyardCard"
     else -> null
 }

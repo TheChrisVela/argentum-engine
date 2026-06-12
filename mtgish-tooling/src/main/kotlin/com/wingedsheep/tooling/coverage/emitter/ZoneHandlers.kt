@@ -114,6 +114,23 @@ internal val zoneHandlers: Map<String, ActionHandler> = actionHandlers {
         val a = args.asArr ?: return@on null
         val cond = a.getOrNull(0) as? JsonObject ?: return@on null
         val inner = (a.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>() ?: return@on null
+        // "If a permanent was returned this way, [do X]" (Nurturing Pixie) — the `up to one target …
+        // return to hand` idiom gates a follow-up on whether the optional target was actually returned.
+        // The engine expresses "the optional target still exists / was acted on" as
+        // `Conditions.TargetMatchesFilter(<zone-agnostic type filter>)` (the moved card still matches its
+        // type line after going to hand). Render only the bare `AnyPermanent` filter -> Permanent, and
+        // only when the ability has a bound target (the "this way" subject); a narrower/other filter, or
+        // no bound target, declines -> SCAFFOLD rather than emit a wrong gate.
+        if (cond.strField("_Condition") == "APermanentWasPutIntoHandThisWay") {
+            if (tvar == null) return@on null
+            if (cond["args"].strField("_Permanents") != "AnyPermanent") return@on null
+            val edsl = renderEffectList(inner, tvar) ?: return@on null
+            return@on call(
+                "ConditionalEffect",
+                arg("condition", call("Conditions.TargetMatchesFilter", arg("GameObjectFilter.Permanent"))),
+                arg("effect", edsl),
+            )
+        }
         // "if you control a <filter>" — a resolution-time state test over your own board.
         if (cond.strField("_Condition") == "PlayerPassesFilter") {
             val condDsl = actionConditionDsl(cond) ?: return@on null

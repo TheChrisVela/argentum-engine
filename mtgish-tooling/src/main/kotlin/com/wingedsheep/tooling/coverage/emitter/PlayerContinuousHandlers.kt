@@ -230,6 +230,14 @@ internal fun EmitCtx.renderEachPlayer(node: JsonObject): Dsl? {
     if (jsonContains(node, "_Players", "AnyPlayer") && "PutAPermanentIntoItsOwnersHand" in blob)
         return call("Effects.EachPlayerReturnPermanentToHand")
     if (jsonContains(node, "_Players", "Opponent") && "Discard" in blob) return call("Patterns.Hand.eachOpponentDiscards", arg("1"))  // Noxious Toad
+    // "each opponent loses N life" (Raven of Fell Omens). Only a fixed Integer amount renders, scoped to
+    // every opponent via EffectTarget.PlayerRef(Player.EachOpponent); a derived/X amount scaffolds.
+    if (jsonContains(node, "_Players", "Opponent") && jsonContains(node, "_Action", "LoseLife")) {
+        val inner = node["args"].asArr?.filterIsInstance<JsonObject>()
+            ?.firstOrNull { it.strField("_Action") == "LoseLife" } ?: return null
+        val amt = findInteger(inner["args"]) as? Int ?: return null
+        return call("Effects.LoseLife", arg("$amt"), arg("EffectTarget.PlayerRef(Player.EachOpponent)"))
+    }
     if (jsonContains(node, "_Action", "DrawNumberCards") || jsonContains(node, "_GameNumber", "ValueX"))
         return call("Patterns.Hand.eachPlayerDrawsX", arg("includeController", "true"), arg("includeOpponents", "true"))
     return null

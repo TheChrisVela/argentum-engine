@@ -444,7 +444,10 @@ object Fidelity {
     // `imageUri` is purely cosmetic art (a created token's picture, like a card's), never a rules input —
     // the same reason `oracleText`/`metadata` are excluded. The emitter doesn't resolve a token's Scryfall
     // image, so a hand-authored card carrying it would diverge on art alone; ignore it like the others.
-    private val NON_GAMEPLAY_KEYS = setOf("metadata", "oracleText", "colorIdentityOverride", "imageUri")
+    // `descriptionOverride` is the human-readable rules-text override a hand-authored ability may carry
+    // (`description = "…"`); it's display-only (never a rules input, like `oracleText`), and the emitter
+    // doesn't synthesise per-ability prose — so ignore it rather than diverge on text alone.
+    private val NON_GAMEPLAY_KEYS = setOf("metadata", "oracleText", "colorIdentityOverride", "imageUri", "descriptionOverride")
 
     private fun JsonObject.isAbilityNode(): Boolean {
         return containsKey("effect") && (containsKey("trigger") || containsKey("cost"))
