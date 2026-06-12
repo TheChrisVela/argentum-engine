@@ -258,6 +258,25 @@ class SecretsOfStrixhavenScenarioTest : ScenarioTestBase() {
             }
         }
 
+        test("Sneering Shadewriter: ETB drains each opponent for 2 and gains you 2") {
+            val game = scenario()
+                .withPlayers()
+                .withCardInHand(1, "Sneering Shadewriter")
+                .withLandsOnBattlefield(1, "Swamp", 5)
+                .withActivePlayer(1)
+                .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                .build()
+
+            game.castSpell(1, "Sneering Shadewriter").error shouldBe null
+            game.resolveStack() // ETB trigger resolves
+
+            game.getLifeTotal(2) shouldBe 18
+            game.getLifeTotal(1) shouldBe 22
+
+            val shade = game.findPermanent("Sneering Shadewriter")!!
+            projector.project(game.state).hasKeyword(shade, Keyword.FLYING).shouldBeTrue()
+        }
+
         test("Zealous Lorecaster: ETB returns an instant/sorcery from your graveyard to hand") {
             val game = scenario()
                 .withPlayers()
