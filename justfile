@@ -160,7 +160,7 @@ coverage-verify-all: _coverage-tool
     set -euo pipefail
     echo "== emitter golden (hermetic, all committed fixtures) =="
     ./gradlew :mtgish-tooling:test --tests "*EmitterGoldenTest" --console=plain
-    for s in POR; do
+    for s in POR ISD; do
         echo "== coverage-verify $s (compile + gameplay-tree gate) =="
         just coverage-verify "$s"
     done
