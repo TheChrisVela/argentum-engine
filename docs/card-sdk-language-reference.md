@@ -2423,6 +2423,20 @@ composite abilities).
     off the stack with a zone-move); a printed `suspend N—[cost]` exiles from hand as its cast cost.
   - **Taigam, Master Opportunist** is the first user: `Composite(CopyTargetSpell(TriggeringEntity),
     CounterEffect(TriggeringEntity → Exile), Suspend(TriggeringEntity, 4))`.
+- `Paradigm` (Secrets of Strixhaven) — `spell { effect = …; paradigm() }` on a Lesson spell. An **exile-zone
+  recurrence** mechanic, modelled exactly like Suspend (a marker the engine reads off an exiled card), differing
+  only in that it casts a **copy** rather than the card itself, so the original recurs forever. Oracle: "[effect]
+  Then exile this spell. After you first resolve a spell with this name, you may cast a copy of it from exile
+  without paying its mana cost at the beginning of each of your first main phases." `paradigm()` implies
+  `selfExile()`: the spell exiles itself on resolution (reusing the `selfExileOnResolve` → `StackResolver` exile
+  path) and is tagged with the `ParadigmComponent` marker as it lands in exile; the `Keyword.PARADIGM` display
+  keyword is added automatically. The engine then grants `Paradigm.recastAbility` — a synthesized
+  `activeZone = EXILE`, `StepEvent(PRECOMBAT_MAIN, You)` trigger whose `MayEffect` copies the card via
+  `CopyCardIntoCollectionEffect(Self)` and casts it with `CastFromCollectionWithoutPayingCostEffect` — to **any**
+  exiled card carrying the marker (the marker is the gate: a Lesson exiled by some other path never recurs). The
+  original stays in exile; each cast copy is a phantom that ceases to exist (CR 707.10a / 112.3b), so there is no
+  exponential growth. The `Lesson` spell subtype (`Subtype.LESSON`) is a plain, non-functional subtype (no Learn
+  mechanic in the set), but the type line must parse it.
 - `Craft(filter, cost)` — `card { craft(filter, cost) }` builder helper (CR 702.167, The Lost Caverns of
   Ixalan). On the front face of a transforming DFC: "Craft with [filter] [cost] ([cost], Exile this permanent,
   Exile [filter] you control and/or [filter] cards from your graveyard: Return this card to the battlefield
