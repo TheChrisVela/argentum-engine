@@ -138,8 +138,8 @@ object Emitter {
             }
         }
 
-        val handledRules = setOf("SpellActions", "TriggerA", "PermanentRuleEffect", "Flying", "Haste",
-            "Vigilance", "Reach", "Defender", "Landwalk", "FirstStrike", "Trample", "CastEffect")
+        val handledRules = setOf("SpellActions", "SpellActions_Spree", "TriggerA", "PermanentRuleEffect",
+            "Flying", "Haste", "Vigilance", "Reach", "Defender", "Landwalk", "FirstStrike", "Trample", "CastEffect")
         for (rule in (card["Rules"].asArr ?: JsonArray(emptyList()))) {
             if (rule !is JsonObject) continue
             if (rule in skipRules) continue  // already holed by the aura pre-check (partial mode)
@@ -155,6 +155,7 @@ object Emitter {
                     continue
                 }
                 rname == "SpellActions" -> block = ctx.spellBlock(card)
+                rname == "SpellActions_Spree" -> block = ctx.spreeSpellBlock(rule)
                 rname == "TriggerA" -> block = ctx.triggerBlock(rule)
                 rname == "TriggerI" -> block = ctx.triggerIBlock(rule)
                 rname == "TriggerOnceEachTurn" -> block = ctx.triggerBlock(rule, oncePerTurn = true)
@@ -245,7 +246,9 @@ object Emitter {
             body.addAll(block)
         }
 
-        if (!permanent && !jsonContains(card["Rules"], "_Rule", "SpellActions")) {
+        if (!permanent && !jsonContains(card["Rules"], "_Rule", "SpellActions") &&
+            !jsonContains(card["Rules"], "_Rule", "SpellActions_Spree")
+        ) {
             gap("no-renderable-effect", addReason = "no-renderable-effect")?.let { return it }
         }
 
