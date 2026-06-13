@@ -64,6 +64,12 @@ data class GameConfig(
     val format: Format = Format.Standard,
 
     /**
+     * Which opponents creatures may attack (CR 802 / 803). Defaults to [AttackMode.MULTIPLE].
+     * Set by the Free-for-All lobby (CR 806.2b); irrelevant in two-player games.
+     */
+    val attackMode: com.wingedsheep.sdk.core.AttackMode = com.wingedsheep.sdk.core.AttackMode.MULTIPLE,
+
+    /**
      * Seed for the game's deterministic RNG (turn order, library shuffles, coin flips, every
      * "at random" choice). When null, the initializer draws a fresh seed from entropy so live
      * play stays random — but the chosen seed is always recorded on [InitializationResult.seed],
@@ -141,7 +147,7 @@ class GameInitializer(
         // is recorded on the result so the game is reproducible later. This clock read is the one
         // sanctioned non-determinism boundary — once seeded, the engine is a pure function again.
         val resolvedSeed: Long = config.seed ?: System.nanoTime()
-        var state = GameState(format = config.format, rng = GameRng.seeded(resolvedSeed))
+        var state = GameState(format = config.format, attackMode = config.attackMode, rng = GameRng.seeded(resolvedSeed))
         val playerIds = mutableListOf<EntityId>()
 
         // Validate Commander-format prerequisites up front. Each player must designate a
@@ -186,7 +192,10 @@ class GameInitializer(
                 PlayerTurnsTakenComponent(count = 0),
                 MulliganStateComponent(
                     mulligansTaken = 0,
-                    hasKept = config.skipMulligans  // Auto-keep if skipping mulligans
+                    hasKept = config.skipMulligans,  // Auto-keep if skipping mulligans
+                    // CR 800.6: in a multiplayer game (began with >2 players) the first mulligan
+                    // is free. Two-player games keep the plain London Mulligan.
+                    freeMulligan = config.players.size > 2
                 )
             )
 

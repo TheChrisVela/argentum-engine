@@ -158,6 +158,14 @@ data class GameState(
     val format: Format = Format.Standard,
 
     /**
+     * Which opponents a creature may attack in this game (CR 802 / 803). Chosen in the lobby for
+     * Free-for-All games (CR 806.2b requires exactly one of the three). Defaults to
+     * [AttackMode.MULTIPLE] so two-player games and existing callers are unaffected — in a
+     * two-player game all three modes behave identically.
+     */
+    val attackMode: com.wingedsheep.sdk.core.AttackMode = com.wingedsheep.sdk.core.AttackMode.MULTIPLE,
+
+    /**
      * Cumulative combat damage dealt by each commander to each player, keyed by
      * `(commanderEntityId, defendingPlayerId)`. Populated by `CombatDamageManager` at the
      * `DamageDealtEvent` emission sites for combat damage to a player. Read by the
@@ -677,6 +685,28 @@ data class GameState(
             }
         }
         return afterPlayer
+    }
+
+    /**
+     * Get the previous player still in the game in turn order before the given player — the
+     * mirror of [getNextPlayer], walking seats the other way. Players who have left the game
+     * (CR 800.4a) are skipped. Used by the attack-right option (CR 803.1b): the player to your
+     * right is the previous remaining seat in turn order. Returns [beforePlayer] if everyone
+     * else has left.
+     */
+    fun getPreviousPlayer(beforePlayer: EntityId): EntityId {
+        val size = turnOrder.size
+        if (size == 0) return beforePlayer
+        val start = turnOrder.indexOf(beforePlayer)
+        for (step in 1..size) {
+            val candidate = turnOrder[((start - step) % size + size) % size]
+            if (getEntity(candidate)
+                    ?.has<com.wingedsheep.engine.state.components.player.PlayerLostComponent>() != true
+            ) {
+                return candidate
+            }
+        }
+        return beforePlayer
     }
 
     companion object {

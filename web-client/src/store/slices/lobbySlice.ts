@@ -2,7 +2,7 @@
  * Lobby slice - handles tournament lobbies, spectating, and lobby management.
  */
 import type { SliceCreator, LobbyState, TournamentState, FfaState, SpectatingState } from './types'
-import type { DeckFormat, TournamentFormat, LobbyGameMode } from '@/types'
+import type { DeckFormat, TournamentFormat, LobbyGameMode, AttackMode } from '@/types'
 import {
   createCreateTournamentLobbyMessage,
   createJoinLobbyMessage,
@@ -38,7 +38,7 @@ export interface LobbySliceActions {
   startLobby: () => void
   leaveLobby: () => void
   stopLobby: () => void
-  updateLobbySettings: (settings: { setCodes?: string[]; format?: TournamentFormat; boosterCount?: number; boosterDistribution?: Record<string, number>; maxPlayers?: number; gamesPerMatch?: number; pickTimeSeconds?: number; picksPerRound?: number; isPublic?: boolean; deckFormat?: DeckFormat | '' | null; chaosBoosters?: boolean; bannedCardNames?: string[]; aiAssistEnabled?: boolean; gameMode?: LobbyGameMode }) => void
+  updateLobbySettings: (settings: { setCodes?: string[]; format?: TournamentFormat; boosterCount?: number; boosterDistribution?: Record<string, number>; maxPlayers?: number; gamesPerMatch?: number; pickTimeSeconds?: number; picksPerRound?: number; isPublic?: boolean; deckFormat?: DeckFormat | '' | null; chaosBoosters?: boolean; bannedCardNames?: string[]; aiAssistEnabled?: boolean; gameMode?: LobbyGameMode; attackMode?: AttackMode }) => void
   addAiToLobby: () => void
   removeAiFromLobby: (playerId: string) => void
   readyForNextRound: () => void

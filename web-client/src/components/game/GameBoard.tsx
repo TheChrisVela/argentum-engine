@@ -4,7 +4,7 @@ import { useInteraction } from '@/hooks/useInteraction'
 import { useViewingPlayer, useOpponent, useOpponents, useViewedOpponent, useSeatIndex, useStackCards, selectPriorityMode, useGhostCards, useBattlefieldCards } from '@/store/selectors'
 import { seatColor } from '@/styles/seatColors'
 import { useMultiplayerView } from '@/hooks/useMultiplayerView'
-import { OpponentRail, OPPONENT_RAIL_HEIGHT } from './OpponentRail'
+import { OpponentRail } from './OpponentRail'
 import { hand, getNextStep, StepShortNames } from '@/types'
 import { StepStrip } from '../ui/StepStrip'
 import { ManaPool } from '../ui/ManaPool'
@@ -83,10 +83,9 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
   const opponents = useOpponents()
   const viewedOpponent = useViewedOpponent()
   const isMulti = (gameState?.players.length ?? 0) > 2
-  const railHeight = isMulti ? OPPONENT_RAIL_HEIGHT : 0
-  // Everything anchored to the viewport top (opponent hand, grid row 1, labels)
-  // shifts down by the rail height in multiplayer.
-  const effectiveTopOffset = topOffset + railHeight
+  // The multiplayer player rail is now a floating top-left column (under the fullscreen button),
+  // not a reserved full-width band — so it no longer pushes the board down.
+  const effectiveTopOffset = topOffset
   useMultiplayerView(isMulti, opponents)
   const stripOpponents = useMemo(() => opponents.filter((o) => !o.hasLost), [opponents])
   const viewedStripIndex = Math.max(
@@ -201,6 +200,12 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
     : spectatorMode
       ? spectatorPlayer2
       : opponent
+
+  // The viewing player's own seat-identity color. In multiplayer "you" are tinted with the same
+  // seat color everyone else sees for you (and that the rail's self chip uses), instead of the
+  // fixed 2-player blue.
+  const selfSeatIndex = useSeatIndex(effectiveViewingPlayer?.playerId ?? null)
+  const selfSeatColor = seatColor(Math.max(0, selfSeatIndex))
 
   if (!gameState || (!spectatorMode && (!playerId || !viewingPlayer))) {
     return null
@@ -447,7 +452,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       )}
       {isMulti && (
         <>
-          <OpponentRail topOffset={topOffset} spectatorMode={spectatorMode} />
+          <OpponentRail spectatorMode={spectatorMode} />
           <div
             data-opponent-strip
             style={{
@@ -642,7 +647,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
         <div style={{ ...styles.centerLifeSection, ...styles.centerLifeSectionRight }}>
           {effectiveViewingPlayer && (
             <>
-              <LifeDisplay life={effectiveViewingPlayer.life} isPlayer playerId={effectiveViewingPlayer.playerId} playerName={effectiveViewingPlayer.name} spectatorMode={spectatorMode} poisonCounters={effectiveViewingPlayer.poisonCounters} commanderDamage={effectiveViewingPlayer.commanderDamage ?? []} />
+              <LifeDisplay life={effectiveViewingPlayer.life} isPlayer playerId={effectiveViewingPlayer.playerId} playerName={effectiveViewingPlayer.name} spectatorMode={spectatorMode} poisonCounters={effectiveViewingPlayer.poisonCounters} commanderDamage={effectiveViewingPlayer.commanderDamage ?? []} {...(isMulti ? { seatColor: selfSeatColor.base } : {})} />
               {!responsive.isMobile && <ActiveEffectsBadges effects={effectiveViewingPlayer.activeEffects} />}
               {!responsive.isMobile && effectiveViewingPlayer.manaPool && <ManaPool manaPool={effectiveViewingPlayer.manaPool} />}
             </>

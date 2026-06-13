@@ -58,7 +58,7 @@ enum class LobbyGameMode {
     TOURNAMENT,
 
     /**
-     * One multiplayer Free-for-All game (CR 806) seating every lobby player (2-4). No rounds, no
+     * One multiplayer Free-for-All game (CR 806) seating every lobby player (2-6). No rounds, no
      * matches, no bracket — when all decks are in, a single N-player [com.wingedsheep.gameserver.session.GameSession]
      * starts. Standings are the elimination order; readying up afterwards starts a new game with
      * the same pod ("play again").
@@ -283,6 +283,12 @@ class TournamentLobby(
      * everyone. Orthogonal to [format] — any pool-building format composes with either mode.
      */
     var gameMode: LobbyGameMode = LobbyGameMode.TOURNAMENT,
+    /**
+     * Which opponents creatures may attack in a Free-for-All game (CR 802 / 803; CR 806.2b requires
+     * exactly one). Only meaningful when [gameMode] is FREE_FOR_ALL — ignored by the tournament
+     * bracket (whose matches are always two-player). Defaults to [AttackMode.MULTIPLE].
+     */
+    var attackMode: com.wingedsheep.sdk.core.AttackMode = com.wingedsheep.sdk.core.AttackMode.MULTIPLE,
 ) {
 
     val isFreeForAll: Boolean get() = gameMode == LobbyGameMode.FREE_FOR_ALL
@@ -1484,6 +1490,7 @@ class TournamentLobby(
                 bannedCardNames = bannedCardNames.sorted(),
                 aiAssistEnabled = aiAssistEnabled,
                 gameMode = gameMode.name,
+                attackMode = attackMode.name,
             ),
             isHost = isHost(forPlayerId)
         )

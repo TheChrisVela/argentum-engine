@@ -217,22 +217,32 @@ data class MulliganStateComponent(
      * Drained as the player resolves each prompt (yes = card moved to battlefield, no = card
      * stays in hand). The leyline phase for this player is "complete" once the list is empty.
      */
-    val pendingLeylineCardIds: List<EntityId> = emptyList()
+    val pendingLeylineCardIds: List<EntityId> = emptyList(),
+    /**
+     * Whether this player's *first* mulligan is free (CR 800.6). In a multiplayer game (a game
+     * that began with more than two players) the first mulligan a player takes doesn't count
+     * toward the number of cards they put on the bottom or the number of mulligans they may take;
+     * subsequent mulligans count as normal. Set once at game setup from the table size and carried
+     * through bottoming — see [GameInitializer]. False for two-player games (London Mulligan as-is).
+     */
+    val freeMulligan: Boolean = false
 ) : Component {
     companion object {
         const val STARTING_HAND_SIZE = 7
     }
 
     /**
-     * The number of cards this player must put on the bottom after keeping.
+     * The number of cards this player must put on the bottom after keeping. With [freeMulligan]
+     * (CR 800.6) the first mulligan is discounted, so an N-mulligan keep bottoms N−1 cards.
      */
-    val cardsToBottom: Int get() = mulligansTaken
+    val cardsToBottom: Int get() = if (freeMulligan) maxOf(0, mulligansTaken - 1) else mulligansTaken
 
     /**
-     * Check if the player can still mulligan (they can always mulligan until
-     * they would have to bottom more cards than they drew).
+     * Check if the player can still mulligan. A player can mulligan until keeping would force
+     * them to bottom their whole hand — so the cap is on [cardsToBottom], not the raw mulligan
+     * count. With [freeMulligan] the free first mulligan grants one extra mulligan before that cap.
      */
-    val canMulligan: Boolean get() = mulligansTaken < STARTING_HAND_SIZE && !hasKept
+    val canMulligan: Boolean get() = !hasKept && cardsToBottom < STARTING_HAND_SIZE
 
     /**
      * Record a mulligan taken.

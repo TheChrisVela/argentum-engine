@@ -224,6 +224,30 @@ class CantBeAttackedWithoutDefenderRule : AttackDefenderRule {
     }
 }
 
+/**
+ * AttackMode (CR 802 / 803): when the game uses attack-left or attack-right, a creature may only
+ * attack the opponent in the adjacent seat (or a planeswalker/battle that opponent controls). The
+ * set of legal opponents is computed centrally by
+ * [com.wingedsheep.engine.mechanics.combat.CombatDefenders.legalDefendingPlayers], so this rule and
+ * the legal-action enumerator never disagree. A no-op under [com.wingedsheep.sdk.core.AttackMode.MULTIPLE]
+ * (and in any two-player game, where every mode permits the sole opponent).
+ */
+class AttackModeDefenderRule : AttackDefenderRule {
+    override fun check(ctx: AttackCheckContext, defenderId: EntityId): String? {
+        if (ctx.state.attackMode == com.wingedsheep.sdk.core.AttackMode.MULTIPLE) return null
+        val defendingPlayer = findDefendingPlayer(ctx, defenderId)
+        val legal = com.wingedsheep.engine.mechanics.combat.CombatDefenders
+            .legalDefendingPlayers(ctx.state, ctx.attackingPlayer)
+        if (defendingPlayer in legal) return null
+        val side = when (ctx.state.attackMode) {
+            com.wingedsheep.sdk.core.AttackMode.LEFT -> "the player to your left"
+            com.wingedsheep.sdk.core.AttackMode.RIGHT -> "the player to your right"
+            com.wingedsheep.sdk.core.AttackMode.MULTIPLE -> "an eligible player"
+        }
+        return "Can only attack $side"
+    }
+}
+
 // =========================================================================
 // Shared helpers
 // =========================================================================
@@ -251,5 +275,6 @@ fun defaultAttackRestrictionRules(): List<AttackRestrictionRule> = listOf(
 
 fun defaultAttackDefenderRules(): List<AttackDefenderRule> = listOf(
     CantAttackUnlessDefenderRule(),
-    CantBeAttackedWithoutDefenderRule()
+    CantBeAttackedWithoutDefenderRule(),
+    AttackModeDefenderRule()
 )

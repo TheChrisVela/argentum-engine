@@ -557,11 +557,21 @@ class GamePlayHandler(
             seat != playerId && seat in state.activePlayers && state.actorFor(seat) == playerId
         }
         val conceder = gameSession.getPlayerSession(playerId)
-        if (!stillControlsLiveSeat && conceder != null && conceder.webSocketSession.isOpen) {
-            sender.send(conceder.webSocketSession, ServerMessage.PlayerEliminated(
-                gameId = gameSession.sessionId,
-                reason = GameOverReason.CONCESSION,
-            ))
+        if (!stillControlsLiveSeat && conceder != null) {
+            if (conceder.webSocketSession.isOpen) {
+                sender.send(conceder.webSocketSession, ServerMessage.PlayerEliminated(
+                    gameId = gameSession.sessionId,
+                    reason = GameOverReason.CONCESSION,
+                ))
+            }
+            // The conceder is out of the game (the table plays on without them). Clear their
+            // game-session routing — exactly as handleGameOver does for everyone — so that
+            // returning to the lobby sticks: a reconnect/refresh treats them as "waiting" instead
+            // of dropping them back into a game they've left. They stay seated in the engine state
+            // (CR 800.4a) and still receive the rebroadcast below until they choose to leave.
+            conceder.currentGameSessionId = null
+            sessionRegistry.getIdentityByWsId(conceder.webSocketSession.id)?.currentGameSessionId = null
+            sessionRegistry.getPlayerSession(conceder.webSocketSession.id)?.currentGameSessionId = null
         }
         broadcastStateUpdate(gameSession, emptyList())
     }

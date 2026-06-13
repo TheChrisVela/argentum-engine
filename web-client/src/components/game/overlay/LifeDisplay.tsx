@@ -139,8 +139,15 @@ export function LifeDisplay({
 
   const size = responsive.isMobile ? 36 : responsive.isTablet ? 42 : responsive.isShortDesktop ? 40 : 48
 
-  // Dynamic styling based on targeting state
-  const bgColor = isPlayer ? '#1a3a5a' : '#4a2812'
+  // Dynamic styling based on targeting state. In multiplayer a seatColor is supplied for *both*
+  // roles (it's the player's seat identity, the same color others see), so it takes precedence
+  // over the fixed 2-player blue (player) / orange (opponent) default.
+  const identityColor = seatColor ?? (isPlayer ? '#3a7aba' : '#e08038')
+  // The orb fill is a dark tint of the identity color. In multiplayer that's the seat color
+  // (so the circle visibly matches the player); 2-player keeps the fixed blue (you) / brown (foe).
+  const bgColor = seatColor
+    ? `color-mix(in srgb, ${seatColor} 32%, #0b0e16)`
+    : isPlayer ? '#1a3a5a' : '#4a2812'
   const borderColor = isDistributeTarget && distributeAllocated > 0
     ? '#ff6b35' // Orange for distribute targets with allocation
     : isDistributeTarget
@@ -151,7 +158,7 @@ export function LifeDisplay({
           ? '#ff4444' // Red glow if valid target
           : isAttackDropTarget
             ? '#ff4444' // Red highlight when attacker being dragged
-            : isPlayer ? '#3a7aba' : seatColor ?? '#e08038'
+            : identityColor
 
   const cursor = isValidTarget || isDistributeTarget || isDefenderClickTarget ? 'pointer' : 'default'
   const boxShadow = isDistributeTarget && distributeAllocated > 0
@@ -171,14 +178,15 @@ export function LifeDisplay({
   // (otherwise the name itself already carries the same information) and when
   // not spectating (there's no "you" in spectator mode).
   const showRoleTag = !spectatorMode && !!playerName
-  // Seat-tinted in multiplayer (SEAT_COLORS are 6-digit hex, so appending an
-  // alpha byte gives the translucent variants the tag uses).
-  const roleColor = isPlayer
-    ? 'rgba(74, 154, 234, 0.7)'
-    : seatColor ? `${seatColor}CC` : 'rgba(255, 158, 70, 0.8)'
-  const roleBorder = isPlayer
-    ? 'rgba(74, 154, 234, 0.35)'
-    : seatColor ? `${seatColor}66` : 'rgba(255, 158, 70, 0.4)'
+  // Seat-tinted in multiplayer (SEAT_COLORS are 6-digit hex, so appending an alpha byte gives the
+  // translucent variants the tag uses). A supplied seatColor wins for both roles; otherwise fall
+  // back to the fixed 2-player blue (player) / orange (opponent).
+  const roleColor = seatColor
+    ? `${seatColor}CC`
+    : isPlayer ? 'rgba(74, 154, 234, 0.7)' : 'rgba(255, 158, 70, 0.8)'
+  const roleBorder = seatColor
+    ? `${seatColor}66`
+    : isPlayer ? 'rgba(74, 154, 234, 0.35)' : 'rgba(255, 158, 70, 0.4)'
 
   // On phones the side-by-side name labels push past the screen edges (the
   // step strip leaves them no room) — show a small name *under* the orb
@@ -202,7 +210,7 @@ export function LifeDisplay({
           fontSize: 12,
           fontWeight: 700,
           letterSpacing: '0.5px',
-          color: isPlayer ? '#4a9aea' : seatColor ?? '#ff9e46',
+          color: seatColor ?? (isPlayer ? '#4a9aea' : '#ff9e46'),
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -259,15 +267,12 @@ export function LifeDisplay({
             style={
               life <= 5
                 ? { color: '#ff4444' }
-                : isPlayer
-                  ? {
-                      color: '#ffffff',
-                      textShadow: '0 0 6px rgba(80, 170, 240, 0.55), 0 1px 2px rgba(0, 0, 0, 0.75), 0 0 1px rgba(0, 0, 0, 0.9)',
-                    }
-                  : {
-                      color: '#ffffff',
-                      textShadow: '0 0 6px rgba(255, 130, 40, 0.55), 0 1px 2px rgba(0, 0, 0, 0.75), 0 0 1px rgba(0, 0, 0, 0.9)',
-                    }
+                : {
+                    color: '#ffffff',
+                    // Glow tinted by seat identity in multiplayer; falls back to the fixed
+                    // blue (player) / orange (opponent) 2-player glow.
+                    textShadow: `0 0 6px ${seatColor ? `${seatColor}8C` : isPlayer ? 'rgba(80, 170, 240, 0.55)' : 'rgba(255, 130, 40, 0.55)'}, 0 1px 2px rgba(0, 0, 0, 0.75), 0 0 1px rgba(0, 0, 0, 0.9)`,
+                  }
             }
           >
             {life}
@@ -308,7 +313,7 @@ export function LifeDisplay({
             fontSize: 9,
             fontWeight: 700,
             letterSpacing: '0.4px',
-            color: isPlayer ? '#4a9aea' : seatColor ?? '#ff9e46',
+            color: seatColor ?? (isPlayer ? '#4a9aea' : '#ff9e46'),
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',

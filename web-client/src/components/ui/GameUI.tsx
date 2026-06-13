@@ -419,6 +419,12 @@ function ConnectionOverlay({
                 >
                   Scenario Builder
                 </button>
+                <button
+                  onClick={() => navigate('/set-completion')}
+                  className={styles.secondaryButton}
+                >
+                  Set Completion
+                </button>
                 {import.meta.env.DEV && (
                   <button
                     onClick={() => navigate('/llm-tournament')}
@@ -897,21 +903,48 @@ function LobbyOverlay({
                     Tournament
                   </button>
                   <button
-                    onClick={() => playerCount <= 4 && updateLobbySettings({ gameMode: 'FREE_FOR_ALL' })}
-                    disabled={playerCount > 4}
+                    onClick={() => playerCount <= 6 && updateLobbySettings({ gameMode: 'FREE_FOR_ALL' })}
+                    disabled={playerCount > 6}
                     className={`${styles.settingsButton} ${isFfa ? styles.settingsButtonActive : ''}`}
-                    title="One multiplayer game — everyone at the same table (2-4 players)"
+                    title="One multiplayer game — everyone at the same table (2-6 players)"
                   >
                     Free-for-All
                   </button>
                 </div>
                 {isFfa && (
                   <div className={styles.variantCaption}>
-                    One game, everyone at the same table (2-4 players). Last player standing wins.
+                    One game, everyone at the same table (2-6 players). Last player standing wins.
                   </div>
                 )}
               </div>
             </div>
+            {/* Free-for-All attack rule (CR 802/803) — only relevant once 3+ players share one table */}
+            {isFfa && (
+              <div className={styles.settingsRow}>
+                <span className={styles.settingsLabel}>Attack</span>
+                <div className={styles.variantGroup}>
+                  <div className={styles.settingsButtons}>
+                    {([
+                      ['MULTIPLE', 'Any opponent', 'Each creature may attack any opponent (CR 802)'],
+                      ['LEFT', 'Left only', 'Each creature may attack only the player to your left (CR 803)'],
+                      ['RIGHT', 'Right only', 'Each creature may attack only the player to your right (CR 803)'],
+                    ] as const).map(([mode, label, title]) => (
+                      <button
+                        key={mode}
+                        onClick={() => updateLobbySettings({ attackMode: mode })}
+                        className={`${styles.settingsButton} ${(lobbyState.settings.attackMode ?? 'MULTIPLE') === mode ? styles.settingsButtonActive : ''}`}
+                        title={title}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className={styles.variantCaption}>
+                    Who each creature may attack. "Left"/"right" follow the seating order.
+                  </div>
+                </div>
+              </div>
+            )}
             {isAnySealed && (() => {
               const caption = isCommanderSealed
                 ? 'Open Commander-shaped packs and build a 60-card deck around a commander from your pool. 1v1.'

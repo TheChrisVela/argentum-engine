@@ -36,6 +36,8 @@ data class PersistentTournamentLobby(
     val aiAssistEnabled: Boolean = true,
     /** Lobby mode axis: LobbyGameMode enum name ("TOURNAMENT" / "FREE_FOR_ALL"). */
     val gameMode: String = "TOURNAMENT",
+    /** FFA attack rule: AttackMode enum name ("MULTIPLE" / "LEFT" / "RIGHT"). */
+    val attackMode: String = "MULTIPLE",
     /** FFA mode: session id of the game currently in progress, or null between games. */
     val ffaGameSessionId: String? = null,
     /** FFA mode: completed games in this lobby's play-again loop. */

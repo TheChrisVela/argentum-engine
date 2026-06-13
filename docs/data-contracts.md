@@ -232,13 +232,25 @@ returns a fresh 40-card limited build (23 nonland + 17 lands), matching the orig
 A lobby carries two orthogonal axes: the **format** (`SEALED` / `DRAFT` / `PREMADE_DECKS` / …,
 how the card pool is built) and a new **mode** (`gameMode`: `TOURNAMENT` or `FREE_FOR_ALL`, what
 happens once decks are in). `TOURNAMENT` runs the existing round-robin bracket of 2-player matches.
-`FREE_FOR_ALL` (CR 806) seats **every** lobby player (2–4) in **one** multiplayer `GameSession` —
+`FREE_FOR_ALL` (CR 806) seats **every** lobby player (2–6) in **one** multiplayer `GameSession` —
 no rounds, no matches, no bracket. The two axes compose: any pool-building format + FFA = "draft (or
 sealed, or premade), then one N-player game".
 
 - **`CreateTournamentLobby` / `UpdateLobbySettings`** gain an optional `gameMode` (default
   `TOURNAMENT`). `LobbySettings.gameMode` echoes it. Switching a lobby to `FREE_FOR_ALL` caps
-  `maxPlayers` at 4 and rejects AI seats (the built-in AI is 1v1-only; FFA pods are humans-only).
+  `maxPlayers` at 6 and rejects AI seats (the built-in AI is 1v1-only; FFA pods are humans-only).
+- **Attack rule.** The same two messages also carry an optional `attackMode` (default `MULTIPLE`),
+  echoed by `LobbySettings.attackMode`, choosing which opponents creatures may attack in the FFA
+  game (CR 802 / 803; CR 806.2b requires exactly one): `MULTIPLE` (any opponent), `LEFT`, or
+  `RIGHT` (only the neighbour in that seat direction). It threads to the engine via
+  `GameConfig.attackMode` → `GameState.attackMode`; the legal-action enumerator filters
+  `validAttackTargets` and the engine rejects an out-of-seat declaration. Ignored in `TOURNAMENT`
+  mode and in any two-player game (all three modes permit the sole opponent).
+- **Free mulligan.** A game that begins with more than two players (any FFA pod) uses the CR 800.6
+  multiplayer mulligan: a player's *first* mulligan is free — it bottoms 0 cards and doesn't count
+  toward the mulligan limit. This is engine-internal; the existing `MulliganDecision.cardsToPutOnBottom`
+  already reflects the discounted count, so no client change is needed. Two-player games are
+  unaffected (plain London Mulligan).
 - **Start.** When the last deck is submitted (or the host starts a premade FFA lobby), the server
   creates one `GameSession` seating all players and broadcasts **`freeForAllGameStarting`**
   `{ lobbyId, gameSessionId, gameNumber, players: PlayerSeatInfo[] }` — the FFA counterpart of

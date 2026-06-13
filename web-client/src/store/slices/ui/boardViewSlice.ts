@@ -72,7 +72,10 @@ export const createBoardViewSlice: SliceCreator<BoardViewSlice> = (set, get) => 
     // Only opponents occupy the viewed slot — your half is sacred.
     if (playerId === ownId && !get().spectatingState) return
     if (gameState && !gameState.players.some((p) => p.playerId === playerId)) return
-    set({ viewedOpponentId: playerId, viewPinned: opts?.pin ?? true })
+    const pin = opts?.pin ?? true
+    // Pinning a board and follow-the-action are mutually exclusive: pinning turns follow off
+    // (the camera is locked), so the Follow toggle reflects that rather than lying "on".
+    set({ viewedOpponentId: playerId, viewPinned: pin, ...(pin ? { followAction: false } : {}) })
   },
 
   unpinView: () => set({ viewPinned: false }),
@@ -84,7 +87,8 @@ export const createBoardViewSlice: SliceCreator<BoardViewSlice> = (set, get) => 
     } catch {
       // Private mode — setting just won't persist.
     }
-    set({ followAction: next })
+    // Turning follow on releases any manual pin (the two are mutually exclusive).
+    set({ followAction: next, ...(next ? { viewPinned: false } : {}) })
   },
 
   followViewTo: (playerId) => {

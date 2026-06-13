@@ -192,7 +192,7 @@ class FreeForAllLobbyTest : FunSpec() {
             (secondGame.gameSessionId == gameSessionId) shouldBe false
         }
 
-        test("FFA lobby refuses AI seats and caps the pod at 4 players") {
+        test("FFA lobby refuses AI seats and caps the pod at 6 players") {
             val host = createClient()
             host.connectAs("Host")
             host.send(ClientMessage.CreateTournamentLobby(
@@ -205,8 +205,8 @@ class FreeForAllLobbyTest : FunSpec() {
                 host.messages.any { it is ServerMessage.LobbyCreated } shouldBe true
             }
             eventually(5.seconds) {
-                // maxPlayers is mode-capped at 4 even though the client asked for 8
-                host.latestLobbyUpdate()?.settings?.maxPlayers shouldBe 4
+                // maxPlayers is mode-capped at 6 even though the client asked for 8
+                host.latestLobbyUpdate()?.settings?.maxPlayers shouldBe 6
             }
 
             host.send(ClientMessage.AddAiToLobby)

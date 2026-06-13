@@ -267,6 +267,7 @@ export type {
   AddExtraRoundMessage,
   // Free-for-All types
   LobbyGameMode,
+  AttackMode,
   FfaStandingInfo,
   FreeForAllGameStartingMessage,
   FreeForAllGameCompleteMessage,

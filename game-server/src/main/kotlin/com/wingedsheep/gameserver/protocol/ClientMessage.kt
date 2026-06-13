@@ -147,8 +147,10 @@ sealed interface ClientMessage {
         val isPublic: Boolean = false,
         /** Master switch for in-app AI assistance (Suggest Pick / Auto-build). Defaults off. */
         val aiAssistEnabled: Boolean = false,
-        /** Lobby mode axis: "TOURNAMENT" (default) or "FREE_FOR_ALL" (one multiplayer game, 2-4 players). */
+        /** Lobby mode axis: "TOURNAMENT" (default) or "FREE_FOR_ALL" (one multiplayer game, 2-6 players). */
         val gameMode: String = "TOURNAMENT",
+        /** Free-for-All attack rule (CR 802/803): "MULTIPLE" (default), "LEFT", or "RIGHT". */
+        val attackMode: String = "MULTIPLE",
     ) : ClientMessage
 
     /**
@@ -262,6 +264,8 @@ sealed interface ClientMessage {
         val aiAssistEnabled: Boolean? = null,
         /** Lobby mode axis: "TOURNAMENT" or "FREE_FOR_ALL". Null = unchanged. */
         val gameMode: String? = null,
+        /** Free-for-All attack rule (CR 802/803): "MULTIPLE", "LEFT", or "RIGHT". Null = unchanged. */
+        val attackMode: String? = null,
     ) : ClientMessage
 
     /**

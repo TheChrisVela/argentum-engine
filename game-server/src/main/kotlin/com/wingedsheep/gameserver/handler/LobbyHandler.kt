@@ -576,8 +576,8 @@ class LobbyHandler(
         val maxPlayers = when {
             format == TournamentFormat.WINSTON_DRAFT -> 2
             format == TournamentFormat.GRID_DRAFT -> message.maxPlayers.coerceIn(2, 4)
-            // FFA pods cap at 4 — the multiplayer UI is designed around at most 3 opponent boards.
-            gameMode == LobbyGameMode.FREE_FOR_ALL -> message.maxPlayers.coerceIn(2, 4)
+            // FFA pods cap at 6 — the multiplayer UI lays opponent boards out around the table.
+            gameMode == LobbyGameMode.FREE_FOR_ALL -> message.maxPlayers.coerceIn(2, 6)
             else -> message.maxPlayers.coerceIn(2, 8)
         }
 
@@ -637,6 +637,8 @@ class LobbyHandler(
             chaosBoosters = format.isCommanderFormat,
             aiAssistEnabled = message.aiAssistEnabled,
             gameMode = gameMode,
+            attackMode = runCatching { com.wingedsheep.sdk.core.AttackMode.valueOf(message.attackMode.uppercase()) }
+                .getOrDefault(com.wingedsheep.sdk.core.AttackMode.MULTIPLE),
         )
         lobby.addPlayer(identity)
         lobbyRepository.saveLobby(lobby)
@@ -1989,7 +1991,7 @@ class LobbyHandler(
         }
 
         // Game-mode switch (mode axis is orthogonal to format). Switching to FREE_FOR_ALL caps the
-        // pod at 4 seats and requires a humans-only roster (AI pod players are a deferred project).
+        // pod at 6 seats and requires a humans-only roster (AI pod players are a deferred project).
         message.gameMode?.let { modeStr ->
             val newMode = runCatching { LobbyGameMode.valueOf(modeStr.uppercase()) }.getOrNull()
             if (newMode == null) {
@@ -2002,14 +2004,21 @@ class LobbyHandler(
                         sender.sendError(session, ErrorCode.INVALID_ACTION, "Free-for-All doesn't support AI players yet — remove them first")
                         return
                     }
-                    if (lobby.playerCount > 4) {
-                        sender.sendError(session, ErrorCode.INVALID_ACTION, "Free-for-All supports at most 4 players")
+                    if (lobby.playerCount > 6) {
+                        sender.sendError(session, ErrorCode.INVALID_ACTION, "Free-for-All supports at most 6 players")
                         return
                     }
-                    lobby.maxPlayers = lobby.maxPlayers.coerceIn(2, 4)
+                    lobby.maxPlayers = lobby.maxPlayers.coerceIn(2, 6)
                 }
                 lobby.gameMode = newMode
             }
+        }
+
+        // Free-for-All attack rule (CR 802/803). Stored regardless of mode; only consumed when a
+        // Free-for-All game starts. Invalid values are ignored (settings left unchanged).
+        message.attackMode?.let { modeStr ->
+            runCatching { com.wingedsheep.sdk.core.AttackMode.valueOf(modeStr.uppercase()) }
+                .onSuccess { lobby.attackMode = it }
         }
 
         // Manual boosterCount override (apply after format change)
@@ -2043,7 +2052,7 @@ class LobbyHandler(
         }
         message.maxPlayers?.let {
             val oldMaxPlayers = lobby.maxPlayers
-            val modeCap = if (lobby.isFreeForAll) 4 else 8
+            val modeCap = if (lobby.isFreeForAll) 6 else 8
             when (lobby.format) {
                 TournamentFormat.WINSTON_DRAFT -> lobby.maxPlayers = 2
                 TournamentFormat.GRID_DRAFT -> lobby.maxPlayers = it.coerceIn(2, 4)

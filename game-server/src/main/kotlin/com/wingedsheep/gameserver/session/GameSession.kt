@@ -132,6 +132,15 @@ class GameSession(
     @Volatile
     var engineFormat: com.wingedsheep.sdk.core.Format = com.wingedsheep.sdk.core.Format.Standard
 
+    /**
+     * Which opponents creatures may attack (CR 802 / 803). Set by the Free-for-All lobby handler
+     * before [startGame]; [com.wingedsheep.sdk.core.AttackMode.MULTIPLE] for two-player and
+     * tournament games, where it has no effect. Stored on the session for the same reasons as
+     * [engineFormat].
+     */
+    @Volatile
+    var attackMode: com.wingedsheep.sdk.core.AttackMode = com.wingedsheep.sdk.core.AttackMode.MULTIPLE
+
     /** Player info for persistence (playerId -> (playerName, token)) */
     private val playerPersistenceInfo = mutableMapOf<EntityId, PlayerPersistenceInfo>()
 
@@ -373,6 +382,7 @@ class GameSession(
             players = playerConfigs,
             useHandSmoother = useHandSmoother,
             format = engineFormat,
+            attackMode = attackMode,
         )
 
         val result = gameInitializer.initializeGame(config)
@@ -516,10 +526,15 @@ class GameSession(
             emptyMap()
         }
         val isOnThePlay = gameState?.activePlayerId == playerId
+        // Cards bottomed if this player keeps now. Reads the component's free-mulligan-aware
+        // cardsToBottom (CR 800.6) rather than the raw mulligan count, so a multiplayer first
+        // mulligan correctly shows "bottom 0".
+        val cardsToPutOnBottom = state?.getEntity(playerId)
+            ?.get<MulliganStateComponent>()?.cardsToBottom ?: count
         return ServerMessage.MulliganDecision(
             hand = hand,
             mulliganCount = count,
-            cardsToPutOnBottom = count,
+            cardsToPutOnBottom = cardsToPutOnBottom,
             cards = cards,
             isOnThePlay = isOnThePlay
         )

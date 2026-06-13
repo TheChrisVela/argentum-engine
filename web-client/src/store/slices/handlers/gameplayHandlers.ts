@@ -498,11 +498,18 @@ export function createGameplayHandlers(set: SetState, get: GetState): Pick<Messa
     },
 
     onStateUpdate: (msg) => {
+      // Once we've left the game (returnToMenu nulls sessionId — e.g. an eliminated FFA player
+      // who returned to the pod standings), ignore its ongoing broadcasts instead of being
+      // dragged back into the board. sessionId is always set at game start before any state
+      // flows, so this never drops a legitimate in-game update.
+      if (get().sessionId == null) return
       getWebSocket()?.onStateVersionReceived(msg.stateVersion)
       processStateUpdate(msg.state, msg, set, get)
     },
 
     onStateDeltaUpdate: (msg) => {
+      // See onStateUpdate: don't re-enter a game we've left (and don't request a resync for it).
+      if (get().sessionId == null) return
       const ws = getWebSocket()
       ws?.onStateVersionReceived(msg.stateVersion)
 

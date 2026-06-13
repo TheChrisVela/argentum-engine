@@ -1125,9 +1125,17 @@ export interface LobbySettings {
   readonly aiAssistEnabled: boolean
   /** Lobby mode axis: bracket of 2-player matches vs one multiplayer Free-for-All game. */
   readonly gameMode: LobbyGameMode
+  /** Free-for-All attack rule (CR 802/803). Only meaningful when gameMode is FREE_FOR_ALL. */
+  readonly attackMode: AttackMode
 }
 
 export type LobbyGameMode = 'TOURNAMENT' | 'FREE_FOR_ALL'
+
+/**
+ * Free-for-All attack rule (CR 802/803): 'MULTIPLE' = attack any opponent; 'LEFT'/'RIGHT' =
+ * attack only the neighbour in that seat direction. Two-player games behave identically for all.
+ */
+export type AttackMode = 'MULTIPLE' | 'LEFT' | 'RIGHT'
 
 export type TournamentFormat =
   | 'SEALED'
@@ -2051,6 +2059,8 @@ export interface UpdateLobbySettingsMessage {
   readonly aiAssistEnabled?: boolean
   /** Lobby mode axis ('TOURNAMENT' / 'FREE_FOR_ALL'). Omit to leave unchanged. */
   readonly gameMode?: LobbyGameMode
+  /** Free-for-All attack rule ('MULTIPLE' / 'LEFT' / 'RIGHT'). Omit to leave unchanged. */
+  readonly attackMode?: AttackMode
 }
 
 // Tournament Client Messages
@@ -2247,6 +2257,7 @@ export function createUpdateLobbySettingsMessage(
     bannedCardNames?: readonly string[]
     aiAssistEnabled?: boolean
     gameMode?: LobbyGameMode
+    attackMode?: AttackMode
   }
 ): UpdateLobbySettingsMessage {
   return { type: 'updateLobbySettings', ...settings }

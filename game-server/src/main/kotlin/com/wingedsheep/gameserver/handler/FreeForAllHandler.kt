@@ -18,7 +18,7 @@ import org.springframework.web.socket.WebSocketSession
 
 /**
  * Free-for-All lobby mode (multiplayer.md Phase 4): instead of pairing lobby players into
- * 2-player bracket matches, one N-player [GameSession] seats every lobby player (2-4). The
+ * 2-player bracket matches, one N-player [GameSession] seats every lobby player (2-6). The
  * format axis (sealed / draft / premade decks) is untouched — this handler only replaces the
  * "what happens once decks are in" half that [TournamentMatchHandler] covers for bracket mode.
  *
@@ -82,6 +82,8 @@ class FreeForAllHandler(
                 com.wingedsheep.sdk.core.Format.Commander()
             }
         }
+        // CR 802 / 803 — the lobby's chosen attack rule applies to this multiplayer game.
+        gameSession.attackMode = lobby.attackMode
 
         for (playerState in playerStates) {
             val identity = playerState.identity

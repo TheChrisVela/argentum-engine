@@ -56,12 +56,15 @@ class CombatEnumerator : ActionEnumerator {
             if (!attackersAlreadyDeclared) {
                 val validAttackers = context.turnManager.getValidAttackers(state, playerId)
                 val projected = context.projected
-                val opponents = state.turnOrder.filter { it != playerId }
+                // Opponents this player may attack under the game's AttackMode (CR 802 / 803).
+                // A planeswalker is attackable iff its controller is one of those opponents.
+                val attackableOpponents = com.wingedsheep.engine.mechanics.combat.CombatDefenders
+                    .legalDefendingPlayers(state, playerId)
                 val opponentPlaneswalkers = state.getBattlefield().filter { entityId ->
                     projected.isPlaneswalker(entityId) &&
-                        projected.getController(entityId) in opponents
+                        projected.getController(entityId) in attackableOpponents
                 }
-                val validAttackTargets = opponents + opponentPlaneswalkers
+                val validAttackTargets = attackableOpponents.toList() + opponentPlaneswalkers
                 val mandatoryAttackers = context.turnManager.getMandatoryAttackers(state, playerId)
                 return listOf(LegalAction(
                     actionType = "DeclareAttackers",

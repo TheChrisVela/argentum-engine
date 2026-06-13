@@ -25,15 +25,26 @@ export function StackDisplay() {
   const toggleDecisionSelection = useGameStore((state) => state.toggleDecisionSelection)
   const pendingDecision = useGameStore((state) => state.pendingDecision)
   const gameState = useGameStore((state) => state.gameState)
-  // Multiplayer: stack items carry their caster's seat color (left border) so
-  // "whose spell is that" reads at a glance. Inactive in 2-player games.
+  // Multiplayer: stack items are wrapped in their caster's seat color (full border + glow) and
+  // tagged with the caster's name, so "whose spell is that" reads at a glance. 2-player games
+  // have only one possible caster per side, so this stays off.
   const players = useGameStore((state) => selectGameState(state)?.players)
   const isMulti = (players?.length ?? 0) > 2
-  const seatBorderFor = (controllerId: EntityId): React.CSSProperties => {
-    if (!isMulti || !players) return {}
+  const seatMetaFor = (controllerId: EntityId) => {
+    if (!isMulti || !players) return null
     const idx = players.findIndex((p) => p.playerId === controllerId)
-    if (idx < 0) return {}
-    return { borderLeft: `3px solid ${seatColor(idx).base}`, borderRadius: 6 }
+    if (idx < 0) return null
+    return { name: players[idx]?.name ?? 'Player', seat: seatColor(idx) }
+  }
+  const seatBorderFor = (controllerId: EntityId): React.CSSProperties => {
+    const meta = seatMetaFor(controllerId)
+    if (!meta) return {}
+    return {
+      border: `1.5px solid ${meta.seat.base}`,
+      borderLeft: `4px solid ${meta.seat.base}`,
+      borderRadius: 6,
+      boxShadow: `0 0 7px 1px ${meta.seat.soft}`,
+    }
   }
 
   // Trigger YesNo: show source card in stack area when a triggered ability has a triggering entity
@@ -162,6 +173,36 @@ export function StackDisplay() {
                     title={card.name}
                     onError={(e) => handleImageError(e, card.name, 'small')}
                   />
+                  {/* Caster tag (multiplayer) — names whose spell/ability this is, in their seat color */}
+                  {(() => {
+                    const meta = seatMetaFor(card.controllerId)
+                    if (!meta) return null
+                    return (
+                      <div
+                        title={`Cast by ${meta.name}`}
+                        style={{
+                          position: 'absolute',
+                          top: 3,
+                          left: 3,
+                          maxWidth: stackImageWidth - 10,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 3,
+                          padding: '1px 6px 1px 4px',
+                          borderRadius: 4,
+                          background: 'rgba(8, 10, 16, 0.82)',
+                          border: `1px solid ${meta.seat.base}`,
+                          zIndex: 3,
+                          pointerEvents: 'none',
+                        }}
+                      >
+                        <span aria-hidden style={{ width: 7, height: 7, borderRadius: '50%', background: meta.seat.base, boxShadow: `0 0 4px ${meta.seat.base}`, flexShrink: 0 }} />
+                        <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.02em', color: meta.seat.bright, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {meta.name}
+                        </span>
+                      </div>
+                    )
+                  })()}
                   {/* Show chosen X value for X spells */}
                   {card.chosenX != null && (
                     <div style={styles.stackXBadge}>

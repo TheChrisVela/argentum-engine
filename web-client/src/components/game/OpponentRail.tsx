@@ -5,14 +5,33 @@ import {
   selectGameState,
   useOpponents,
   useViewedOpponent,
+  useViewingPlayer,
   useSeatIndex,
 } from '@/store/selectors'
 import { seatColor } from '@/styles/seatColors'
 import type { ClientCard, ClientPlayer } from '@/types'
 import { useResponsiveContext } from './board/shared'
 
-/** Height of the rail band; GameBoard adds this to its top offset in multiplayer. */
-export const OPPONENT_RAIL_HEIGHT = 34
+/**
+ * Chip dimensions by screen size. The rail is a fixed-width column, so every chip shares one
+ * size; large desktops get noticeably bigger chips (the small default felt cramped there).
+ */
+function chipSizing(responsive: { isMobile: boolean; isTablet: boolean; isShortDesktop: boolean }) {
+  const compact = responsive.isMobile
+  const large = !responsive.isMobile && !responsive.isTablet && !responsive.isShortDesktop
+  return {
+    width: compact ? 150 : large ? 224 : 188,
+    height: compact ? 22 : large ? 32 : 26,
+    padX: compact ? 7 : large ? 14 : 11,
+    gap: compact ? 4 : large ? 9 : 7,
+    dot: large ? 12 : 10,
+    name: large ? 14 : 12,
+    life: compact ? 11 : large ? 15 : 13,
+    heart: compact ? 10 : large ? 14 : 12,
+    hand: compact ? 10 : large ? 13 : 12,
+    marker: compact ? 9 : large ? 13 : 11,
+  }
+}
 
 /**
  * The opponent rail — the multiplayer overview guarantee. One chip per opponent,
@@ -27,38 +46,43 @@ export const OPPONENT_RAIL_HEIGHT = 34
  * Renders only in games with more than two players — the 2-player layout is sacred.
  */
 export function OpponentRail({
-  topOffset,
   spectatorMode = false,
 }: {
-  topOffset: number
   spectatorMode?: boolean
 }) {
+  const responsive = useResponsiveContext()
   const opponents = useOpponents()
   const viewedOpponent = useViewedOpponent()
+  const self = useViewingPlayer()
   const viewPinned = useGameStore((state) => state.viewPinned)
   const followAction = useGameStore((state) => state.followAction)
   const toggleFollowAction = useGameStore((state) => state.toggleFollowAction)
 
   if (opponents.length <= 1) return null
 
+  // Vertical column in the top-left corner, tucked under the fullscreen button (top: 8/12,
+  // ~36px tall). A column reads as a clear turn-order list and leaves the board its full height.
+  const top = responsive.isMobile ? 46 : 54
+  const left = responsive.isMobile ? 8 : 12
+  const columnWidth = chipSizing(responsive).width
+
   return (
     <div
       data-opponent-rail
       style={{
         position: 'fixed',
-        top: topOffset,
-        left: 0,
-        right: 0,
-        height: OPPONENT_RAIL_HEIGHT,
+        top,
+        left,
+        // Fixed width so every chip is the same size regardless of name length — a ragged
+        // column reads as messy. Names truncate with ellipsis inside this width.
+        width: columnWidth,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        gap: 5,
         zIndex: 120,
         pointerEvents: 'none',
-        // Leave the top corners free for the fullscreen / spectator-count /
-        // concede buttons that live at left/right edges.
-        padding: '0 150px',
+        maxHeight: `calc(100vh - ${top + 16}px)`,
       }}
     >
       <style>{`
@@ -75,7 +99,20 @@ export function OpponentRail({
           0% { opacity: 0.9; }
           100% { opacity: 0; }
         }
+        /* Active-turn ring: a steady, clearly-visible pulse around whoever's turn it is. */
+        @keyframes railTurnRing {
+          0%, 100% { box-shadow: 0 0 0 2px var(--turn-color), 0 0 8px 1px var(--turn-glow); }
+          50% { box-shadow: 0 0 0 3px var(--turn-color), 0 0 14px 4px var(--turn-glow); }
+        }
+        @keyframes railTurnArrow {
+          0%, 100% { transform: translateX(0); opacity: 0.85; }
+          50% { transform: translateX(2px); opacity: 1; }
+        }
       `}</style>
+      {/* "You" chip first, so the full turn order — and whose turn it is — reads left to
+          right across the rail. Informational only: your board is always at the bottom, and
+          your life/targeting anchor stays on the center-HUD orb. Hidden when spectating. */}
+      {!spectatorMode && self && <SelfRailChip self={self} />}
       {opponents.map((opponent) => (
         <RailChip
           key={opponent.playerId}
@@ -86,36 +123,245 @@ export function OpponentRail({
         />
       ))}
       {!spectatorMode && (
-        <button
-          onClick={toggleFollowAction}
-          title={
-            followAction
-              ? 'Follow the action: the view slides to the active board automatically. Click for a manual camera.'
-              : 'Manual camera: the view only moves when you switch boards. Click to follow the action.'
-          }
+        <>
+          {/* Divider — the Follow control is a camera *setting*, not a player, so set it apart
+              from the chip list above. */}
+          <div aria-hidden style={{ alignSelf: 'stretch', height: 1, margin: '4px 6px 2px', background: 'rgba(255, 255, 255, 0.1)' }} />
+          <button
+            onClick={toggleFollowAction}
+            title={
+              followAction
+                ? 'Follow the action: the view slides to the active board automatically. Click for a manual camera.'
+                : 'Manual camera: the view only moves when you switch boards. Click to follow the action.'
+            }
+            style={{
+              // Deliberately unlike a chip: rounded-rect (not a full pill), smaller, narrower
+              // than the fixed-width chips (flex-start), with an eye icon + explicit ON/OFF.
+              alignSelf: 'flex-start',
+              pointerEvents: 'auto',
+              height: 20,
+              padding: '0 9px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              borderRadius: 6,
+              border: `1px solid ${followAction ? 'rgba(110, 200, 255, 0.55)' : '#3a3a44'}`,
+              background: followAction ? 'rgba(20, 50, 80, 0.7)' : 'rgba(18, 18, 26, 0.7)',
+              color: followAction ? '#9fd8ff' : '#888',
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <span aria-hidden style={{ fontSize: 11 }}>{followAction ? '◉' : '○'}</span>
+            Follow
+            <span style={{ fontWeight: 800, color: followAction ? '#cdebff' : '#666' }}>
+              {followAction ? 'On' : 'Off'}
+            </span>
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The viewing player's own chip in the rail — the multiplayer overview's "you" entry, so the
+ * whole table (and whose turn it is) is visible in one strip. Deliberately a slim, informational
+ * subset of [RailChip]: seat color, name, life, hand, poison, plus the active-turn ring and
+ * priority/deciding indicators. It is not a view-switch / defender / target anchor — those stay
+ * on your board and center-HUD orb — so it carries no `data-life-id`.
+ */
+function SelfRailChip({ self }: { self: ClientPlayer }) {
+  const responsive = useResponsiveContext()
+  const gameState = useGameStore(selectGameState)
+  const opponentDecisionStatus = useGameStore((state) => state.opponentDecisionStatus)
+
+  const playerId = self.playerId
+  const seatIndex = useSeatIndex(playerId)
+  const seat = seatColor(Math.max(0, seatIndex))
+
+  const isActiveTurn = gameState?.activePlayerId === playerId && !self.hasLost
+  const hasPriority = gameState?.priorityPlayerId === playerId && !self.hasLost
+  const isDeciding = opponentDecisionStatus?.playerId === playerId
+
+  const compact = responsive.isMobile
+  const sz = chipSizing(responsive)
+  const tomb = self.hasLost
+  const lifeDanger = self.life <= 5
+
+  const borderColor = tomb ? '#3a3a44' : seat.base
+  const background = tomb
+    ? 'rgba(18, 18, 24, 0.85)'
+    : `linear-gradient(180deg, ${seat.soft}, rgba(10, 12, 20, 0.92))`
+
+  return (
+    <div style={{ position: 'relative', pointerEvents: 'auto', width: '100%' }}>
+      <div
+        title={`You — Life ${self.life} · Hand ${self.handSize}${self.hasLost ? ' · Eliminated' : ''}`}
+        style={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          width: '100%',
+          boxSizing: 'border-box',
+          gap: sz.gap,
+          height: sz.height,
+          padding: `0 ${sz.padX}px`,
+          borderRadius: 999,
+          border: `2px solid ${borderColor}`,
+          background,
+          color: tomb ? '#666' : '#dde3f0',
+          userSelect: 'none',
+          whiteSpace: 'nowrap',
+          filter: tomb ? 'grayscale(1)' : 'none',
+          opacity: tomb ? 0.6 : 1,
+          // Active turn → animated ring (same signal as the opponent chips).
+          ...(isActiveTurn && !tomb
+            ? {
+                animation: 'railTurnRing 1.4s ease-in-out infinite',
+                ['--turn-color' as string]: seat.bright,
+                ['--turn-glow' as string]: seat.soft,
+              }
+            : {}),
+        }}
+      >
+        {/* Turn marker — triangle in front when it's your turn. */}
+        {isActiveTurn && !tomb && (
+          <span
+            aria-hidden
+            title="Your turn"
+            style={{
+              color: seat.bright,
+              fontSize: sz.marker,
+              lineHeight: 1,
+              flexShrink: 0,
+              animation: 'railTurnArrow 1s ease-in-out infinite',
+              textShadow: `0 0 5px ${seat.soft}`,
+            }}
+          >
+            ▶
+          </span>
+        )}
+        {/* Seat dot / skull */}
+        <span
+          aria-hidden
           style={{
-            pointerEvents: 'auto',
-            height: 22,
-            padding: '0 8px',
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 4,
-            borderRadius: 999,
-            border: `1px solid ${followAction ? 'rgba(110, 200, 255, 0.5)' : '#444'}`,
-            background: followAction ? 'rgba(20, 50, 80, 0.8)' : 'rgba(25, 25, 35, 0.8)',
-            color: followAction ? '#9fd8ff' : '#777',
+            justifyContent: 'center',
+            width: sz.dot,
+            height: sz.dot,
+            borderRadius: '50%',
+            background: tomb ? 'transparent' : seat.base,
+            boxShadow: tomb ? 'none' : `0 0 5px ${seat.base}`,
             fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
+            flexShrink: 0,
           }}
         >
-          <span aria-hidden style={{ fontSize: 11 }}>{followAction ? '◉' : '○'}</span>
-          Follow
-        </button>
-      )}
+          {tomb ? '💀' : ''}
+        </span>
+
+        {!compact && (
+          <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: 5, overflow: 'hidden' }}>
+            <span
+              style={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                fontSize: sz.name,
+                fontWeight: 700,
+                letterSpacing: '0.02em',
+                color: tomb ? '#666' : seat.bright,
+              }}
+            >
+              {self.name}
+            </span>
+            <span aria-hidden style={{ fontSize: 9, opacity: 0.75, fontWeight: 600, flexShrink: 0 }}>YOU</span>
+          </span>
+        )}
+
+        {/* Life */}
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 3,
+            flexShrink: 0,
+            marginLeft: compact ? 'auto' : 0,
+            fontSize: sz.life,
+            fontWeight: 800,
+            fontVariantNumeric: 'tabular-nums',
+            color: tomb ? '#555' : lifeDanger ? '#ff5555' : '#ffffff',
+            textDecoration: tomb ? 'line-through' : 'none',
+          }}
+        >
+          <span aria-hidden style={{ color: tomb ? '#555' : '#ff6b6b', fontSize: sz.heart }}>❤</span>
+          {self.life}
+        </span>
+
+        {/* Hand count */}
+        {!tomb && (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 3,
+              flexShrink: 0,
+              fontSize: sz.hand,
+              fontWeight: 700,
+              fontVariantNumeric: 'tabular-nums',
+              color: '#9fb0d0',
+            }}
+          >
+            <HandCountIcon />
+            {self.handSize}
+          </span>
+        )}
+
+        {/* Poison */}
+        {!tomb && self.poisonCounters > 0 && (
+          <span
+            title={`${self.poisonCounters}/10 poison counters`}
+            style={{ fontSize: compact ? 10 : 11, fontWeight: 800, color: '#71f5a7' }}
+          >
+            ☠{self.poisonCounters}
+          </span>
+        )}
+
+        {/* Deciding spinner / priority dot (the turn ring is the border glow) */}
+        {isDeciding ? (
+          <span
+            aria-hidden
+            title="Deciding"
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: '50%',
+              border: '2px solid rgba(255, 193, 7, 0.3)',
+              borderTopColor: '#ffc107',
+              animation: 'railSpin 0.9s linear infinite',
+              flexShrink: 0,
+            }}
+          />
+        ) : hasPriority && !isActiveTurn ? (
+          <span
+            aria-hidden
+            title="You hold priority"
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: '#ffc107',
+              boxShadow: '0 0 5px rgba(255, 193, 7, 0.8)',
+              flexShrink: 0,
+            }}
+          />
+        ) : null}
+      </div>
     </div>
   )
 }
@@ -304,6 +550,7 @@ function RailChip({
   }
 
   const compact = responsive.isMobile
+  const sz = chipSizing(responsive)
   const tomb = opponent.hasLost
 
   const borderColor = tomb
@@ -319,15 +566,14 @@ function RailChip({
       ? `linear-gradient(180deg, ${seat.soft}, rgba(10, 12, 20, 0.92))`
       : 'rgba(10, 12, 20, 0.88)'
 
-  const ringShadow = [
-    isActiveTurn ? `0 0 0 2px ${seat.bright}, 0 0 10px ${seat.soft}` : null,
-    isDefenderAssignTarget ? '0 0 12px rgba(255, 68, 68, 0.6)' : null,
-  ].filter(Boolean).join(', ')
+  // Active turn is shown as an animated ring (see the chip's `animation` below); only the
+  // defender-assign highlight uses a static box-shadow here.
+  const ringShadow = isDefenderAssignTarget ? '0 0 12px rgba(255, 68, 68, 0.6)' : ''
 
   const lifeDanger = opponent.life <= 5
 
   return (
-    <div style={{ position: 'relative', pointerEvents: 'auto' }}>
+    <div style={{ position: 'relative', pointerEvents: 'auto', width: '100%' }}>
       <div
         data-rail-chip={playerId}
         // The viewed opponent's full-size life orb (center HUD) carries the
@@ -349,11 +595,13 @@ function RailChip({
         onMouseLeave={() => setHovered(false)}
         style={{
           position: 'relative',
-          display: 'inline-flex',
+          display: 'flex',
           alignItems: 'center',
-          gap: compact ? 4 : 7,
-          height: compact ? 22 : 26,
-          padding: compact ? '0 7px' : '0 11px',
+          width: '100%',
+          boxSizing: 'border-box',
+          gap: sz.gap,
+          height: sz.height,
+          padding: `0 ${sz.padX}px`,
           borderRadius: 999,
           border: `${isViewed ? 2 : 1}px solid ${borderColor}`,
           background,
@@ -365,12 +613,20 @@ function RailChip({
           opacity: tomb ? 0.6 : 1,
           transition: 'border-color 150ms, background 150ms, opacity 200ms',
           ...(ringShadow ? { boxShadow: ringShadow } : {}),
-          ...(boardHasTargets && !isViewed
+          // Active turn wins the animation slot (clearest signal); otherwise the
+          // "board has targets" halo. Both drive box-shadow, so only one can run.
+          ...(isActiveTurn && !tomb
             ? {
-                animation: 'railHalo 1.2s ease-in-out infinite',
-                ['--halo-color' as string]: 'rgba(0, 187, 255, 0.7)',
+                animation: 'railTurnRing 1.4s ease-in-out infinite',
+                ['--turn-color' as string]: seat.bright,
+                ['--turn-glow' as string]: seat.soft,
               }
-            : {}),
+            : boardHasTargets && !isViewed
+              ? {
+                  animation: 'railHalo 1.2s ease-in-out infinite',
+                  ['--halo-color' as string]: 'rgba(0, 187, 255, 0.7)',
+                }
+              : {}),
         }}
       >
         {/* Attention pulse overlay — keyed so each event restarts the animation
@@ -389,6 +645,23 @@ function RailChip({
             }}
           />
         )}
+        {/* Turn marker — a small triangle in front of whoever's turn it is. */}
+        {isActiveTurn && !tomb && (
+          <span
+            aria-hidden
+            title="Active turn"
+            style={{
+              color: seat.bright,
+              fontSize: sz.marker,
+              lineHeight: 1,
+              flexShrink: 0,
+              animation: 'railTurnArrow 1s ease-in-out infinite',
+              textShadow: `0 0 5px ${seat.soft}`,
+            }}
+          >
+            ▶
+          </span>
+        )}
         {/* Viewed marker / seat dot / skull */}
         <span
           aria-hidden
@@ -396,8 +669,8 @@ function RailChip({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 10,
-            height: 10,
+            width: sz.dot,
+            height: sz.dot,
             borderRadius: '50%',
             background: tomb ? 'transparent' : seat.base,
             boxShadow: tomb ? 'none' : `0 0 5px ${seat.base}`,
@@ -408,14 +681,17 @@ function RailChip({
           {tomb ? '💀' : ''}
         </span>
 
-        {/* Name (hidden on phones — the seat dot + position carries identity) */}
+        {/* Name (hidden on phones — the seat dot + position carries identity). Flexes to fill
+            the fixed chip width and truncates, so every chip is the same size. */}
         {!compact && (
           <span
             style={{
-              maxWidth: 110,
+              flex: 1,
+              minWidth: 0,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              fontSize: 12,
+              whiteSpace: 'nowrap',
+              fontSize: sz.name,
               fontWeight: 700,
               letterSpacing: '0.02em',
               color: tomb ? '#666' : seat.bright,
@@ -434,14 +710,16 @@ function RailChip({
             display: 'inline-flex',
             alignItems: 'center',
             gap: 3,
-            fontSize: compact ? 11 : 13,
+            flexShrink: 0,
+            marginLeft: compact ? 'auto' : 0,
+            fontSize: sz.life,
             fontWeight: 800,
             fontVariantNumeric: 'tabular-nums',
             color: tomb ? '#555' : lifeDanger ? '#ff5555' : '#ffffff',
             textDecoration: tomb ? 'line-through' : 'none',
           }}
         >
-          <span aria-hidden style={{ color: tomb ? '#555' : '#ff6b6b', fontSize: compact ? 10 : 12 }}>❤</span>
+          <span aria-hidden style={{ color: tomb ? '#555' : '#ff6b6b', fontSize: sz.heart }}>❤</span>
           {opponent.life}
         </span>
 
@@ -452,7 +730,8 @@ function RailChip({
               display: 'inline-flex',
               alignItems: 'center',
               gap: 3,
-              fontSize: compact ? 10 : 12,
+              flexShrink: 0,
+              fontSize: sz.hand,
               fontWeight: 700,
               fontVariantNumeric: 'tabular-nums',
               color: '#9fb0d0',
