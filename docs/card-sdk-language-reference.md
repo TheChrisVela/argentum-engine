@@ -2352,6 +2352,19 @@ composite abilities).
   ManaSpent)`) against the source's power *or* toughness — modelled as an `AnyCondition` of two `Compare(GT)`
   arms, so it fires when the mana exceeds the smaller characteristic. No parameter (mirrors `firebending()` /
   `decayed()`).
+- `Opus` — "Opus — Whenever you cast an instant or sorcery spell, [base]. If five or more mana was spent to cast
+  that spell, [bonus] [instead]." (Secrets of Strixhaven). **Opus is an ability word** (CR 207.2c — flavor only),
+  so it adds *no keyword*; the whole mechanic is one `Triggers.YouCastInstantOrSorcery` triggered ability wired by
+  the `card { opus { … } }` builder helper. The 5+ mana tier is a `Compare` of
+  `ContextProperty(MANA_SPENT_ON_TRIGGERING_SPELL) >= 5` (the mana spent on the *triggering* spell, not the
+  resolving object's own cast). Author the base effect as `effect = …` and pick exactly one bonus setter:
+  `insteadIfFiveOrMore = …` lowers to `ConditionalEffect(5+ → bonus, otherwise → base)` and renders "… [bonus]
+  instead" (Deluge Virtuoso, Exhibition Tidecaller, Tackle Artist); `alsoIfFiveOrMore = …` lowers to
+  `base then ConditionalEffect(5+ → bonus)` and runs the bonus *in addition* (Expressive Firedancer, Colorstorm
+  Stallion). Declare a `target(name, requirement)` inside the block and reference the returned handle from both
+  `effect` and the bonus so the single chosen target carries across both tiers (Exhibition Tidecaller's "target
+  player mills three … mills ten instead"). The rendered ability text is auto-composed from the base/bonus effect
+  descriptions unless `description` overrides the whole string.
 - `Decayed` — "This creature can't block, and when it attacks, sacrifice it at end of combat" (CR 702.147,
   Innistrad: Midnight Hunt). Display-only; wire the behavior with the `card { decayed() }` builder helper, which adds
   the keyword plus a `CantBlock(GroupFilter.source())` static ability and a "whenever this attacks" triggered

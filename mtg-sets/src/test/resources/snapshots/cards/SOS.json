@@ -1157,7 +1157,8 @@
                             }
                         }
                     ]
-                }
+                },
+                "descriptionOverride": "Opus — Whenever you cast an instant or sorcery spell, this creature gets +1/+1 until end of turn. If five or more mana was spent to cast that spell, this creature gains double strike until end of turn."
             }
         ]
     },
