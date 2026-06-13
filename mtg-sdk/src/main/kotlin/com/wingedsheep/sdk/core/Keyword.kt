@@ -311,7 +311,16 @@ enum class Keyword(val displayName: String) {
      * creates a copy of the card's prepare spell (`cardFaces[0]`) in exile that they may cast
      * (paying that spell's cost); casting the copy unprepares the creature.
      */
-    PREPARED("Prepared");
+    PREPARED("Prepared"),
+
+    /**
+     * Increment (Secrets of Strixhaven).
+     * "Whenever you cast a spell, if the amount of mana you spent is greater than this
+     * creature's power or toughness, put a +1/+1 counter on this creature."
+     * Wired via the `increment()` DSL helper on [com.wingedsheep.sdk.dsl.CardBuilder],
+     * which attaches this display-only keyword plus the cast-spell triggered ability.
+     */
+    INCREMENT("Increment");
 
     companion object {
         fun fromString(value: String): Keyword? =

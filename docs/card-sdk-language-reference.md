@@ -2344,6 +2344,14 @@ composite abilities).
   with [ManaExpiry](#manaexpiry).`END_OF_COMBAT` and discarded by `CombatManager.endCombat`. It is a normal
   triggered ability (not a mana ability): it uses the stack and can be responded to. `n` may be any fixed value;
   "firebending X (X = its power)" is not yet expressible by this helper (the keyword carries only a fixed Int).
+- `Increment` — "Whenever you cast a spell, if the amount of mana you spent is greater than this creature's power
+  or toughness, put a +1/+1 counter on this creature." (Secrets of Strixhaven). Display-only; wire the behavior with
+  the `card { increment() }` builder helper, which adds the `KeywordAbility.Increment` display marker (surfacing
+  `Keyword.INCREMENT`) plus a `Triggers.YouCastSpell` triggered `AddCounters(+1/+1, 1, Self)` gated by an
+  intervening-if (CR 603.4) that compares the triggering spell's mana spent (`EntityProperty(Triggering,
+  ManaSpent)`) against the source's power *or* toughness — modelled as an `AnyCondition` of two `Compare(GT)`
+  arms, so it fires when the mana exceeds the smaller characteristic. No parameter (mirrors `firebending()` /
+  `decayed()`).
 - `Decayed` — "This creature can't block, and when it attacks, sacrifice it at end of combat" (CR 702.147,
   Innistrad: Midnight Hunt). Display-only; wire the behavior with the `card { decayed() }` builder helper, which adds
   the keyword plus a `CantBlock(GroupFilter.source())` static ability and a "whenever this attacks" triggered
@@ -2634,6 +2642,11 @@ that works in both resolution and static-ability (projection) contexts.
 - `SourceIsModified` — has counters, attached Equipment, or controller-owned Aura
   attached (CR 700.4). Kept as a dedicated condition because the controller-of-Aura
   match isn't expressible via the generic `EntityMatches` filter machinery.
+- `SourceReceivedCounterThisTurn` — "if you put a counter on this creature this turn." True while the source
+  carries the per-turn `ReceivedCountersThisTurnComponent` marker (stamped by the counter-placement path, cleared
+  at cleanup). Distinct from `SourceHasCounter` (which checks current counters): this fires even if the counter was
+  later removed, and stays false if the source merely entered with counters from a *prior* turn. Used as the
+  end-step intervening-if of Secrets of Strixhaven's Fractal Tender.
 - `SourceHasSubtype(subtype)` — `SourceMatches(GameObjectFilter.Any.withSubtype(...))`;
   Changeling is honored.
 - `SourceHasKeyword(keyword)` — `SourceMatches(GameObjectFilter.Any.withKeyword(...))`.
