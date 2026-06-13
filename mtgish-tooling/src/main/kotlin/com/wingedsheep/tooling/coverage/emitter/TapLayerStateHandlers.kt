@@ -8,9 +8,11 @@ import com.wingedsheep.tooling.coverage.Lit
 import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.asArr
 import com.wingedsheep.tooling.coverage.asInt
+import com.wingedsheep.tooling.coverage.asStr
 import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.compact
 import com.wingedsheep.tooling.coverage.dot
+import com.wingedsheep.tooling.coverage.field
 import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.firstArgWordTagged
 import com.wingedsheep.tooling.coverage.jsonContains
@@ -130,6 +132,21 @@ internal val tapLayerStateHandlers: Map<String, ActionHandler> = actionHandlers 
         call("AddCountersEffect", arg("counterType", counter), arg("count", "$count"), arg("target", tgt))
     }
 
+    on("CreateReplaceWouldPutCountersUntil") { node, _, _ ->
+        // "Until end of turn, if you would put one or more +1/+1 counters on a creature you control,
+        // put that many plus N +1/+1 counters on it instead." (Prairie Dog's {4}{W}.) This installs the
+        // duration-/controller-scoped analogue of Hardened Scales' static ModifyCounterPlacement, which
+        // is exactly Effects.GrantCounterPlacementModifier(). The facade's defaults (+1/+1 counters, a
+        // creature you control, until end of turn) match the common case, so only the modifier amount is
+        // threaded. Render ONLY the fully-defaulted shape; any deviation (other counter type, a recipient
+        // other than "a creature you control", a non-You placer, a non-EOT expiration, or a replacement
+        // amount that isn't "the number of counters plus a fixed N") declines -> SCAFFOLD rather than
+        // emit a lossy approximation.
+        val modifier = grantCounterPlacementModifierAmount(node) ?: return@on null
+        if (modifier == 1) call("Effects.GrantCounterPlacementModifier")
+        else call("Effects.GrantCounterPlacementModifier", arg("modifier", "$modifier"))
+    }
+
     on("Earthbend") { _, args, tvar ->
         // Earthbend N (TLA keyword action): "target land becomes a 0/0 creature with haste that's still
         // a land. Put N +1/+1 counters on it. When it dies or is exiled, return it to the battlefield
@@ -188,6 +205,75 @@ internal val tapLayerStateHandlers: Map<String, ActionHandler> = actionHandlers 
     on("SkipAllCombatPhasesTheirNextTurn") { _, _, tvar ->
         if (tvar != null) call("SkipCombatPhasesEffect", arg(Lit(tvar))) else call("SkipCombatPhasesEffect")
     }
+}
+
+/**
+ * The fixed extra-counter amount [N] for a `CreateReplaceWouldPutCountersUntil` action that exactly
+ * matches `Effects.GrantCounterPlacementModifier()`'s defaults — "until end of turn, if YOU would put
+ * one or more +1/+1 counters on a creature YOU control, put that many plus N +1/+1 counters on it
+ * instead" — or null for any shape that doesn't (so the card scaffolds rather than render a lossy
+ * approximation). The IR args are `[<replacable-event>, [<replacement-action>], <expiration>]`:
+ *  - replacable event: `APlayerWouldPutAnyNumberOfCountersOfTypeOnAPermanent(SinglePlayer(You),
+ *    PTCounter(1,1), And(IsCardtype Creature, ControlledByAPlayer(SinglePlayer(You))))`.
+ *  - replacement: `PutNewAmount(Plus(WouldPutCounters_NumberOfCounters, Integer N))` with `N >= 1`.
+ *  - expiration: `UntilEndOfTurn`.
+ * Anything else (other counter type, other player scope, a recipient that isn't "a creature you
+ * control", a non-EOT expiration, or a replacement that isn't "the placed count plus a fixed N")
+ * declines. This mirrors the engine's `GrantCounterPlacementModifierEffect`, whose defaults are the
+ * common case; only the `modifier` is parameterised here.
+ */
+private fun grantCounterPlacementModifierAmount(node: JsonObject): Int? {
+    val args = node["args"].asArr ?: return null
+    val event = args.getOrNull(0) as? JsonObject ?: return null
+    val replacements = (args.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>() ?: return null
+    val expiration = args.getOrNull(2) as? JsonObject ?: return null
+
+    if (event.strField("_ReplacableEventWouldPutCounters") !=
+        "APlayerWouldPutAnyNumberOfCountersOfTypeOnAPermanent"
+    ) return null
+    val eventArgs = event["args"].asArr ?: return null
+    // Placer must be exactly "you" (the controller-scoped 'you' the facade assumes).
+    val placer = eventArgs.getOrNull(0) as? JsonObject
+    if (placer?.strField("_Players") != "SinglePlayer" ||
+        placer.field("args").strField("_Player") != "You"
+    ) return null
+    // Counter must be exactly a +1/+1 counter.
+    val counter = eventArgs.getOrNull(1) as? JsonObject
+    if (counter?.strField("_CounterType") != "PTCounter") return null
+    val pt = counter["args"].asArr
+    if (pt?.getOrNull(0).asInt() != 1 || pt?.getOrNull(1).asInt() != 1) return null
+    // Recipient must be exactly "a creature you control": And(IsCardtype Creature,
+    // ControlledByAPlayer(SinglePlayer(You))).
+    val recipient = eventArgs.getOrNull(2) as? JsonObject ?: return null
+    if (recipient.strField("_Permanents") != "And") return null
+    val recipientArms = recipient["args"].asArr?.filterIsInstance<JsonObject>() ?: return null
+    if (recipientArms.size != 2) return null
+    val hasCreature = recipientArms.any {
+        it.strField("_Permanents") == "IsCardtype" && it.field("args").asStr() == "Creature"
+    }
+    val controlledByYou = recipientArms.any { arm ->
+        arm.strField("_Permanents") == "ControlledByAPlayer" &&
+            arm.field("args").strField("_Players") == "SinglePlayer" &&
+            arm.field("args").field("args").strField("_Player") == "You"
+    }
+    if (!hasCreature || !controlledByYou) return null
+
+    // Expiration must be exactly end of turn.
+    if (expiration.strField("_Expiration") != "UntilEndOfTurn") return null
+
+    // Replacement must be exactly "PutNewAmount(Plus(<the placed count>, Integer N))" with N >= 1.
+    val replacement = replacements.singleOrNull() ?: return null
+    if (replacement.strField("_ReplacementActionWouldPutCounters") != "PutNewAmount") return null
+    val plus = replacement["args"] as? JsonObject ?: return null
+    if (plus.strField("_GameNumber") != "Plus") return null
+    val plusArgs = plus["args"].asArr ?: return null
+    if (plusArgs.size != 2) return null
+    val base = plusArgs.getOrNull(0) as? JsonObject
+    if (base?.strField("_GameNumber") != "WouldPutCounters_NumberOfCounters") return null
+    val addend = plusArgs.getOrNull(1) as? JsonObject
+    if (addend?.strField("_GameNumber") != "Integer") return null
+    val n = addend.field("args").asInt() ?: return null
+    return if (n >= 1) n else null
 }
 
 /** CreatePermanentLayerEffectUntil / its each-permanent form -> ModifyStats / SetBasePowerToughness /

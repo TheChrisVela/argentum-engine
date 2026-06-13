@@ -28,6 +28,10 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     supported("PermanentPassesFilter", "condition: a permanent matches a filter (e.g. ThisPermanent IsSaddled -> Conditions.SourceIsSaddled)")
     supported("PlayerPassesFilter", "condition: a player matches a filter (e.g. You HasntCastASpellThisTurn)")
     supported("IsSaddled", "predicate: this permanent is saddled (CR 702.171b)")
+    // "during your turn" — IsPlayersTurn(You) -> Conditions.IsYourTurn, the gate on Overzealous Muscle's
+    // "Whenever you commit a crime during your turn, …". Renders as a triggerCondition when it wraps a
+    // trigger (the emitter unwraps the If-gated trigger); any non-You scope declines -> SCAFFOLD.
+    supported("IsPlayersTurn", "condition: it's a given player's turn (You -> Conditions.IsYourTurn)")
     supported("HasntCastASpellThisTurn", "predicate: player hasn't cast a (filtered) spell this turn")
     // "you've cast another spell this turn" -> Conditions.YouCastSpellsThisTurn(atLeast = 2) at
     // resolution (the resolving spell is already recorded). The emitter renders the "Other ThisSpell"

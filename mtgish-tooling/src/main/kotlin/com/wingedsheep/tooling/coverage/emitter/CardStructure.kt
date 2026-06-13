@@ -770,7 +770,7 @@ internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false
     // trigger, and thread `Conditions.SourceIsSaddled` as the triggerCondition (Drover Grizzly, Giant
     // Beaver). Any other `If` gate leaves the rule untouched so triggerSpecFor declines -> SCAFFOLD; we
     // never silently drop or widen the gate.
-    val (effRule, effTriggerCondition) = unwrapSaddledIfTrigger(rule, triggerCondition)
+    val (effRule, effTriggerCondition) = unwrapIfGatedTrigger(rule, triggerCondition)
     val spec = triggerSpecFor(effRule) ?: run { reasons.add("trigger-shape"); return null }
     val (targets, actions) = extractEnvelope(rule)
     if (actions == null) { reasons.add("trigger-actions"); return null }
@@ -809,15 +809,18 @@ internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false
 }
 
 /**
- * The Mount "while saddled" attack trigger nests the intervening-if (CR 603.4) inside the TriggerA's
- * trigger slot: `args[0]` is an `If` node whose `args` are `[<gate condition>, <real _Trigger>]`. If
- * that gate is exactly "this permanent is saddled" (`PermanentPassesFilter(ThisPermanent, IsSaddled)`),
- * return a rule with `args[0]` replaced by the inner real trigger plus `Conditions.SourceIsSaddled` as
- * the triggerCondition; the actions in `args[1]` are untouched (Drover Grizzly, Giant Beaver). Any
- * other gate (or no `If`) returns the rule unchanged with the caller's existing condition, so
- * `triggerSpecFor` then declines an unrecognised `If` -> SCAFFOLD. Never widens the gate.
+ * Some triggers nest an intervening-if (CR 603.4) *inside* the TriggerA's trigger slot: `args[0]` is an
+ * `If` node whose `args` are `[<gate condition>, <real _Trigger>]` rather than a bare `_Trigger`. When
+ * the gate is one we can render exactly, unwrap to the inner real trigger and thread the matching
+ * `triggerCondition`; the actions in `args[1..]` are untouched. Two recognised gates:
+ *  - "this permanent is saddled" (`PermanentPassesFilter(ThisPermanent, IsSaddled)`) ->
+ *    `Conditions.SourceIsSaddled` (Drover Grizzly, Giant Beaver).
+ *  - any gate `interveningIfDsl` renders, e.g. "during your turn" (`IsPlayersTurn(You)`) ->
+ *    `Conditions.IsYourTurn` (Overzealous Muscle).
+ * Any other gate (or no `If`) returns the rule unchanged with the caller's existing condition, so
+ * `triggerSpecFor` then declines an unrecognised `If` -> SCAFFOLD. Never widens or drops the gate.
  */
-private fun unwrapSaddledIfTrigger(rule: JsonObject, existing: String?): Pair<JsonObject, String?> {
+private fun EmitCtx.unwrapIfGatedTrigger(rule: JsonObject, existing: String?): Pair<JsonObject, String?> {
     val args = rule["args"].asArr ?: return rule to existing
     val trig = args.getOrNull(0) as? JsonObject ?: return rule to existing
     if (trig.strField("_Trigger") != "If") return rule to existing
@@ -827,12 +830,13 @@ private fun unwrapSaddledIfTrigger(rule: JsonObject, existing: String?): Pair<Js
     val isSaddledGate = gate?.strField("_Condition") == "PermanentPassesFilter" &&
         jsonContains(gate, "_Permanent", "ThisPermanent") &&
         jsonContains(gate, "_Permanents", "IsSaddled")
-    if (!isSaddledGate) return rule to existing
+    val condDsl = if (isSaddledGate) "Conditions.SourceIsSaddled" else interveningIfDsl(gate)
+        ?: return rule to existing
     val rewritten = buildJsonObject {
         rule.forEach { (k, v) -> if (k != "args") put(k, v) }
         put("args", JsonArray(listOf<JsonElement>(innerTrigger) + args.drop(1)))
     }
-    return rewritten to (existing ?: "Conditions.SourceIsSaddled")
+    return rewritten to (existing ?: condDsl)
 }
 
 /**
@@ -909,6 +913,14 @@ internal fun EmitCtx.interveningIfDsl(cond: JsonObject?): String? {
 
 /** One non-And intervening-if condition node -> its `Conditions.*` DSL, or null (-> SCAFFOLD). */
 private fun EmitCtx.singleInterveningIfDsl(cond: JsonObject): String? {
+    // "during your turn" — IsPlayersTurn(You) -> Conditions.IsYourTurn (Overzealous Muscle's
+    // "Whenever you commit a crime during your turn, …"). Only the You scope renders; any other
+    // player scope (an opponent's turn) has no calibrated DSL constant yet, so it declines -> SCAFFOLD.
+    if (cond.strField("_Condition") == "IsPlayersTurn" &&
+        jsonContains(cond, "_Player", "You")
+    ) {
+        return "Conditions.IsYourTurn"
+    }
     if (cond.strField("_Condition") == "PlayerPassesFilter" &&
         jsonContains(cond, "_Player", "You") &&
         jsonContains(cond, "_Players", "HasntCastASpellThisTurn") &&

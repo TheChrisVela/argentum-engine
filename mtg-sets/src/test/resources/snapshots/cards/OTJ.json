@@ -2931,6 +2931,7 @@
                 "id": "ability_2",
                 "cost": "CostTap",
                 "effect": "AddManaOfChoice",
+                "timing": "ManaAbility",
                 "isManaAbility": true
             }
         ]
