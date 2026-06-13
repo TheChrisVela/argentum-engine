@@ -42,6 +42,7 @@ import com.wingedsheep.sdk.scripting.effects.GrantProtectionFromChosenColorEffec
 import com.wingedsheep.sdk.scripting.effects.ForEachColorOfEffect
 import com.wingedsheep.sdk.scripting.effects.GrantCantBeBlockedByChosenColorEffect
 import com.wingedsheep.sdk.scripting.effects.GrantCantBeBlockedExceptByEffect
+import com.wingedsheep.sdk.scripting.effects.GrantFlashbackEffect
 import com.wingedsheep.sdk.scripting.effects.GrantHarmonizeEffect
 import com.wingedsheep.sdk.scripting.effects.GrantToxicEffect
 import com.wingedsheep.sdk.scripting.effects.CantAttackGroupEffect
@@ -1587,6 +1588,20 @@ object Effects {
         cost: ManaCost? = null,
         duration: Duration = Duration.EndOfTurn
     ): Effect = GrantHarmonizeEffect(target, cost, duration)
+
+    /**
+     * Grant Flashback (CR 702.34) to a target instant or sorcery card in a graveyard.
+     * "Target instant or sorcery card in your graveyard gains flashback until end of turn. The
+     * flashback cost is equal to its mana cost." — Archmage's Newt.
+     *
+     * [cost] defaults to `null`, meaning the flashback cost equals the card's own mana cost;
+     * pass a [ManaCost] to grant a fixed flashback cost instead (e.g. `{0}` when saddled).
+     */
+    fun GrantFlashback(
+        target: EffectTarget = EffectTarget.ContextTarget(0),
+        cost: ManaCost? = null,
+        duration: Duration = Duration.EndOfTurn
+    ): Effect = GrantFlashbackEffect(target, cost, duration)
 
     /**
      * Grant "hexproof from the chosen color" to a target. Must run inside a

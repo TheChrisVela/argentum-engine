@@ -236,6 +236,87 @@
     ]
 }
 
+// Archmage's Newt
+{
+    "name": "Archmage's Newt",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Salamander Mount",
+    "oracleText": "Whenever this creature deals combat damage to a player, target instant or sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost. That card gains flashback {0} until end of turn instead if this creature is saddled. (You may cast that card from your graveyard for its flashback cost. Then exile it.)\nSaddle 3",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "SADDLE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "SADDLE",
+            "n": 3
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "EntityMatches",
+                            "entity": "Self",
+                            "filter": {
+                                "statePredicates": [
+                                    "IsSaddled"
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "GrantFlashback",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "cost": "{0}"
+                    },
+                    "otherwise": {
+                        "type": "GrantFlashback",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "instant|sorcery own:you",
+                        "zone": "Graveyard"
+                    }
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a player, target instant or sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost. That card gains flashback {0} until end of turn instead if this creature is saddled."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "39",
+        "rarity": "RARE",
+        "artist": "Edgar Sánchez Hidalgo",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a440bbd6-8e51-4db1-90d9-7fa9fc327ad5.jpg?1712355386"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Armored Armadillo
 {
     "name": "Armored Armadillo",
@@ -1063,6 +1144,93 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Colossal Rattlewurm
+{
+    "name": "Colossal Rattlewurm",
+    "manaCost": "{2}{G}{G}",
+    "typeLine": "Creature — Wurm",
+    "oracleText": "Colossal Rattlewurm has flash as long as you control a Desert.\nTrample\n{1}{G}, Exile this card from your graveyard: Search your library for a Desert card, put it onto the battlefield tapped, then shuffle.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{G}"
+                            }
+                        },
+                        "CostExileSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "land Desert"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            }
+                        },
+                        "ShuffleLibrary"
+                    ]
+                },
+                "activateFromZone": "Graveyard"
+            }
+        ],
+        "conditionalFlash": {
+            "type": "Exists",
+            "player": "You",
+            "zone": "Battlefield",
+            "filter": "land Desert"
+        }
+    },
+    "metadata": {
+        "collectorNumber": "159",
+        "rarity": "RARE",
+        "artist": "Filip Burburan",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/7/17a104d3-e4ac-44a0-9c6a-39965b1b9751.jpg?1712355903"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -2758,6 +2926,87 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Gila Courser
+{
+    "name": "Gila Courser",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Lizard Mount",
+    "oracleText": "Whenever this creature attacks while saddled, exile the top card of your library. Until the end of your next turn, you may play that card.\nSaddle 1 (Tap any number of other creatures you control with total power 1 or more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "keywords": [
+        "SADDLE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "SADDLE",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "exiledCard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "exiledCard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "exiledCard",
+                            "expiry": {
+                                "type": "UntilControllerStep",
+                                "step": "CLEANUP",
+                                "includeCurrentTurn": false
+                            }
+                        }
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": {
+                        "statePredicates": [
+                            "IsSaddled"
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "124",
+        "rarity": "UNCOMMON",
+        "artist": "Brent Hollowell",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/5/f568803d-65c0-48d7-916f-671267a9e00e.jpg?1712355755"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

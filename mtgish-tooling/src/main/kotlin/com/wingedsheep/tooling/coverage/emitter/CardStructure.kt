@@ -366,6 +366,18 @@ private fun EmitCtx.youControlConditionDsl(condNode: JsonElement?): String? {
 }
 
 /**
+ * A `FlashForCasters { Condition }` rule -> the card-level `conditionalFlash = <condition>`
+ * assignment ("<this> has flash as long as <condition>", CR 702.8 / Colossal Rattlewurm). Only the
+ * "you control a [filter]" condition the shared [youControlConditionDsl] renders exactly produces a
+ * line; any other flash condition declines (null -> SCAFFOLD) so the emitter never grants flash on a
+ * condition it can't reproduce.
+ */
+internal fun EmitCtx.conditionalFlashLines(rule: JsonObject): List<Stmt>? {
+    val cond = youControlConditionDsl(rule["args"]) ?: run { reasons.add("FlashForCasters"); return null }
+    return listOf(Assign("conditionalFlash", Lit(cond)))
+}
+
+/**
  * "you've committed a crime this turn" (`PlayerPassesFilter(You, CommitedACrimeThisTurn)`, OTJ) ->
  * the `Conditions.YouCommittedCrimeThisTurn` DSL string, or null when the player isn't You / the
  * filter isn't the bare crime predicate. Used by the [ifRuleBlock] static gates (Nimble Brigand's
@@ -1641,6 +1653,12 @@ internal fun EmitCtx.abilityCostDsl(node: JsonElement?): String? {
             if (obj.field("args").strField("_Permanent") == "ThisPermanent") "Costs.Tap" else null
         "SacrificePermanent" ->
             if (obj.field("args").strField("_Permanent") == "ThisPermanent") "Costs.SacrificeSelf" else null
+        // "Exile this card from your graveyard" — the self-exile cost of a from-graveyard activated
+        // ability (Colossal Rattlewurm's Desert-fetch, Bonebind Orator's recursion). Only the
+        // ThisGraveyardCard subject maps to Costs.ExileSelf; any other exiled card declines so we never
+        // render a self-exile as a generic one.
+        "ExileGraveyardCard" ->
+            if (obj.field("args").strField("_GraveyardCard") == "ThisGraveyardCard") "Costs.ExileSelf" else null
         "SacrificeAPermanent" -> costFilterDsl(obj.field("args"))?.let {
             if (it == "GameObjectFilter.Any") "Costs.Sacrifice()" else "Costs.Sacrifice($it)"
         }

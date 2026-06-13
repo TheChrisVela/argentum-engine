@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.effects.ExecutorModule
 import com.wingedsheep.engine.handlers.effects.permanent.ExploreEffectExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantActivatedAbilityExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantActivatedAbilityToGroupExecutor
+import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantFlashbackExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantHarmonizeExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantKeywordExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantToEnchantedCreatureTypeGroupExecutor
@@ -145,6 +146,7 @@ class PermanentExecutors(
         // abilities
         GrantActivatedAbilityExecutor(),
         GrantActivatedAbilityToGroupExecutor(),
+        GrantFlashbackExecutor(),
         GrantHarmonizeExecutor(),
         GrantKeywordExecutor(),
         RemoveKeywordExecutor(),

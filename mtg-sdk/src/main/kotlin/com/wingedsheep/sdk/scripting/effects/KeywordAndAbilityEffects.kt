@@ -183,6 +183,37 @@ data class GrantHarmonizeEffect(
 }
 
 /**
+ * Grant Flashback (CR 702.34) to a target instant or sorcery card in a graveyard.
+ * "Target instant or sorcery card in your graveyard gains flashback until end of turn. The
+ * flashback cost is equal to its mana cost." — Archmage's Newt.
+ *
+ * The runtime sibling of printed [com.wingedsheep.sdk.scripting.KeywordAbility.Flashback], modelled
+ * exactly like [GrantHarmonizeEffect]: it records a granted graveyard-cast keyword ability keyed to
+ * the card entity, which the cast-from-graveyard enumerator, the cast handler, and the stack
+ * resolver's exile-on-resolution clause consult through the runtime granted-keyword record. The
+ * grant survives the graveyard → stack move so a spell cast this way still exiles on resolution.
+ *
+ * @property target The instant or sorcery card (in a graveyard) gaining flashback
+ * @property cost The flashback cost. `null` (the default) means "equal to the card's mana cost"
+ *   per Archmage's Newt; a non-null value grants a fixed flashback cost (e.g. `{0}` when the
+ *   granting Mount is saddled).
+ * @property duration How long the grant lasts (until end of turn for Archmage's Newt)
+ */
+@SerialName("GrantFlashback")
+@Serializable
+data class GrantFlashbackEffect(
+    val target: EffectTarget,
+    val cost: ManaCost? = null,
+    val duration: Duration = Duration.EndOfTurn
+) : Effect {
+    override val description: String = buildString {
+        append("${target.description} gains flashback")
+        append(if (cost != null) " $cost" else " (the flashback cost is equal to its mana cost)")
+        if (duration.description.isNotEmpty()) append(" ${duration.description}")
+    }
+}
+
+/**
  * Grant an activated ability to a group of creatures.
  * "Each creature you control gains '{B}: This creature gets +1/+1 until end of turn.'"
  *

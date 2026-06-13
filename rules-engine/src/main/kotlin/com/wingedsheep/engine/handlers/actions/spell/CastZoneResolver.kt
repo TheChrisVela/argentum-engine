@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers.actions.spell
 
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
+import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.WarpGrants
 import com.wingedsheep.engine.handlers.EffectContext
@@ -205,8 +206,9 @@ class CastZoneResolver(
     }
 
     /**
-     * Check if a card in the graveyard has a Flashback keyword ability,
-     * allowing it to be cast from the graveyard for its flashback cost.
+     * Check if a card in the graveyard has a Flashback keyword ability — printed on the card or
+     * granted at runtime (Archmage's Newt) — allowing it to be cast from the graveyard for its
+     * flashback cost (and exiled on resolution).
      */
     fun hasFlashbackPermission(
         state: GameState,
@@ -216,8 +218,8 @@ class CastZoneResolver(
         val graveyardZone = ZoneKey(playerId, Zone.GRAVEYARD)
         if (cardId !in state.getZone(graveyardZone)) return false
         val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return false
-        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId) ?: return false
-        return cardDef.keywordAbilities.any { it is KeywordAbility.Flashback }
+        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+        return FlashbackGrants.effectiveFlashback(state, cardId, cardDef) != null
     }
 
     /**
@@ -242,9 +244,8 @@ class CastZoneResolver(
      */
     fun getFlashbackCost(cardId: EntityId, state: GameState): com.wingedsheep.sdk.core.ManaCost? {
         val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return null
-        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId) ?: return null
-        val flashback = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Flashback>().firstOrNull()
-        return flashback?.cost
+        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+        return FlashbackGrants.effectiveFlashback(state, cardId, cardDef)?.cost
     }
 
     /**

@@ -117,6 +117,7 @@ internal fun EmitCtx.renderEffectList(actions: List<JsonObject>, tvar: String?):
     becomeCreatureTypeEffect(actions, tvar)?.let { return it }
     chooseTypeModifyStatsEffect(actions)?.let { return it }
     chooseCreatureTypeRevealTopEffect(actions)?.let { return it }
+    impulseExileTopMayPlay(actions)?.let { return it }
     val rendered = mutableListOf<Dsl>()
     for (act in actions) {
         val r = renderAction(act, tvar)
@@ -600,6 +601,37 @@ internal fun EmitCtx.chooseCreatureTypeRevealTopEffect(actions: List<JsonObject>
         "TheChosenCreatureType" !in blob) return null
     if ("PutTopOfLibraryInHand" !in blob || "PutTopOfLibraryInGraveyard" !in blob) return null
     return call("Patterns.CreatureType.chooseCreatureTypeRevealTop")
+}
+
+/**
+ * [ExileTopCardOfLibrary, CreatePlayerEffectUntil(You, [MayPlayExiledCard(TheCardExiledThisWay)],
+ * UntilEndOfNextTurn)] -> the impulse-draw composite (Alania's Pathmaker, Gila Courser): exile the
+ * top card of your library into exile, then grant "you may play that card until the end of your next
+ * turn". Renders the foundational gather → move → grant pipeline:
+ *
+ *   GatherCardsEffect(CardSource.TopOfLibrary(DynamicAmount.Fixed(1)), storeAs = "exiledCard")
+ *   MoveCollectionEffect(from = "exiledCard", destination = CardDestination.ToZone(Zone.EXILE))
+ *   GrantMayPlayFromExileEffect("exiledCard", MayPlayExpiry.UntilEndOfNextTurn)
+ *
+ * Only this exact two-action shape with the "until end of your next turn" window collapses; any
+ * other player effect, expiration, or extra rider declines (null -> SCAFFOLD) rather than guess.
+ */
+internal fun EmitCtx.impulseExileTopMayPlay(actions: List<JsonObject>): Dsl? {
+    if (actions.size != 2) return null
+    if (actions[0].strField("_Action") != "ExileTopCardOfLibrary") return null
+    val grant = actions[1]
+    if (grant.strField("_Action") != "CreatePlayerEffectUntil") return null
+    val blob = compact(grant)
+    if ("MayPlayExiledCard" !in blob || "TheCardExiledThisWay" !in blob) return null
+    // "Until the end of your next turn" — never expires this turn even on your own turn.
+    if (!jsonContains(grant, "_Expiration", "UntilEndOfNextTurn")) return null
+    return Composite(
+        listOf(
+            Lit("GatherCardsEffect(source = CardSource.TopOfLibrary(DynamicAmount.Fixed(1)), storeAs = \"exiledCard\")"),
+            Lit("MoveCollectionEffect(from = \"exiledCard\", destination = CardDestination.ToZone(Zone.EXILE))"),
+            Lit("GrantMayPlayFromExileEffect(\"exiledCard\", MayPlayExpiry.UntilEndOfNextTurn)")
+        )
+    )
 }
 
 /** [MayCost(cost), Unless(CostWasPaid, [Sacrifice...])] -> PayOrSufferEffect (echo / upkeep cost). */

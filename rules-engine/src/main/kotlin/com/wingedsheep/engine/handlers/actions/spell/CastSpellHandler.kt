@@ -16,6 +16,7 @@ import com.wingedsheep.engine.core.CardsDiscardedEvent
 import com.wingedsheep.engine.core.CardsRevealedEvent
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSpentEvent
+import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.SneakWindow
 import com.wingedsheep.engine.mechanics.WarpGrants
@@ -380,8 +381,8 @@ class CastSpellHandler(
         } else if (faceManaCostOverride != null && cardDef != null) {
             costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, faceManaCostOverride, action.playerId)
         } else if (action.useAlternativeCost && cardDef != null) {
-            // Check flashback cost first (card in graveyard with Flashback keyword)
-            val flashbackAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Flashback>().firstOrNull()
+            // Check flashback cost first (printed on the card, or granted at runtime by Archmage's Newt).
+            val flashbackAbility = FlashbackGrants.effectiveFlashback(state, action.cardId, cardDef)
             // Harmonize may be printed on the card or granted at runtime (Songcrafter Mage).
             val harmonizeAbility = HarmonizeGrants.effectiveHarmonize(state, action.cardId, cardDef)
             // Each branch is gated by [CastSpell.altAllows] so an explicit player choice (e.g.
@@ -1381,8 +1382,8 @@ class CastSpellHandler(
         } else if (faceManaCostOverrideExecute != null && cardDef != null) {
             costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, faceManaCostOverrideExecute, action.playerId)
         } else if (action.useAlternativeCost && cardDef != null) {
-            // Check flashback cost first
-            val flashbackAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Flashback>().firstOrNull()
+            // Check flashback cost first (printed on the card, or granted at runtime by Archmage's Newt).
+            val flashbackAbility = FlashbackGrants.effectiveFlashback(currentState, action.cardId, cardDef)
             // Harmonize may be printed on the card or granted at runtime (Songcrafter Mage).
             val harmonizeAbility = HarmonizeGrants.effectiveHarmonize(currentState, action.cardId, cardDef)
             // Branches gated by [CastSpell.altAllows] — mirrors validate(); honors the player's

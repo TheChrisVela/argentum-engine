@@ -33,6 +33,7 @@ import com.wingedsheep.sdk.scripting.MayCastFromGraveyard
 import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
 import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
+import com.wingedsheep.engine.mechanics.FlashbackGrants
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.mechanics.WarpGrants
 import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
@@ -1055,9 +1056,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
             val cardComponent = container.get<CardComponent>() ?: continue
             val cardDef = context.cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
 
-            val flashback = cardDef.keywordAbilities
-                .filterIsInstance<KeywordAbility.Flashback>()
-                .firstOrNull() ?: continue
+            // Flashback may be printed on the card or granted at runtime (Archmage's Newt).
+            val flashback = FlashbackGrants.effectiveFlashback(state, cardId, cardDef) ?: continue
 
             // Check timing: instants at instant speed, sorceries at sorcery speed
             val isInstant = cardComponent.typeLine.isInstant

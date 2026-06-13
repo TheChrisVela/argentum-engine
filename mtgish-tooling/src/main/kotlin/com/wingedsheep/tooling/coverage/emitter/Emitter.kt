@@ -176,6 +176,14 @@ object Emitter {
                 rname == "Activated" || rname == "ActivatedWithModifiers" -> block = ctx.activatedBlock(rule)
                 rname == "Cycling" -> block = manaKeywordCost(rule)?.let { listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.cycling", arg("\"$it\"")))))) }
                 rname == "Morph" -> block = manaKeywordCost(rule)?.let { listOf(Assign("morph", Lit("\"$it\""))) }
+                // FlashForCasters (conditional flash, CR 702.8) — "<this> has flash as long as you
+                // control a [filter]" (Colossal Rattlewurm: "...as long as you control a Desert"). The
+                // condition rides as `PlayerPassesFilter(You, ControlsA(filter))`; render the card-level
+                // `conditionalFlash = Conditions.YouControl(<filter>)` assignment (identical tree to a
+                // raw `Exists(You, BATTLEFIELD, filter)`). Only the "you control a [filter]" shape the
+                // shared youControlConditionDsl can render exactly produces a line; any other condition
+                // declines -> SCAFFOLD rather than guess.
+                rname == "FlashForCasters" -> block = ctx.conditionalFlashLines(rule)
                 rname == "Flashback" -> block = manaKeywordCost(rule)?.let { listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.flashback", arg("\"$it\"")))))) }
                 rname == "Crew" -> block = rule["args"].asInt()?.let { listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.crew", arg("$it")))))) }
                 // Saddle N (CR 702.171) — a numeric keyword ability. mtgish shapes the count as a nested
