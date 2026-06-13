@@ -85,11 +85,14 @@ internal fun EmitCtx.createTokenDsl(spec: JsonObject, count: Int = 1, dynamicCou
             // `Activated` / `ActivatedWithModifiers` rule (e.g. Mourner's Surprise's Mercenary token
             // with "{T}: Target creature you control gets +1/+0 … Activate only as a sorcery.") renders
             // as an inline `ActivatedAbility(…)` via [grantedActivatedAbilityExpr] and is passed through
-            // `CreateTokenEffect.activatedAbilities`. Any other shape (a granted *triggered* ability, a
-            // parameterized keyword, an activated ability we can't render whole) scaffolds rather than
-            // silently drop it.
+            // `CreateTokenEffect.activatedAbilities`. A granted *triggered* ability (Send in the Pest's
+            // Pest with "Whenever this token attacks, you gain 1 life.") renders as an inline
+            // `TriggeredAbility.create(…)` via [grantedTriggeredAbilityExpr] and is passed through
+            // `CreateTokenEffect.triggeredAbilities`. Any other shape (a parameterized keyword, an
+            // ability we can't render whole) scaffolds rather than silently drop it.
             val tokenKeywords = mutableListOf<String>()
             val tokenActivatedAbilities = mutableListOf<Dsl>()
+            val tokenTriggeredAbilities = mutableListOf<Dsl>()
             for (ability in ((a.getOrNull(5) as? JsonArray) ?: JsonArray(emptyList()))) {
                 val abilityRule = ability as? JsonObject ?: return null
                 val rname = abilityRule.strField("_Rule") ?: return null
@@ -97,15 +100,20 @@ internal fun EmitCtx.createTokenDsl(spec: JsonObject, count: Int = 1, dynamicCou
                     tokenActivatedAbilities.add(grantedActivatedAbilityExpr(abilityRule) ?: return null)
                     continue
                 }
-                if (abilityRule["args"] != null) return null  // TriggerA / parameterized -> SCAFFOLD
+                if (rname == "TriggerA") {
+                    tokenTriggeredAbilities.add(grantedTriggeredAbilityExpr(abilityRule) ?: return null)
+                    continue
+                }
+                if (abilityRule["args"] != null) return null  // other parameterized rule -> SCAFFOLD
                 val kw = pascalToUpperSnake(rname)
                 if (kw !in keywords) return null
                 tokenKeywords.add(kw)
             }
             // The `Effects.CreateToken` facade can't carry abilities — only the raw `CreateTokenEffect`
-            // constructor exposes `activatedAbilities`. Use it when an activated ability is present;
-            // otherwise keep the tidier facade.
-            val ctor = if (tokenActivatedAbilities.isEmpty()) "Effects.CreateToken" else "CreateTokenEffect"
+            // constructor exposes `activatedAbilities` / `triggeredAbilities`. Use it when a granted
+            // ability is present; otherwise keep the tidier facade.
+            val hasGrantedAbilities = tokenActivatedAbilities.isNotEmpty() || tokenTriggeredAbilities.isNotEmpty()
+            val ctor = if (!hasGrantedAbilities) "Effects.CreateToken" else "CreateTokenEffect"
             val parts = mutableListOf(arg("power", "$power"), arg("toughness", "$toughness"))
             if (colors.isNotEmpty()) parts.add(arg("colors", "setOf(${colors.joinToString(", ") { "Color.$it" }})"))
             parts.add(arg("creatureTypes", "setOf(${subs.joinToString(", ") { "\"$it\"" }})"))
@@ -113,18 +121,21 @@ internal fun EmitCtx.createTokenDsl(spec: JsonObject, count: Int = 1, dynamicCou
             if (tokenActivatedAbilities.isNotEmpty()) {
                 parts.add(arg("activatedAbilities", Call("listOf", tokenActivatedAbilities.map { arg(it) })))
             }
+            if (tokenTriggeredAbilities.isNotEmpty()) {
+                parts.add(arg("triggeredAbilities", Call("listOf", tokenTriggeredAbilities.map { arg(it) })))
+            }
             // The recipient ("its controller creates …") is a named arg on both ctors, independent of
             // the count, so add it once before resolving the count overload below.
             if (controller != null) parts.add(arg("controller", Lit(controller)))
             // Count rendering depends on the constructor we picked:
             //  - `Effects.CreateToken` facade: a fixed count is the trailing named `count: Int` overload;
             //    a dynamic count is the `count: DynamicAmount` first-positional overload.
-            //  - raw `CreateTokenEffect` ctor (used when the token has activated abilities): the `count: Int`
-            //    secondary ctor does NOT expose `activatedAbilities`, so the count MUST be a `DynamicAmount`
-            //    on the primary ctor — a fixed count renders as `DynamicAmount.Fixed(N)`, not a bare Int
-            //    (otherwise `CreateTokenEffect(count = 2, activatedAbilities = …)` fails to compile —
-            //    Hellspur Posse Boss).
-            val usesRawCtor = tokenActivatedAbilities.isNotEmpty()
+            //  - raw `CreateTokenEffect` ctor (used when the token has granted abilities): the `count: Int`
+            //    secondary ctor does NOT expose `activatedAbilities`/`triggeredAbilities`, so the count MUST
+            //    be a `DynamicAmount` on the primary ctor — a fixed count renders as `DynamicAmount.Fixed(N)`,
+            //    not a bare Int (otherwise `CreateTokenEffect(count = 2, activatedAbilities = …)` fails to
+            //    compile — Hellspur Posse Boss).
+            val usesRawCtor = hasGrantedAbilities
             when {
                 dynamicCount != null -> return Call(ctor, listOf(arg("count", dynamicCount)) + parts)
                 count == 1 -> return Call(ctor, parts)

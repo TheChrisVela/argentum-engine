@@ -112,6 +112,10 @@ class EmitCtx(val keywords: Set<String>, val oracleText: String? = null) {
 internal val SELF_REFS = setOf(
     "ThisPermanent", "Trigger_ThatCreature", "ThatEnteringPermanent", "Trigger_ThatPermanent",
     "ThatCreature", "ThatPermanent", "Trigger_ThatGraveyardCard", "ThatGraveyardCard",
+    // "this card from your graveyard" — the source's own card in the graveyard. Used by self-recursion
+    // graveyard activated abilities ("{cost}: Return this card from your graveyard to the battlefield",
+    // Teacher's Pest); always resolves to the source itself.
+    "ThisGraveyardCard",
 )
 
 // ---------------------------------------------------------------------------

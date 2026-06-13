@@ -825,6 +825,35 @@ internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false
 }
 
 /**
+ * A `TriggerA` rule granted to a *token* ("Create a … token with '<trigger>'", Send in the Pest's Pest
+ * with "Whenever this token attacks, you gain 1 life.") -> a `TriggeredAbility.create(trigger = …,
+ * binding = …, effect = …)` constructor expression for `CreateTokenEffect.triggeredAbilities`. The
+ * sibling of [grantedActivatedAbilityExpr] for the granted-*triggered* shape.
+ *
+ * Only the SELF-bound, untargeted, plain shape renders — the trigger spec comes from [triggerSpecFor]
+ * (so the token trigger's binding is the same SELF binding the card-body path uses), and the effect
+ * list is rendered with `EffectTarget.Self`. Any complication the inline `TriggeredAbility.create`
+ * form can't carry — a chosen target, an intervening-if / modal / "you may" wrapper — declines
+ * (-> the caller scaffolds the whole token) rather than emit a lossy granted ability.
+ */
+internal fun EmitCtx.grantedTriggeredAbilityExpr(rule: JsonObject): Dsl? {
+    if ("\"Modal_" in compact(rule)) return null
+    val spec = triggerSpecFor(rule) ?: return null
+    val (targets, actions) = extractEnvelope(rule)
+    if (actions == null) return null
+    if (targets != null && targets.isNotEmpty()) return null  // a targeted granted trigger -> SCAFFOLD
+    // No "you may" / intervening-if rendering on the inline create() form — decline those shapes.
+    if (actions.any { it.strField("_Action") == "MayAction" || it.strField("_Action") == "If" }) return null
+    val effect = renderEffectList(actions, tvar = "EffectTarget.Self") ?: return null
+    return call(
+        "TriggeredAbility.create",
+        arg("trigger", "$spec.event"),
+        arg("binding", "$spec.binding"),
+        arg("effect", effect),
+    )
+}
+
+/**
  * Some triggers nest an intervening-if (CR 603.4) *inside* the TriggerA's trigger slot: `args[0]` is an
  * `If` node whose `args` are `[<gate condition>, <real _Trigger>]` rather than a bare `_Trigger`. When
  * the gate is one we can render exactly, unwrap to the inner real trigger and thread the matching

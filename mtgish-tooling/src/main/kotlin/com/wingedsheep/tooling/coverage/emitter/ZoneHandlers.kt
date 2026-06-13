@@ -325,9 +325,16 @@ internal val zoneHandlers: Map<String, ActionHandler> = actionHandlers {
             // "onto the battlefield under your control" (Ashen Powder) carries an EntersUnderPlayersControl
             // flag — a plain Move would (wrongly) return it under its owner's control. Render the
             // control-grabbing put; under another player's control isn't expressible, so scaffold.
+            // An EntersTapped flag ("…to the battlefield tapped", Teacher's Pest) needs the
+            // PutOntoBattlefield facade (Move can't carry `tapped`); combining tapped with a control
+            // grab isn't expressible by either facade, so scaffold that pairing.
             val flagBlob = compact(args)
+            val entersTapped = "EntersTapped" in flagBlob
             return@on when {
-                "EntersUnderPlayersControl" !in flagBlob -> call("Effects.Move", arg(Lit(tgt)), arg("Zone.BATTLEFIELD"))
+                "EntersUnderPlayersControl" !in flagBlob ->
+                    if (entersTapped) call("Effects.PutOntoBattlefield", arg(Lit(tgt)), arg("tapped", "true"))
+                    else call("Effects.Move", arg(Lit(tgt)), arg("Zone.BATTLEFIELD"))
+                entersTapped -> null
                 "\"You\"" in flagBlob -> call("Effects.PutOntoBattlefieldUnderYourControl", arg(Lit(tgt)))
                 else -> null
             }
