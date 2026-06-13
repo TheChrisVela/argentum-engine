@@ -23,6 +23,10 @@ internal fun BridgeBuilder.manaCountersAndState() {
     // layer effect collapse to one BecomeCreatureTypeEffect (Mistform cycle, Imagecrafter).
     effect("AddCreatureTypeVariable", "BecomeCreatureType", UNIVERSAL)
     effects("PutACounterOfTypeOnPermanent", "PutNumberCountersOfTypeOnPermanent", tag = "AddCounters", note = UNIVERSAL)
+    // "Put a counter on each <filter>" — the mass form, rendered as ForEachInGroup(AddCounters) over the
+    // recovered group filter (Bounding Felidar's "each other creature you control").
+    composed("PutACounterOfTypeOnEachPermanent", "ForEachInGroup(AddCounters) over a group filter",
+        composes = listOf("AddCounters"))
 
     // Earthbend N (TLA keyword action): target land becomes a 0/0 creature-land with haste, gets N
     // +1/+1 counters, and gains "when it dies or is exiled, return it to the battlefield tapped".
