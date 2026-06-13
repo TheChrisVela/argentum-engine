@@ -171,8 +171,14 @@ export function LifeDisplay({
   // (otherwise the name itself already carries the same information) and when
   // not spectating (there's no "you" in spectator mode).
   const showRoleTag = !spectatorMode && !!playerName
-  const roleColor = isPlayer ? 'rgba(74, 154, 234, 0.7)' : 'rgba(255, 158, 70, 0.8)'
-  const roleBorder = isPlayer ? 'rgba(74, 154, 234, 0.35)' : 'rgba(255, 158, 70, 0.4)'
+  // Seat-tinted in multiplayer (SEAT_COLORS are 6-digit hex, so appending an
+  // alpha byte gives the translucent variants the tag uses).
+  const roleColor = isPlayer
+    ? 'rgba(74, 154, 234, 0.7)'
+    : seatColor ? `${seatColor}CC` : 'rgba(255, 158, 70, 0.8)'
+  const roleBorder = isPlayer
+    ? 'rgba(74, 154, 234, 0.35)'
+    : seatColor ? `${seatColor}66` : 'rgba(255, 158, 70, 0.4)'
 
   // On phones the side-by-side name labels push past the screen edges (the
   // step strip leaves them no room) — show a small name *under* the orb
