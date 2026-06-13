@@ -2268,7 +2268,7 @@ activatedAbility {
 > **Where set-mechanic helpers live.** The `card { … }` keyword helpers below for *set-specific*
 > mechanics — `leyline()`, `flurry { }`, `mobilize(…)`, `firebending(n)`, `sneak(cost)`, `decayed()`,
 > `vividEtb { }` / `vividCostReduction()`, `impending(time, cost)`, `renew(cost) { }`,
-> `craft(filter, cost)`, `station()`, `increment()` — are `CardBuilder` **extension functions** in
+> `craft(filter, cost)`, `station()` — are `CardBuilder` **extension functions** in
 > `mtg-sdk/.../dsl/mechanics/` (one file per mechanic), not methods on the core `CardBuilder`. They
 > stay in package `com.wingedsheep.sdk.dsl`, so the call syntax is unchanged, but a card file that
 > uses one needs the matching import (e.g. `import com.wingedsheep.sdk.dsl.station`). Evergreen /
@@ -2344,16 +2344,27 @@ composite abilities).
   with [ManaExpiry](#manaexpiry).`END_OF_COMBAT` and discarded by `CombatManager.endCombat`. It is a normal
   triggered ability (not a mana ability): it uses the stack and can be responded to. `n` may be any fixed value;
   "firebending X (X = its power)" is not yet expressible by this helper (the keyword carries only a fixed Int).
-- `Increment` — "Whenever you cast a spell, if the amount of mana you spent is greater than this creature's
-  power or toughness, put a +1/+1 counter on this creature." (Secrets of Strixhaven). Display-only; wire the
-  behavior with the `card { increment() }` builder helper, which adds the keyword ability plus a `YouCastSpell`
-  triggered ability whose **intervening-if** (CR 603.4) compares the *triggering* spell's mana spent
-  (`DynamicAmount.ContextProperty(MANA_SPENT_ON_TRIGGERING_SPELL)`) against `Min(EntityProperty(Source, Power),
-  EntityProperty(Source, Toughness))` with `ComparisonOperator.GT`, then puts one `+1/+1` counter on the source.
-  "greater than its power or toughness" is satisfied as soon as the mana spent beats the *smaller* stat, hence
-  `Min`; the comparison reads the creature's **projected** P/T, so the threshold rises as it grows. Shares the
-  triggering-spell mana-spent primitive with `opus { }` (§"Set mechanics") — build it once. Composition only; no
-  new engine type.
+- `Increment` — "Whenever you cast a spell, if the amount of mana you spent is greater than this creature's power
+  or toughness, put a +1/+1 counter on this creature." (Secrets of Strixhaven). Display-only; wire the behavior with
+  the `card { increment() }` builder helper, which adds the `KeywordAbility.Increment` display marker (surfacing
+  `Keyword.INCREMENT`) plus a `Triggers.YouCastSpell` triggered `AddCounters(+1/+1, 1, Self)` gated by an
+  intervening-if (CR 603.4) that compares the triggering spell's mana spent (`EntityProperty(Triggering,
+  ManaSpent)`) against the source's power *or* toughness — modelled as an `AnyCondition` of two `Compare(GT)`
+  arms, so it fires when the mana exceeds the smaller characteristic. No parameter (mirrors `firebending()` /
+  `decayed()`).
+- `Opus` — "Opus — Whenever you cast an instant or sorcery spell, [base]. If five or more mana was spent to cast
+  that spell, [bonus] [instead]." (Secrets of Strixhaven). **Opus is an ability word** (CR 207.2c — flavor only),
+  so it adds *no keyword*; the whole mechanic is one `Triggers.YouCastInstantOrSorcery` triggered ability wired by
+  the `card { opus { … } }` builder helper. The 5+ mana tier is a `Compare` of
+  `ContextProperty(MANA_SPENT_ON_TRIGGERING_SPELL) >= 5` (the mana spent on the *triggering* spell, not the
+  resolving object's own cast). Author the base effect as `effect = …` and pick exactly one bonus setter:
+  `insteadIfFiveOrMore = …` lowers to `ConditionalEffect(5+ → bonus, otherwise → base)` and renders "… [bonus]
+  instead" (Deluge Virtuoso, Exhibition Tidecaller, Tackle Artist); `alsoIfFiveOrMore = …` lowers to
+  `base then ConditionalEffect(5+ → bonus)` and runs the bonus *in addition* (Expressive Firedancer, Colorstorm
+  Stallion). Declare a `target(name, requirement)` inside the block and reference the returned handle from both
+  `effect` and the bonus so the single chosen target carries across both tiers (Exhibition Tidecaller's "target
+  player mills three … mills ten instead"). The rendered ability text is auto-composed from the base/bonus effect
+  descriptions unless `description` overrides the whole string.
 - `Decayed` — "This creature can't block, and when it attacks, sacrifice it at end of combat" (CR 702.147,
   Innistrad: Midnight Hunt). Display-only; wire the behavior with the `card { decayed() }` builder helper, which adds
   the keyword plus a `CantBlock(GroupFilter.source())` static ability and a "whenever this attacks" triggered
@@ -2644,6 +2655,11 @@ that works in both resolution and static-ability (projection) contexts.
 - `SourceIsModified` — has counters, attached Equipment, or controller-owned Aura
   attached (CR 700.4). Kept as a dedicated condition because the controller-of-Aura
   match isn't expressible via the generic `EntityMatches` filter machinery.
+- `SourceReceivedCounterThisTurn` — "if you put a counter on this creature this turn." True while the source
+  carries the per-turn `ReceivedCountersThisTurnComponent` marker (stamped by the counter-placement path, cleared
+  at cleanup). Distinct from `SourceHasCounter` (which checks current counters): this fires even if the counter was
+  later removed, and stays false if the source merely entered with counters from a *prior* turn. Used as the
+  end-step intervening-if of Secrets of Strixhaven's Fractal Tender.
 - `SourceHasSubtype(subtype)` — `SourceMatches(GameObjectFilter.Any.withSubtype(...))`;
   Changeling is honored.
 - `SourceHasKeyword(keyword)` — `SourceMatches(GameObjectFilter.Any.withKeyword(...))`.

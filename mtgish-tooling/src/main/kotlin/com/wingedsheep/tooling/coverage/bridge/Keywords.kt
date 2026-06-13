@@ -29,6 +29,17 @@ internal fun BridgeBuilder.keywords() {
     // the integer case auto-renders, while "firebending X (X = its power)" carries an XValue node and
     // the emitter declines it (-> SCAFFOLD). This entry only marks the capability covered.
     supported("Firebending", "keyword ability: Firebending N -> keywordAbility(KeywordAbility.firebending(N)) (CR 702.189)")
+    // Increment (Secrets of Strixhaven) — a keyword whose whole mechanic is composed by the
+    // `increment()` CardBuilder helper: the display keyword plus a "whenever you cast a spell, if the
+    // mana you spent exceeds this creature's power or toughness, put a +1/+1 counter on it" triggered
+    // ability (intervening-if on EntityNumericProperty.ManaSpent). `composed`, not a bare keyword: a
+    // plain Keyword.INCREMENT stamp would drop the cast-spell trigger. The emitter's `rname ==
+    // "Increment"` branch renders the no-arg `increment()` builder call (the rule carries no args).
+    composed(
+        "Increment",
+        "keyword: increment() -> Keyword.INCREMENT + 'whenever you cast a spell, if mana spent > power or toughness, +1/+1 counter' trigger",
+        composes = listOf("AddCounters"),
+    )
     // Ward (CR 702.21) — a PARAMETERIZED keyword ability: the cost rides in the rule's args
     // (`Ward—Discard a card`, `Ward {2}`, `Ward—Pay N life`, `Ward—Sacrifice <filter>`). Like Saddle,
     // it must be `supported`, not `keyword`: a bare `keywords(Keyword.WARD)` would drop the cost. The
@@ -61,10 +72,4 @@ internal fun BridgeBuilder.keywords() {
     supported("Station", "keyword ability: Station (CR 702.184a) -> station() builder; adds charge counters = tapped creature's power")
     supported("StationChargedAnimate", "{N+} station symbol -> animate into a creature: gated GrantCardType + GrantKeyword rows (CR 721.2b)")
     supported("StationCharged", "{N+} station symbol gating an ability (CR 721.2a) -> OnlyIfCondition(SourceCounterCountAtLeast(CHARGE, N)); emitter scaffolds the payload")
-    // Increment (Secrets of Strixhaven) — a bare `_Rule: "Increment"` keyword in the IR, but it carries
-    // a composed triggered ability (cast a spell -> if mana spent > min(power, toughness), +1/+1 counter)
-    // that the engine has no handler for. Like Saddle/Firebending/Station it must be `supported`, not
-    // `keyword`: a bare `keywords(Keyword.INCREMENT)` stamp would add the display keyword and silently drop
-    // the counter trigger. The emitter's `rname == "Increment"` branch renders the `increment()` builder.
-    supported("Increment", "keyword ability: Increment (Secrets of Strixhaven) -> increment() builder; +1/+1 counter when a cast spell's mana spent exceeds min(power, toughness)")
 }
