@@ -311,7 +311,18 @@ enum class Keyword(val displayName: String) {
      * creates a copy of the card's prepare spell (`cardFaces[0]`) in exile that they may cast
      * (paying that spell's cost); casting the copy unprepares the creature.
      */
-    PREPARED("Prepared");
+    PREPARED("Prepared"),
+
+    /**
+     * Paradigm (Secrets of Strixhaven).
+     * Appears on Lesson spells. "Then exile this spell. After you first resolve a spell with this
+     * name, you may cast a copy of it from exile without paying its mana cost at the beginning of
+     * each of your first main phases." Display-only on the keyword — the behavior is driven by the
+     * spell's `paradigm` flag, which routes the spell to exile on resolution and tags it with the
+     * paradigm marker so the engine synthesizes the recurring free-recast ability
+     * ([com.wingedsheep.sdk.scripting.Paradigm.recastAbility]).
+     */
+    PARADIGM("Paradigm");
 
     companion object {
         fun fromString(value: String): Keyword? =
