@@ -2077,6 +2077,133 @@
     ]
 }
 
+// Bucolic Ranch
+{
+    "name": "Bucolic Ranch",
+    "manaCost": "",
+    "typeLine": "Land — Desert",
+    "oracleText": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a Mount spell.\n{3}, {T}: Look at the top card of your library. If it's a Mount card, you may reveal it and put it into your hand. If you don't put it into your hand, you may put it on the bottom of your library.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "restriction": {
+                        "type": "SubtypeSpellsOnly",
+                        "subtypes": [
+                            "Mount"
+                        ]
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "looked",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "Mount",
+                            "storeSelected": "kept",
+                            "storeRemainder": "rest",
+                            "selectedLabel": "Put in hand",
+                            "remainderLabel": "Leave"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kept",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "rest",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "toBottom",
+                            "storeRemainder": "stayOnTop",
+                            "selectedLabel": "Put on bottom",
+                            "remainderLabel": "Leave on top"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toBottom",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "265",
+        "rarity": "UNCOMMON",
+        "artist": "Leonardo Borazio",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/c/6c4f6b81-53d0-49fb-b404-c2ad67de7493.jpg?1712356362"
+    }
+}
+
 // Cactarantula
 {
     "name": "Cactarantula",
@@ -6410,6 +6537,133 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Hollow Marauder
+{
+    "name": "Hollow Marauder",
+    "manaCost": "{6}{B}",
+    "typeLine": "Creature — Specter Rogue",
+    "oracleText": "This spell costs {1} less to cast for each creature card in your graveyard.\nFlying\nWhen this creature enters, any number of target opponents each discard a card. For each of those opponents who didn't discard a card with mana value 4 or greater, draw a card.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "storeAs": "hm_hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hm_hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "chooser": "TargetPlayer",
+                                "storeSelected": "hm_discarded",
+                                "prompt": "Choose a card to discard"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "hm_discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard",
+                                    "player": {
+                                        "type": "ContextPlayer",
+                                        "index": 0
+                                    }
+                                },
+                                "moveType": "Discard"
+                            },
+                            {
+                                "type": "ConditionalOnCollection",
+                                "collection": "hm_discarded",
+                                "ifNotEmpty": {
+                                    "type": "Composite",
+                                    "effects": []
+                                },
+                                "ifEmpty": {
+                                    "type": "DrawCards",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "filter": "mv>=4"
+                            }
+                        ]
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "unlimited": true,
+                    "id": "any number of target opponents"
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "CardsInGraveyardMatchingFilter",
+                        "filter": "creature"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "90",
+        "rarity": "UNCOMMON",
+        "artist": "Wero Gallo",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/f/df2913d5-57c7-4f9b-bc96-8a46beef2563.jpg?1712355599",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Hollow Marauder's first ability doesn't change its mana value, which is always 7."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "When the triggered ability resolves, the next target opponent in turn order chooses a card in hand without revealing it, then each other target opponent does the same. All chosen cards are then discarded at the same time."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -14349,6 +14603,117 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Three Steps Ahead
+{
+    "name": "Three Steps Ahead",
+    "manaCost": "{U}",
+    "typeLine": "Instant",
+    "oracleText": "Spree (Choose one or more additional costs.)\n+ {1}{U} — Counter target spell.\n+ {3} — Create a token that's a copy of target artifact or creature you control.\n+ {2} — Draw two cards, then discard a card.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": "Counter",
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": {},
+                                "zone": "Stack"
+                            }
+                        }
+                    ],
+                    "description": "+ {1}{U} — Counter target spell.",
+                    "additionalManaCost": "{1}{U}"
+                },
+                {
+                    "effect": {
+                        "type": "CreateTokenCopyOfTarget",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature|artifact ctrl:you"
+                            }
+                        }
+                    ],
+                    "description": "+ {3} — Create a token that's a copy of target artifact or creature you control.",
+                    "additionalManaCost": "{3}"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "description": "+ {2} — Draw two cards, then discard a card.",
+                    "additionalManaCost": "{2}"
+                }
+            ],
+            "chooseCount": 3,
+            "minChooseCount": 1
+        }
+    },
+    "metadata": {
+        "collectorNumber": "75",
+        "rarity": "RARE",
+        "artist": "Francisco Miyara",
+        "flavorText": "She'd planned for every eventuality, with the obvious exception of failure.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/f/8fffd839-2337-4a14-9312-cee085a17f4b.jpg?1712860611"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

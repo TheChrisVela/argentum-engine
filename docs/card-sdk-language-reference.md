@@ -1192,8 +1192,10 @@ Every `TargetRequirement` carries count semantics (defaults shown):
 - `unlimited = false` — when `true`, **"any number of target ..."** — no upper cap. The practical
   maximum is the number of legal targets, which the engine sends to the client; validation imposes
   no limit and the minimum is 0. Use this instead of a large placeholder `count` (Phyrexian Purge,
-  Kaboom, Weaver of Lies). For "**X** target creatures" use `dynamicMaxCount = DynamicAmount.XValue`
-  instead — that clamps the count to the chosen X.
+  Kaboom, Weaver of Lies). Available on `TargetObject` / `TargetCreature(...)` / `TargetPlayer` and
+  on `TargetOpponent` — `TargetOpponent(unlimited = true)` is "any number of target opponents"
+  (Hollow Marauder); pair with `ForEachTargetEffect` to apply a per-opponent body. For "**X** target
+  creatures" use `dynamicMaxCount = DynamicAmount.XValue` instead — that clamps the count to the chosen X.
 - `dynamicMaxCount: DynamicAmount?` — evaluated when the spell/ability hits the stack; the resolved
   value becomes the max ("up to X target creatures", X = board state or chosen X).
 - `sameController = false` — on `TargetObject` / `TargetCreature(...)`; when `true` and the requirement
