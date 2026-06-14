@@ -1177,7 +1177,11 @@ Every `TargetRequirement` carries count semantics (defaults shown):
 
 - `count = 1` — maximum number of targets.
 - `minCount = count` — minimum; set below `count` for "one or two target creatures".
-- `optional = false` — when `true`, minimum becomes 0 ("up to N target ...").
+- `optional = false` — when `true`, minimum becomes 0 ("up to N target ..."). An activated ability
+  whose controller-chosen requirements are **all** optional (e.g. Boom Box's "Destroy up to one target
+  artifact, up to one target creature, and up to one target land") is legal to activate with an *empty*
+  target list — choosing no targets for every slot — and still resolves; the engine only requires a
+  target when at least one controller requirement has a non-zero effective minimum.
 - `unlimited = false` — when `true`, **"any number of target ..."** — no upper cap. The practical
   maximum is the number of legal targets, which the engine sends to the client; validation imposes
   no limit and the minimum is 0. Use this instead of a large placeholder `count` (Phyrexian Purge,
