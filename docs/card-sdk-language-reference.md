@@ -3714,6 +3714,23 @@ batch decisions can group structurally identical triggers and persistent yields 
 copies. Null for synthesized sources with no card definition (e.g. spell copies). See
 `backlog/stack-collapse-and-batch-decisions.md` §C.2.
 
+### Batched may-question (engine-internal, not authored)
+
+When a run of structurally identical **optional, targeted** triggers ("Whenever …, you may … *target* …") fires off one
+event, the engine asks the controller a single `BatchYesNoDecision` instead of one `YesNoDecision` per trigger — Magic
+Online's "auto-stack identical triggers" affordance (`backlog/stack-collapse-and-batch-decisions.md` §B). Cards author
+nothing: `TriggerProcessor` groups contiguous `liveTriggers` sharing one (controller, `AbilityIdentity`) key (and that would
+actually raise the may-question rather than fizzle for lack of targets) into one decision carrying a `count`. The reply,
+`BatchYesNoResponse(choice, applyToAll)`, is fanned back out by `BatchMayTriggerContinuation`:
+
+- `applyToAll = true` resolves the whole run (`no` drops it; `yes` unwraps each may-gate and routes every instance through
+  ordinary per-trigger target selection — only the yes/no is shared, never the target).
+- `applyToAll = false` peels one instance off (answered with `choice`) and re-raises the batch for the remainder.
+
+Only same-controller, same-identity, targeted-may triggers batch; targetless "may" triggers still decide at resolution, and a
+lone trigger uses the plain per-trigger yes/no. The guard guarantees the engine never makes a meaningful target/ordering
+choice on the player's behalf.
+
 ## 21. Structural lint (`CardLinter`)
 
 Every registered card is structurally validated at build time: `CardValidator.validate` runs

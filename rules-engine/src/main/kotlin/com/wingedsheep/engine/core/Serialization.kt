@@ -149,6 +149,7 @@ val engineSerializersModule = SerializersModule {
         subclass(SearchLibraryDecision::class)
         subclass(ReorderLibraryDecision::class)
         subclass(SelectManaSourcesDecision::class)
+        subclass(BatchYesNoDecision::class)
     }
 
     // DecisionResponse hierarchy
@@ -169,6 +170,7 @@ val engineSerializersModule = SerializersModule {
         subclass(CombatResolutionResponse::class)
         subclass(CancelDecisionResponse::class)
         subclass(ManaSourcesSelectedResponse::class)
+        subclass(BatchYesNoResponse::class)
     }
 
     // ContinuationFrame hierarchy
@@ -274,6 +276,7 @@ val engineSerializersModule = SerializersModule {
         subclass(MayPayManaTriggerContinuation::class)
         subclass(MayPayXContinuation::class)
         subclass(MayTriggerContinuation::class)
+        subclass(BatchMayTriggerContinuation::class)
         subclass(PutOnBottomOfLibraryContinuation::class)
         subclass(ReflexiveTriggerResolveContinuation::class)
         subclass(ReflexiveTriggerTargetContinuation::class)
