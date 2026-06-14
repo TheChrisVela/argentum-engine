@@ -88,6 +88,7 @@ import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
 import com.wingedsheep.sdk.scripting.effects.GrantExileOnLeaveEffect
 import com.wingedsheep.sdk.scripting.effects.GrantHexproofEffect
 import com.wingedsheep.sdk.scripting.effects.GrantKeywordEffect
+import com.wingedsheep.sdk.scripting.effects.GrantStaticAbilityEffect
 import com.wingedsheep.sdk.scripting.effects.GrantTriggeredAbilityEffect
 import com.wingedsheep.sdk.scripting.effects.GrantKeywordToAttackersBlockedByEffect
 import com.wingedsheep.sdk.scripting.effects.RemoveAllAbilitiesEffect
@@ -873,6 +874,21 @@ object Effects {
         duration: Duration = Duration.EndOfTurn
     ): Effect =
         GrantKeywordEffect(flag.name, target, duration)
+
+    /**
+     * Grant a static ability to a target until end of turn (or another [duration]).
+     *
+     * The runtime sibling of a printed [com.wingedsheep.sdk.scripting.StaticAbility] — e.g.
+     * granting [com.wingedsheep.sdk.scripting.CantBeBlockedByMoreThan] so the combat blocker
+     * validation honors a temporarily-conferred "can't be blocked by more than one creature"
+     * (Full Steam Ahead). Compose inside [ForEachInGroup] with [EffectTarget.Self] for
+     * "each creature you control gains ...".
+     */
+    fun GrantStaticAbility(
+        ability: com.wingedsheep.sdk.scripting.StaticAbility,
+        target: EffectTarget = EffectTarget.ContextTarget(0),
+        duration: Duration = Duration.EndOfTurn
+    ): Effect = GrantStaticAbilityEffect(ability, target, duration)
 
     /**
      * Mark a permanent so that if it would leave the battlefield, it is exiled instead.

@@ -768,7 +768,7 @@ private fun EmitCtx.castTimeCaptureSpell(card: JsonObject): List<Stmt>? {
  * bullet marker. Returns null if the oracle text is absent or has no bullets — the renderer then
  * declines (→ SCAFFOLD) rather than invent labels.
  */
-private fun EmitCtx.modeBullets(): List<String>? {
+internal fun EmitCtx.modeBullets(): List<String>? {
     val oracle = oracleText ?: return null
     if ("•" !in oracle) return null
     return oracle.substringAfter("•").let { "•$it" }
@@ -856,6 +856,61 @@ internal fun EmitCtx.modalChooseOneSpell(card: JsonObject): List<Stmt>? {
         Sub(Block("mode(\"${ktStr(bullets[i])}\")", body))
     }
     return listOf(Sub(Block("spell", listOf(Sub(Block("modal(chooseCount = 1)", modeBlocks))))))
+}
+
+/**
+ * One arm of a `Modal_ChooseOne` on a triggered ability → a `Mode.withTarget(effect, target, "bullet")`
+ * (a single targeted mode) or `Mode.noTarget(effect, "bullet")` (an untargeted mode) call expression.
+ *
+ * Unlike [modalArmBody] (which emits `mode("…") { val t = target(…); effect = … }` statement blocks for
+ * the spell-side `modal(chooseCount = 1) { }` builder), a triggered ability hosts its modal as a plain
+ * effect — `effect = ModalEffect.chooseOne(Mode.withTarget(…), …)`. So each arm renders to the inline
+ * `Mode.*` call form, binding any per-mode target to the modal slot `EffectTarget.ContextTarget(0)`.
+ *
+ * Renders only the shapes already covered by the per-effect handlers: an untargeted `ActionList`, or a
+ * `Targeted` arm with exactly one conventional target. Returns null for anything else so the whole
+ * modal trigger declines to SCAFFOLD rather than emit a partial/lossy arm.
+ */
+private fun EmitCtx.modalArmEffectExpr(arm: JsonObject, bullet: String): Dsl? {
+    when (arm.strField("_Actions")) {
+        "ActionList" -> {
+            val actions = arm["args"].asArr?.filterIsInstance<JsonObject>() ?: return null
+            val effect = renderEffectList(actions, "EffectTarget.ContextTarget(0)") ?: return null
+            return call("Mode.noTarget", arg(effect), arg(Lit("\"${ktStr(bullet)}\"")))
+        }
+        "Targeted" -> {
+            val (targets, actions) = targetedArms(arm) ?: return null
+            if (targets == null || actions == null || targets.size != 1) return null
+            val tnode = targetExpr(targets[0], actions)
+                ?: run { reasons.add("target:${targets[0].strField("_Target")}"); return null }
+            val effect = renderEffectList(actions, "EffectTarget.ContextTarget(0)") ?: return null
+            return call("Mode.withTarget", arg(effect), arg(tnode), arg(Lit("\"${ktStr(bullet)}\"")))
+        }
+        else -> return null
+    }
+}
+
+/**
+ * A `Modal_ChooseOne` actions node (on a triggered ability) → a `ModalEffect.chooseOne(Mode.…, Mode.…)`
+ * effect expression, the inline modal form a `triggeredAbility { effect = … }` hosts (the sibling of
+ * [modalChooseOneSpell], which uses the spell-only `modal(chooseCount = 1) { }` builder). Mode labels
+ * come from the oracle-text bullets ([modeBullets]); each arm renders via [modalArmEffectExpr].
+ *
+ * Declines (→ SCAFFOLD) unless every arm renders AND the bullet count matches the arm count, so a modal
+ * trigger never emits with a missing or mislabeled mode.
+ */
+internal fun EmitCtx.modalChooseOneEffectExpr(actionsNode: JsonObject): Dsl? {
+    if (actionsNode.strField("_Actions") != "Modal_ChooseOne") return null
+    val arms = actionsNode["args"].asArr?.filterIsInstance<JsonObject>() ?: return null
+    if (arms.isEmpty()) return null
+
+    val bullets = modeBullets() ?: run { reasons.add("modal-trigger"); return null }
+    if (bullets.size != arms.size) { reasons.add("modal-trigger"); return null }
+
+    val modeCalls = arms.mapIndexed { i, arm ->
+        modalArmEffectExpr(arm, bullets[i]) ?: run { reasons.add("modal-trigger"); return null }
+    }
+    return Call("ModalEffect.chooseOne", modeCalls.map { arg(it) })
 }
 
 /**
@@ -1055,15 +1110,48 @@ private val TRIGGER_SPEC = mapOf(
     "WhenACreatureBecomesBlocked" to "Triggers.BecomesBlocked",
 )
 
+/**
+ * A modal `TriggerA` rule ("At the beginning of combat on your turn, choose one — …") →
+ * `triggeredAbility { trigger = …; effect = ModalEffect.chooseOne(Mode.…, Mode.…) }`.
+ *
+ * Only the plain `Modal_ChooseOne` shape with a recoverable trigger spec renders: the trigger comes
+ * from [triggerSpecFor] (after unwrapping any intervening-if gate), and the modal effect from
+ * [modalChooseOneEffectExpr] (per-mode targets bound to the modal slot). Returns null — so the caller
+ * falls through to its `Modal_*` decline → SCAFFOLD — for any other modal kind, an unrecoverable
+ * trigger, an intervening-if-gated modal trigger (not yet calibrated), or an "optional"/once-per-turn
+ * wrapper, rather than emit a partial/lossy modal trigger.
+ */
+private fun EmitCtx.modalTriggerBlock(rule: JsonObject, oncePerTurn: Boolean, triggerCondition: String?): List<Stmt>? {
+    // Find the modal actions node directly under the TriggerA (args = [trigger, Modal_ChooseOne]).
+    val modalNode = rule["args"].asArr?.filterIsInstance<JsonObject>()
+        ?.firstOrNull { it.strField("_Actions") == "Modal_ChooseOne" } ?: return null
+
+    // Recover the trigger spec the same way the non-modal path does; decline (→ caller's SCAFFOLD) on
+    // an intervening-if-gated modal trigger or any once-per-turn/extra wrapper we haven't calibrated.
+    val (effRule, effTriggerCondition) = unwrapIfGatedTrigger(rule, triggerCondition)
+    if (effTriggerCondition != null || oncePerTurn) return null
+    val spec = triggerSpecFor(effRule) ?: return null
+
+    val modal = modalChooseOneEffectExpr(modalNode) ?: return null
+    return listOf(Sub(Block("triggeredAbility", listOf(
+        Assign("trigger", Lit(spec)),
+        Assign("effect", modal),
+    ))))
+}
+
 /** A TriggerA rule (self-triggered) -> triggeredAbility { trigger; [triggerCondition]; [target]; effect }.
  *  [oncePerTurn] is set by the `TriggerOnceEachTurn` rule envelope, whose body is otherwise shaped
  *  identically to a TriggerA. [triggerCondition] is an optional intervening-if condition DSL (CR 603.4)
  *  supplied by an enclosing gate (e.g. the "while saddled" `If` wrapper passes
  *  `Conditions.SourceIsSaddled`); it renders as a `triggerCondition = …` line. */
 internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false, triggerCondition: String? = null): List<Stmt>? {
-    // A modal triggered ability ("When this enters, choose one — …") carries a `Modal_*` envelope; the
-    // generic action path would render only the first mode and silently drop the rest, so decline the
-    // whole ability rather than emit one arm (mirrors the spell-side modal guard).
+    // A "choose one —" modal triggered ability hosts its modal as a plain effect:
+    // `triggeredAbility { trigger = …; effect = ModalEffect.chooseOne(Mode.…, Mode.…) }`. Render the
+    // `Modal_ChooseOne` arms via [modalChooseOneEffectExpr] (the inline `Mode.*` form), per-mode targets
+    // bound to the modal slot. Any other `Modal_*` shape (choose N, choose up to N, …) — or a
+    // `Modal_ChooseOne` whose arms / bullets can't be recovered exactly — still declines to SCAFFOLD
+    // inside the renderer rather than emit a partial/lossy modal.
+    modalTriggerBlock(rule, oncePerTurn, triggerCondition)?.let { return it }
     if ("\"Modal_" in compact(rule)) { reasons.add("modal-trigger"); return null }
 
     // A Mount's "while saddled" attack trigger nests the intervening-if (CR 603.4) *inside* the

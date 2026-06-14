@@ -10,6 +10,7 @@ import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantActivate
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantFlashbackExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantHarmonizeExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantKeywordExecutor
+import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantStaticAbilityExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantToEnchantedCreatureTypeGroupExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantTriggeredAbilityExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.IncrementAbilityResolutionCountExecutor
@@ -151,6 +152,7 @@ class PermanentExecutors(
         GrantFlashbackExecutor(),
         GrantHarmonizeExecutor(),
         GrantKeywordExecutor(),
+        GrantStaticAbilityExecutor(),
         RemoveKeywordExecutor(),
         GrantToEnchantedCreatureTypeGroupExecutor(),
         GrantTriggeredAbilityExecutor(),

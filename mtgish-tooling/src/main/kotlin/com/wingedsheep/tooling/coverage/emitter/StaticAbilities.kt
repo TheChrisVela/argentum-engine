@@ -437,7 +437,7 @@ private fun EmitCtx.lordGroupFilterExpr(filterNode: JsonElement?): Dsl? {
     return groupFilterExpr(filterNode)
 }
 
-private fun EmitCtx.staticAbilityExpr(ruleName: String, ruleNode: JsonObject): Dsl? {
+internal fun EmitCtx.staticAbilityExpr(ruleName: String, ruleNode: JsonObject): Dsl? {
     when (ruleName) {
         "CantBlock" -> return call("CantBlock")
         "CantBeBlockedByMoreThanOne" -> return call("CantBeBlockedByMoreThan", arg("maxBlockers", "1"))

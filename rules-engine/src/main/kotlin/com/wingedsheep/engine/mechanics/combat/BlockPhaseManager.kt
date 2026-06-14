@@ -498,7 +498,12 @@ internal class BlockPhaseManager(
             val attackerCard = attackerContainer.get<CardComponent>() ?: continue
             val cardDef = cardRegistry.getCard(attackerCard.cardDefinitionId) ?: continue
 
-            val limit = cardDef.staticAbilities
+            // Printed "can't be blocked by more than N" plus any granted temporarily
+            // (e.g. Full Steam Ahead grants CantBeBlockedByMoreThan(1) until end of turn).
+            val grantedAbilities = state.grantedStaticAbilities
+                .filter { it.entityId == attackerId }
+                .map { it.ability }
+            val limit = (cardDef.staticAbilities + grantedAbilities)
                 .filterIsInstance<CantBeBlockedByMoreThan>()
                 .filter { it.filter.scope is com.wingedsheep.sdk.scripting.filters.unified.Scope.Self }
                 .minOfOrNull { it.maxBlockers } ?: continue

@@ -214,6 +214,40 @@ data class GrantFlashbackEffect(
 }
 
 /**
+ * Grant a static ability to a target until end of turn.
+ * "Target creature gains 'This creature can't be blocked by more than one creature.'"
+ *
+ * The runtime sibling of a printed [com.wingedsheep.sdk.scripting.StaticAbility]. Unlike
+ * keyword grants (which flow through projected keywords) and triggered/activated grants
+ * (consulted by the trigger/ability resolvers), a granted static ability is recorded keyed
+ * to the entity and read at the point of use — e.g. the combat blocker validation consults
+ * granted [com.wingedsheep.sdk.scripting.CantBeBlockedByMoreThan] alongside the creature's
+ * printed static abilities. Compose inside [com.wingedsheep.sdk.dsl.Effects.ForEachInGroup]
+ * with [EffectTarget.Self] to grant it to each creature in a group (Full Steam Ahead).
+ *
+ * @property ability The static ability to grant
+ * @property target The permanent to grant the ability to
+ * @property duration How long the grant lasts
+ */
+@SerialName("GrantStaticAbility")
+@Serializable
+data class GrantStaticAbilityEffect(
+    val ability: com.wingedsheep.sdk.scripting.StaticAbility,
+    val target: EffectTarget,
+    val duration: Duration = Duration.EndOfTurn
+) : Effect {
+    override val description: String = buildString {
+        append("${target.description} gains \"${ability.description}\"")
+        if (duration.description.isNotEmpty()) append(" ${duration.description}")
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect {
+        val newAbility = ability.applyTextReplacement(replacer)
+        return if (newAbility !== ability) copy(ability = newAbility) else this
+    }
+}
+
+/**
  * Grant an activated ability to a group of creatures.
  * "Each creature you control gains '{B}: This creature gets +1/+1 until end of turn.'"
  *

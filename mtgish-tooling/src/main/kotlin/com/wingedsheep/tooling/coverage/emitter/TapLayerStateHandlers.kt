@@ -395,12 +395,21 @@ internal fun EmitCtx.renderLayerEffect(node: JsonObject, action: String, tvar: S
                 inner.add(call("Effects.ModifyStats", arg(scaleByBase(count, pBase)), arg(scaleByBase(count, tBase)), arg(Lit(target))))
             }
             "AddAbility" -> {
-                // Only a bare keyword grant renders faithfully; a granted triggered/activated ability or a
-                // parameterized keyword can't be reproduced here, so scaffold instead of dropping it.
-                val kw = grantedKeyword(leObj) ?: return null
-                val gkArgs = mutableListOf(arg("Keyword.$kw"), arg(Lit(target)))
-                if (duration.isNotEmpty()) gkArgs.add(arg(Lit(duration)))
-                inner.add(Call("Effects.GrantKeyword", gkArgs))
+                // A bare keyword grant renders as Effects.GrantKeyword; a renderable static permanent rule
+                // (e.g. "can't be blocked by more than one creature") renders as Effects.GrantStaticAbility.
+                // A granted triggered/activated ability or a parameterized keyword carries structure this
+                // can't reproduce, so scaffold instead of dropping it.
+                val kw = grantedKeyword(leObj)
+                if (kw != null) {
+                    val gkArgs = mutableListOf(arg("Keyword.$kw"), arg(Lit(target)))
+                    if (duration.isNotEmpty()) gkArgs.add(arg(Lit(duration)))
+                    inner.add(Call("Effects.GrantKeyword", gkArgs))
+                } else {
+                    val staticAbility = grantedStaticAbility(leObj) ?: return null
+                    val gsArgs = mutableListOf(arg(staticAbility), arg(Lit(target)))
+                    if (duration.isNotEmpty()) gsArgs.add(arg(Lit(duration)))
+                    inner.add(Call("Effects.GrantStaticAbility", gsArgs))
+                }
             }
             else -> return null  // any other layer effect (e.g. add card type, lose abilities) -> SCAFFOLD
         }
@@ -576,6 +585,28 @@ private fun EmitCtx.grantedKeyword(addAbility: JsonObject): String? {
     if (rule["args"] != null) return null
     val kw = pascalToUpperSnake(rname)
     return if (kw in keywords) kw else null
+}
+
+/**
+ * The granted [com.wingedsheep.sdk.scripting.StaticAbility] DSL for an `AddAbility` layer effect that
+ * wraps a `PermanentRuleEffect` (e.g. "gains 'This creature can't be blocked by more than one
+ * creature'"), or null (-> SCAFFOLD) when the rule isn't a single self-scoped permanent rule the
+ * static-ability renderer can reproduce. Renders the same `StaticAbility` constant
+ * [staticAbilityExpr] already emits for printed statics, wrapped in `Effects.GrantStaticAbility(...)`
+ * by the caller. Only a lone self-rule renders; a rule with its own filter/args, or more than one
+ * rule in the `PermanentRuleEffect`, declines so the card scaffolds rather than dropping structure.
+ */
+private fun EmitCtx.grantedStaticAbility(addAbility: JsonObject): Dsl? {
+    val grant = (addAbility["args"].asArr)?.getOrNull(0) as? JsonObject ?: return null
+    if (grant.strField("_Rule") != "PermanentRuleEffect") return null
+    // PermanentRuleEffect args = [subject-permanent, [rule, ...]]. Render only the self ("ThisPermanent")
+    // single-rule case; anything filtered or compound carries structure GrantStaticAbility can't scope.
+    val ruleArgs = grant["args"].asArr ?: return null
+    if (!jsonContains(ruleArgs.getOrNull(0), "_Permanent", "ThisPermanent")) return null
+    val rules = ruleArgs.getOrNull(1).asArr ?: return null
+    val ruleNode = rules.singleOrNull() as? JsonObject ?: return null
+    val ruleName = ruleNode.strField("_PermanentRule") ?: return null
+    return staticAbilityExpr(ruleName, ruleNode)
 }
 
 /** The layer effect's `_Expiration` -> "" for the default (end-of-turn) facade, an explicit

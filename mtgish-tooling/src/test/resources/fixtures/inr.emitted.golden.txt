@@ -9421,7 +9421,7 @@ val Triskaidekaphobia = card("Triskaidekaphobia") {
     colorIdentity = "B"
     typeLine = "Enchantment"
     oracleText = "At the beginning of your upkeep, choose one —\n• Each player with exactly 13 life loses the game, then each player gains 1 life.\n• Each player with exactly 13 life loses the game, then each player loses 1 life."
-    // STRUCTURE needs human wiring: modal-trigger
+    // STRUCTURE needs human wiring: EachPlayerAction, modal-trigger
     metadata {
         rarity = Rarity.UNCOMMON
         collectorNumber = "136"

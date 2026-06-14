@@ -598,6 +598,15 @@ class CleanupPhaseManager(
             newState = newState.copy(grantedActivatedAbilities = remainingGrants)
         }
 
+        // 7a. Expire granted static abilities (e.g. Full Steam Ahead's "can't be blocked by
+        // more than one creature") with EndOfTurn duration.
+        if (newState.grantedStaticAbilities.isNotEmpty()) {
+            val remainingGrants = newState.grantedStaticAbilities.filter { grant ->
+                grant.duration !is Duration.EndOfTurn
+            }
+            newState = newState.copy(grantedStaticAbilities = remainingGrants)
+        }
+
         // 7b. Expire granted cast-keyword abilities (e.g. Songcrafter Mage's harmonize) with
         // EndOfTurn duration.
         if (newState.grantedKeywordAbilities.isNotEmpty()) {
