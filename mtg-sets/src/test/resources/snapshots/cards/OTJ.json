@@ -9218,6 +9218,100 @@
     ]
 }
 
+// Outlaw Stitcher
+{
+    "name": "Outlaw Stitcher",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Human Warlock",
+    "oracleText": "When this creature enters, create a 2/2 blue and black Zombie Rogue creature token, then put two +1/+1 counters on that token for each spell you've cast this turn other than the first.\nPlot {4}{U} (You may pay {4}{U} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "PLOT"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Plot",
+            "cost": "{4}{U}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 2,
+                            "toughness": 2,
+                            "colors": [
+                                "BLUE",
+                                "BLACK"
+                            ],
+                            "creatureTypes": [
+                                "Zombie",
+                                "Rogue"
+                            ],
+                            "imageUri": "https://cards.scryfall.io/normal/front/7/4/74c7a0bd-6011-495a-b56c-8fa707dd7f12.jpg?1712316777"
+                        },
+                        {
+                            "type": "AddDynamicCounters",
+                            "counterType": "+1/+1",
+                            "amount": {
+                                "type": "Multiply",
+                                "amount": {
+                                    "type": "Max",
+                                    "left": {
+                                        "type": "Subtract",
+                                        "left": "SpellsCastThisTurn",
+                                        "right": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 0
+                                    }
+                                },
+                                "multiplier": 2
+                            },
+                            "target": {
+                                "type": "PipelineTarget",
+                                "collectionName": "createdTokens"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, create a 2/2 blue and black Zombie Rogue creature token, then put two +1/+1 counters on that token for each spell you've cast this turn other than the first."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "59",
+        "rarity": "UNCOMMON",
+        "artist": "Alix Branwyn",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/a/ba9584f0-55b8-448d-99a7-041934053f42.jpg?1712355468",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Outlaw Stitcher's ability will count all spells you've cast this turn except the first, including itself (if it wasn't the first spell), spells that were countered or didn't resolve, and spells that are still on the stack."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Outlaws' Fury
 {
     "name": "Outlaws' Fury",
@@ -10489,6 +10583,75 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Rattleback Apothecary
+{
+    "name": "Rattleback Apothecary",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Gorgon Warlock",
+    "oracleText": "Deathtouch\nWhenever you commit a crime, target creature you control gains your choice of menace or lifelink until end of turn. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CommitCrimeEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "GrantKeyword",
+                                "keyword": "MENACE",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target"
+                                }
+                            },
+                            "description": "Menace"
+                        },
+                        {
+                            "effect": {
+                                "type": "GrantKeyword",
+                                "keyword": "LIFELINK",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target"
+                                }
+                            },
+                            "description": "Lifelink"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "target"
+                },
+                "descriptionOverride": "Whenever you commit a crime, target creature you control gains your choice of menace or lifelink until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "100",
+        "rarity": "UNCOMMON",
+        "artist": "Loïc Canavaggia",
+        "flavorText": "\"Looking for a little liquid courage? I also stock liquid murder, if that's what you're after.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/a/9a88e233-f09c-49e7-b1e3-386fba851fdf.jpg?1712355645"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -14471,6 +14634,116 @@
             {
                 "date": "2024-04-12",
                 "text": "You can't choose the same mode more than once."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Vadmir, New Blood
+{
+    "name": "Vadmir, New Blood",
+    "manaCost": "{1}{B}",
+    "typeLine": "Legendary Creature — Vampire Rogue",
+    "oracleText": "Whenever you commit a crime, put a +1/+1 counter on Vadmir. This ability triggers only once each turn. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime.)\nAs long as Vadmir has four or more +1/+1 counters on it, it has menace and lifelink.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CommitCrimeEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever you commit a crime, put a +1/+1 counter on Vadmir. This ability triggers only once each turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "MENACE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "+1/+1"
+                            }
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": {
+                            "type": "CounterCount",
+                            "counterType": {
+                                "type": "Named",
+                                "name": "+1/+1"
+                            }
+                        }
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "113",
+        "rarity": "RARE",
+        "artist": "Andreas Zafiratos",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/828b5855-af5a-46a6-8fd4-0a2e28f3bb01.jpg?1712355705",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "A player commits a crime as they cast a spell, activate an ability, or put a triggered ability on the stack that targets at least one opponent, at least one permanent, spell, or ability an opponent controls, and/or at least one card in an opponent's graveyard."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "A player can commit only one crime per spell or ability they control. Targeting multiple opponents, permanents, spells, abilities, and/or cards with the same spell or ability doesn't constitute committing multiple crimes."
             }
         ]
     },

@@ -516,6 +516,36 @@ private fun EmitCtx.youCommittedCrimeConditionDsl(condNode: JsonElement?): Strin
 }
 
 /**
+ * "this permanent has N or more +1/+1 counters on it"
+ * (`PermanentPassesFilter(ThisPermanent, HasNumCountersOfType(GreaterThanOrEqualTo Integer N,
+ * PTCounter(1,1)))`, Vadmir, New Blood) -> the `Conditions.SourceCounterCountAtLeast(
+ * Counters.PLUS_ONE_PLUS_ONE, N)` DSL string, or null when the subject isn't ThisPermanent, the
+ * comparison isn't `>= N`, or the counter isn't the bare ±1/±1 counter. Used by the [ifRuleBlock]
+ * static gates (Vadmir's "menace and lifelink at 4+ counters"). The predicate reads the source's
+ * counter map under projection, so the gated keywords appear/vanish as counters cross the threshold.
+ *
+ * Only the bare `PTCounter(1,1)` (+1/+1) renders here — a keyword/named counter threshold has different
+ * `Counters.*` plumbing and would change meaning, so it declines (-> SCAFFOLD).
+ */
+private fun EmitCtx.sourceCounterCountAtLeastConditionDsl(condNode: JsonElement?): String? {
+    val cond = condNode as? JsonObject ?: return null
+    if (cond.strField("_Condition") != "PermanentPassesFilter") return null
+    val args = cond["args"].asArr ?: return null
+    if ((args.getOrNull(0) as? JsonObject)?.strField("_Permanent") != "ThisPermanent") return null
+    val has = args.getOrNull(1) as? JsonObject ?: return null
+    if (has.strField("_Permanents") != "HasNumCountersOfType") return null
+    val hArgs = has["args"].asArr ?: return null
+    val comparison = hArgs.getOrNull(0) as? JsonObject ?: return null
+    if (comparison.strField("_Comparison") != "GreaterThanOrEqualTo") return null
+    val n = (comparison["args"] as? JsonObject)?.takeIf { it.strField("_GameNumber") == "Integer" }
+        ?.get("args").asInt() ?: return null
+    val counter = hArgs.getOrNull(1) as? JsonObject ?: return null
+    val pt = counter.takeIf { it.strField("_CounterType") == "PTCounter" }?.get("args").asArr
+    if (pt?.getOrNull(0).asInt() != 1 || pt?.getOrNull(1).asInt() != 1) return null
+    return "Conditions.SourceCounterCountAtLeast(Counters.PLUS_ONE_PLUS_ONE, $n)"
+}
+
+/**
  * `If{cond}[rules]` permanent rule -> one or more `staticAbility { ability = ... }` blocks gating a
  * continuous effect on a condition. Renders only the exact shapes we can express faithfully:
  *
@@ -605,30 +635,45 @@ internal fun EmitCtx.ifRuleBlock(rule: JsonObject): List<Stmt>? {
     //   If(PlayerPassesFilter(You, CommitedACrimeThisTurn))
     //     [ PermanentLayerEffect(ThisPermanent, [ AdjustPT(p, t) ]) ]
     // -> ConditionalStaticAbility(ModifyStats(p, t, Filters.Self), Conditions.YouCommittedCrimeThisTurn).
-    // Only the SELF "grant a single keyword to this permanent" or "fixed +p/+t to this permanent"
-    // inner shape renders; any other layer effect (dynamic P/T, multi-keyword, group filter) declines
+    // Vadmir, New Blood: "As long as Vadmir has four or more +1/+1 counters on it, it has menace and
+    //   lifelink." — same SELF gated-static shape, but the gate is a counter-count threshold and the
+    //   layer effect carries *two* keyword grants:
+    //   If(PermanentPassesFilter(ThisPermanent, HasNumCountersOfType(>= 4, PTCounter(1,1))))
+    //     [ PermanentLayerEffect(ThisPermanent, [ AddAbility(Menace), AddAbility(Lifelink) ]) ]
+    // -> one ConditionalStaticAbility(GrantKeyword(kw, Filters.Self), SourceCounterCountAtLeast(+1/+1, 4))
+    //    per granted keyword.
+    // Only the SELF "grant keyword(s) to this permanent" or "fixed +p/+t to this permanent" inner shape
+    // renders; any other layer effect (dynamic P/T, group filter, non-keyword AddAbility) declines
     // -> SCAFFOLD.
     if (innerRule.strField("_Rule") == "PermanentLayerEffect" &&
         jsonContains(innerRule, "_Permanent", "ThisPermanent")
     ) {
         val condDsl = youHaventCastASpellConditionDsl(cond)
             ?: youCommittedCrimeConditionDsl(cond)
+            ?: sourceCounterCountAtLeastConditionDsl(cond)
             ?: run { reasons.add("If"); return null }
         val layerEffects = (innerRule["args"].asArr?.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>()
-        val le = layerEffects?.singleOrNull()
-        when (le?.strField("_StaticLayerEffect")) {
-            "AddAbility" -> {
+            ?: run { reasons.add("If"); return null }
+        // All-AddAbility layer effects: grant each bare keyword to SELF, gated on the same condition.
+        // One layer effect or several (Vadmir grants two) — emit one ConditionalStaticAbility per keyword.
+        if (layerEffects.isNotEmpty() && layerEffects.all { it.strField("_StaticLayerEffect") == "AddAbility" }) {
+            val keywords = layerEffects.map { le ->
                 // An AddAbility whose granted rule is anything richer than a plain keyword (an activated
                 // ability, landwalk, protection-from-color) isn't a bare keyword grant — decline.
                 val granted = (le["args"] as? JsonArray)?.singleOrNull() as? JsonObject
                 if (granted?.strField("_Rule") != null && granted.size > 1) { reasons.add("If"); return null }
-                val kw = keywordOf(le) ?: run { reasons.add("If"); return null }
-                return listOf(staticAbilityStmt(call(
+                keywordOf(le) ?: run { reasons.add("If"); return null }
+            }
+            return keywords.map { kw ->
+                staticAbilityStmt(call(
                     "ConditionalStaticAbility",
                     arg("ability", call("GrantKeyword", arg("Keyword.$kw"), arg("Filters.Self"))),
                     arg("condition", Lit(condDsl)),
-                )))
+                ))
             }
+        }
+        val le = layerEffects.singleOrNull()
+        when (le?.strField("_StaticLayerEffect")) {
             "AdjustPT" -> {
                 // A fixed +p/+t buff: `args` is the [p, t] pair. Anything else (a dynamic AdjustPTX /
                 // AdjustPTForEach) declines rather than dropping the variable count.

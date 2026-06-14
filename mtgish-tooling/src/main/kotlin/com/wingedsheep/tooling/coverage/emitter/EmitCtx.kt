@@ -132,6 +132,7 @@ internal fun EmitCtx.renderEffectList(actions: List<JsonObject>, tvar: String?):
     echoEffect(actions)?.let { return it }
     counterUnlessPaysEffect(actions)?.let { return it }
     becomeCreatureTypeEffect(actions, tvar)?.let { return it }
+    chooseAbilityGrantEffect(actions, tvar)?.let { return it }
     chooseTypeModifyStatsEffect(actions)?.let { return it }
     chooseCreatureTypeRevealTopEffect(actions)?.let { return it }
     impulseExileTopMayPlay(actions)?.let { return it }
@@ -309,6 +310,12 @@ internal fun EmitCtx.dynamicAmountExpr(node: JsonElement?): Dsl? {
             val argv = node["args"].asArr ?: return null
             val spellsNode = argv.firstOrNull { (it as? JsonObject)?.containsKey("_Spells") == true } as? JsonObject
             val playerNode = argv.firstOrNull { (it as? JsonObject)?.containsKey("_Player") == true } as? JsonObject
+            // "the number of spells you've cast this turn other than the first" (Outlaw Stitcher) —
+            // mtgish models the "other than the first" exclusion as `Other(TheNthSpellCastByPlayerThisTurn(
+            // 1, AnySpell, <player>))`. The engine has no "Nth-spell" exclusion, so render it as the
+            // arithmetic equivalent: max(spellsCastThisTurn - 1, 0). Only the You-scoped, any-spell,
+            // exclude-the-FIRST shape collapses; any other Nth / filter / scope declines (-> SCAFFOLD).
+            spellsCastExcludingFirstAmount(spellsNode, playerNode)?.let { return it }
             val filter = spellsCastThisTurnFilter(spellsNode) ?: return null
             val player = spellsCastThisTurnPlayer(playerNode) ?: return null
             return call("DynamicAmount.SpellsCastThisTurn", arg(player), arg(filter))
@@ -490,6 +497,43 @@ private fun spellsCastThisTurnFilter(spells: JsonObject?): String? = when (spell
     "IsCardtype" -> if (spells.field("args").asStr() == "Creature") "GameObjectFilter.Creature" else null
     "IsNonCardtype" -> if (spells.field("args").asStr() == "Creature") "GameObjectFilter.Noncreature" else null
     else -> null
+}
+
+/**
+ * "the number of spells <player> has cast this turn other than the first" -> a
+ * `DynamicAmount.Max(DynamicAmount.Subtract(DynamicAmount.SpellsCastThisTurn(<player>), Fixed(1)),
+ * Fixed(0))` expression (Outlaw Stitcher), or null when the shape isn't exactly
+ * `Other(TheNthSpellCastByPlayerThisTurn(1, AnySpell, <player>))`.
+ *
+ * mtgish has no "all spells except the Nth" count, so it nests the exclusion as an `Other` of the
+ * first (Nth = 1) cast. The engine's `SpellsCastThisTurn` counts ALL casts (it has no Nth concept),
+ * so "all but the first" is `total - 1`, clamped at 0 (a turn with zero or one spell yields 0). Only
+ * the exclude-the-FIRST, any-spell shape with a [spellsCastThisTurnPlayer]-renderable scope collapses;
+ * excluding any other ordinal, a filtered spell set, or a mismatched player declines (-> SCAFFOLD).
+ */
+private fun EmitCtx.spellsCastExcludingFirstAmount(spells: JsonObject?, playerNode: JsonObject?): Dsl? {
+    if (spells?.strField("_Spells") != "Other") return null
+    val nth = spells["args"] as? JsonObject ?: return null
+    if (nth.strField("_Spell") != "TheNthSpellCastByPlayerThisTurn") return null
+    val nthArgs = nth["args"].asArr ?: return null
+    // [ordinal, spell filter, player]. The excluded ordinal must be the FIRST (1) and the set AnySpell.
+    val ordinal = (nthArgs.getOrNull(0) as? JsonObject)
+        ?.takeIf { it.strField("_GameNumber") == "Integer" }?.get("args").asInt()
+    if (ordinal != 1) return null
+    if ((nthArgs.getOrNull(1) as? JsonObject)?.strField("_Spells") != "AnySpell") return null
+    // The Nth-spell's caster and the outer count's player must be the same renderable scope.
+    val innerPlayer = nthArgs.getOrNull(2) as? JsonObject
+    val player = spellsCastThisTurnPlayer(playerNode) ?: return null
+    if (spellsCastThisTurnPlayer(innerPlayer) != player) return null
+    return call(
+        "DynamicAmount.Max",
+        arg(call(
+            "DynamicAmount.Subtract",
+            arg(call("DynamicAmount.SpellsCastThisTurn", arg(player), arg("GameObjectFilter.Any"))),
+            arg(call("DynamicAmount.Fixed", arg("1"))),
+        )),
+        arg(call("DynamicAmount.Fixed", arg("0"))),
+    )
 }
 
 /** The `Player.*` scope for a [NumSpellsCastByPlayerThisTurn] player ref, or null for a scope we don't
@@ -684,6 +728,60 @@ internal fun EmitCtx.becomeCreatureTypeEffect(actions: List<JsonObject>, tvar: S
     val parts = mutableListOf(arg("target", Lit(target)))
     if (excluded != null) parts.add(arg("excludedTypes", "listOf(\"${ktStr(excluded)}\")"))
     return Call("BecomeCreatureTypeEffect", parts)
+}
+
+/**
+ * [ChooseAnAbility([kw1, kw2, …]), CreatePermanentLayerEffectUntil(Ref_TargetPermanent,
+ * [AddAbilityVariable(TheChosenAbility)], UntilEndOfTurn)] -> a single
+ * `ModalEffect.chooseOne(Mode.noTarget(GrantKeywordEffect(Keyword.X, <target>, Duration.EndOfTurn),
+ * "X"), …)` ("target … gains your choice of <kw1> or <kw2> until end of turn", Rattleback Apothecary).
+ *
+ * mtgish models "your choice of keyword X or Y" as a `ChooseAnAbility` action listing the keyword
+ * options, then a single layer effect that grants `TheChosenAbility`. The engine has no "chosen
+ * ability variable", so the choice is reified as a `ModalEffect.chooseOne` over one
+ * [GrantKeywordEffect] per option — each granting its keyword to the same target for end of turn. The
+ * mode label is the option's display name (the IR `_Rule` string, e.g. "Menace"), matching the engine's
+ * `Keyword.displayName`.
+ *
+ * Renders only the exact shape: every option a bare keyword the SDK knows, the layer effect a lone
+ * `AddAbilityVariable(TheChosenAbility)` collapsing at end of turn, on a recoverable target. Anything
+ * else (a non-keyword option, a riding +P/T, a non-EOT window, a richer layer-effect list) declines
+ * (null -> SCAFFOLD) rather than emit a lossy grant.
+ */
+internal fun EmitCtx.chooseAbilityGrantEffect(actions: List<JsonObject>, tvar: String?): Dsl? {
+    val chooser = actions.firstOrNull { it.strField("_Action") == "ChooseAnAbility" } ?: return null
+    val layer = actions.firstOrNull {
+        it.strField("_Action") in setOf("CreatePermanentLayerEffectUntil", "CreateEachPermanentLayerEffectUntil")
+    } ?: return null
+    // The pair must be the WHOLE effect — a third action would be dropped.
+    if (actions.size != 2) return null
+    // Layer effect: exactly the chosen-ability grant, collapsing at end of turn.
+    if (!jsonContains(layer, "_LayerEffect", "AddAbilityVariable")) return null
+    if (!jsonContains(layer, "_AbilityVariable", "TheChosenAbility")) return null
+    if (jsonContains(layer, "_LayerEffect", "AdjustPT")) return null
+    if (!jsonContains(layer, "_Expiration", "UntilEndOfTurn")) return null
+    val layerEffects = (layer["args"].asArr)?.getOrNull(1) as? JsonArray ?: return null
+    if (layerEffects.size != 1) return null  // a lone chosen-ability grant; a riding effect declines
+    val target = refTarget(layer["args"], tvar) ?: return null
+    // The options: each a bare keyword rule the SDK knows. A non-keyword or parameterized option declines.
+    val options = chooser["args"].asArr?.filterIsInstance<JsonObject>() ?: return null
+    if (options.size < 2) return null
+    val modes = options.map { opt ->
+        if (opt["args"] != null) return null  // a parameterized ability, not a bare keyword
+        val rule = opt.strField("_Rule") ?: return null
+        val kw = pascalToUpperSnake(rule).takeIf { it in keywords } ?: return null
+        call(
+            "Mode.noTarget",
+            arg(call(
+                "GrantKeywordEffect",
+                arg("Keyword.$kw"),
+                arg(Lit(target)),
+                arg("Duration.EndOfTurn"),
+            )),
+            arg(Lit("\"${ktStr(rule)}\"")),
+        )
+    }
+    return Call("ModalEffect.chooseOne", modes.map { arg(it) })
 }
 
 /**

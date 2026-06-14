@@ -131,6 +131,27 @@ internal val tapLayerStateHandlers: Map<String, ActionHandler> = actionHandlers 
         call("AddCountersEffect", arg("counterType", counter), arg("count", "$count"), arg("target", tgt))
     }
 
+    on("PutNumberCountersOfTypeOnEachPermanent") { _, args, tvar ->
+        // "Put N <counter> counters on <permanents>." — the mass / dynamic-count form. IR args are
+        // [<amount>, <counterType>, <permanents>]. The only recipient we render here is the just-created
+        // token (`TheTokensCreatedThisWay` -> the CREATED_TOKENS pipeline slot, Outlaw Stitcher: "put two
+        // +1/+1 counters on that token for each spell …"); a real "each <group>" filter would need a
+        // ForEach over the group, which this handler deliberately leaves to scaffold. The amount may be
+        // dynamic, so render through AddDynamicCounters with the recovered DynamicAmount. Only the named
+        // ±1/±1 / keyword counters render; an unrenderable amount or non-token recipient declines.
+        val arr = args.asArr ?: return@on null
+        val counter = counterTypeDsl(arr.getOrNull(1)) ?: return@on null
+        val recipient = arr.getOrNull(2) as? JsonObject ?: return@on null
+        if (recipient.strField("_Permanents") != "TheTokensCreatedThisWay") return@on null
+        val amount = dynamicAmount(arr.getOrNull(0)) ?: return@on null
+        call(
+            "Effects.AddDynamicCounters",
+            arg("counterType", counter),
+            arg("amount", Lit(amount)),
+            arg("target", "EffectTarget.PipelineTarget(CREATED_TOKENS, 0)"),
+        )
+    }
+
     on("CreateReplaceWouldPutCountersUntil") { node, _, _ ->
         // "Until end of turn, if you would put one or more +1/+1 counters on a creature you control,
         // put that many plus N +1/+1 counters on it instead." (Prairie Dog's {4}{W}.) This installs the
