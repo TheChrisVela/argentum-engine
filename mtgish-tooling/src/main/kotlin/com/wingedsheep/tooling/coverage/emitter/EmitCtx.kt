@@ -428,8 +428,19 @@ internal fun EmitCtx.dynamicAmountExpr(node: JsonElement?): Dsl? {
         // it would silently widen the count's filter to GameObjectFilter.Any and over-count every permanent.
         // Decline (-> SCAFFOLD) rather than misrender (The Spirit Oasis's "draw a card for each Shrine").
         if (subtype == null && node.firstArgWordTagged("IsEnchantmentType") != null) return null
-        val filter = if (subtype != null) Lit("GameObjectFilter.Creature").dot("withSubtype", arg("\"$subtype\""))
-                     else landSearchFilterExpr(node)
+        // A bare "number of LANDS [you control]" battlefield tally (Dance of the Tumbleweeds) is an
+        // explicit `IsCardtype Land` with no land subtype or basic-land signal. Render
+        // `GameObjectFilter.Land` directly: `landSearchFilterExpr` is search-oriented and its
+        // "basic land" oracle fallback would narrow a *lands* count to basics whenever the card's text
+        // also mentions a basic-land search elsewhere (Dance's mode 0). Land subtypes / basic-land
+        // signals still route through the search helper below.
+        val bareLandCount = subtype == null && "\"Land\"" in countBlob &&
+            "IsLandType" !in countBlob && "IsBasicLand" !in countBlob && "IsSupertype" !in countBlob
+        val filter = when {
+            subtype != null -> Lit("GameObjectFilter.Creature").dot("withSubtype", arg("\"$subtype\""))
+            bareLandCount -> Lit("GameObjectFilter.Land")
+            else -> landSearchFilterExpr(node)
+        }
         return call("DynamicAmount.AggregateBattlefield", arg(player), arg(filter))
     }
     return null
@@ -575,6 +586,8 @@ internal fun EmitCtx.keywordOf(node: JsonElement?): String? {
  *
  *  - `PlayerPassesFilter(You, ControlsA(<filter>))` ("if you control a <filter>") ->
  *    `Conditions.YouControl(<filter>)` (Take the Fall: "if you control an outlaw" -> the outlaw group).
+ *  - `PlayerPassesFilter(You, NumCardsInHandIs(EqualTo 0))` ("if you have no cards in hand") ->
+ *    `Conditions.EmptyHand` (Plan the Heist: "Surveil 3 if you have no cards in hand.").
  */
 internal fun EmitCtx.actionConditionDsl(cond: JsonObject?): String? {
     if (cond == null) return null
@@ -585,6 +598,15 @@ internal fun EmitCtx.actionConditionDsl(cond: JsonObject?): String? {
             if (controls?.strField("_Players") == "ControlsA") {
                 val filter = gameObjectFilterDsl(controls["args"])
                 if (filter != null) return render(call("Conditions.YouControl", arg(Lit(filter))))
+            }
+            // "if you have no cards in hand" -> Conditions.EmptyHand. Only the exact
+            // `NumCardsInHandIs(EqualTo 0)` shape renders; any other comparator/count declines.
+            if (controls?.strField("_Players") == "NumCardsInHandIs") {
+                val cmp = controls["args"] as? JsonObject
+                if (cmp?.strField("_Comparison") == "EqualTo") {
+                    val n = cmp["args"].asInt() ?: ((cmp["args"] as? JsonObject)?.get("args").asInt())
+                    if (n == 0) return "Conditions.EmptyHand"
+                }
             }
         }
     }
