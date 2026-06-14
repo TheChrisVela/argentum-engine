@@ -575,6 +575,8 @@ internal fun EmitCtx.keywordOf(node: JsonElement?): String? {
  *
  *  - `PlayerPassesFilter(You, ControlsA(<filter>))` ("if you control a <filter>") ->
  *    `Conditions.YouControl(<filter>)` (Take the Fall: "if you control an outlaw" -> the outlaw group).
+ *  - `PlayerPassesFilter(You, NumCardsInHandIs(EqualTo 0))` ("if you have no cards in hand") ->
+ *    `Conditions.EmptyHand` (Plan the Heist: "Surveil 3 if you have no cards in hand.").
  */
 internal fun EmitCtx.actionConditionDsl(cond: JsonObject?): String? {
     if (cond == null) return null
@@ -585,6 +587,15 @@ internal fun EmitCtx.actionConditionDsl(cond: JsonObject?): String? {
             if (controls?.strField("_Players") == "ControlsA") {
                 val filter = gameObjectFilterDsl(controls["args"])
                 if (filter != null) return render(call("Conditions.YouControl", arg(Lit(filter))))
+            }
+            // "if you have no cards in hand" -> Conditions.EmptyHand. Only the exact
+            // `NumCardsInHandIs(EqualTo 0)` shape renders; any other comparator/count declines.
+            if (controls?.strField("_Players") == "NumCardsInHandIs") {
+                val cmp = controls["args"] as? JsonObject
+                if (cmp?.strField("_Comparison") == "EqualTo") {
+                    val n = cmp["args"].asInt() ?: ((cmp["args"] as? JsonObject)?.get("args").asInt())
+                    if (n == 0) return "Conditions.EmptyHand"
+                }
             }
         }
     }
