@@ -7,7 +7,6 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.effects.CardSource
-import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.IterationSpace
@@ -62,7 +61,7 @@ val FinalShowdown = card("Final Showdown") {
                     additionalManaCost = "{1}"
                 ),
                 Mode(
-                    effect = CompositeEffect(
+                    effect = Effects.Composite(
                         listOf(
                             GatherCardsEffect(
                                 source = CardSource.ControlledPermanents(
