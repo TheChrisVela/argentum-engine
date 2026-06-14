@@ -67,7 +67,10 @@ internal class AttackPhaseManager(
     ): ExecutionResult {
         // Validate each attacker
         val projected = state.projectedState
-        val opponents = state.turnOrder.filter { it != attackingPlayer }
+        // CR 805.10a/b — a creature attacks the opposing team; never a teammate. Exclude the whole
+        // attacking team from legal player targets (in a non-team game this is just the attacker).
+        val attackingTeam = state.teamOf(attackingPlayer)
+        val opponents = state.turnOrder.filter { it !in attackingTeam }
 
         // Validate band declarations (CR 702.22c).
         val bandValidation = validateBands(state, attackers, bands, projected)
@@ -81,7 +84,7 @@ internal class AttackPhaseManager(
             }
             // Validate defender is either an opponent player or a planeswalker controlled by an opponent
             if (defenderId !in opponents) {
-                if (!projected.isPlaneswalker(defenderId) || projected.getController(defenderId) in listOf(attackingPlayer)) {
+                if (!projected.isPlaneswalker(defenderId) || projected.getController(defenderId) in attackingTeam) {
                     return ExecutionResult.error(state, "Invalid attack target: must be an opponent or their planeswalker")
                 }
                 if (defenderId !in state.getBattlefield()) {

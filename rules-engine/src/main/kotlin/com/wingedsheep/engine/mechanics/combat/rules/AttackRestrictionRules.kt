@@ -41,8 +41,10 @@ class MustBeCreatureAttackRule : AttackRestrictionRule {
  */
 class ControlledByAttackerRule : AttackRestrictionRule {
     override fun check(ctx: AttackCheckContext): String? {
+        // CR 805.10b — the attacking team's combined attack may include creatures controlled by any
+        // active-team member, so accept control by any teammate (not just the declaring player).
         val controller = ctx.projected.getController(ctx.attackerId)
-        if (controller != ctx.attackingPlayer) {
+        if (controller == null || controller !in ctx.state.teamOf(ctx.attackingPlayer)) {
             val name = ctx.state.getEntity(ctx.attackerId)?.get<CardComponent>()?.name ?: "Creature"
             return "You don't control $name"
         }
