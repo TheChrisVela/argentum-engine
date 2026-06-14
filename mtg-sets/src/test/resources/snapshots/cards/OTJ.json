@@ -5876,6 +5876,157 @@
     ]
 }
 
+// Great Train Heist
+{
+    "name": "Great Train Heist",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Spree (Choose one or more additional costs.)\n+ {2}{R} — Untap all creatures you control. If it's your combat phase, there is an additional combat phase after this phase.\n+ {2} — Creatures you control get +1/+0 and gain first strike until end of turn.\n+ {R} — Choose target opponent. Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "TapUntap",
+                                    "target": "Self",
+                                    "tap": false
+                                }
+                            },
+                            {
+                                "type": "Gated",
+                                "gate": {
+                                    "type": "Gate.WhenCondition",
+                                    "condition": {
+                                        "type": "IsInPhase",
+                                        "phases": [
+                                            "COMBAT"
+                                        ]
+                                    }
+                                },
+                                "then": "AddCombatPhase"
+                            }
+                        ]
+                    },
+                    "description": "+ {2}{R} — Untap all creatures you control. If it's your combat phase, there is an additional combat phase after this phase.",
+                    "additionalManaCost": "{2}{R}"
+                },
+                {
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "ModifyStats",
+                                    "powerModifier": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    },
+                                    "toughnessModifier": {
+                                        "type": "Fixed",
+                                        "amount": 0
+                                    },
+                                    "target": "Self"
+                                }
+                            },
+                            {
+                                "type": "ForEach",
+                                "space": {
+                                    "type": "IterationSpace.Group",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "body": {
+                                    "type": "GrantKeyword",
+                                    "keyword": "FIRST_STRIKE",
+                                    "target": "Self"
+                                }
+                            }
+                        ]
+                    },
+                    "description": "+ {2} — Creatures you control get +1/+0 and gain first strike until end of turn.",
+                    "additionalManaCost": "{2}"
+                },
+                {
+                    "effect": {
+                        "type": "CreateDelayedTrigger",
+                        "effect": {
+                            "type": "CreatePredefinedToken",
+                            "tokenType": "Treasure",
+                            "tapped": true
+                        },
+                        "trigger": {
+                            "event": {
+                                "type": "DealsDamageEvent",
+                                "damageType": "DamageCombat",
+                                "recipient": "AnyPlayer",
+                                "sourceFilter": "creature ctrl:you"
+                            }
+                        },
+                        "watchedRecipient": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "targetRequirements": [
+                        "TargetOpponent"
+                    ],
+                    "description": "+ {R} — Choose target opponent. Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token.",
+                    "additionalManaCost": "{R}"
+                }
+            ],
+            "chooseCount": 3,
+            "minChooseCount": 1
+        }
+    },
+    "metadata": {
+        "collectorNumber": "125",
+        "rarity": "RARE",
+        "artist": "Campbell White",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/357dd9b2-5d2d-49f6-86f0-f5c4d63474dd.jpg?1712860638",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "You must choose at least one of the listed modes and pay its associated additional cost in order to cast a spell with spree."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You choose the modes as you cast the spell with spree. Once modes are chosen, they can't be changed."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You can't choose the same mode more than once."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "If it isn't your combat phase as the first mode resolves, you won't get an additional combat phase. If you cast Great Train Heist before your combat phase, you won't get an additional combat phase that turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Hardbristle Bandit
 {
     "name": "Hardbristle Bandit",
@@ -8570,6 +8721,41 @@
     "colorIdentityOverride": [
         "RED"
     ]
+}
+
+// Mirage Mesa
+{
+    "name": "Mirage Mesa",
+    "manaCost": "",
+    "typeLine": "Land — Desert",
+    "oracleText": "This land enters tapped. As it enters, choose a color.\n{T}: Add one mana of the chosen color.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "colorSet": "ManaColorSet.SourceChosenColor"
+                },
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped",
+            {
+                "type": "EntersWithChoice",
+                "choiceType": "COLOR"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "262",
+        "artist": "Andrew Mar",
+        "flavorText": "\"Out there, death and salvation may lie on either side of the same ridge of sand.\"\n—Ertha Jo, frontier mentor",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/3/c3d2e816-c06d-4c5d-98fe-c350d8cfab27.jpg?1712356348"
+    },
+    "colorIdentityOverride": []
 }
 
 // Mobile Homestead
@@ -12046,6 +12232,85 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Ruthless Lawbringer
+{
+    "name": "Ruthless Lawbringer",
+    "manaCost": "{1}{W}{B}",
+    "typeLine": "Creature — Vampire Assassin",
+    "oracleText": "When this creature enters, you may sacrifice another creature. When you do, destroy target nonland permanent.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SelectTarget",
+                                "requirement": {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you",
+                                        "excludeSelf": true
+                                    }
+                                },
+                                "storeAs": "creatureToSacrifice"
+                            },
+                            {
+                                "type": "SacrificeTarget",
+                                "target": {
+                                    "type": "PipelineTarget",
+                                    "collectionName": "creatureToSacrifice"
+                                }
+                            }
+                        ]
+                    },
+                    "reflexiveEffect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "reflexiveTargetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "nonland permanent"
+                            }
+                        }
+                    ],
+                    "descriptionOverride": "You may sacrifice another creature. When you do, destroy target nonland permanent."
+                },
+                "descriptionOverride": "When this creature enters, you may sacrifice another creature. When you do, destroy target nonland permanent."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "229",
+        "rarity": "UNCOMMON",
+        "artist": "Joshua Raphael",
+        "flavorText": "There's only one law that truly matters to the Sterling Company: never stand in the way of profit.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/2/927b5498-23f1-47c0-b441-7daaeb54f9b8.jpg?1712356201"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
     ]
 }
 

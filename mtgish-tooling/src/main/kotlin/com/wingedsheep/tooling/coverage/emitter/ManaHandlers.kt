@@ -65,6 +65,9 @@ internal fun manaProduceDsl(node: JsonElement?): Dsl? =
         null -> null
         "ManaProduceC" -> call("Effects.AddColorlessMana", arg("1"))
         "AnyManaColor" -> call("Effects.AddManaOfChoice")
+        // "{T}: Add one mana of the chosen color." — pairs with an `EntersWithChoice(ChoiceType.COLOR)`
+        // replacement (Mirage Mesa, Uncharted Haven). The chosen color was fixed when the land entered.
+        "ManaOfTheChosenColor" -> call("Effects.AddManaOfChosenColor")
         "And" -> manaAndDsl(node)  // {B}{B}{B} (Dark Ritual), {C}{C}{C} (Basalt Monolith), …
         else -> MANA_PRODUCE_COLOR[produce]?.let { call("Effects.AddMana", arg(it)) }
     }

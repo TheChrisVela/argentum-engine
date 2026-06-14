@@ -599,7 +599,7 @@ class TriggerDetector(
             for (delayed in eventBased) {
                 if (delayed.fireOnce && delayed.id in firedOnceIds) continue
                 val spec = delayed.trigger ?: continue
-                if (!matchesEventForWatchedEntity(spec, event, delayed.watchedEntityId, delayed.id, delayed.sourceId, delayed.controllerId, state)) continue
+                if (!matchesEventForWatchedEntity(spec, event, delayed.watchedEntityId, delayed.watchedRecipientId, delayed.id, delayed.sourceId, delayed.controllerId, state)) continue
                 if (delayed.fireOnce) firedOnceIds.add(delayed.id)
                 triggers.add(
                     PendingTrigger(
@@ -640,6 +640,7 @@ class TriggerDetector(
         spec: com.wingedsheep.sdk.scripting.TriggerSpec,
         event: EngineGameEvent,
         watchedEntityId: EntityId?,
+        watchedRecipientId: EntityId?,
         delayedId: String,
         sourceId: EntityId,
         controllerId: EntityId,
@@ -662,6 +663,9 @@ class TriggerDetector(
             is com.wingedsheep.sdk.scripting.EventPattern.DealsDamageEvent -> {
                 if (event !is com.wingedsheep.engine.core.DamageDealtEvent) return false
                 if (watchedEntityId != null && event.sourceId != watchedEntityId) return false
+                // Recipient-scoped ("…to *that player* this turn"): the damaged entity must be
+                // the baked recipient. The spec's recipient filter still applies on top.
+                if (watchedRecipientId != null && event.targetId != watchedRecipientId) return false
                 matcher.matchesDealsDamageTrigger(specEvent, event, state, controllerId)
             }
             // "When damage is prevented this way": fires only for this delayed trigger's own

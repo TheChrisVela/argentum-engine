@@ -1913,6 +1913,13 @@ Triggers.youCastSpell(
     Deflecting Palm). Only `DealsDamageEvent` (scoped on the damage source) and `ZoneChangeEvent`
     (scoped on the moving entity) use this; the spec's `GameObjectFilter` is *not* applied — the
     watched entity is the whole scope.
+  - **Recipient-scoped** — set `watchedRecipient` to bind a `DealsDamageEvent` trigger to the damaged
+    *recipient* (rather than the source): "whenever a creature you control deals combat damage to
+    **that player** this turn, …" (Great Train Heist's Treasure-on-hit mode). The target is resolved at
+    creation time (e.g. `EffectTarget.ContextTarget(0)` for a just-chosen target opponent), so the
+    trigger fires only for hits to that specific player. The `TriggerSpec`'s `recipient` / `sourceFilter`
+    still apply on top (use `RecipientFilter.AnyPlayer` + `sourceFilter = Creature.youControl()`).
+    Orthogonal to `watchedTarget` (source scope) — set at most one.
   - **Filter-scoped** — leave `watchedTarget` null and let the `TriggerSpec`'s `GameObjectFilter` +
     `TriggerBinding` describe the group, exactly like a battlefield-resident trigger. Use this for
     "whenever a creature you control enters this turn, …" (Thunder of Unity chapters II/III):

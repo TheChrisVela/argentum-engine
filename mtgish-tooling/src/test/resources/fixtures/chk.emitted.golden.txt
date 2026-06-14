@@ -9255,6 +9255,8 @@ package com.wingedsheep.mtg.sets.generated.demo.cards
 
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.ChoiceType
+import com.wingedsheep.sdk.scripting.EntersWithChoice
 
 
 /**
@@ -9269,7 +9271,8 @@ val SwirlTheMists = card("Swirl the Mists") {
     colorIdentity = "U"
     typeLine = "Enchantment"
     oracleText = "As this enchantment enters, choose a color word.\nAll instances of color words in the text of spells and permanents are changed to the chosen color word."
-    // STRUCTURE needs human wiring: AsPermanentEnters
+    replacementEffect(EntersWithChoice(ChoiceType.COLOR))
+    // STRUCTURE needs human wiring: EachPermanentAndSpellEffect
     metadata {
         rarity = Rarity.RARE
         collectorNumber = "94"

@@ -1961,6 +1961,15 @@ internal fun EmitCtx.asEntersBlock(rule: JsonObject, condition: String? = null):
         val dsl: Dsl = when (rep.strField("_ReplacementActionWouldEnter")) {
             "EntersTapped" -> call("EntersTapped")
             "ChooseACreatureType" -> call("EntersWithChoice", arg("ChoiceType.CREATURE_TYPE"))
+            // "As ~ enters, choose a color." Only the unrestricted any-color choice (Mirage Mesa,
+            // Uncharted Haven) renders exactly; a constrained color pick scaffolds. Pairs with the
+            // `AddMana(ManaOfTheChosenColor)` -> `Effects.AddManaOfChosenColor()` mana ability.
+            "ChooseAColor" -> {
+                if ((rep["args"] as? JsonObject)?.strField("_ChoosableColor") != "AnyColor") {
+                    reasons.add("AsPermanentEnters"); return null
+                }
+                call("EntersWithChoice", arg("ChoiceType.COLOR"))
+            }
             "EntersWithACounter" -> {
                 // "~ enters with a [counter] on it" — a single fixed counter on this permanent. The
                 // self-scoped ±1/±1 counter renders as the default-filter EntersWithCounters; a keyword
