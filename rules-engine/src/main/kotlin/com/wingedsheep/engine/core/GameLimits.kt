@@ -39,7 +39,7 @@ object GameLimits {
      * and legal-action pass then scans, so this caps both the allocation burst and the resulting
      * per-step cost. Far above any real board; only a degenerate doubler stack reaches it.
      */
-    const val MAX_TOKENS_PER_EFFECT: Int = 10_000
+    const val MAX_TOKENS_PER_EFFECT: Int = 500
 
     /**
      * Maximum nesting/iteration depth of effect execution within a single resolution, enforced at
