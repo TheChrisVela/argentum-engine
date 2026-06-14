@@ -85,6 +85,20 @@ class EffectHandlerTest : StringSpec({
         ).shouldBeNull()
     }
 
+    "'becomes a white Rabbit with base P/T 0/1' renders the atomic BecomeCreature (Metamorphic Blast)" {
+        // SetColor + SetCreatureType + SetPT together are the engine's atomic BecomeCreature shape (one
+        // effect across the COLOUR/TYPE/P-T layers), not a per-layer Composite.
+        layer(
+            """{"_Action":"CreatePermanentLayerEffectUntil","args":[{"_Permanent":"Ref_TargetPermanent"},""" +
+                """[{"_LayerEffect":"SetColor","args":{"_SettableColor":"SimpleColorList","args":["White"]}},""" +
+                """{"_LayerEffect":"SetCreatureType","args":"Rabbit"},""" +
+                """{"_LayerEffect":"SetPT","args":{"_PT":"PT","args":[0,1]}}],{"_Expiration":"UntilEndOfTurn"}]}""",
+            "EffectTarget.ContextTarget(0)",
+        ) shouldBe "Effects.BecomeCreature(target = EffectTarget.ContextTarget(0), power = 0, " +
+            "toughness = 1, creatureTypes = setOf(\"Rabbit\"), colors = setOf(Color.WHITE.name), " +
+            "duration = Duration.EndOfTurn)"
+    }
+
     // --- PutExiledCardOntoBattlefield (the return half of the exile-then-return blink) -------------
 
     "the bare under-owner's-control return renders a plain Move to the battlefield" {

@@ -568,7 +568,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   `sacrificeOnlyOnControllersTurn = true` restricts it to "at the beginning of *your* next end step"
   (Mardu Siegebreaker: a tapped+attacking copy of the linked-exiled card, sacrificed at your next end step).
 - `CreateTokenCopyOfEquippedCreature(count?, tapped?)` — equipment-specific copy.
-- `CreateTreasure(count?, tapped?)` — Treasure tokens.
+- `CreateTreasure(count?, tapped?)` — Treasure tokens. `count` accepts an `Int` or a `DynamicAmount`
+  (the latter evaluated at resolution, e.g. `CreateTreasure(DynamicAmounts.sourcePower(), tapped = true)`
+  for Goldvein Hydra's "create a number of tapped Treasure tokens equal to its power").
 - `CreateFood(count?, controller?)` — Food tokens.
 - `CreateLander(count?, controller?)` — Lander land tokens.
 - `CreateMutavault(count?, tapped?, controller?)` — Mutavault tokens.

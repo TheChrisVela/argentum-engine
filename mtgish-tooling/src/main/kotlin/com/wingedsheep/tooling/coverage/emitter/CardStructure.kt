@@ -1265,6 +1265,11 @@ private fun EmitCtx.singleInterveningIfDsl(cond: JsonObject): String? {
     // -> Conditions.YouCastSpellsThisTurn(2, GameObjectFilter.InstantOrSorcery). Only the exact
     // Other(ThisSpell) + instant-or-sorcery shape renders; anything else declines -> SCAFFOLD.
     youCastAnotherInstantOrSorceryDsl(cond)?.let { return it }
+    // "if you've cast two or more spells this turn" — PlayerPassesFilter(You,
+    // CastNumSpellsThisTurn([GreaterThanOrEqualTo N], AnySpell)) (Loan Shark). Only the unrestricted
+    // "any spell" count with a `>= N` comparison maps to Conditions.YouCastSpellsThisTurn(N); a
+    // filtered spell set or any other comparison (exactly N, fewer than N) declines -> SCAFFOLD.
+    youCastNumSpellsThisTurnDsl(cond)?.let { return it }
     // "you control another outlaw" — ControlsA over And(Other(ThatEnteringPermanent), IsAnOutlaw). The
     // entering permanent is itself an outlaw, so this is exactly "two or more outlaws you control".
     youControlAnotherOutlawDsl(cond)?.let { return it }
@@ -1290,6 +1295,28 @@ private fun EmitCtx.youCastAnotherInstantOrSorceryDsl(cond: JsonObject): String?
     if ("\"Other\"" !in blob || "ThisSpell" !in blob) return null
     if (!(blob.contains("\"Instant\"") && blob.contains("\"Sorcery\""))) return null
     return "Conditions.YouCastSpellsThisTurn(2, GameObjectFilter.InstantOrSorcery)"
+}
+
+/** `PlayerPassesFilter(You, CastNumSpellsThisTurn([Comparison GreaterThanOrEqualTo Integer N], AnySpell))`
+ *  ("if you've cast N or more spells this turn") -> `Conditions.YouCastSpellsThisTurn(N)`, else null. Only
+ *  the unrestricted `AnySpell` set with a `>= N` comparison renders — the spell being cast counts itself
+ *  in the cast tracker by the time the enters trigger resolves, so "two or more spells this turn" is the
+ *  literal threshold (Loan Shark). A filtered spell set, or any comparison other than `GreaterThanOrEqualTo`
+ *  (exactly / fewer than), declines -> SCAFFOLD rather than miscount. */
+private fun EmitCtx.youCastNumSpellsThisTurnDsl(cond: JsonObject): String? {
+    if (cond.strField("_Condition") != "PlayerPassesFilter") return null
+    val args = cond["args"].asArr ?: return null
+    if ((args.getOrNull(0) as? JsonObject)?.strField("_Player") != "You") return null
+    val cast = args.getOrNull(1) as? JsonObject ?: return null
+    if (cast.strField("_Players") != "CastNumSpellsThisTurn") return null
+    val castArgs = cast["args"].asArr ?: return null
+    val comparison = castArgs.getOrNull(0) as? JsonObject ?: return null
+    if (comparison.strField("_Comparison") != "GreaterThanOrEqualTo") return null
+    val n = (comparison["args"] as? JsonObject)?.takeIf { it.strField("_GameNumber") == "Integer" }
+        ?.get("args").asInt() ?: return null
+    // Only the unrestricted "any spell" set renders; a filtered spell set declines rather than over/undercount.
+    if ((castArgs.getOrNull(1) as? JsonObject)?.strField("_Spells") != "AnySpell") return null
+    return "Conditions.YouCastSpellsThisTurn($n)"
 }
 
 /** The "<counter> counter" name for a `HasNoCountersOfType(<CounterType>)` node, mapped to the engine's

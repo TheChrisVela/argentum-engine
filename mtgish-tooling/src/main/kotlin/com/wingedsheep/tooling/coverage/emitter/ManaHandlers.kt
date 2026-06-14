@@ -5,6 +5,7 @@ import com.wingedsheep.tooling.coverage.Dsl
 import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.asArr
 import com.wingedsheep.tooling.coverage.call
+import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.strField
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -28,6 +29,17 @@ internal val manaHandlers: Map<String, ActionHandler> = actionHandlers {
         val produce = arr.getOrNull(0) as? JsonObject ?: return@on null
         val restriction = manaUseModifierRestriction(arr.drop(1)) ?: return@on null
         manaProduceWithRestrictionDsl(produce, restriction)
+    }
+    on("AddManaRepeatedWithModifiers") { _, args, _ ->
+        // "{T}: Add two mana of any one color. Spend this mana only to cast Mount or Vehicle spells."
+        // (Intrepid Stablemaster): a produced mana, a repeat count, and a use-restriction modifier.
+        // args = [<ManaProduce>, <count>, <ManaUseModifier>…]. Only a fixed integer count over a produce
+        // the restricted facades cover renders; any dynamic count or unrenderable restriction scaffolds.
+        val arr = args.asArr ?: return@on null
+        val produce = arr.getOrNull(0) as? JsonObject ?: return@on null
+        val count = findInteger(arr.getOrNull(1)) as? Int ?: return@on null
+        val restriction = manaUseModifierRestriction(arr.drop(2)) ?: return@on null
+        manaProduceRepeatedWithRestrictionDsl(produce, count, restriction)
     }
     on("AddManaRepeated") { _, args, _ ->
         // "Add {R} for each Goblin on the battlefield" (Brightstone Ritual): a single mana symbol produced
@@ -72,7 +84,21 @@ private fun manaUseModifierRestriction(modifiers: List<JsonElement>): String? {
     val cardtypes = branches.mapNotNull { b ->
         (b as? JsonObject)?.takeIf { it.strField("_Spells") == "IsCardtype" }?.get("args")
     }.mapNotNull { (it as? kotlinx.serialization.json.JsonPrimitive)?.content }.toSet()
-    return if (cardtypes == setOf("Instant", "Sorcery")) "ManaRestriction.InstantOrSorceryOnly" else null
+    if (cardtypes == setOf("Instant", "Sorcery")) return "ManaRestriction.InstantOrSorceryOnly"
+    // "Spend this mana only to cast Mount or Vehicle spells" (Intrepid Stablemaster): an Or of subtype
+    // checks — IsCreatureType / IsArtifactType — over named subtypes. Each branch must be a bare subtype
+    // check carrying a string subtype; the engine's SubtypeSpellsOnly matches a spell whose type line
+    // carries any of those subtypes. Decline if any branch is a non-subtype check rather than drop it.
+    val subtypes = branches.map { b ->
+        val obj = b as? JsonObject ?: return null
+        when (obj.strField("_Spells")) {
+            "IsCreatureType", "IsArtifactType", "IsEnchantmentType", "IsLandType" ->
+                (obj["args"] as? kotlinx.serialization.json.JsonPrimitive)?.content ?: return null
+            else -> return null
+        }
+    }
+    if (subtypes.isEmpty()) return null
+    return "ManaRestriction.SubtypeSpellsOnly(setOf(${subtypes.joinToString(", ") { "\"$it\"" }}))"
 }
 
 /**
@@ -87,6 +113,23 @@ private fun manaProduceWithRestrictionDsl(node: JsonObject, restriction: String)
         "AnyManaColor" -> call("Effects.AddManaOfChoice", arg("restriction", restriction))
         else -> MANA_PRODUCE_COLOR[produce]?.let {
             call("Effects.AddMana", arg(it), arg("1"), arg("restriction", restriction))
+        }
+    }
+
+/**
+ * `{_ManaProduce}` + a repeat [count] + a recovered restriction token -> the matching restricted mana
+ * Effect producing [count] mana. "Two mana of any one color" maps to `Effects.AddAnyColorMana(amount = N,
+ * restriction = …)` (the player picks one color and gets N of it). A single named color produces N of
+ * that color; colorless produces N colorless. Declines (null) for produce shapes the restricted facades
+ * don't cover (And pools), so a restriction is never silently dropped.
+ */
+private fun manaProduceRepeatedWithRestrictionDsl(node: JsonObject, count: Int, restriction: String): Dsl? =
+    when (val produce = node.strField("_ManaProduce")) {
+        null -> null
+        "ManaProduceC" -> call("Effects.AddColorlessMana", arg("$count"), arg("restriction", restriction))
+        "AnyManaColor" -> call("Effects.AddAnyColorMana", arg("amount", "$count"), arg("restriction", restriction))
+        else -> MANA_PRODUCE_COLOR[produce]?.let {
+            call("Effects.AddMana", arg(it), arg("$count"), arg("restriction", restriction))
         }
     }
 
@@ -111,5 +154,7 @@ private fun manaAndDsl(node: JsonObject): Dsl? {
 /** True when this ability is a mana ability: no target, and at least one action adds mana. */
 internal fun isManaAbility(tvar: String?, actions: List<JsonObject>): Boolean =
     tvar == null && actions.any {
-        it.strField("_Action") in setOf("AddMana", "AddManaRepeated", "AddManaWithModifiers")
+        it.strField("_Action") in setOf(
+            "AddMana", "AddManaRepeated", "AddManaWithModifiers", "AddManaRepeatedWithModifiers"
+        )
     }

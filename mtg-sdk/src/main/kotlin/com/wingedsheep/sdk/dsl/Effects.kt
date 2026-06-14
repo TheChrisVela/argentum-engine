@@ -1441,6 +1441,14 @@ object Effects {
         CreatePredefinedTokenEffect("Treasure", count, tapped = tapped)
 
     /**
+     * Create a dynamic number of Treasure tokens — the count is evaluated at resolution
+     * time. Used for cards like Goldvein Hydra ("create a number of tapped Treasure tokens
+     * equal to its power") where the amount depends on game state.
+     */
+    fun CreateTreasure(count: DynamicAmount, tapped: Boolean = false): Effect =
+        CreatePredefinedTokenEffect("Treasure", tapped = tapped, dynamicCount = count)
+
+    /**
      * "You may behold a [filter]. If you do, [ifBeheld]." — the resolution-time behold
      * (choose a matching permanent you control or reveal a matching card from hand). See
      * [com.wingedsheep.sdk.scripting.effects.BeholdEffect]. Used by Sarkhan, Dragon Ascendant.

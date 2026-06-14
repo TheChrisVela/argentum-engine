@@ -3427,6 +3427,92 @@
     ]
 }
 
+// Freestrider Lookout
+{
+    "name": "Freestrider Lookout",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Human Rogue",
+    "oracleText": "Reach\nWhenever you commit a crime, look at the top five cards of your library. You may put a land card from among them onto the battlefield tapped. Put the rest on the bottom of your library in a random order. This ability triggers only once each turn. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CommitCrimeEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 5
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "looked",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "land",
+                            "storeSelected": "kept",
+                            "storeRemainder": "rest",
+                            "prompt": "You may put a land card onto the battlefield tapped",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kept",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever you commit a crime, look at the top five cards of your library. You may put a land card from among them onto the battlefield tapped. Put the rest on the bottom of your library in a random order. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "163",
+        "rarity": "RARE",
+        "artist": "Matt Zeilinger",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/2/32370f05-52a2-405f-b2bb-1b8a9b0b69f8.jpg?1712355921"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Frontier Seeker
 {
     "name": "Frontier Seeker",
@@ -3870,6 +3956,61 @@
                 "text": "Count the number of Treasures you control as Gold Rush resolves to determine how big a bonus the target creature receives. That bonus won't change even if the number of Treasures you control does during the turn."
             }
         ]
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Goldvein Hydra
+{
+    "name": "Goldvein Hydra",
+    "manaCost": "{X}{G}",
+    "typeLine": "Creature — Hydra",
+    "oracleText": "Vigilance, trample, haste\nThis creature enters with X +1/+1 counters on it.\nWhen this creature dies, create a number of tapped Treasure tokens equal to its power.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "keywords": [
+        "VIGILANCE",
+        "TRAMPLE",
+        "HASTE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure",
+                    "tapped": true,
+                    "dynamicCount": {
+                        "type": "EntityProperty",
+                        "entity": "Source",
+                        "numericProperty": "Power"
+                    }
+                }
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithDynamicCounters",
+                "count": "XValue"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "167",
+        "rarity": "MYTHIC",
+        "artist": "David Auden Nash",
+        "flavorText": "The key is to slay it before it sprouts so many heads that your fear outpaces your greed.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/e/de0e01e4-e143-47fd-8565-7b48219bb546.jpg?1712355937"
     },
     "colorIdentityOverride": [
         "GREEN"
@@ -4622,6 +4763,65 @@
     ]
 }
 
+// Intrepid Stablemaster
+{
+    "name": "Intrepid Stablemaster",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Human Scout",
+    "oracleText": "Reach\n{T}: Add {G}.\n{T}: Add two mana of any one color. Spend this mana only to cast Mount or Vehicle spells.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddManaOfChoice",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "restriction": {
+                        "type": "SubtypeSpellsOnly",
+                        "subtypes": [
+                            "Mount",
+                            "Vehicle"
+                        ]
+                    }
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "169",
+        "rarity": "UNCOMMON",
+        "artist": "Svetlin Velinov",
+        "flavorText": "\"Never get too cocky. Remember you stay upright only by your mount's good graces.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/d/4d6cdf2a-026a-41ba-87d9-8fcd8a67f06e.jpg?1712355945"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Inventive Wingsmith
 {
     "name": "Inventive Wingsmith",
@@ -5300,6 +5500,64 @@
     "colorIdentityOverride": []
 }
 
+// Loan Shark
+{
+    "name": "Loan Shark",
+    "manaCost": "{3}{U}",
+    "typeLine": "Creature — Shark Rogue",
+    "oracleText": "When this creature enters, if you've cast two or more spells this turn, draw a card.\nPlot {3}{U} (You may pay {3}{U} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "keywords": [
+        "PLOT"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Plot",
+            "cost": "{3}{U}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "triggerCondition": {
+                    "type": "PlayerCastSpellsThisTurn",
+                    "atLeast": 2
+                },
+                "descriptionOverride": "When this creature enters, if you've cast two or more spells this turn, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "55",
+        "artist": "Wayne Reynolds",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/9/49f12760-ff07-4c9f-a7a9-1e64bd3a9adf.jpg?1712355452",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "The cast of Loan Shark counts toward the number of spells you've cast this turn. You'll need to have cast at least one other spell this turn for its ability to draw a card."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Lonely Arroyo
 {
     "name": "Lonely Arroyo",
@@ -5729,6 +5987,92 @@
         "artist": "Mila Pesic",
         "flavorText": "She poses a riddle to each mark, allowing them a chance to keep their goods. Thus far, none have succeeded.",
         "imageUri": "https://cards.scryfall.io/normal/front/3/4/34071884-c5b6-42c0-9eb3-9f32910c29d8.jpg?1712355453"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Metamorphic Blast
+{
+    "name": "Metamorphic Blast",
+    "manaCost": "{U}",
+    "typeLine": "Instant",
+    "oracleText": "Spree (Choose one or more additional costs.)\n+ {1} — Until end of turn, target creature becomes a white Rabbit with base power and toughness 0/1.\n+ {3} — Target player draws two cards.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "BecomeCreature",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "power": 0,
+                        "toughness": 1,
+                        "creatureTypes": [
+                            "Rabbit"
+                        ],
+                        "colors": [
+                            "WHITE"
+                        ]
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature"
+                            }
+                        }
+                    ],
+                    "description": "+ {1} — Until end of turn, target creature becomes a white Rabbit with base power and toughness 0/1.",
+                    "additionalManaCost": "{1}"
+                },
+                {
+                    "effect": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "targetRequirements": [
+                        "TargetPlayer"
+                    ],
+                    "description": "+ {3} — Target player draws two cards.",
+                    "additionalManaCost": "{3}"
+                }
+            ],
+            "chooseCount": 2,
+            "minChooseCount": 1
+        }
+    },
+    "metadata": {
+        "collectorNumber": "57",
+        "rarity": "UNCOMMON",
+        "artist": "Michal Ivan",
+        "flavorText": "Rundo's craving for revenge was replaced by a craving for vegetables.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/d/bd38d922-cfc1-43a8-82d8-5de441c71076.jpg?1712860596",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "You must choose at least one of the listed modes and pay its associated additional cost in order to cast a spell with spree."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You choose the modes as you cast the spell with spree. Once modes are chosen, they can't be changed."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You can't choose the same mode more than once."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -10283,6 +10627,72 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Trick Shot
+{
+    "name": "Trick Shot",
+    "manaCost": "{4}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Trick Shot deals 6 damage to target creature and 2 damage to up to one other target creature token.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 6
+                    },
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 0
+                    }
+                },
+                {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "target": {
+                        "type": "ContextTarget",
+                        "index": 1
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "creature"
+            },
+            {
+                "type": "TargetOther",
+                "baseRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature token"
+                    }
+                },
+                "id": "tokenCreature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "151",
+        "artist": "Brian Valeza",
+        "flavorText": "\"Cowerin' behind your buddy ain't gonna help, ya yellow-bellied lowlife.\"\n—Tyron, Slickshot duelist",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cd3c2d02-67ca-4858-9b7a-3cfe8a08356c.jpg?1712355870"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

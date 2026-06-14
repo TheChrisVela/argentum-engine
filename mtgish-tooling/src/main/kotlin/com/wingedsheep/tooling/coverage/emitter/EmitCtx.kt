@@ -272,7 +272,12 @@ internal fun EmitCtx.dynamicAmountExpr(node: JsonElement?): Dsl? {
         "ToughnessOfPermanent" ->
             return if (jsonContains(node["args"], "_Permanent", "ThisPermanent")) call("DynamicAmounts.sourceToughness") else null
         "PowerOfPermanent" -> {
-            if (jsonContains(node["args"], "_Permanent", "ThisPermanent")) return call("DynamicAmounts.sourcePower")
+            // "its power" where "it" is the source: either the static ThisPermanent or — in a dies
+            // trigger — Trigger_ThatPermanent (the permanent that died, i.e. this source via LKI).
+            // Both read the source's last-known power (Goldvein Hydra, Heartfire Hero).
+            if (jsonContains(node["args"], "_Permanent", "ThisPermanent") ||
+                jsonContains(node["args"], "_Permanent", "Trigger_ThatPermanent")
+            ) return call("DynamicAmounts.sourcePower")
             // "equal to its power" where "it" is a bound target (Burrog Barrage's "deals damage equal to
             // its power" — the buffed target creature). Resolve the ref to its declaration-order index.
             val idx = targetFlatIndexForRef(findRef(node["args"]))

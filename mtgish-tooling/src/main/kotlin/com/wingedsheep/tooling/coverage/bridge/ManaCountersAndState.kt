@@ -13,12 +13,21 @@ internal fun BridgeBuilder.manaCountersAndState() {
     // ManaRestriction.InstantOrSorceryOnly — the emitter renders only that one CanOnlySpendOnSpells
     // shape and scaffolds any other modifier.
     composed("AddManaWithModifiers", UNIVERSAL, composes = listOf("AddMana", "AddColorlessMana", "AddManaOfChoice"))
+    // "Add N mana of any one color. Spend this mana only to cast Mount or Vehicle spells." (Intrepid
+    // Stablemaster): AddManaWithModifiers with a repeat count, carrying a ManaRestriction (instant/sorcery
+    // or a subtype-spend SubtypeSpellsOnly). Same mana family; the emitter renders only the fixed-count,
+    // recoverable-restriction shape and scaffolds anything else.
+    composed("AddManaRepeatedWithModifiers", UNIVERSAL, composes = listOf("AddMana", "AddColorlessMana", "AddManaOfChoice"))
     effect("AddColorlessMana", "AddColorlessMana", UNIVERSAL)
 
     // CreateTokens lowers to either the generic CreateToken (creature tokens) or a predefined-token
     // facade (Treasure -> CreatePredefinedToken); the capability scorer can't see which from the tag
     // alone, so name both — mirroring the AddMana family above.
     composed("CreateTokens", UNIVERSAL, composes = listOf("CreateToken", "CreatePredefinedToken"))
+    // CreateTokensWithFlags is CreateTokens carrying enter-state flags (e.g. EntersTapped). The flag rides
+    // on the same predefined/creature token facade (CreateTreasure(tapped = true), CreateToken(tapped = …)),
+    // so it composes the same primitives — Goldvein Hydra's "tapped Treasure tokens equal to its power".
+    composed("CreateTokensWithFlags", UNIVERSAL, composes = listOf("CreateToken", "CreatePredefinedToken"))
     // "becomes the creature type of your choice" — a ChooseACreatureType + an AddCreatureTypeVariable
     // layer effect collapse to one BecomeCreatureTypeEffect (Mistform cycle, Imagecrafter).
     effect("AddCreatureTypeVariable", "BecomeCreatureType", UNIVERSAL)

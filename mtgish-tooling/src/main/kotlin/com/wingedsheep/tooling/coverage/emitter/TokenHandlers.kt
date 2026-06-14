@@ -28,6 +28,20 @@ internal val tokenHandlers: Map<String, ActionHandler> = actionHandlers {
         val spec = args.asArr?.firstOrNull() as? JsonObject ?: return@on null
         createTokenDsl(spec)
     }
+    // `CreateTokensWithFlags` is a `CreateTokens` carrying enter-state flags (args[1]). The only flag we
+    // render exactly is `EntersTapped` (a tapped token); any other flag (attacking, with a counter, …)
+    // declines -> SCAFFOLD rather than silently drop it. Goldvein Hydra: "create a number of tapped
+    // Treasure tokens equal to its power."
+    on("CreateTokensWithFlags") { _, args, _ ->
+        val a = args.asArr ?: return@on null
+        val spec = (a.getOrNull(0) as? JsonArray)?.firstOrNull() as? JsonObject ?: return@on null
+        val flags = (a.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>() ?: emptyList()
+        val flagNames = flags.mapNotNull { it.strField("_TokenFlag") }
+        if (flagNames.isEmpty()) return@on null
+        // Only EntersTapped is renderable; bail on any other flag so we never drop it.
+        if (flagNames.any { it != "EntersTapped" }) return@on null
+        createTokenDsl(spec, tapped = true)
+    }
 }
 
 private val TOKEN_COLOR = mapOf(
@@ -39,7 +53,7 @@ private val TOKEN_COLOR = mapOf(
  *  `DynamicAmount` DSL ("X" / "the number of creature cards in your graveyard"). [controller], when set,
  *  is the EffectTarget DSL for who receives the token (e.g. `EffectTarget.TargetController` for "its
  *  controller creates …"); null means the spell's controller (the facade default). */
-internal fun EmitCtx.createTokenDsl(spec: JsonObject, count: Int = 1, dynamicCount: Dsl? = null, controller: String? = null): Dsl? {
+internal fun EmitCtx.createTokenDsl(spec: JsonObject, count: Int = 1, dynamicCount: Dsl? = null, controller: String? = null, tapped: Boolean = false): Dsl? {
     when (spec.strField("_CreatableToken")) {
         "NumberTokens" -> {
             val a = spec["args"].asArr ?: return null
@@ -48,16 +62,28 @@ internal fun EmitCtx.createTokenDsl(spec: JsonObject, count: Int = 1, dynamicCou
             // (ValueX, Form a Posse) or "the number of creature cards in your graveyard" (Rise of
             // the Varmints) — renders as a `DynamicAmount` via [dynamicAmountExpr]; decline
             // (-> SCAFFOLD) on a count we can't render exactly rather than emit a wrong fixed number.
-            // [controller] threads through unchanged so a counted token can still target its recipient.
+            // [controller] / [tapped] thread through unchanged so a counted token keeps its recipient/state.
             val n = findInteger(a.getOrNull(0)) as? Int
-            if (n != null) return createTokenDsl(inner, n, controller = controller)
+            if (n != null) return createTokenDsl(inner, n, controller = controller, tapped = tapped)
             val dynamic = dynamicAmountExpr(a.getOrNull(0)) ?: return null
-            return createTokenDsl(inner, dynamicCount = dynamic, controller = controller)
+            return createTokenDsl(inner, dynamicCount = dynamic, controller = controller, tapped = tapped)
         }
         // Predefined artifact token with fixed characteristics -> its dedicated facade
         // (serialises as CreatePredefinedToken, not the generic CreateToken). It has no controller
         // override, so a controller-directed Treasure declines rather than silently drop the recipient.
-        "TreasureToken" -> return if (controller != null) null else call("Effects.CreateTreasure", arg("$count"))
+        // A fixed count uses the `Int` overload; a dynamic count uses the `DynamicAmount` overload
+        // (Goldvein Hydra's "tapped Treasure tokens equal to its power"). `tapped = true` renders the
+        // tapped flag.
+        "TreasureToken" -> {
+            if (controller != null) return null
+            val parts = mutableListOf<com.wingedsheep.tooling.coverage.Arg>()
+            when {
+                dynamicCount != null -> parts.add(arg("count", dynamicCount))
+                count != 1 -> parts.add(arg("count", "$count"))
+            }
+            if (tapped) parts.add(arg("tapped", "true"))
+            return Call("Effects.CreateTreasure", parts)
+        }
         "TokenWithPT" -> {
             // args: [ {_PT [p,t]}, {_TokenColorList [names]}, [supertypes], [cardtypes],
             //         {_TokenSubtypes [subs]}, [abilities] ]
@@ -109,11 +135,14 @@ internal fun EmitCtx.createTokenDsl(spec: JsonObject, count: Int = 1, dynamicCou
                 if (kw !in keywords) return null
                 tokenKeywords.add(kw)
             }
-            // The `Effects.CreateToken` facade can't carry abilities — only the raw `CreateTokenEffect`
-            // constructor exposes `activatedAbilities` / `triggeredAbilities`. Use it when a granted
-            // ability is present; otherwise keep the tidier facade.
+            // The `Effects.CreateToken` facade can't carry abilities OR the tapped flag — only the raw
+            // `CreateTokenEffect` constructor exposes `activatedAbilities` / `triggeredAbilities` / `tapped`.
+            // Use it when a granted ability is present or the token enters tapped; otherwise keep the tidier
+            // facade. (Army of the Damned: "thirteen … tokens tapped"; Rise from the Tides: dynamic-count
+            // Zombies tapped.)
             val hasGrantedAbilities = tokenActivatedAbilities.isNotEmpty() || tokenTriggeredAbilities.isNotEmpty()
-            val ctor = if (!hasGrantedAbilities) "Effects.CreateToken" else "CreateTokenEffect"
+            val usesRawCtor = hasGrantedAbilities || tapped
+            val ctor = if (!usesRawCtor) "Effects.CreateToken" else "CreateTokenEffect"
             val parts = mutableListOf(arg("power", "$power"), arg("toughness", "$toughness"))
             if (colors.isNotEmpty()) parts.add(arg("colors", "setOf(${colors.joinToString(", ") { "Color.$it" }})"))
             parts.add(arg("creatureTypes", "setOf(${subs.joinToString(", ") { "\"$it\"" }})"))
@@ -124,18 +153,17 @@ internal fun EmitCtx.createTokenDsl(spec: JsonObject, count: Int = 1, dynamicCou
             if (tokenTriggeredAbilities.isNotEmpty()) {
                 parts.add(arg("triggeredAbilities", Call("listOf", tokenTriggeredAbilities.map { arg(it) })))
             }
+            if (tapped) parts.add(arg("tapped", "true"))
             // The recipient ("its controller creates …") is a named arg on both ctors, independent of
             // the count, so add it once before resolving the count overload below.
             if (controller != null) parts.add(arg("controller", Lit(controller)))
             // Count rendering depends on the constructor we picked:
             //  - `Effects.CreateToken` facade: a fixed count is the trailing named `count: Int` overload;
             //    a dynamic count is the `count: DynamicAmount` first-positional overload.
-            //  - raw `CreateTokenEffect` ctor (used when the token has granted abilities): the `count: Int`
-            //    secondary ctor does NOT expose `activatedAbilities`/`triggeredAbilities`, so the count MUST
-            //    be a `DynamicAmount` on the primary ctor — a fixed count renders as `DynamicAmount.Fixed(N)`,
-            //    not a bare Int (otherwise `CreateTokenEffect(count = 2, activatedAbilities = …)` fails to
-            //    compile — Hellspur Posse Boss).
-            val usesRawCtor = hasGrantedAbilities
+            //  - raw `CreateTokenEffect` ctor (used for granted abilities or the tapped flag): the `count: Int`
+            //    secondary ctor does NOT expose the extra fields, so the count MUST be a `DynamicAmount` on the
+            //    primary ctor — a fixed count renders as `DynamicAmount.Fixed(N)`, not a bare Int (otherwise
+            //    `CreateTokenEffect(count = 2, tapped = true)` fails to compile — Hellspur Posse Boss).
             when {
                 dynamicCount != null -> return Call(ctor, listOf(arg("count", dynamicCount)) + parts)
                 count == 1 -> return Call(ctor, parts)

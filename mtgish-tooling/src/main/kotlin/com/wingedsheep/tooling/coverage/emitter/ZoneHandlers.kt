@@ -570,6 +570,48 @@ internal fun EmitCtx.renderLook(node: JsonObject, args: JsonElement?, tvar: Stri
             ),
         ))
     }
+    // "Look at the top N. You may put a <type> card from among them onto the battlefield tapped. Put the
+    // rest on the BOTTOM of your library in a random order." (Freestrider Lookout). Same filtered-may-keep /
+    // bottom shape as the reveal-to-hand variant above, but the kept card enters the battlefield tapped
+    // instead of going to hand. Only EntersTapped is renderable; any other enter flag scaffolds. Render only
+    // when the type filter translates faithfully.
+    if ("MayPutACardOfTypeOntoTheBattlefield" in blob &&
+        "PutTheRemainingCardsOnTheBottomOfLibraryInARandomOrder" in blob
+    ) {
+        val n = findInteger(node) ?: return null
+        val putAction = node.field("args").asArr?.getOrNull(1).asArr?.firstOrNull {
+            it.strField("_LookAtTopOfLibraryAction") == "MayPutACardOfTypeOntoTheBattlefield"
+        } as? JsonObject ?: return null
+        val putArgs = putAction.field("args").asArr ?: return null
+        val flagNames = (putArgs.getOrNull(1) as? JsonArray)
+            ?.mapNotNull { (it as? JsonObject)?.strField("_EnterFlag") } ?: emptyList()
+        // Only the tapped enter state renders; any other flag (or none we recognise) scaffolds.
+        if (flagNames != listOf("EntersTapped")) return null
+        val pred = cardsPredicateDsl(putArgs.getOrNull(0)) ?: return null
+        return Composite(listOf(
+            Lit("GatherCardsEffect(CardSource.TopOfLibrary(DynamicAmount.Fixed($n)), storeAs = \"looked\")"),
+            Raw(
+                "SelectFromCollectionEffect(\n" +
+                    "                from = \"looked\",\n" +
+                    "                selection = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(1)),\n" +
+                    "                filter = GameObjectFilter(cardPredicates = listOf($pred)),\n" +
+                    "                storeSelected = \"kept\",\n" +
+                    "                storeRemainder = \"rest\",\n" +
+                    "                showAllCards = true,\n" +
+                    "                selectedLabel = \"Put onto the battlefield\",\n" +
+                    "                remainderLabel = \"Put on bottom\"\n" +
+                    "            )",
+            ),
+            Lit("MoveCollectionEffect(from = \"kept\", destination = CardDestination.ToZone(Zone.BATTLEFIELD, placement = ZonePlacement.Tapped))"),
+            Raw(
+                "MoveCollectionEffect(\n" +
+                    "                from = \"rest\",\n" +
+                    "                destination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom),\n" +
+                    "                order = CardOrder.Random\n" +
+                    "            )",
+            ),
+        ))
+    }
     // "Look at the top X cards ... Put one of them into your hand and the rest on the bottom of your
     // library in a random order." (Pillage the Bog). One generic card kept to hand, the remainder
     // bottomed at random — and the look count may be dynamic ("twice the number of lands you control").

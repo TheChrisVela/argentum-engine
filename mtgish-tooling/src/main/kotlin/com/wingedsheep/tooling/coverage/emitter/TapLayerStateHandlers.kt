@@ -324,6 +324,13 @@ internal fun EmitCtx.renderLayerEffect(node: JsonObject, action: String, tvar: S
     // The layer-effects list (mtgish always shapes the action's args as [target/filter, list, expiration]).
     val layerEffects = (node["args"].asArr)?.getOrNull(1) as? JsonArray ?: return null
     if (layerEffects.isEmpty()) return null
+
+    // "becomes a [color] [creature-type] with base power and toughness P/T" (Metamorphic Blast's Spree
+    // mode) — a SetPT alongside an optional SetColor and/or SetCreatureType, and nothing else. This is the
+    // engine's atomic `Effects.BecomeCreature` shape (one effect spanning the COLOR/TYPE/P_T layers), so a
+    // per-layer Composite would diverge from the hand-authored tree. Render BecomeCreature only for the
+    // single-target case (BecomeCreature has no group form). Any other layer effect alongside declines.
+    if (!mass) becomeCreatureLayerEffect(layerEffects, target)?.let { return it }
     val inner = mutableListOf<Dsl>()
     for (le in layerEffects) {
         val leObj = le as? JsonObject ?: return null
@@ -397,6 +404,72 @@ internal fun EmitCtx.renderLayerEffect(node: JsonObject, action: String, tvar: S
         return call("Effects.ForEachInGroup", arg(filter), arg(effect))
     }
     return effect
+}
+
+/** Colour names mtgish's `SimpleColorList` uses -> the `Color` enum constant. */
+private val LAYER_EFFECT_COLOR = mapOf(
+    "White" to "WHITE", "Blue" to "BLUE", "Black" to "BLACK", "Red" to "RED", "Green" to "GREEN",
+)
+
+/**
+ * The "becomes a [color] [creature-type] with base power and toughness P/T" shape — a layer-effect list
+ * whose entries are exactly one `SetPT` plus an optional `SetColor` and/or `SetCreatureType`, and nothing
+ * else. Renders the engine's atomic `Effects.BecomeCreature(target, power, toughness, creatureTypes,
+ * colors, duration = EndOfTurn)` (CR 613, layers 5/4/7b), matching the hand-authored idiom (Metamorphic
+ * Blast). Returns null — so the caller falls through to the per-layer renderer or scaffolds — whenever:
+ *  - there's no `SetPT` (no "becomes a P/T" base — not a become-creature shape),
+ *  - any layer effect other than Set{PT,Color,CreatureType} is present (e.g. AddCardtype, AddAbility),
+ *  - a colour isn't one of the five renderable mono-colours, or a SetColor lists more/zero than one,
+ *  - the P/T values aren't plain integers.
+ * The duration is always end-of-turn here (the engine's `Effects.BecomeCreature` facade defaults to it),
+ * so a non-EOT expiration on this shape declines via the caller's `expirationDsl` guard before this runs.
+ */
+internal fun EmitCtx.becomeCreatureLayerEffect(layerEffects: JsonArray, target: String): Dsl? {
+    val effects = layerEffects.filterIsInstance<JsonObject>()
+    if (effects.size != layerEffects.size) return null
+    if (effects.none { it.strField("_LayerEffect") == "SetPT" }) return null
+    if (effects.any { it.strField("_LayerEffect") !in setOf("SetPT", "SetColor", "SetCreatureType") }) return null
+    // A BARE SetPT ("becomes a 5/1 until end of turn", no type/colour change) is a base-P/T set, not a
+    // "becomes a creature" — keep it as SetBasePowerToughnessEffect (the per-layer renderer). Only the
+    // genuine "becomes a [colour] [type] creature" shape (SetColor and/or SetCreatureType present) maps
+    // to BecomeCreature.
+    if (effects.none { it.strField("_LayerEffect") in setOf("SetColor", "SetCreatureType") }) return null
+
+    var power: Int? = null
+    var toughness: Int? = null
+    val creatureTypes = mutableListOf<String>()
+    val colors = mutableListOf<String>()
+    for (le in effects) {
+        when (le.strField("_LayerEffect")) {
+            "SetPT" -> {
+                val pt = (le["args"] as? JsonObject)?.get("args").asArr ?: return null
+                if (pt.size != 2) return null
+                power = pt[0].asInt() ?: return null
+                toughness = pt[1].asInt() ?: return null
+            }
+            "SetCreatureType" -> {
+                val sub = le["args"].asStr() ?: return null
+                creatureTypes.add(sub)
+            }
+            "SetColor" -> {
+                val names = (le["args"] as? JsonObject)?.takeIf { it.strField("_SettableColor") == "SimpleColorList" }
+                    ?.get("args").asArr?.mapNotNull { it.asStr() } ?: return null
+                if (names.size != 1) return null  // multicolour / colourless set isn't this shape
+                colors.add(LAYER_EFFECT_COLOR[names[0]] ?: return null)
+            }
+        }
+    }
+    if (power == null || toughness == null) return null
+
+    val parts = mutableListOf(arg("target", Lit(target)), arg("power", "$power"), arg("toughness", "$toughness"))
+    if (creatureTypes.isNotEmpty()) {
+        parts.add(arg("creatureTypes", call("setOf", *creatureTypes.map { arg(Lit("\"${ktStr(it)}\"")) }.toTypedArray())))
+    }
+    if (colors.isNotEmpty()) {
+        parts.add(arg("colors", call("setOf", *colors.map { arg(Lit("Color.$it.name")) }.toTypedArray())))
+    }
+    parts.add(arg("duration", Lit("Duration.EndOfTurn")))
+    return Call("Effects.BecomeCreature", parts)
 }
 
 /** A ±X modifier (`PlusX` / `MinusX` / `Zero`) applied to a dynamic amount: PlusX keeps it; MinusX
