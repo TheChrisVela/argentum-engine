@@ -9895,7 +9895,7 @@ val TorpidMoloch = card("Torpid Moloch") {
     power = 3
     toughness = 2
     keywords(Keyword.DEFENDER)
-    // STRUCTURE needs human wiring: activated-cost
+    // STRUCTURE needs human wiring: CreatePermanentLayerEffectUntil
     metadata {
         rarity = Rarity.COMMON
         collectorNumber = "147"

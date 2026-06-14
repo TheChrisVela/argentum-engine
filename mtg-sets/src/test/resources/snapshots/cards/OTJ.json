@@ -1628,6 +1628,99 @@
     ]
 }
 
+// Breeches, the Blastmaker
+{
+    "name": "Breeches, the Blastmaker",
+    "manaCost": "{1}{U}{R}",
+    "typeLine": "Legendary Creature — Goblin Pirate",
+    "oracleText": "Menace\nWhenever you cast your second spell each turn, you may sacrifice an artifact. If you do, flip a coin. When you win the flip, copy that spell. You may choose new targets for the copy. When you lose the flip, Breeches deals damage equal to that spell's mana value to any target.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthSpellCastEvent",
+                    "nthSpell": 2,
+                    "player": "You"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "Sacrifice",
+                            "filter": "artifact"
+                        }
+                    },
+                    "then": {
+                        "type": "FlipCoin",
+                        "wonEffect": {
+                            "type": "CopyTargetSpell",
+                            "target": "TriggeringEntity"
+                        },
+                        "lostEffect": {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "EntityProperty",
+                                "entity": "Triggering",
+                                "numericProperty": "ManaValue"
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "any target"
+                            }
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "197",
+        "rarity": "RARE",
+        "artist": "Dmitry Burmak",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/f/cf3bda9e-42af-4f99-a504-c96c25c2794b.jpg?1712356062",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Spells that were cast before Breeches entered the battlefield count. If Breeches was the first spell you cast this turn, the next spell you cast this turn is your second spell."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "Breeches's triggered ability triggers without requiring a target. It sets up two delayed triggered abilities: one that triggers when you win the flip, and one that triggers when you lose the flip. Only one of these abilities will trigger, based on the result of the flip."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "If you don't sacrifice an artifact, you won't flip a coin, and neither delayed triggered ability will trigger."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "If you win the flip, the copy created by Breeches's delayed triggered ability will have the same targets as the spell it's copying unless you choose new ones."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "The copy made by Breeches's delayed triggered ability is created on the stack, so it's not \"cast.\""
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Bridled Bighorn
 {
     "name": "Bridled Bighorn",
@@ -7199,6 +7292,95 @@
     ]
 }
 
+// Jolene, Plundering Pugilist
+{
+    "name": "Jolene, Plundering Pugilist",
+    "manaCost": "{1}{R}{G}",
+    "typeLine": "Legendary Creature — Human Mercenary",
+    "oracleText": "Whenever you attack with one or more creatures with power 4 or greater, create a Treasure token.\n{1}{R}, Sacrifice a Treasure: Jolene deals 1 damage to any target.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "YouAttackEvent",
+                    "attackerFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "PowerAtLeast",
+                                "min": 4
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{R}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "artifact Treasure"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    }
+                ],
+                "descriptionOverride": "{1}{R}, Sacrifice a Treasure: Jolene deals 1 damage to any target."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "210",
+        "rarity": "UNCOMMON",
+        "artist": "Andreas Zafiratos",
+        "flavorText": "\"So, are we doing this the easy way or the fun way?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/e/fe30b5c8-4889-4350-bb1d-3e2a67d9dfb2.jpg?1712356118"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Lassoed by the Law
 {
     "name": "Lassoed by the Law",
@@ -7756,6 +7938,75 @@
     "colorIdentityOverride": [
         "BLUE",
         "GREEN"
+    ]
+}
+
+// Magda, the Hoardmaster
+{
+    "name": "Magda, the Hoardmaster",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Dwarf Berserker",
+    "oracleText": "Whenever you commit a crime, create a tapped Treasure token. This ability triggers only once each turn. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime.)\nSacrifice three Treasures: Create a 4/4 red Scorpion Dragon creature token with flying and haste. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CommitCrimeEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Treasure",
+                    "tapped": true
+                },
+                "oncePerTurn": true
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "artifact Treasure",
+                        "count": 3
+                    }
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 4,
+                    "toughness": 4,
+                    "colors": [
+                        "RED"
+                    ],
+                    "creatureTypes": [
+                        "Scorpion",
+                        "Dragon"
+                    ],
+                    "keywords": [
+                        "FLYING",
+                        "HASTE"
+                    ],
+                    "name": "Scorpion Dragon",
+                    "imageUri": "https://cards.scryfall.io/normal/front/3/3/334178bb-970b-4f5a-af9b-1729eab65808.jpg?1712316350"
+                },
+                "timing": "SorcerySpeed",
+                "descriptionOverride": "Sacrifice three Treasures: Create a 4/4 red Scorpion Dragon creature token with flying and haste. Activate only as a sorcery."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "133",
+        "rarity": "RARE",
+        "artist": "Diego Gisbert",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/4/4443d112-209b-49ec-bc40-3a11dcdb092e.jpg?1712355792"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

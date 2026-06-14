@@ -1618,6 +1618,20 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
         if (plainCreature && n != null) return "TriggerSpec(EventPattern.YouAttackEvent(minAttackers = $n), TriggerBinding.ANY)"
     }
 
+    // "Whenever you attack with one or more creatures [matching a filter]" —
+    // WhenAPlayerAttacksWithAnyNumberOfCreatures scoped to You. The args are [caster scope, attacker
+    // filter]; the batched trigger fires once per combat when at least one declared attacker matches.
+    // Maps to Triggers.YouAttackWithFilter(<filter>) (Jolene, Plundering Pugilist's "with power 4 or
+    // greater"). Only the You scope renders; the attacker filter must round-trip exactly through
+    // gameObjectFilterDsl (a shape it can't recover declines -> SCAFFOLD rather than widening the trigger).
+    if (jsonContains(trig, "_Trigger", "WhenAPlayerAttacksWithAnyNumberOfCreatures")) {
+        val argv = trig["args"].asArr ?: return null
+        val scope = castScope(argv.getOrNull(0) as? JsonObject)
+        if (scope != CastScope.YOU) return null
+        val filter = gameObjectFilterDsl(argv.getOrNull(1)) ?: return null
+        return "Triggers.YouAttackWithFilter($filter)"
+    }
+
     // "Whenever a [filtered] permanent enters the battlefield" (the SELF case returned above): an
     // `Other(ThisPermanent)` clause means "another …" -> OTHER binding (Elvish Vanguard's "another
     // Elf", Wretched Anurid's "another creature"); otherwise "a …" -> ANY (Wirewood Savage's "a Beast").
@@ -2189,6 +2203,17 @@ internal fun EmitCtx.abilityCostDsl(node: JsonElement?): String? {
             if (obj.field("args").strField("_GraveyardCard") == "ThisGraveyardCard") "Costs.ExileSelf" else null
         "SacrificeAPermanent" -> costFilterDsl(obj.field("args"))?.let {
             if (it == "GameObjectFilter.Any") "Costs.Sacrifice()" else "Costs.Sacrifice($it)"
+        }
+        // "Sacrifice N <permanents>" as an activation cost (Magda, the Hoardmaster's "Sacrifice three
+        // Treasures"). IR args are [<N Integer>, <permanent filter>]. Maps to Costs.SacrificeMultiple(N,
+        // <filter>); only a FIXED integer count and an exactly-recoverable filter render (a dynamic count
+        // or an unrenderable filter declines -> SCAFFOLD rather than guessing).
+        "SacrificeNumberPermanents" -> {
+            val a = obj["args"].asArr ?: return null
+            val n = findInteger(a.getOrNull(0)) as? Int ?: return null
+            val filter = costFilterDsl(a.getOrNull(1)) ?: return null
+            if (filter == "GameObjectFilter.Any") "Costs.SacrificeMultiple($n)"
+            else "Costs.SacrificeMultiple($n, $filter)"
         }
         "PayLife" -> (findInteger(obj.field("args")) as? Int)?.let { "Costs.PayLife($it)" }
         "TapNumberPermanents" -> {

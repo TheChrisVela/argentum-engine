@@ -7,10 +7,23 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     supported("WhenAPermanentEntersTheBattlefield", "trigger: ETB (Triggers.* scan validates in P1)")
     supported("WhenACreatureOrPlaneswalkerDies", "trigger: dies")
     supported("WhenACreatureAttacks", "trigger: attacks")
+    // "Whenever you attack with one or more creatures [matching a filter]" — the batched declare-attackers
+    // trigger that fires once per combat when at least one attacker matches (Triggers.YouAttackWithFilter,
+    // Jolene Plundering Pugilist's "with power 4 or greater"). You scope only; the emitter recovers the
+    // attacker filter exactly or declines -> SCAFFOLD.
+    supported("WhenAPlayerAttacksWithAnyNumberOfCreatures", "trigger: you attack with one or more creatures matching a filter (Triggers.YouAttackWithFilter)")
     supported("WhenACreatureBlocks", "trigger: blocks (Ydwen Efreet)")
     supported("WhenACreatureDealsCombatDamageToAPlayer", "trigger: combat damage to player")
     supported("WhenAPlayerCastsASpell", "trigger: a player casts a spell (Triggers.YouCastSpell / AnyPlayerCastsSpell / OpponentCastsSpell + type filters)")
     supported("WhenAPlayerCastsTheirNthSpellInATurn", "trigger: you cast your Nth spell each turn (Triggers.NthSpellCast(N, Player.You) — Rodeo Pyromancers)")
+    // DELIBERATE DECLINE — Breeches, the Blastmaker. Its second-spell payoff (NthSpellCast above) is a
+    // `MayCost(sacrifice an artifact)`-gated `FlipACoin_OnWinAndLose` that sets up two reflexive (delayed)
+    // triggers — win: `CopySpellAndMayChooseNewTargets`, lose: deal that spell's mana value to any target.
+    // The win/lose coin branch + reflexive-trigger + copy-spell-with-new-targets cluster is exactly the
+    // value-selection / reflexive shape the module creator's note (mtgish-tooling/CLAUDE.md) says to leave
+    // BLOCKED rather than risk a confidently-wrong render. The tags FlipACoin_OnWinAndLose / ReflexiveTrigger
+    // / CopySpellAndMayChooseNewTargets stay unmapped on purpose; the hand-authored card + its scenario test
+    // (BreechesTheBlastmakerTest) is the ground truth.
     supported("AtTheBeginningOfAPlayersUpkeep", "trigger: upkeep (Triggers.YourUpkeep / EachUpkeep / EachOpponentUpkeep)")
     supported("AtTheBeginningOfAPlayersEndStep", "trigger: end step (Triggers.YourEndStep / EachEndStep)")
     // OTJ Plot (CR 718) — "When this card becomes plotted, …" (Triggers.BecomesPlotted, Aloe Alchemist).
