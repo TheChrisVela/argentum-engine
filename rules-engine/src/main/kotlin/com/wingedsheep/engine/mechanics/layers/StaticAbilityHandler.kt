@@ -111,6 +111,7 @@ import com.wingedsheep.sdk.scripting.NoncombatDamageBonus
 import com.wingedsheep.sdk.scripting.OpponentsPlayWithHandsRevealed
 import com.wingedsheep.sdk.scripting.OverrideEnchantedLandManaColor
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
+import com.wingedsheep.sdk.scripting.PlotFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlayLandsAndCastFilteredFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlayersCantCastSpells
 import com.wingedsheep.sdk.scripting.PreventActivatedAbilities
@@ -697,6 +698,7 @@ class StaticAbilityHandler(
             is FreeFirstEquipEachTurn,
             is PlayFromTopOfLibrary,
             is PlayLandsAndCastFilteredFromTopOfLibrary,
+            is PlotFromTopOfLibrary,
             is PlayersCantCastSpells,
             is RestrictSpellsCastPerTurn,
 

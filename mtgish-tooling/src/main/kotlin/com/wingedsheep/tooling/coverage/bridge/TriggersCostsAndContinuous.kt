@@ -110,4 +110,23 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // nested _PlayerEffect of a PlayerEffect / EachPlayerEffect static. Renders to
     // `RestrictSpellsCastPerTurn(maxPerTurn = N, eachPlayer = <scope>)`.
     effect("CantCastMoreThanNumberSpellsEachTurn", "RestrictSpellsCastPerTurn")
+
+    // "Spells your opponents cast from graveyards or from exile cost {2} more to cast" (Aven
+    // Interrupter) — the nested _PlayerEffect of an EachPlayerEffect{Opponent} static. Renders to
+    // `ModifySpellCost(target = SpellCostTarget.OpponentsCastFromZones(...), modification =
+    // IncreaseGeneric(N))`. The spell-zone selectors below carry the zone set.
+    effect("IncreaseSpellCost", "ModifySpellCost")
+    supported("WasCastFromExile", "spell selector: cast from exile (SpellCostTarget.OpponentsCastFromZones zone = EXILE)")
+    supported("WasCastFromAPlayersGraveyard", "spell selector: cast from a graveyard (SpellCostTarget.OpponentsCastFromZones zone = GRAVEYARD)")
+
+    // Fblthp, Lost on the Range (CR 718) — top-of-library plot + look. Nested _PlayerEffect /
+    // _Rule capabilities of the controller-scoped statics.
+    supported("MayLookAtTopCardOfLibraryAnyTime", "player static: look at the top card of your library any time (LookAtTopOfLibrary)")
+    supported("MayPlotCardsFromTheTopOfTheirLibrary", "player static: plot cards from the top of your library (PlotFromTopOfLibrary)")
+    supported("TopCardOfPlayersLibraryEffect", "rule: the top card of your library has plot, plot cost = its mana cost (PlotFromTopOfLibrary)")
+
+    // Roxanne, Starfall Savant (CR 605) — "Whenever you tap an artifact token for mana, add one mana
+    // of any type that artifact token produced." A triggered mana ability; renders to the
+    // AdditionalManaOnSourceTap mirror static (color = null), the same shape as Lavaleaper's land mirror.
+    supported("WhenAPlayerTapsAPermanentForMana", "trigger: tap a permanent for mana → AdditionalManaOnSourceTap mirror static")
 }

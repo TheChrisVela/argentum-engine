@@ -141,6 +141,7 @@ import com.wingedsheep.sdk.scripting.effects.CounterAllOnStackEffect
 import com.wingedsheep.sdk.scripting.effects.CounterCondition
 import com.wingedsheep.sdk.scripting.effects.CounterDestination
 import com.wingedsheep.sdk.scripting.effects.CounterEffect
+import com.wingedsheep.sdk.scripting.effects.ExileTargetSpellEffect
 import com.wingedsheep.sdk.scripting.effects.ReturnSpellToOwnersHandEffect
 import com.wingedsheep.sdk.scripting.effects.CounterTarget
 import com.wingedsheep.sdk.scripting.effects.CounterTargetSource
@@ -1494,6 +1495,18 @@ object Effects {
     ): Effect = com.wingedsheep.sdk.scripting.effects.BeholdEffect(filter, ifBeheld)
 
     /**
+     * Create Meteorite artifact tokens (Roxanne, Starfall Savant).
+     * A colorless artifact named Meteorite with "When this token enters, it deals 2 damage to
+     * any target." and "{T}: Add one mana of any color." Roxanne creates them tapped.
+     *
+     * @param count Number of tokens to create
+     * @param tapped Whether the tokens enter the battlefield tapped
+     * @param controller Who controls the tokens (null = effect controller)
+     */
+    fun CreateMeteorite(count: Int = 1, tapped: Boolean = false, controller: EffectTarget? = null): Effect =
+        CreatePredefinedTokenEffect("Meteorite", count, controller, tapped = tapped)
+
+    /**
      * Create Food artifact tokens.
      * "{2}, {T}, Sacrifice this artifact: You gain 3 life."
      *
@@ -1978,6 +1991,15 @@ object Effects {
      */
     fun CounterTriggeringSpell(): Effect =
         CounterEffect(targetSource = CounterTargetSource.TriggeringEntity)
+
+    /**
+     * Exile target spell (CR 718, "exile target spell" — Aven Interrupter). Not a counter: it
+     * exiles even can't-be-countered spells and fires no "spell was countered" trigger, but the
+     * spell still fails to resolve. Pass [makePlotted] = true for "it becomes plotted" (the
+     * card's owner may cast it for free on a later turn). Pair with `Targets.Spell`.
+     */
+    fun ExileTargetSpell(makePlotted: Boolean = false): Effect =
+        ExileTargetSpellEffect(makePlotted = makePlotted)
 
     /**
      * Counter target spell unless its controller pays a mana cost.

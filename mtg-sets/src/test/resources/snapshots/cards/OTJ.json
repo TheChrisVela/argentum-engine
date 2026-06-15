@@ -835,6 +835,85 @@
     ]
 }
 
+// Aven Interrupter
+{
+    "name": "Aven Interrupter",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Creature — Bird Rogue",
+    "oracleText": "Flash\nFlying\nWhen this creature enters, exile target spell. It becomes plotted. (Its owner may cast it as a sorcery on a later turn without paying its mana cost.)\nSpells your opponents cast from graveyards or from exile cost {2} more to cast.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH",
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ExileTargetSpell",
+                    "makePlotted": true
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {},
+                        "zone": "Stack"
+                    },
+                    "id": "spell"
+                },
+                "descriptionOverride": "When this creature enters, exile target spell. It becomes plotted."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "OpponentsCastFromZones",
+                    "zones": [
+                        "Graveyard",
+                        "Exile"
+                    ]
+                },
+                "modification": {
+                    "type": "IncreaseGeneric",
+                    "amount": 2
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "4",
+        "rarity": "RARE",
+        "artist": "Daniel Romanovsky",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/3/d3ca43a4-d194-440f-8099-f1fa103a108d.jpg?1712355236",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Spells that can't be countered can still be exiled by Aven Interrupter's triggered ability. They won't resolve."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "If the plotted card's owner casts it, the spell has no relation to the spell that player originally cast. Any choices made for the original spell aren't carried over to the new one."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You can't cast a plotted card on the same turn it became plotted."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Badlands Revival
 {
     "name": "Badlands Revival",
@@ -5001,6 +5080,59 @@
         "artist": "José Parodi",
         "flavorText": "\"We should have taken the blasted ferry!\"\n—Hope Hagan, prospector",
         "imageUri": "https://cards.scryfall.io/normal/front/6/2/62bbe11b-e959-4080-98ac-09bd57519c00.jpg?1712355418"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Fblthp, Lost on the Range
+{
+    "name": "Fblthp, Lost on the Range",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Legendary Creature — Homunculus",
+    "oracleText": "Ward {2}\nYou may look at the top card of your library any time.\nThe top card of your library has plot. The plot cost is equal to its mana cost.\nYou may plot nonland cards from the top of your library.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{2}"
+            }
+        }
+    ],
+    "script": {
+        "staticAbilities": [
+            "LookAtTopOfLibrary",
+            "PlotFromTopOfLibrary"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "rarity": "RARE",
+        "artist": "Brian Valeza",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/1/01d3e6ea-4791-4948-af22-c1bd04c34c1e.jpg?1712355420",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "If the top card of your library normally has plot, you may plot that card using its own plot cost or the plot cost given to it by Fblthp."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "If you plot the top card of your library, you must exile that card and pay its plot cost before you may look at the new top card of your library."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You can't cast a plotted card on the same turn it became plotted."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -13043,6 +13175,71 @@
     ]
 }
 
+// Roxanne, Starfall Savant
+{
+    "name": "Roxanne, Starfall Savant",
+    "manaCost": "{3}{R}{G}",
+    "typeLine": "Legendary Creature — Cat Druid",
+    "oracleText": "Whenever Roxanne enters or attacks, create a tapped colorless artifact token named Meteorite with \"When this token enters, it deals 2 damage to any target\" and \"{T}: Add one mana of any color.\"\nWhenever you tap an artifact token for mana, add one mana of any type that artifact token produced.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Meteorite",
+                    "tapped": true
+                },
+                "descriptionOverride": "Whenever Roxanne enters, create a tapped Meteorite token."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Meteorite",
+                    "tapped": true
+                },
+                "descriptionOverride": "Whenever Roxanne attacks, create a tapped Meteorite token."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "AdditionalManaOnSourceTap",
+                "sourceFilter": "artifact token ctrl:you"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "228",
+        "rarity": "RARE",
+        "artist": "Ina Wong",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/1/11fbe52f-febd-49fc-8391-28d3efe9c3eb.jpg?1712356193",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "You're tapping an artifact token for mana only if you're activating a mana ability of that token that includes the tap symbol ({T}) in its cost."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "The additional mana is produced by Roxanne, not by the artifact token that you tapped for mana."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN"
+    ]
+}
+
 // Rush of Dread
 {
     "name": "Rush of Dread",
@@ -16830,6 +17027,114 @@
             {
                 "date": "2024-04-12",
                 "text": "You can't choose the same mode more than once."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Unscrupulous Contractor
+{
+    "name": "Unscrupulous Contractor",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Human Assassin",
+    "oracleText": "When this creature enters, you may sacrifice a creature. When you do, target player draws two cards and loses 2 life.\nPlot {2}{B} (You may pay {2}{B} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "PLOT"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Plot",
+            "cost": "{2}{B}"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "SelectTarget",
+                                "requirement": {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you"
+                                    }
+                                },
+                                "storeAs": "creatureToSacrifice"
+                            },
+                            {
+                                "type": "SacrificeTarget",
+                                "target": {
+                                    "type": "PipelineTarget",
+                                    "collectionName": "creatureToSacrifice"
+                                }
+                            }
+                        ]
+                    },
+                    "reflexiveEffect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            },
+                            {
+                                "type": "LoseLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                }
+                            }
+                        ]
+                    },
+                    "reflexiveTargetRequirements": [
+                        "TargetPlayer"
+                    ],
+                    "descriptionOverride": "You may sacrifice a creature. When you do, target player draws two cards and loses 2 life."
+                },
+                "descriptionOverride": "When this creature enters, you may sacrifice a creature. When you do, target player draws two cards and loses 2 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "112",
+        "rarity": "UNCOMMON",
+        "artist": "Mila Pesic",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/e/9e56a8df-db04-4a88-a5ab-6954d3449976.jpg?1712355703",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "You don't choose a target for Unscrupulous Contractor's ability at the time it triggers. Rather, a second \"reflexive\" ability triggers if you sacrifice a creature this way. You choose a target for that ability as it goes on the stack."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You can't cast a plotted card on the same turn it became plotted. On any future turn, you may cast that card from exile without paying its mana cost during your main phase while the stack is empty."
             }
         ]
     },

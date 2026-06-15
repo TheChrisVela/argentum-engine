@@ -152,25 +152,32 @@ class MakePlottedExecutor : EffectExecutor<MakePlottedEffect> {
         var newState = state
         val events = mutableListOf<GameEvent>()
         for (cardId in collection) {
-            val cardName = newState.getEntity(cardId)?.get<CardComponent>()?.name ?: "card"
+            val cardComponent = newState.getEntity(cardId)?.get<CardComponent>()
+            val cardName = cardComponent?.name ?: "card"
+            // CR 718.2: a plotted card's owner is the player who may later cast it for free.
+            // For "you plot a card you own" effects the owner is the controller anyway; for
+            // "exile target spell, it becomes plotted" (Aven Interrupter) the spell's owner —
+            // not the player who plotted it — gets the free-cast permission.
+            val plottedController =
+                if (effect.ownerControls) (cardComponent?.ownerId ?: controllerId) else controllerId
             newState = newState.updateEntity(cardId) { container ->
                 container
-                    .with(PlottedComponent(controllerId = controllerId, turnPlotted = newState.turnNumber))
-                    .with(PlayWithoutPayingCostComponent(controllerId = controllerId, permanent = true))
+                    .with(PlottedComponent(controllerId = plottedController, turnPlotted = newState.turnNumber))
+                    .with(PlayWithoutPayingCostComponent(controllerId = plottedController, permanent = true))
             }
             val (permId, stateWithPerm) = newState.newEntity()
             newState = stateWithPerm.addMayPlayPermission(
                 MayPlayPermission(
                     id = permId,
                     cardIds = setOf(cardId),
-                    controllerId = controllerId,
+                    controllerId = plottedController,
                     sourceId = cardId,
                     condition = SourcePlottedOnPriorTurn,
                     permanent = true,
                     timestamp = newState.timestamp,
                 )
             )
-            events.add(CardPlottedEvent(controllerId, cardId, cardName))
+            events.add(CardPlottedEvent(plottedController, cardId, cardName))
         }
 
         return EffectResult.success(newState, events)
