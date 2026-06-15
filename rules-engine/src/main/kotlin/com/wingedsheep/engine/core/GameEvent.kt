@@ -336,7 +336,15 @@ data class SpellCastEvent(
      * `ContextPropertyKey.MODES_CHOSEN_ON_TRIGGERING_SPELL` for cards like Riku of Many
      * Paths whose triggered ability scales by the cast's mode count.
      */
-    val chosenModesCount: Int = 0
+    val chosenModesCount: Int = 0,
+    /**
+     * Mana value of the cast spell (CR 202.3), captured at cast time. Distinct from
+     * [totalManaSpent] (actual mana paid, which can differ with cost reductions, alternative
+     * costs, or X). Feeds `ContextPropertyKey.TRIGGERING_SPELL_MANA_VALUE` so payoffs that key
+     * off "a spell with equal or lesser mana value" (Kellan, the Kid) read the printed value of
+     * the spell that fired the trigger, not the mana spent on it.
+     */
+    val manaValue: Int = 0
 ) : GameEvent
 
 /**

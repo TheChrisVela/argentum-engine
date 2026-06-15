@@ -7124,6 +7124,70 @@
     ]
 }
 
+// Ghired, Mirror of the Wilds
+{
+    "name": "Ghired, Mirror of the Wilds",
+    "manaCost": "{R}{G}{W}",
+    "typeLine": "Legendary Creature — Human Shaman",
+    "oracleText": "Haste\nNontoken creatures you control have \"{T}: Create a token that's a copy of target token you control that entered this turn.\"",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "HASTE"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantActivatedAbility",
+                "ability": {
+                    "id": "ability_1",
+                    "cost": "CostTap",
+                    "effect": {
+                        "type": "CreateTokenCopyOfTarget",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": {
+                                    "cardPredicates": [
+                                        "IsToken"
+                                    ],
+                                    "statePredicates": [
+                                        "EnteredThisTurn"
+                                    ],
+                                    "controllerPredicate": "ControlledByYou"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "filter": {
+                    "baseFilter": "creature nontoken ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "205",
+        "rarity": "MYTHIC",
+        "artist": "Diego Gisbert",
+        "flavorText": "\"The Conclave was soft. The Clans were trapped beasts. Here in this untamed wilderness, nature can truly roam free.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e43e3d71-4fb8-4ab1-8c8f-b65ae3ad4cc4.jpg?1712356098"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // Giant Beaver
 {
     "name": "Giant Beaver",
@@ -9218,6 +9282,168 @@
     ]
 }
 
+// Jace Reawakened
+{
+    "name": "Jace Reawakened",
+    "manaCost": "{U}{U}",
+    "typeLine": "Legendary Planeswalker — Jace",
+    "oracleText": "You can't cast Jace Reawakened during your first, second, or third turns of the game.\n+1: Draw a card, then discard a card.\n+1: You may exile a nonland card with mana value 3 or less from your hand. If you do, it becomes plotted.\n−6: Until end of turn, whenever you cast a spell, copy it. You may choose new targets for the copy.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 1 card to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "filter": "nonland mv<=3"
+                            },
+                            "storeAs": "handCards"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "handCards",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "nonland mv<=3",
+                            "storeSelected": "toPlot",
+                            "selectedLabel": "Exile and plot"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toPlot",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "MakePlotted",
+                            "from": "toPlot"
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -6
+                },
+                "effect": {
+                    "type": "CopyEachSpellCast",
+                    "spellFilter": {}
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            }
+        ],
+        "castRestrictions": [
+            {
+                "type": "CastOnlyIfCondition",
+                "condition": {
+                    "type": "Not",
+                    "condition": {
+                        "type": "ControllerTurnsTakenAtMost",
+                        "threshold": 3
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "271",
+        "rarity": "MYTHIC",
+        "artist": "Cristi Balanescu",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd17e8d4-499e-4005-ae3c-bc9c44dc5a67.jpg?1712356388",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Jace Reawakened's last ability copies any spell you cast, not just instant and sorcery spells. The copy is created on the stack, so it's not \"cast.\""
+            },
+            {
+                "date": "2024-04-12",
+                "text": "A plotted card is exiled face up. You may cast it as a sorcery on a later turn without paying its mana cost, but not on the turn it became plotted."
+            }
+        ]
+    },
+    "startingLoyalty": 3,
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Jagged Barrens
 {
     "name": "Jagged Barrens",
@@ -9839,6 +10065,210 @@
         "GREEN",
         "BLUE",
         "WHITE"
+    ]
+}
+
+// Kellan, the Kid
+{
+    "name": "Kellan, the Kid",
+    "manaCost": "{G}{W}{U}",
+    "typeLine": "Legendary Creature — Human Faerie Rogue",
+    "oracleText": "Flying, lifelink\nWhenever you cast a spell from anywhere other than your hand, you may cast a permanent spell with equal or lesser mana value from your hand without paying its mana cost. If you don't, you may put a land card from your hand onto the battlefield.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        {
+                            "type": "SpellCastFromZoneOtherThan",
+                            "zone": "Hand"
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.DoAction",
+                        "action": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand",
+                                        "filter": "permanent"
+                                    },
+                                    "storeAs": "kellanCandidates"
+                                },
+                                {
+                                    "type": "FilterCollection",
+                                    "from": "kellanCandidates",
+                                    "filter": {
+                                        "type": "ManaValueAtMost",
+                                        "max": {
+                                            "type": "ContextProperty",
+                                            "key": "TRIGGERING_SPELL_MANA_VALUE"
+                                        }
+                                    },
+                                    "storeMatching": "kellanEligible"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "kellanEligible",
+                                    "selection": {
+                                        "type": "ChooseUpTo",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    },
+                                    "storeSelected": "kellanChosen",
+                                    "selectedLabel": "Cast without paying its mana cost"
+                                },
+                                {
+                                    "type": "CastFromCollectionWithoutPayingCost",
+                                    "from": "kellanChosen",
+                                    "storeCastTo": "kellanCast"
+                                }
+                            ]
+                        },
+                        "successCriterion": {
+                            "type": "SuccessCriterion.CollectionNonEmpty",
+                            "name": "kellanCast"
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": []
+                    },
+                    "otherwise": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand",
+                                    "filter": "land"
+                                },
+                                "storeAs": "put_candidates"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "put_candidates",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "putting"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "putting",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "213",
+        "rarity": "MYTHIC",
+        "artist": "Magali Villeneuve",
+        "flavorText": "\"I found out who I was. Now it's time to discover who I am.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/04dfbc4c-ab21-45db-bbd9-b9d245d60015.jpg?1712356134",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Kellan's ability resolves before the spell that caused it to trigger."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "If you cast a permanent spell this way, you don't get to put a land onto the battlefield, even if you couldn't cast a spell with equal or lesser mana value."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "WHITE",
+        "BLUE"
+    ]
+}
+
+// Kraum, Violent Cacophony
+{
+    "name": "Kraum, Violent Cacophony",
+    "manaCost": "{2}{U}{R}",
+    "typeLine": "Legendary Creature — Zombie Horror",
+    "oracleText": "Flying\nWhenever you cast your second spell each turn, put a +1/+1 counter on Kraum and draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "NthSpellCastEvent",
+                    "nthSpell": 2,
+                    "player": "You"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "214",
+        "rarity": "UNCOMMON",
+        "artist": "Artur Nakhodkin",
+        "flavorText": "Concerned for his apprentice's welfare, Ludevic sent his greatest creation to make sure Geralf got into the right kind of trouble.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/5/958a3e6b-7e20-40ea-8b2c-7c728934b5e5.jpg?1712356134"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
     ]
 }
 

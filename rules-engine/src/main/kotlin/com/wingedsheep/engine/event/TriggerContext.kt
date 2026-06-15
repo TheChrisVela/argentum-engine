@@ -77,6 +77,13 @@ data class TriggerContext(
      */
     val manaSpentOnTriggeringSpell: Int? = null,
     /**
+     * For SpellCastEvent triggers — mana value (CR 202.3) of the triggering spell. `null` when
+     * the trigger was not driven by a spell cast. Read by
+     * `ContextPropertyKey.TRIGGERING_SPELL_MANA_VALUE` so abilities like Kellan, the Kid can
+     * gate "a permanent spell with equal or lesser mana value."
+     */
+    val manaValueOfTriggeringSpell: Int? = null,
+    /**
      * Power of the creature the trigger's source (an Aura/Equipment) was attached to, captured
      * when the trigger fired. Carried as last-known information (CR 608.2h) so that an
      * "enchanted creature deals damage equal to its power" ability still uses the right power
@@ -155,7 +162,8 @@ data class TriggerContext(
                     triggeringEntityId = event.spellEntityId,
                     triggeringPlayerId = event.casterId,
                     modesChosenCount = event.chosenModesCount.takeIf { it > 0 },
-                    manaSpentOnTriggeringSpell = event.totalManaSpent.takeIf { it > 0 }
+                    manaSpentOnTriggeringSpell = event.totalManaSpent.takeIf { it > 0 },
+                    manaValueOfTriggeringSpell = event.manaValue.takeIf { it > 0 }
                 )
                 is CardsDrawnEvent -> TriggerContext(triggeringPlayerId = event.playerId)
                 is com.wingedsheep.engine.core.ScriedEvent -> TriggerContext(

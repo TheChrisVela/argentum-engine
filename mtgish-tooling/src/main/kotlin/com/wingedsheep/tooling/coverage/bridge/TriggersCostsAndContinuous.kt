@@ -78,6 +78,10 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // loot, rendered by the emitter as MayEffect(IfYouDoEffect(...)). Universal condition vocabulary.
     supported("CostWasPaid", "condition: the optional cost was paid (IfYouDoEffect linkage)")
     supported("WasCastFromTheirHand", "predicate: spell cast from the player's hand (fromZone = HAND)")
+    // The negation — "a spell from anywhere other than your hand" (Kellan, the Kid). Backed by
+    // SpellCastPredicate.CastFromZoneOtherThan(Zone.HAND). The trigger itself is coverable even
+    // though Kellan's free-cast-or-play-land body declines to SCAFFOLD in the emitter.
+    supported("WasntCastFromTheirHand", "predicate: spell cast from a zone other than the player's hand (CastFromZoneOtherThan(HAND))")
     // Source-relative Mount/Vehicle payoff filter: "a creature that crewed/saddled it this turn"
     // (Giant Beaver) -> GameObjectFilter.Creature.crewedOrSaddledSourceThisTurn().
     supported("SaddledPermanentThisTurn", "filter: a creature that saddled this permanent this turn (crewedOrSaddledSourceThisTurn)")

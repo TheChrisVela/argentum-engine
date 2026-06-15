@@ -1220,6 +1220,11 @@ class TriggerMatcher(
             val spellComponent = state.getEntity(event.spellEntityId)?.get<SpellOnStackComponent>()
             spellComponent?.castFromZone == predicate.zone
         }
+        is SpellCastPredicate.CastFromZoneOtherThan -> {
+            val spellComponent = state.getEntity(event.spellEntityId)?.get<SpellOnStackComponent>()
+            val from = spellComponent?.castFromZone
+            from != null && from != predicate.zone
+        }
         SpellCastPredicate.WasKicked -> event.wasKicked
         is SpellCastPredicate.PaidWithManaFromSubtype -> when (predicate.subtype) {
             Subtype.TREASURE -> event.paidWithTreasureMana
@@ -1252,7 +1257,8 @@ class TriggerMatcher(
                 triggerScryCount = trigger.triggerContext.scryCount,
                 triggerExcessDamageAmount = trigger.triggerContext.excessDamageAmount,
                 triggerRecipientToughness = trigger.triggerContext.recipientToughnessAtDamage,
-                triggerManaSpentOnTriggeringSpell = trigger.triggerContext.manaSpentOnTriggeringSpell
+                triggerManaSpentOnTriggeringSpell = trigger.triggerContext.manaSpentOnTriggeringSpell,
+                triggerManaValueOfTriggeringSpell = trigger.triggerContext.manaValueOfTriggeringSpell
             )
             conditionEvaluator.evaluate(state, condition, context)
         }
