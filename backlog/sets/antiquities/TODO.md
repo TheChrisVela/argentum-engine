@@ -44,7 +44,7 @@ the work; **confirm during implementation.**
 
 ---
 
-## ✅ List A — Implementable WITHOUT engine work (57 cards)
+## ✅ List A — Implementable WITHOUT engine work (52 cards)
 
 Compose from existing primitives. Items tagged **(verify)** are composable but non-trivial —
 confirm the noted clause during `add-card`; if it surprises you, move it to List B.
@@ -80,26 +80,14 @@ confirm the noted clause during `add-card`; if it surprises you, move it to List
 - **Strip Mine** — `{T}`: add `{C}`; `{T}, Sacrifice`: destroy target land.
 
 ### (verify) — composable but confirm the noted clause
-- **Circle of Protection: Artifacts** — `{2}`: prevent next damage from a chosen *artifact*
-  source (`Effects.PreventAllDamageFromChosenSource` filtered to artifacts).
-- **Martyrs of Korlis** — redirect artifact damage to itself while untapped
-  (`RedirectDamage` replacement, source=artifacts; **verify** gating the replacement on "untapped").
-- **Drafna's Restoration** — put any number of target artifact cards from a GY on top of
-  library in any order (**verify** multi-target GY→library-top ordering).
 - **Gate to Phyrexia** — `Sacrifice a creature`: destroy target artifact; only your upkeep,
   once each turn (**verify** `ActivationRestriction.OncePerTurn` + upkeep timing).
-- **Xenic Poltergeist** — `{T}`: until your next upkeep, target noncreature artifact becomes
-  an artifact creature P/T = its mana value (`Effects.BecomeCreature` + dynamic MV +
-  `Duration.UntilYourNextUpkeep`).
 - **Yawgmoth Demon** — flying, first strike; upkeep "may sacrifice an artifact; if you don't,
   tap it and it deals 2 to you" (**verify** optional-sac-else Tap+Damage on self).
 - **Detonate** — `{X}{R}`: destroy target artifact with mana value X (no regen) + X damage to
   controller (**verify** target filtered by the chosen X).
 - **Dwarven Weaponsmith** — `{T}, Sacrifice an artifact`: +1/+1 counter on target creature;
   only your upkeep (**verify** upkeep timing).
-- **Goblin Artisans** — `{T}`: flip a coin; win → draw, lose → counter your own artifact spell
-  (`FlipCoinEffect`; **verify** counter-own-spell branch; the "another Goblin Artisans"
-  targeting clause is obscure).
 - **Argothian Pixies** — can't be blocked by artifact creatures + prevent all damage from
   artifact creatures (`CantBeBlockedBy(filter)` + `PreventDamage` static; **verify** source-filtered static prevention).
 - **Argothian Treefolk** — prevent all damage from artifact sources (`PreventDamage` static; **verify**).
@@ -134,7 +122,7 @@ confirm the noted clause during `add-card`; if it surprises you, move it to List
 
 ---
 
-## 🔧 List B — NEEDS ENGINE WORK (25 cards), grouped by missing mechanic
+## 🔧 List B — NEEDS ENGINE WORK (30 cards), grouped by missing mechanic
 
 Each group is a candidate single feature PR. Confirm with `add-card` before building.
 
@@ -206,6 +194,24 @@ suppression, or untap-count restriction primitive exists.
   `OwnedByReferencedPlayer`). (Originally triaged into List A; reclassified during implementation —
   the only "(clean)" card that turned out to need engine work.)
 
+### Reclassified from List A during implementation (confirmed engine gaps)
+- **Circle of Protection: Artifacts** — needs a "choose an **artifact** source, prevent its next
+  damage" prevention filter. `PreventionSourceFilter` has `ChosenSource` / `ChosenColoredSource` /
+  `ChosenCreatureType` but no `ChosenArtifactSource`; the executor only supports a `coloredOnly`
+  constraint. `ChosenSource` alone would silently drop the artifact restriction.
+- **Martyrs of Korlis** — `RedirectDamage` (and `EventPattern.DamageEvent`) has no condition slot,
+  so the redirect can't be gated on "as long as this creature is **untapped**." Needs a
+  conditional/restricted replacement effect.
+- **Xenic Poltergeist** — needs `BecomeCreature` with **dynamic** P/T equal to the target's own
+  mana value. `BecomeCreatureEffect` takes only fixed `Int` P/T; `SetBasePowerEffect` is dynamic
+  but power-only and doesn't add the creature type. No dynamic-P/T animate primitive.
+- **Drafna's Restoration** — needs (a) an "**any number of target** cards in a **separately
+  targeted** player's graveyard" predicate (same owned/controlled-by-target-player family as
+  Hurkyl's Recall) and (b) player-chosen **ordering** of a target collection onto the library top.
+- **Goblin Artisans** — coin-flip + targeted counter composes, but "…that isn't the target of an
+  ability from another creature named Goblin Artisans" needs a self-referential targeting-
+  restriction predicate that doesn't exist. Skipped rather than ship with the clause dropped.
+
 ### Postpone (no engine support, by project policy)
 - **Bronze Tablet** — ante zone. The engine has no ante support; postpone, consistent with the
   ARN ante stance (see memory: "Postpone ante cards").
@@ -218,4 +224,4 @@ suppression, or untap-count restriction primitive exists.
   citing it — never a web source.
 - The "(verify)" tags in List A mark the cards most likely to surprise you into List B during
   `add-card`; everything else in List A should compose cleanly.
-- Counts: 3 done + 57 List A + 25 List B = 85.
+- Counts: 3 done + 52 List A + 30 List B = 85.
