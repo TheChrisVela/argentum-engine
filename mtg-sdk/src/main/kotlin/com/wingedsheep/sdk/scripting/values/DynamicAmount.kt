@@ -990,4 +990,35 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
         override val description: String = "the number of creatures that crewed or saddled it this turn"
     }
 
+    /**
+     * The number of permanents of creature [subtype] that entered the battlefield under
+     * [player]'s control this turn (counting even those that have since left or changed type —
+     * the entry event is what's tracked). When [excludeTriggeringEntity] is true, the permanent
+     * whose entry triggered the ability is not counted, giving "each *other* [subtype]" wording
+     * (Geralf, the Fleshwright). Simultaneous entries each see the others (2024-04-12 ruling).
+     *
+     * Backed by `PermanentsEnteredUnderControlThisTurnComponent`; the triggering entity is read
+     * from the resolution context's triggering-entity id.
+     */
+    @SerialName("SubtypeEnteredUnderControlThisTurn")
+    @Serializable
+    data class SubtypeEnteredUnderControlThisTurn(
+        val player: Player,
+        val subtype: com.wingedsheep.sdk.core.Subtype,
+        val excludeTriggeringEntity: Boolean = false
+    ) : DynamicAmount {
+        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount {
+            val new = replacer.replaceSubtype(subtype)
+            return if (new == subtype) this else copy(subtype = new)
+        }
+        override val description: String = buildString {
+            append("the number of ")
+            if (excludeTriggeringEntity) append("other ")
+            append(subtype.value)
+            append("s that entered the battlefield under ")
+            append(player.possessive)
+            append(" control this turn")
+        }
+    }
+
 }

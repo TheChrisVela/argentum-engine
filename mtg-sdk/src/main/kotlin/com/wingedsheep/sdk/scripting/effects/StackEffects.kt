@@ -345,6 +345,21 @@ sealed interface WardCost {
     data class Sacrifice(val filter: GameObjectFilter) : WardCost {
         override val description: String = "a ${filter.description}"
     }
+
+    /**
+     * A ward cost made of two or more component costs that must *all* be paid — e.g.
+     * "Ward—{2}, Pay 2 life." (Gisa, the Hellraiser). The components are paid one at a time
+     * in order; declining or being unable to pay any one component counters the spell or
+     * ability (CR 702.21a — a single ward cost whose payment is composed of multiple parts).
+     *
+     * Nesting another [Composite] inside [parts] is not supported (and not needed by any
+     * printed card); keep [parts] a flat list of atomic ward costs.
+     */
+    @SerialName("WardCost.Composite")
+    @Serializable
+    data class Composite(val parts: List<WardCost>) : WardCost {
+        override val description: String = parts.joinToString(", ") { it.description }
+    }
 }
 
 /**
@@ -365,6 +380,7 @@ data class WardCounterEffect(
         is WardCost.Life -> "Counter it unless its controller pays ${cost.amount} life"
         is WardCost.Discard -> "Counter it unless its controller discards ${cost.description}"
         is WardCost.Sacrifice -> "Counter it unless its controller sacrifices ${cost.description}"
+        is WardCost.Composite -> "Counter it unless its controller pays ${cost.description}"
     }
 }
 

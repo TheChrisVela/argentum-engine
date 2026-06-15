@@ -91,14 +91,15 @@ internal val zoneHandlers: Map<String, ActionHandler> = actionHandlers {
     }
 
     // "Exile the top card of your library." (the first half of the impulse-draw idiom — Irascible
-    // Wolverine, Alania's Pathmaker). The exiled card is stored under the shared "exiledCard" key that
+    // Wolverine, Alania's Pathmaker). The exiled card is stored under the shared "impulseExiled" key that
     // the paired `CreatePlayerEffectUntil{MayPlayExiledCard(TheCardExiledThisWay)}` action reads to grant
     // the may-play window (see TapLayerStateHandlers' CreatePlayerEffectUntil branch). The exile itself is
-    // the gather + move-to-exile atomic pair.
+    // the gather + move-to-exile atomic pair, matching `Patterns.Exile.impulse(1)`'s default storeAs key
+    // so the emitted tree is gameplay-equivalent to the hand-authored facade call.
     on("ExileTopCardOfLibrary") { _, _, _ ->
         Composite(listOf(
-            Lit("GatherCardsEffect(CardSource.TopOfLibrary(DynamicAmount.Fixed(1)), storeAs = \"exiledCard\")"),
-            Lit("MoveCollectionEffect(from = \"exiledCard\", destination = CardDestination.ToZone(Zone.EXILE))"),
+            Lit("GatherCardsEffect(CardSource.TopOfLibrary(DynamicAmount.Fixed(1)), storeAs = \"impulseExiled\")"),
+            Lit("MoveCollectionEffect(from = \"impulseExiled\", destination = CardDestination.ToZone(Zone.EXILE))"),
         ))
     }
 

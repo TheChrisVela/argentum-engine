@@ -724,6 +724,36 @@ data class PermanentTypesEnteredBattlefieldThisTurnComponent(
 data class LandsEnteredUnderControlThisTurnComponent(val count: Int = 0) : Component
 
 /**
+ * One permanent that entered the battlefield under a player's control this turn, captured for
+ * subtype-keyed "for each [creature type] that entered the battlefield under your control this
+ * turn" counts (Geralf, the Fleshwright). [subtypes] is snapshotted from the **projected** state
+ * at the instant of entry, so a permanent that was a Zombie when it entered still counts even
+ * after it leaves the battlefield or loses the type (CR 603.10 last-known style — the entry event
+ * is what matters, not current state). [entityId] lets a triggered ability exclude the permanent
+ * that caused it to trigger ("each *other* Zombie", and simultaneous entries per the 2024-04-12
+ * ruling).
+ */
+@Serializable
+data class EnteredPermanentRecord(
+    val entityId: EntityId,
+    val subtypes: Set<String> = emptySet()
+)
+
+/**
+ * Tracks every permanent that entered the battlefield under this player's control during the
+ * current turn, with the subtypes each had at entry. Populated by `PermanentEntryTracker.record`
+ * (exactly once per ETB) and cleared at end of turn by [CleanupPhaseManager].
+ *
+ * Backs `DynamicAmount.SubtypeEnteredUnderControlThisTurn(player, subtype, excludeTriggeringEntity)`
+ * — "for each [other] [subtype] that entered the battlefield under your control this turn"
+ * (Geralf, the Fleshwright). Counts entries even if the permanent has since left or changed type.
+ */
+@Serializable
+data class PermanentsEnteredUnderControlThisTurnComponent(
+    val entries: List<EnteredPermanentRecord> = emptyList()
+) : Component
+
+/**
  * Marker component indicating that this player has put a counter on a creature this turn.
  * Cleared at end of turn by CleanupPhaseManager.
  *

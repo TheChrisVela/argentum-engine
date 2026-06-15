@@ -36,6 +36,7 @@ import com.wingedsheep.engine.state.components.player.FlashGrantsThisTurnCompone
 import com.wingedsheep.engine.state.components.player.CardsLeftGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.player.LandDropsComponent
 import com.wingedsheep.engine.state.components.player.LandsEnteredUnderControlThisTurnComponent
+import com.wingedsheep.engine.state.components.player.PermanentsEnteredUnderControlThisTurnComponent
 import com.wingedsheep.engine.state.components.player.LifeGainedAmountThisTurnComponent
 import com.wingedsheep.engine.state.components.player.LifeGainedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.LifeLostThisTurnComponent
@@ -475,6 +476,9 @@ class CleanupPhaseManager(
                 }
                 if (result.has<LandsEnteredUnderControlThisTurnComponent>()) {
                     result = result.without<LandsEnteredUnderControlThisTurnComponent>()
+                }
+                if (result.has<PermanentsEnteredUnderControlThisTurnComponent>()) {
+                    result = result.without<PermanentsEnteredUnderControlThisTurnComponent>()
                 }
                 if (result.has<PutCounterOnCreatureThisTurnComponent>()) {
                     result = result.without<PutCounterOnCreatureThisTurnComponent>()

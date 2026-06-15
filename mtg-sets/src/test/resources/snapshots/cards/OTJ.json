@@ -236,6 +236,113 @@
     ]
 }
 
+// Annie Flash, the Veteran
+{
+    "name": "Annie Flash, the Veteran",
+    "manaCost": "{3}{R}{G}{W}",
+    "typeLine": "Legendary Creature — Human Rogue",
+    "oracleText": "Flash\nWhen Annie Flash enters, if you cast it, return target permanent card with mana value 3 or less from your graveyard to the battlefield tapped.\nWhenever Annie Flash becomes tapped, exile the top two cards of your library. You may play those cards this turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "permanent card with mana value 3 or less from your graveyard"
+                    },
+                    "destination": "Battlefield",
+                    "placement": "Tapped"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "permanent mv<=3 own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "permanent card with mana value 3 or less from your graveyard"
+                },
+                "triggerCondition": "WasCast",
+                "descriptionOverride": "When Annie Flash enters, if you cast it, return target permanent card with mana value 3 or less from your graveyard to the battlefield tapped."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "TapEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeAs": "impulseExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "impulseExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "impulseExiled"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever Annie Flash becomes tapped, exile the top two cards of your library. You may play those cards this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "190",
+        "rarity": "MYTHIC",
+        "artist": "Kieran Yanner",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8d4af7c3-a70d-4f71-b27d-b268c4a0f81e.jpg?1712356036",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Annie Flash's second ability triggers if you cast it from any zone. It doesn't trigger if you put Annie Flash onto the battlefield without casting it."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "A permanent card is an artifact, battle, creature, enchantment, land, or planeswalker card."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "If the mana cost of a card in your graveyard includes {X}, X is 0 for the purpose of determining its mana value."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You pay all costs and follow all normal timing rules for cards played from exile with Annie Flash's last ability. For example, if the exiled card is a land card, you may play it only during your main phase while the stack is empty."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "GREEN",
+        "WHITE"
+    ]
+}
+
 // Annie Joins Up
 {
     "name": "Annie Joins Up",
@@ -1045,6 +1152,98 @@
         "imageUri": "https://cards.scryfall.io/normal/front/6/8/68b2e74b-933b-4285-963b-dda3a986a914.jpg?1712356248"
     },
     "colorIdentityOverride": []
+}
+
+// Baron Bertram Graywater
+{
+    "name": "Baron Bertram Graywater",
+    "manaCost": "{2}{W}{B}",
+    "typeLine": "Legendary Creature — Vampire Noble",
+    "oracleText": "Whenever one or more tokens you control enter, create a 1/1 black Vampire Rogue creature token with lifelink. This ability triggers only once each turn.\n{1}{B}, Sacrifice another creature or artifact: Draw a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "PermanentsEnteredEvent",
+                    "filter": "token"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Vampire",
+                        "Rogue"
+                    ],
+                    "keywords": [
+                        "LIFELINK"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/5/5/55a35e07-9d80-4f2b-a000-5638b72a9808.jpg?1712316236"
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever one or more tokens you control enter, create a 1/1 black Vampire Rogue creature token with lifelink. This ability triggers only once each turn."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature|artifact",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "{1}{B}, Sacrifice another creature or artifact: Draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "195",
+        "rarity": "UNCOMMON",
+        "artist": "Johan Grenier",
+        "flavorText": "\"Of course the law's on my side. I wrote it.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/9/e9da18b4-1efc-44b7-8001-a2cfd44c69bf.jpg?1712356055",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "If Baron Bertram Graywater enters under your control and is itself a token, its own ability will trigger and you'll create a Vampire Rogue token. If you also control a nontoken Baron Bertram Graywater, that one's ability will also trigger, netting you another Vampire Rogue."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
 }
 
 // Beastbond Outcaster
@@ -6383,6 +6582,92 @@
     ]
 }
 
+// Geralf, the Fleshwright
+{
+    "name": "Geralf, the Fleshwright",
+    "manaCost": "{2}{U}",
+    "typeLine": "Legendary Creature — Human Warlock",
+    "oracleText": "Whenever you cast a spell during your turn other than your first spell that turn, create a 2/2 blue and black Zombie Rogue creature token.\nWhenever a Zombie you control enters, put a +1/+1 counter on it for each other Zombie that entered the battlefield under your control this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "SpellCastEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "BLUE",
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Zombie",
+                        "Rogue"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/7/4/74c7a0bd-6011-495a-b56c-8fa707dd7f12.jpg?1712316777"
+                },
+                "triggerCondition": {
+                    "type": "All",
+                    "conditions": [
+                        "IsYourTurn",
+                        {
+                            "type": "PlayerCastSpellsThisTurn",
+                            "atLeast": 2
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever you cast a spell during your turn other than your first spell that turn, create a 2/2 blue and black Zombie Rogue creature token."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature Zombie ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddDynamicCounters",
+                    "counterType": "+1/+1",
+                    "amount": {
+                        "type": "SubtypeEnteredUnderControlThisTurn",
+                        "player": "You",
+                        "subtype": "Zombie",
+                        "excludeTriggeringEntity": true
+                    },
+                    "target": "TriggeringEntity"
+                },
+                "descriptionOverride": "Whenever a Zombie you control enters, put a +1/+1 counter on it for each other Zombie that entered the battlefield under your control this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "50",
+        "rarity": "MYTHIC",
+        "artist": "Chris Rahn",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/f/afe3b678-b340-4c53-bbf6-19252a809d73.jpg?1712355427",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Geralf's first ability will consider spells you cast before it was on the battlefield. For example, if Geralf is the first spell you cast during your turn, each subsequent spell you cast that turn after it's on the battlefield will cause its first ability to trigger."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "If multiple Zombies enter the battlefield under your control at the same time, Geralf's last ability will trigger for each of those Zombies. Each of those triggered abilities will see each of those other Zombies that entered the battlefield plus any other Zombies that entered the battlefield under your control so far this turn."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Getaway Glamer
 {
     "name": "Getaway Glamer",
@@ -6713,6 +6998,133 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Gisa, the Hellraiser
+{
+    "name": "Gisa, the Hellraiser",
+    "manaCost": "{3}{B}{B}",
+    "typeLine": "Legendary Creature — Human Warlock",
+    "oracleText": "Ward—{2}, Pay 2 life.\nSkeletons and Zombies you control get +1/+1 and have menace.\nWhenever you commit a crime, create two tapped 2/2 blue and black Zombie Rogue creature tokens. This ability triggers only once each turn. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Composite",
+                "parts": [
+                    {
+                        "type": "WardCost.Mana",
+                        "manaCost": "{2}"
+                    },
+                    {
+                        "type": "WardCost.Life",
+                        "amount": 2
+                    }
+                ]
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CommitCrimeEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "BLUE",
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Zombie",
+                        "Rogue"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/7/4/74c7a0bd-6011-495a-b56c-8fa707dd7f12.jpg?1712316777",
+                    "tapped": true
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever you commit a crime, create two tapped 2/2 blue and black Zombie Rogue creature tokens. This ability triggers only once each turn."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 1,
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "HasAnyOfSubtypes",
+                                "subtypes": [
+                                    "Skeleton",
+                                    "Zombie"
+                                ]
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    }
+                }
+            },
+            {
+                "type": "GrantKeyword",
+                "keyword": "MENACE",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature",
+                            {
+                                "type": "HasAnyOfSubtypes",
+                                "subtypes": [
+                                    "Skeleton",
+                                    "Zombie"
+                                ]
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "rarity": "MYTHIC",
+        "artist": "Chris Rahn",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/db7c07b2-02b2-4e62-bf1b-4848e06eec28.jpg?1712355592",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "A player commits a crime as they cast a spell, activate an ability, or put a triggered ability on the stack that targets at least one opponent, at least one permanent, spell, or ability an opponent controls, and/or at least one card in an opponent's graveyard."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "The spell or ability that constituted a crime doesn't have to have resolved yet or at all. As soon as you're finished casting the spell, activating the ability, or putting the triggered ability on the stack, you've committed a crime."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "A player can commit only one crime per spell or ability they control. Targeting multiple opponents, permanents, spells, abilities, and/or cards with the same spell or ability doesn't constitute committing multiple crimes."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -8383,11 +8795,11 @@
                                     "amount": 1
                                 }
                             },
-                            "storeAs": "exiledCard"
+                            "storeAs": "impulseExiled"
                         },
                         {
                             "type": "MoveCollection",
-                            "from": "exiledCard",
+                            "from": "impulseExiled",
                             "destination": {
                                 "type": "ToZone",
                                 "zone": "Exile"
@@ -8395,7 +8807,7 @@
                         },
                         {
                             "type": "GrantMayPlayFromExile",
-                            "from": "exiledCard"
+                            "from": "impulseExiled"
                         }
                     ]
                 }

@@ -8520,9 +8520,9 @@ val StromkirkOccultist = card("Stromkirk Occultist") {
     triggeredAbility {
         trigger = Triggers.DealsCombatDamageToPlayer
         effect = Effects.Composite(
-            GatherCardsEffect(CardSource.TopOfLibrary(DynamicAmount.Fixed(1)), storeAs = "exiledCard"),
-            MoveCollectionEffect(from = "exiledCard", destination = CardDestination.ToZone(Zone.EXILE)),
-            GrantMayPlayFromExileEffect("exiledCard", MayPlayExpiry.EndOfTurn)
+            GatherCardsEffect(CardSource.TopOfLibrary(DynamicAmount.Fixed(1)), storeAs = "impulseExiled"),
+            MoveCollectionEffect(from = "impulseExiled", destination = CardDestination.ToZone(Zone.EXILE)),
+            GrantMayPlayFromExileEffect("impulseExiled", MayPlayExpiry.EndOfTurn)
         )
     }
     // STRUCTURE needs human wiring: Madness

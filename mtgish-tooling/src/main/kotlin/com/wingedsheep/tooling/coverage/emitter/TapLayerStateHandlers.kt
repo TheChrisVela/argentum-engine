@@ -230,9 +230,10 @@ internal val tapLayerStateHandlers: Map<String, ActionHandler> = actionHandlers 
         }
         // "Until end of turn / end of your next turn, you may play that card." — the second half of the
         // impulse-draw idiom (Irascible Wolverine, Alania's Pathmaker). The grant reads the card the paired
-        // `ExileTopCardOfLibrary` action stashed under "exiledCard". Only the controller-scoped grant on the
-        // card-exiled-this-way renders, and only for the two expirations the MayPlayExpiry facade names;
-        // any other player scope or expiration declines (-> SCAFFOLD) rather than emit a wrong window.
+        // `ExileTopCardOfLibrary` action stashed under "impulseExiled" (matching `Patterns.Exile.impulse`'s
+        // default storeAs key). Only the controller-scoped grant on the card-exiled-this-way renders, and
+        // only for the two expirations the MayPlayExpiry facade names; any other player scope or expiration
+        // declines (-> SCAFFOLD) rather than emit a wrong window.
         if (jsonContains(node, "_PlayerEffect", "MayPlayExiledCard") &&
             jsonContains(node, "_CardInExile", "TheCardExiledThisWay") &&
             jsonContains(node, "_Player", "You")
@@ -242,7 +243,7 @@ internal val tapLayerStateHandlers: Map<String, ActionHandler> = actionHandlers 
                 "UntilEndOfNextTurn" -> "MayPlayExpiry.UntilEndOfNextTurn"
                 else -> return@on null
             }
-            return@on call("GrantMayPlayFromExileEffect", arg("\"exiledCard\""), arg(Lit(expiry)))
+            return@on call("GrantMayPlayFromExileEffect", arg("\"impulseExiled\""), arg(Lit(expiry)))
         }
         null
     }

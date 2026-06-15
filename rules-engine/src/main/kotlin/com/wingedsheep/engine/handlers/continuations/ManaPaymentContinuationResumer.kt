@@ -208,6 +208,14 @@ class ManaPaymentContinuationResumer(
             val events = listOf<GameEvent>(
                 LifeChangedEvent(playerId, currentLife, newLife, LifeChangeReason.PAYMENT)
             )
+            // If this life cost was one component of a composite ward cost, charge the next
+            // component before the spell is allowed to resolve.
+            chargeNextWardPartOrNull(
+                newState, events,
+                continuation.remainingWardParts, continuation.spellEntityId,
+                continuation.payingPlayerId, continuation.wardSourceId, continuation.controllerId,
+                checkForMore
+            )?.let { return it }
             return checkForMore(newState, events)
         } else {
             val counterResult = if (continuation.exileOnCounter) {
@@ -288,6 +296,12 @@ class ManaPaymentContinuationResumer(
         if (discardResult.error != null) return discardResult
         if (discardResult.isPaused) return discardResult
 
+        chargeNextWardPartOrNull(
+            discardResult.newState, discardResult.events.toList(),
+            continuation.remainingWardParts, continuation.spellEntityId,
+            continuation.payingPlayerId, continuation.wardSourceId, continuation.controllerId,
+            checkForMore
+        )?.let { return it }
         return checkForMore(discardResult.newState, discardResult.events.toList())
     }
 
@@ -350,6 +364,12 @@ class ManaPaymentContinuationResumer(
             events.addAll(transitionResult.events)
         }
 
+        chargeNextWardPartOrNull(
+            newState, events.toList(),
+            continuation.remainingWardParts, continuation.spellEntityId,
+            continuation.payingPlayerId, continuation.wardSourceId, continuation.controllerId,
+            checkForMore
+        )?.let { return it }
         return checkForMore(newState, events)
     }
 
@@ -459,7 +479,9 @@ class ManaPaymentContinuationResumer(
                         pendingSubCostSources = subCostSources,
                         availableSources = continuation.availableSources,
                         onPaid = continuation.onPaid,
-                        sourceId = continuation.sourceId
+                        sourceId = continuation.sourceId,
+                        remainingWardParts = continuation.remainingWardParts,
+                        wardSourceId = continuation.wardSourceId
                     )
                 }
             }
@@ -489,6 +511,15 @@ class ManaPaymentContinuationResumer(
             )
         }
 
+        // If this mana cost was one component of a composite ward cost, charge the next
+        // component before the spell is allowed to resolve.
+        chargeNextWardPartOrNull(
+            currentState, events,
+            continuation.remainingWardParts, continuation.spellEntityId,
+            continuation.payingPlayerId, continuation.wardSourceId, continuation.controllerId,
+            checkForMore
+        )?.let { return it }
+
         // Spell resolves normally — don't counter it.
         return runOnPaidThenCheckForMore(
             currentState,
@@ -498,6 +529,54 @@ class ManaPaymentContinuationResumer(
             continuation.sourceId,
             checkForMore
         )
+    }
+
+    /**
+     * If [remainingWardParts] is non-empty, charge the next component of a composite ward cost
+     * (CR 702.21a — "Ward—{2}, Pay 2 life") and return the resulting [ExecutionResult] (a new
+     * pause for the next component's decision, or a resolved/countered result). Returns `null`
+     * when there are no further ward components, so the caller proceeds with the spell resolving.
+     *
+     * [priorEvents] (e.g. the LifeChangedEvent / tap events from the just-paid component) are
+     * prepended to the next component's events so nothing is dropped across the chain.
+     */
+    private fun chargeNextWardPartOrNull(
+        state: GameState,
+        priorEvents: List<GameEvent>,
+        remainingWardParts: List<com.wingedsheep.sdk.scripting.effects.WardCost>,
+        spellEntityId: EntityId,
+        payingPlayerId: EntityId,
+        wardSourceId: EntityId?,
+        controllerId: EntityId?,
+        checkForMore: CheckForMore
+    ): ExecutionResult? {
+        if (remainingWardParts.isEmpty()) return null
+
+        // The spell/ability must still be on the stack; if it left, there's nothing left to pay for.
+        val container = state.getEntity(spellEntityId)
+        if (container == null || !state.stack.contains(spellEntityId)) {
+            return checkForMore(state, priorEvents)
+        }
+
+        val next = com.wingedsheep.engine.handlers.effects.stack.WardCounterEffectExecutor
+            .chargeWardCost(
+                state = state,
+                cardRegistry = services.cardRegistry,
+                cost = remainingWardParts.first(),
+                remainingParts = remainingWardParts.drop(1),
+                spellEntityId = spellEntityId,
+                container = container,
+                payingPlayerId = payingPlayerId,
+                wardSourceId = wardSourceId,
+                controllerId = controllerId
+            ).toExecutionResult()
+
+        if (next.error != null) return next
+        return if (next.isPaused) {
+            ExecutionResult.paused(next.state, next.pendingDecision!!, priorEvents + next.events)
+        } else {
+            checkForMore(next.state, priorEvents + next.events)
+        }
     }
 
     /**
@@ -1185,7 +1264,9 @@ class ManaPaymentContinuationResumer(
         pendingSubCostSources: List<EntityId>,
         availableSources: List<ManaSourceOption>,
         onPaid: com.wingedsheep.sdk.scripting.effects.Effect? = null,
-        sourceId: EntityId? = null
+        sourceId: EntityId? = null,
+        remainingWardParts: List<com.wingedsheep.sdk.scripting.effects.WardCost> = emptyList(),
+        wardSourceId: EntityId? = null
     ): ExecutionResult {
         val headSourceId = pendingSubCostSources.first()
         val sourceName = availableSources.firstOrNull { it.entityId == headSourceId }?.name
@@ -1236,7 +1317,9 @@ class ManaPaymentContinuationResumer(
             pendingSubCostSources = pendingSubCostSources,
             availableSources = availableSources,
             onPaid = onPaid,
-            sourceId = sourceId
+            sourceId = sourceId,
+            remainingWardParts = remainingWardParts,
+            wardSourceId = wardSourceId
         )
 
         val stateWithDecision = state.withPendingDecision(decision)
@@ -1353,7 +1436,9 @@ class ManaPaymentContinuationResumer(
                 pendingSubCostSources = remaining,
                 availableSources = continuation.availableSources,
                 onPaid = continuation.onPaid,
-                sourceId = continuation.sourceId
+                sourceId = continuation.sourceId,
+                remainingWardParts = continuation.remainingWardParts,
+                wardSourceId = continuation.wardSourceId
             )
         }
 
@@ -1380,6 +1465,15 @@ class ManaPaymentContinuationResumer(
                 )
             )
         }
+        // If this mana component was one part of a composite ward cost, charge the next
+        // component before the spell is allowed to resolve.
+        chargeNextWardPartOrNull(
+            currentState, events,
+            continuation.remainingWardParts, continuation.spellEntityId,
+            continuation.payingPlayerId, continuation.wardSourceId, continuation.controllerId,
+            checkForMore
+        )?.let { return it }
+
         // Payment fully resolved through the sub-cost source — fire the "If they do, …"
         // rider (no-op when null), with the counter's controller as "you".
         return runOnPaidThenCheckForMore(

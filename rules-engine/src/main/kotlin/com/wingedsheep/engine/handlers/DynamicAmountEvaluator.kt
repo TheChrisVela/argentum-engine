@@ -454,6 +454,22 @@ class DynamicAmountEvaluator(
                 }
             }
 
+            is DynamicAmount.SubtypeEnteredUnderControlThisTurn -> {
+                val playerIds = resolveUnifiedPlayerIds(state, amount.player, context)
+                val wanted = amount.subtype.value
+                val excludeId = if (amount.excludeTriggeringEntity) context.triggeringEntityId else null
+                playerIds.sumOf { playerId ->
+                    val entries = state.getEntity(playerId)
+                        ?.get<com.wingedsheep.engine.state.components.player.PermanentsEnteredUnderControlThisTurnComponent>()
+                        ?.entries
+                        ?: emptyList()
+                    entries.count { rec ->
+                        rec.entityId != excludeId &&
+                            rec.subtypes.any { it.equals(wanted, ignoreCase = true) }
+                    }
+                }
+            }
+
         }
     }
 

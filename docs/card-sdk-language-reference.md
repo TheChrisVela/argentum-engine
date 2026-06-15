@@ -996,6 +996,7 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
 - `eachOpponentMayPutFromHand(filter?)` — each opponent may dump a matching card.
 - `putFromHand(filter?, count?, entersTapped?)` — you may put N from hand onto battlefield.
 - `incubate(n)` — make an Incubator token with N counters.
+- `impulse(count?, expiry?)` — impulse draw: exile the top N of your library, may play those cards until `expiry` (default end of turn); played cards still pay their mana. For the play-free variant compose with `GrantPlayWithoutPayingCostEffect` (cf. `shuffleAndExileTopPlayFree`). Irascible Wolverine (1), Annie Flash, the Veteran (2).
 - `returnLinkedExile(underOwnersControl?)` — bring back linked exile pile.
 - `takeFromLinkedExile()` — pull one card from linked exile.
 - `shuffleGraveyardIntoLibrary(target?)` — Elixir of Immortality shape.
@@ -2486,6 +2487,12 @@ composite abilities).
   and `WardCost.Sacrifice(filter)` ("Ward—Sacrifice a Food", Ygra). For sacrifice ward, the opponent
   chooses which matching permanent(s) they control to sacrifice (declining counters their spell); valid
   fodder is matched against projected state, so subtypes granted by continuous effects count.
+  Composite costs ("Ward—{2}, Pay 2 life", Gisa, the Hellraiser) use
+  `KeywordAbility.wardComposite(WardCost.Mana("{2}"), WardCost.Life(2))` → `WardCost.Composite(parts)`.
+  The components are charged one at a time in order; the spell/ability resolves only if every
+  component is paid, and declining or being unable to pay any one component counters it (CR 702.21a).
+  Each component reuses the same per-cost decision flow as a standalone ward, so a composite cost
+  shows one prompt per component. `parts` must be flat atomic ward costs (no nested `Composite`).
 - `Protection(color)` — protection from a single color.
 - `ProtectionFrom(set)` — protection from a set of colors/types.
 - `Protection(ProtectionScope.Supertype("Legendary"))` / `KeywordAbility.protectionFromSupertype("Legendary")` — protection from a supertype, e.g. "protection from legendary creatures" (Tsabo Tavoc). Enforced across targeting, blocking, and combat damage via projected `PROTECTION_FROM_SUPERTYPE_<X>` keywords.
@@ -3425,6 +3432,16 @@ of `AddMana`. The engine empties pools at end of turn, so:
   `CardsDrawnThisTurnComponent`, reset to 0 for every player at turn start). Powers
   characteristic-defining stats like Duelist of the Mind's "power is equal to the number of
   cards you've drawn this turn" via `dynamicPower = CharacteristicValue.dynamic(TurnTracking(You, CARDS_DRAWN))`.
+
+`SubtypeEnteredUnderControlThisTurn(player, subtype, excludeTriggeringEntity?)` /
+`DynamicAmounts.subtypeEnteredUnderControlThisTurn(subtype, player?, excludeTriggeringEntity?)` —
+"the number of [other] [subtype]s that entered the battlefield under [player]'s control this turn"
+(Geralf, the Fleshwright — "each other Zombie that entered the battlefield under your control this
+turn"). It's a **turn-history** count: backed by `PermanentsEnteredUnderControlThisTurnComponent`,
+which records each entrant's subtypes (from projected state) at entry, so a permanent that has since
+left the battlefield or lost the type still counts. `excludeTriggeringEntity = true` drops the
+permanent whose entry triggered the ability (giving "each *other*"); because every simultaneous
+entrant is recorded before the triggers resolve, each one sees the others (2024-04-12 ruling).
 
 ---
 

@@ -75,6 +75,7 @@ sealed interface KeywordAbility {
             is WardCost.Life -> "Ward—Pay ${cost.amount} life"
             is WardCost.Discard -> "Ward—Discard ${cost.description}"
             is WardCost.Sacrifice -> "Ward—Sacrifice ${cost.description}"
+            is WardCost.Composite -> "Ward—${cost.description}"
         }
     }
 
@@ -647,6 +648,14 @@ sealed interface KeywordAbility {
          */
         fun wardSacrifice(filter: GameObjectFilter): KeywordAbility =
             Ward(WardCost.Sacrifice(filter))
+
+        /**
+         * Create Ward with a composite cost — all components must be paid. E.g.
+         * `wardComposite(WardCost.Mana("{2}"), WardCost.Life(2))` for "Ward—{2}, Pay 2 life"
+         * (Gisa, the Hellraiser).
+         */
+        fun wardComposite(vararg parts: WardCost): KeywordAbility =
+            Ward(WardCost.Composite(parts.toList()))
 
         /**
          * Create Hexproof from a color.

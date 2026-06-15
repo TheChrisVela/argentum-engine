@@ -298,6 +298,21 @@ object DynamicAmounts {
         DynamicAmount.TurnTracking(player, TurnTracker.LANDS_ENTERED_UNDER_CONTROL)
 
     /**
+     * "The number of [other] [subtype]s that entered the battlefield under [player]'s control
+     * this turn" (Geralf, the Fleshwright — "each other Zombie that entered the battlefield under
+     * your control this turn"). Counts entries even after the permanent has left or changed type.
+     * Set [excludeTriggeringEntity] for "each *other*" — drops the permanent whose entry triggered
+     * the ability (and, for simultaneous entries, lets each entrant see the others per the
+     * 2024-04-12 ruling).
+     */
+    fun subtypeEnteredUnderControlThisTurn(
+        subtype: com.wingedsheep.sdk.core.Subtype,
+        player: Player = Player.You,
+        excludeTriggeringEntity: Boolean = false
+    ): DynamicAmount =
+        DynamicAmount.SubtypeEnteredUnderControlThisTurn(player, subtype, excludeTriggeringEntity)
+
+    /**
      * "The number of times [player] descended this turn" (CR 700.11) — count of
      * nontoken permanent cards put into [player]'s graveyard from any zone this turn.
      * Used by the descend N / fathomless descent ability words.
