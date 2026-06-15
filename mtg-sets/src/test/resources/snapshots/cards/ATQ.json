@@ -336,6 +336,51 @@
     "colorIdentityOverride": []
 }
 
+// Citanul Druid
+{
+    "name": "Citanul Druid",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Human Druid",
+    "oracleText": "Whenever an opponent casts an artifact spell, put a +1/+1 counter on this creature.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsArtifact"
+                        ]
+                    },
+                    "player": "Opponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "31",
+        "rarity": "UNCOMMON",
+        "artist": "Jeff A. Menges",
+        "flavorText": "Driven mad by the fall of Argoth, the Citanul Druids found peace only in battle.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/8/f8a130dc-3b1f-4fae-8459-b26bb5647fec.jpg?1562947598"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Clay Statue
 {
     "name": "Clay Statue",
