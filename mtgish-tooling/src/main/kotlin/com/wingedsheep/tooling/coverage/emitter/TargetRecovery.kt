@@ -39,6 +39,18 @@ import kotlinx.serialization.json.JsonObject
  * `…Expr(…)?.let(::render)` wrapper so callers above still receive the historical String.
  */
 
+/** The SDK [com.wingedsheep.sdk.core.Color] enum names — the only colours that render as a static
+ *  `Color.X`. A filter IR colour token outside this set (e.g. "the chosen color" / "that color") has no
+ *  static representation. */
+private val SDK_COLOR_NAMES = setOf("WHITE", "BLUE", "BLACK", "RED", "GREEN")
+
+/** The uppercased `Color.X` enum names for each colour [token], or null if ANY token is not one of the
+ *  five real colours. Returning null forces the caller to decline (→ SCAFFOLD) rather than emit an
+ *  invalid enum like `Color.THECHOSENCOLOR` (chosen-colour shapes) or silently drop the colour clause
+ *  (which would wrongly widen the filter to every colour). */
+internal fun colorEnumNames(tokens: List<String>): List<String>? =
+    tokens.map { it.uppercase() }.takeIf { upper -> upper.all { it in SDK_COLOR_NAMES } }
+
 /**
  * Single source of truth for the filter-predicate suffixes recovered from the mtgish filter IR. The
  * TargetFilter renderer ([creatureFilterExpr]) and the GameObjectFilter renderer ([gameObjectFilterExpr])
@@ -297,11 +309,11 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
     // Color recovery, IsColor/IsNonColor-scoped: a single colour -> .withColor / .notColor; several
     // colours under an Or ("white or black creature") -> .withAnyColor so the extra colours aren't
     // dropped. Multiple excluded colours chain as .notColor (AND-of-not = "neither X nor Y").
-    filterNode.colorsOf("IsNonColor").forEach { node = node.dot("notColor", arg("Color.${it.uppercase()}")) }
-    val colors = filterNode.colorsOf("IsColor")
+    (colorEnumNames(filterNode.colorsOf("IsNonColor")) ?: return null).forEach { node = node.dot("notColor", arg("Color.$it")) }
+    val colors = colorEnumNames(filterNode.colorsOf("IsColor")) ?: return null
     when {
-        colors.size == 1 -> node = node.dot("withColor", arg("Color.${colors[0].uppercase()}"))
-        colors.size > 1 -> node = node.dot("withAnyColor", *colors.map { arg("Color.${it.uppercase()}") }.toTypedArray())
+        colors.size == 1 -> node = node.dot("withColor", arg("Color.${colors[0]}"))
+        colors.size > 1 -> node = node.dot("withAnyColor", *colors.map { arg("Color.$it") }.toTypedArray())
     }
     // "...with flying" / "...without flying" — withoutFlying first, since a DoesntHaveAbility Flying
     // clause also satisfies the plain-Flying string check (mirrors gameObjectFilterExpr).
@@ -642,8 +654,8 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
         // scaffolds rather than counter the wrong spells (Confound).
         if ("TargetsA" in blob) return null
         val types = targetTypes(args)
-        val colors = args.colorsOf("IsColor")
-        val nonColors = args.colorsOf("IsNonColor")
+        val colors = colorEnumNames(args.colorsOf("IsColor")) ?: return null
+        val nonColors = colorEnumNames(args.colorsOf("IsNonColor")) ?: return null
         val nonTypes = args.argWordsTagged("IsNonCardtype")
         if (types.isEmpty() && colors.isEmpty() && nonColors.isEmpty() && nonTypes == listOf("Creature")) {
             return Call("TargetSpell", listOf(arg("filter", "TargetFilter.NoncreatureSpellOnStack")))
@@ -653,15 +665,15 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
         // "neither X nor Y"; each excluded colour chains as .notColor. SDK supports it on SpellOnStack.
         if (types.isEmpty() && colors.isEmpty() && nonColors.isNotEmpty()) {
             var f: Dsl = Lit("TargetFilter.SpellOnStack")
-            nonColors.forEach { f = f.dot("notColor", arg("Color.${it.uppercase()}")) }
+            nonColors.forEach { f = f.dot("notColor", arg("Color.$it")) }
             return Call("TargetSpell", listOf(arg("filter", f)))
         }
         if (nonColors.isNotEmpty()) return null  // nonColor + (type | positive colour) combo not rendered -> SCAFFOLD
         // "counter target blue spell" — a colour-restricted spell on the stack.
         if (types.isEmpty() && colors.isNotEmpty()) {
             var f: Dsl = Lit("TargetFilter.SpellOnStack")
-            f = if (colors.size == 1) f.dot("withColor", arg("Color.${colors[0].uppercase()}"))
-                else f.dot("withAnyColor", *colors.map { arg("Color.${it.uppercase()}") }.toTypedArray())
+            f = if (colors.size == 1) f.dot("withColor", arg("Color.${colors[0]}"))
+                else f.dot("withAnyColor", *colors.map { arg("Color.$it") }.toTypedArray())
             return Call("TargetSpell", listOf(arg("filter", f)))
         }
         if (colors.isNotEmpty()) return null  // colour + type combo not rendered yet -> SCAFFOLD
@@ -868,6 +880,12 @@ internal fun EmitCtx.gameObjectFilterExpr(filterNode: JsonElement?): Dsl? {
     // effect to every creature on the battlefield. Decline so radiance scaffolds rather than emitting a
     // confidently-wrong mass effect (Cleansing Beam, Surge of Zeal, the Wojek pingers).
     if ("SharesAColorWithPermanent" in blob) return null
+    // "each of the target permanents" (Felidar Savior's "+1/+1 counter on each of up to two target
+    // creatures") arrives as a `Ref_TargetPermanent(s)` reference, NOT a battlefield filter. The bare
+    // `"Permanent" in blob` arm below would misread it (the substring is inside `Ref_TargetPermanents`)
+    // as GameObjectFilter.Permanent and widen the effect to EVERY permanent, so decline (-> SCAFFOLD):
+    // a target-reference group has no static GroupFilter rendering.
+    if ("Ref_TargetPermanent" in blob) return null
     // "...that was dealt damage this turn" has no GroupFilter helper — decline rather than widen the group.
     if ("WasDealtDamageThisTurn" in blob) return null
     // "creatures you control WITH +1/+1 counters on them" (Badgermole's trample lord): a
@@ -945,7 +963,7 @@ internal fun EmitCtx.gameObjectFilterExpr(filterNode: JsonElement?): Dsl? {
         "Permanent" in blob -> Lit("GameObjectFilter.Permanent")
         else -> return null
     }
-    val colors = filterNode.wordsAtKey("_Color").map { it.uppercase() }.distinct()
+    val colors = (colorEnumNames(filterNode.wordsAtKey("_Color")) ?: return null).distinct()
     if (colors.size > 1 && "\"Or\"" in blob) {
         node = node.dot("withAnyColor", *colors.map { arg("Color.$it") }.toTypedArray())
     } else if (colors.size == 1) {
@@ -1034,7 +1052,10 @@ internal fun EmitCtx.revealedHandFilterExpr(filterNode: JsonElement?): Dsl? {
     if (landType == null && color == null) return null
     val parts = mutableListOf<Dsl>()
     if (landType != null) parts.add(Lit("GameObjectFilter.Land").dot("withSubtype", arg(subtypeArg(landType))))
-    if (color != null) parts.add(Lit("GameObjectFilter.Any").dot("withColor", arg("Color.${color.uppercase()}")))
+    if (color != null) {
+        val colorName = colorEnumNames(listOf(color))?.singleOrNull() ?: return null
+        parts.add(Lit("GameObjectFilter.Any").dot("withColor", arg("Color.$colorName")))
+    }
     return Infix("or", parts, parenthesized = parts.size > 1)
 }
 
@@ -1093,10 +1114,10 @@ internal fun EmitCtx.landSearchFilterExpr(filterNode: JsonElement?): Dsl {
             var out: Dsl = Lit("GameObjectFilter.Creature")
             // "black and/or red creature" -> withAnyColor; a single colour -> withColor; fall back to the
             // oracle's "black creature" wording only when the filter node carries no structured colour.
-            val colors = filterNode.colorsOf("IsColor")
+            val colors = colorEnumNames(filterNode.colorsOf("IsColor")).orEmpty()
             when {
-                colors.size > 1 -> out = out.dot("withAnyColor", *colors.map { arg("Color.${it.uppercase()}") }.toTypedArray())
-                colors.size == 1 -> out = out.dot("withColor", arg("Color.${colors[0].uppercase()}"))
+                colors.size > 1 -> out = out.dot("withAnyColor", *colors.map { arg("Color.$it") }.toTypedArray())
+                colors.size == 1 -> out = out.dot("withColor", arg("Color.${colors[0]}"))
                 "black creature" in oracle -> out = out.dot("withColor", arg("Color.BLACK"))
             }
             if ("tapped creature" in oracle) out = out.dot("tapped")

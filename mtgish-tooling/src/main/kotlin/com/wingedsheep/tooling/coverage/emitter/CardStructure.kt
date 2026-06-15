@@ -2417,6 +2417,9 @@ internal fun EmitCtx.abilityCostDsl(node: JsonElement?): String? {
         "ExileGraveyardCard" ->
             if (obj.field("args").strField("_GraveyardCard") == "ThisGraveyardCard") "Costs.ExileSelf" else null
         "SacrificeAPermanent" -> costFilterDsl(obj.field("args"))?.let {
+            // "Sacrifice ANOTHER <permanent>" carries an `Other(ThisPermanent)` clause (Hungry Ghoul:
+            // "Sacrifice another creature"); render Costs.SacrificeAnother (excludeSelf) so the source
+            // can't pay by sacrificing itself. A bare "Sacrifice a <permanent>" stays Costs.Sacrifice.
             val another = jsonContains(obj.field("args"), "_Permanents", "Other") &&
                 jsonContains(obj.field("args"), "_Permanent", "ThisPermanent")
             when {

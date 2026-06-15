@@ -255,7 +255,21 @@ internal fun EmitCtx.renderEachPlayer(node: JsonObject): Dsl? {
     // "each player returns a permanent they control to its owner's hand" (Words of Wind's replacement).
     if (jsonContains(node, "_Players", "AnyPlayer") && "PutAPermanentIntoItsOwnersHand" in blob)
         return call("Effects.EachPlayerReturnPermanentToHand")
-    if (jsonContains(node, "_Players", "Opponent") && "Discard" in blob) return call("Patterns.Hand.eachOpponentDiscards", arg("1"))  // Noxious Toad
+    // Noxious Toad: `EachPlayerAction(Opponent, DiscardACard)` — the opponent's ONLY action is the
+    // discard. Arbiter of Woe is `EachPlayerActions(Opponent, [DiscardACard, LoseLife])`; collapsing to
+    // eachOpponentDiscards would silently drop the life loss, so inspect the opponent-scoped action
+    // list (args[1], a single action or a nested list) and render only when its sole action is the
+    // discard — otherwise decline (-> SCAFFOLD) rather than emit a lossy card.
+    if (jsonContains(node, "_Players", "Opponent") && "Discard" in blob) {
+        val opponentActions = when (val second = node["args"].asArr?.getOrNull(1)) {
+            is JsonArray -> second.filterIsInstance<JsonObject>()
+            is JsonObject -> listOf(second)
+            else -> emptyList()
+        }
+        return if (opponentActions.singleOrNull()?.strField("_Action") == "DiscardACard")
+            call("Patterns.Hand.eachOpponentDiscards", arg("1"))
+        else null
+    }
     // "Each opponent sacrifices a <filter> of their choice" (Lorehold Charm). The sacrificing player
     // chooses, scoped to every opponent via ForceSacrificeEffect over EffectTarget.PlayerRef(EachOpponent).
     // Only a renderable filter and a count-of-one form render; anything else scaffolds.
