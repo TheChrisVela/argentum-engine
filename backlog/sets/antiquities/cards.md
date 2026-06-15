@@ -2,7 +2,7 @@
 
 **Set Size:** 85 cards
 **Release Date:** March 4, 1994
-**Implemented:** 6 / 85
+**Implemented:** 12 / 85
 | Color       | Count |
 |-------------|-------|
 | White       | 7     |
@@ -66,7 +66,7 @@
 - [ ] Titania's Song
 
 ### Artifacts
-- [ ] Amulet of Kroog
+- [x] Amulet of Kroog
 - [ ] Armageddon Clock
 - [ ] Ashnod's Altar
 - [ ] Ashnod's Battle Gear
@@ -79,23 +79,23 @@
 - [ ] Colossus of Sardia
 - [ ] Coral Helm
 - [ ] Cursed Rack
-- [ ] Dragon Engine
+- [x] Dragon Engine
 - [ ] Feldon's Cane
 - [ ] Golgothian Sylex
-- [ ] Grapeshot Catapult
+- [x] Grapeshot Catapult
 - [ ] Ivory Tower
 - [x] Jalum Tome
-- [ ] Mightstone
+- [x] Mightstone
 - [ ] Millstone
 - [ ] Mishra's War Machine
 - [ ] Obelisk of Undoing
-- [ ] Onulet
+- [x] Onulet
 - [x] Ornithopter
 - [ ] Primal Clay
 - [ ] Rakalite
 - [ ] Rocket Launcher
 - [ ] Shapeshifter
-- [ ] Staff of Zegon
+- [x] Staff of Zegon
 - [ ] Su-Chi
 - [ ] Tablet of Epityr
 - [ ] Tawnos's Coffin

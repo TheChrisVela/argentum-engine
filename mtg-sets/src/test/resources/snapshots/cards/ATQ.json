@@ -35,6 +35,51 @@
     "colorIdentityOverride": []
 }
 
+// Dragon Engine
+{
+    "name": "Dragon Engine",
+    "manaCost": "{3}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "{2}: This creature gets +1/+0 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}"
+                    }
+                },
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "49",
+        "artist": "Anson Maddocks",
+        "flavorText": "Those who believed the city of Kroog would never fall to Mishra's forces severely underestimated the might of his war machines.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/7/07793a71-1106-4303-b620-e403bd378020.jpg?1562896584"
+    },
+    "colorIdentityOverride": []
+}
+
 // Jalum Tome
 {
     "name": "Jalum Tome",
