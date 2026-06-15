@@ -318,6 +318,8 @@ sealed, or premade), then one N-player game".
 - **`CreateTournamentLobby` / `UpdateLobbySettings`** gain an optional `gameMode` (default
   `TOURNAMENT`). `LobbySettings.gameMode` echoes it. Switching a lobby to `FREE_FOR_ALL` caps
   `maxPlayers` at 6 and rejects AI seats (the built-in AI is 1v1-only; FFA pods are humans-only).
+  `TWO_HEADED_GIANT` and `TEAM_VS_TEAM` are the two **team** modes (see below); both also reject AI
+  seats and share the single-pod FFA lifecycle (one `GameSession`, play-again, standings).
 - **Attack rule.** The same two messages also carry an optional `attackMode` (default `MULTIPLE`),
   echoed by `LobbySettings.attackMode`, choosing which opponents creatures may attack in the FFA
   game (CR 802 / 803; CR 806.2b requires exactly one): `MULTIPLE` (any opponent), `LEFT`, or
@@ -325,14 +327,24 @@ sealed, or premade), then one N-player game".
   `GameConfig.attackMode` → `GameState.attackMode`; the legal-action enumerator filters
   `validAttackTargets` and the engine rejects an out-of-seat declaration. Ignored in `TOURNAMENT`
   mode and in any two-player game (all three modes permit the sole opponent).
-- **Two-Headed Giant teams (CR 810).** When `gameMode` is `TWO_HEADED_GIANT`, the same two messages
-  carry an optional `randomTeams` (default **`true`**) and `teamAssignments` (playerId → team index
-  `0`/`1`, full map), both echoed by `LobbySettings`. `randomTeams = true` shuffles the four seats
-  into two teams of two at game start, re-rolled each game; `false` uses the host's
-  `teamAssignments`. At start the server resolves the partition (`TwoHeadedGiantTeams.partition`):
-  random, or the manual map balanced into even teams, falling back to seat-order pairing if the
-  manual assignment can't form two pairs of two. The result flows to `GameSession.teams` →
-  `GameConfig.teams`. Ignored outside `TWO_HEADED_GIANT`.
+- **Team modes — Two-Headed Giant (CR 810) and Team vs. Team (CR 808).** Both split the pod into two
+  even teams and share the same controls: an optional `randomTeams` (default **`true`**) and
+  `teamAssignments` (playerId → team index `0`/`1`, full map), echoed by `LobbySettings`.
+  `randomTeams = true` shuffles the seats into two even teams at game start, re-rolled each game;
+  `false` uses the host's `teamAssignments`. At start the server resolves the partition
+  (`EvenTeams.partition`): random, or the manual map balanced into even teams, falling back to
+  seat-order grouping if the manual assignment can't form two equal teams. The result flows to
+  `GameSession.teams` → `GameConfig.teams`. The two modes differ only in the engine `Format` chosen:
+  - `TWO_HEADED_GIANT` — exactly four players (`Format.TwoHeadedGiant`): teams share one 30-life
+    total, take shared turns, fight combined combat, and win/lose together.
+  - `TEAM_VS_TEAM` — an even pod of 4/6/8 (`Format.TeamVsTeam`, i.e. 2v2/3v3/4v4): **nothing is
+    shared** (CR 808.5). Each player keeps their own 20 life and their own turn, is eliminated
+    individually (CR 104.3b), and a team loses only once all its members have left (CR 104.2c).
+    `maxPlayers` caps at 8.
+
+  The seat roster (`PlayerSeatInfo`) carries `teamIndex` for grouping and a game-level
+  `teamSharedLife` flag (`true` for 2HG, `false` for Team vs. Team) so the client renders either a
+  single shared-life team header or per-player life. Ignored outside a team mode.
 - **Free mulligan.** A game that begins with more than two players (any FFA pod) uses the CR 800.6
   multiplayer mulligan: a player's *first* mulligan is free — it bottoms 0 cards and doesn't count
   toward the mulligan limit. This is engine-internal; the existing `MulliganDecision.cardsToPutOnBottom`

@@ -27,15 +27,16 @@ object CombatDefenders {
         }
 
     /** Every distinct defending player in the current combat: anyone who has a creature attacking
-     *  them (or their planeswalkers/battles) — and, in Two-Headed Giant, their whole team (CR
-     *  805.10a: every member of the nonactive team is a defending player, so an un-attacked teammate
-     *  may still declare blockers to protect the team). In a non-team game `teamOf` is a singleton,
-     *  so this is unchanged. */
+     *  them (or their planeswalkers/battles) — and, under shared team turns (Two-Headed Giant), their
+     *  whole team (CR 805.10a: every member of the nonactive team is a defending player, so an
+     *  un-attacked teammate may still declare blockers to protect the team). Without shared team
+     *  turns — Team vs. Team (CR 808) and non-team games — only the directly-attacked players defend
+     *  (`sharedTurnTeam` is a singleton there), so a teammate can't block for you. */
     fun defendingPlayers(state: GameState): Set<EntityId> =
         state.getBattlefield()
             .mapNotNull { state.getEntity(it)?.get<AttackingComponent>()?.defenderId }
             .map { defendingPlayerOf(state, it) }
-            .flatMap { state.teamOf(it) }
+            .flatMap { state.sharedTurnTeam(it) }
             .toSet()
 
     /** True if [playerId] is a defending player in the current combat. */

@@ -295,6 +295,15 @@ export function useIsTeamGame(): boolean {
   return useGameStore(selectIsTeamGame)
 }
 
+/**
+ * True only for a team game where teammates share one life total (Two-Headed Giant — CR 810).
+ * Team vs. Team (CR 808) is a team game but each player keeps their own life, so this is false —
+ * the rail then shows per-player life instead of a single shared-life team header.
+ */
+export function useIsSharedLifeTeamGame(): boolean {
+  return useGameStore((state) => selectIsTeamGame(state) && state.teamSharedLife)
+}
+
 /** Team index of a player, or null in a non-team game / unknown player. */
 export function useTeamIndex(playerId: EntityId | null): number | null {
   return useGameStore((state) => (playerId ? state.teamByPlayerId?.[playerId] ?? null : null))

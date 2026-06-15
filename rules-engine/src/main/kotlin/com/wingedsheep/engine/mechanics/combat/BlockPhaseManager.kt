@@ -336,14 +336,14 @@ internal class BlockPhaseManager(
         // Check each attacker
         for (attackerId in attackerIds) {
             // CR 509.1b / 805.10d: a creature can only block an attacker that is attacking its
-            // controller (or a planeswalker/battle its controller protects). In Two-Headed Giant
-            // the defending team blocks as one, so a creature may block an attacker aimed at any
-            // member of its team (teamActivePlayers is a singleton in a non-team game, preserving
-            // the plain multiplayer rule).
+            // controller (or a planeswalker/battle its controller protects). Under shared team turns
+            // (Two-Headed Giant) the defending team blocks as one, so a creature may block an attacker
+            // aimed at any teammate; without shared team turns (Team vs. Team — CR 808, non-team
+            // games) sharedTurnTeam is a singleton, so you can only block attackers aimed at you.
             val attacking = state.getEntity(attackerId)?.get<AttackingComponent>()
                 ?: return "${cardComponent.name} can't block: ${attackerId.value} isn't attacking"
             val attackedDefender = CombatDefenders.defendingPlayerOf(state, attacking.defenderId)
-            if (attackedDefender !in state.teamActivePlayers(blockingPlayer)) {
+            if (attackedDefender !in state.sharedTurnTeam(blockingPlayer)) {
                 return "${cardComponent.name} can't block a creature attacking another player"
             }
 

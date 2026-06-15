@@ -45,6 +45,12 @@ export interface BoardViewSliceState {
    * board, shared-life headers).
    */
   teamByPlayerId: Readonly<Record<EntityId, number>>
+  /**
+   * True when teammates share one life total (Two-Headed Giant — CR 810). False for Team vs. Team
+   * (CR 808), where each player has their own life even though they are on a team. Drives whether
+   * the rail shows a single shared-life team header or per-player life.
+   */
+  teamSharedLife: boolean
 }
 
 export interface BoardViewSliceActions {
@@ -63,10 +69,11 @@ export interface BoardViewSliceActions {
   /** Spectator/replay: anchor the bottom half to a seat (null = stream default). */
   setSpectatorBottomSeat: (playerId: EntityId | null) => void
   /**
-   * Stamp the Two-Headed Giant seat → team map from the game-start roster. Pass an empty map for
-   * a non-team game (the default). Persists until the next reset.
+   * Stamp the seat → team map from the game-start roster (2HG / Team vs. Team). Pass an empty map
+   * for a non-team game (the default). [sharedLife] is true only when the team shares one life total
+   * (2HG); Team vs. Team passes false. Persists until the next reset.
    */
-  setSeatTeams: (teamByPlayerId: Record<EntityId, number>) => void
+  setSeatTeams: (teamByPlayerId: Record<EntityId, number>, sharedLife?: boolean) => void
   /** Reset on game start / leave. */
   resetBoardView: () => void
 }
@@ -79,6 +86,7 @@ export const createBoardViewSlice: SliceCreator<BoardViewSlice> = (set, get) => 
   followAction: loadFollowAction(),
   spectatorBottomSeatId: null,
   teamByPlayerId: {},
+  teamSharedLife: false,
 
   viewOpponent: (playerId, opts) => {
     const { gameState, playerId: ownId } = get()
@@ -133,8 +141,9 @@ export const createBoardViewSlice: SliceCreator<BoardViewSlice> = (set, get) => 
   setSpectatorBottomSeat: (playerId) =>
     set({ spectatorBottomSeatId: playerId, viewedOpponentId: null, viewPinned: false }),
 
-  setSeatTeams: (teamByPlayerId) => set({ teamByPlayerId }),
+  setSeatTeams: (teamByPlayerId, sharedLife = false) =>
+    set({ teamByPlayerId, teamSharedLife: sharedLife }),
 
   resetBoardView: () =>
-    set({ viewedOpponentId: null, viewPinned: false, spectatorBottomSeatId: null, teamByPlayerId: {} }),
+    set({ viewedOpponentId: null, viewPinned: false, spectatorBottomSeatId: null, teamByPlayerId: {}, teamSharedLife: false }),
 })

@@ -578,6 +578,9 @@ class LobbyHandler(
             format == TournamentFormat.GRID_DRAFT -> message.maxPlayers.coerceIn(2, 4)
             // Two-Headed Giant is always exactly four seats (two teams of two).
             gameMode == LobbyGameMode.TWO_HEADED_GIANT -> 4
+            // Team vs. Team is two even teams: 4 (2v2), 6 (3v3), or 8 (4v4). The even-pod rule is
+            // re-checked at game start; an odd cap simply never starts a game.
+            gameMode == LobbyGameMode.TEAM_VS_TEAM -> message.maxPlayers.coerceIn(4, 8)
             // FFA pods cap at 6 — the multiplayer UI lays opponent boards out around the table.
             gameMode == LobbyGameMode.FREE_FOR_ALL -> message.maxPlayers.coerceIn(2, 6)
             else -> message.maxPlayers.coerceIn(2, 8)
@@ -2001,26 +2004,42 @@ class LobbyHandler(
                 return
             }
             if (newMode != lobby.gameMode) {
-                if (newMode == LobbyGameMode.FREE_FOR_ALL || newMode == LobbyGameMode.TWO_HEADED_GIANT) {
+                if (newMode != LobbyGameMode.TOURNAMENT) {
                     if (lobby.players.keys.any { aiGameManager.isAiPlayer(it) }) {
-                        val label = if (newMode == LobbyGameMode.TWO_HEADED_GIANT) "Two-Headed Giant" else "Free-for-All"
+                        val label = when (newMode) {
+                            LobbyGameMode.TWO_HEADED_GIANT -> "Two-Headed Giant"
+                            LobbyGameMode.TEAM_VS_TEAM -> "Team vs. Team"
+                            else -> "Free-for-All"
+                        }
                         sender.sendError(session, ErrorCode.INVALID_ACTION, "$label doesn't support AI players yet — remove them first")
                         return
                     }
                 }
-                if (newMode == LobbyGameMode.TWO_HEADED_GIANT) {
-                    // Two teams of two — always exactly four seats.
-                    if (lobby.playerCount > 4) {
-                        sender.sendError(session, ErrorCode.INVALID_ACTION, "Two-Headed Giant is exactly four players")
-                        return
+                when (newMode) {
+                    LobbyGameMode.TWO_HEADED_GIANT -> {
+                        // Two teams of two — always exactly four seats.
+                        if (lobby.playerCount > 4) {
+                            sender.sendError(session, ErrorCode.INVALID_ACTION, "Two-Headed Giant is exactly four players")
+                            return
+                        }
+                        lobby.maxPlayers = 4
                     }
-                    lobby.maxPlayers = 4
-                } else if (newMode == LobbyGameMode.FREE_FOR_ALL) {
-                    if (lobby.playerCount > 6) {
-                        sender.sendError(session, ErrorCode.INVALID_ACTION, "Free-for-All supports at most 6 players")
-                        return
+                    LobbyGameMode.TEAM_VS_TEAM -> {
+                        // Two even teams: at most eight players (4v4).
+                        if (lobby.playerCount > 8) {
+                            sender.sendError(session, ErrorCode.INVALID_ACTION, "Team vs. Team supports at most 8 players")
+                            return
+                        }
+                        lobby.maxPlayers = lobby.maxPlayers.coerceIn(4, 8)
                     }
-                    lobby.maxPlayers = lobby.maxPlayers.coerceIn(2, 6)
+                    LobbyGameMode.FREE_FOR_ALL -> {
+                        if (lobby.playerCount > 6) {
+                            sender.sendError(session, ErrorCode.INVALID_ACTION, "Free-for-All supports at most 6 players")
+                            return
+                        }
+                        lobby.maxPlayers = lobby.maxPlayers.coerceIn(2, 6)
+                    }
+                    LobbyGameMode.TOURNAMENT -> Unit
                 }
                 lobby.gameMode = newMode
             }
@@ -2076,6 +2095,8 @@ class LobbyHandler(
             when {
                 // Two-Headed Giant is locked at four seats — the host can't change it.
                 lobby.isTwoHeadedGiant -> lobby.maxPlayers = 4
+                // Team vs. Team allows 4/6/8 (two even teams), above the FFA board-layout cap of 6.
+                lobby.isTeamVsTeam -> lobby.maxPlayers = it.coerceIn(4, 8)
                 lobby.format == TournamentFormat.WINSTON_DRAFT -> lobby.maxPlayers = 2
                 lobby.format == TournamentFormat.GRID_DRAFT -> lobby.maxPlayers = it.coerceIn(2, 4)
                 else -> lobby.maxPlayers = it.coerceIn(2, modeCap)

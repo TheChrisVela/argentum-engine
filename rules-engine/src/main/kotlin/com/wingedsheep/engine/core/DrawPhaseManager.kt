@@ -68,12 +68,16 @@ class DrawPhaseManager(
         )
 
         // CR 103.8a / 810.6: the player (or team) that goes first skips the draw step of its first
-        // turn; CR 103.8c — no one skips in a 3+/4-player free-for-all. With non-team games modeled
-        // as singleton teams, "exactly two teams" captures both cases: a 2-player game and a 2-team
-        // Two-Headed Giant game skip the starting side's first draw, while a 3/4-player FFA does not.
+        // turn; CR 103.8c — no one skips in a game that began with 3+ players. The skip therefore
+        // applies only to a genuine heads-up game: exactly two players (a 1v1 — each its own
+        // singleton team), or a 2-team Two-Headed Giant pod where the two teams alternate shared
+        // turns. A Team vs. Team pod (4/6/8 players taking individual turns) is a 3+-player game, so
+        // no one skips — which is why this is gated on sharesTeamTurns, not just `teams.size == 2`.
+        val isHeadsUp = state.activePlayers.size == 2 ||
+            (state.format.sharesTeamTurns && state.teams.size == 2)
         val isFirstTurnFirstTeam = state.turnNumber == 1 &&
             activePlayer == state.turnOrder.first() &&
-            state.teams.size == 2
+            isHeadsUp
         if (isFirstTurnFirstTeam) {
             return ExecutionResult.success(
                 state.withPriority(activePlayer),
@@ -86,10 +90,11 @@ class DrawPhaseManager(
         // so its prompt-on-draw pause stays the final action of the step. Deck-out marks the loss in
         // the returned state, so accumulating each draw's state/events is enough. (Prompt-on-draw for
         // a teammate's own draw is a rare deferred nuance — teammate draws skip that prompt.) In a
-        // non-team game there are no teammates and this loop is a no-op.
+        // non-team game — and in Team vs. Team, where each player draws only on their own turn
+        // (CR 808.4) — there are no shared-turn teammates and this loop is a no-op.
         var s = state
         val teammateEvents = mutableListOf<GameEvent>()
-        for (teammate in state.teamActivePlayers(activePlayer)) {
+        for (teammate in state.sharedTurnTeam(activePlayer)) {
             if (teammate == activePlayer) continue
             if (s.getEntity(teammate)?.has<SkipDrawStepComponent>() == true) {
                 s = s.updateEntity(teammate) { it.without<SkipDrawStepComponent>() }

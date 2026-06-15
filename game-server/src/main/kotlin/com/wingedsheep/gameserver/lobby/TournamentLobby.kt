@@ -72,7 +72,18 @@ enum class LobbyGameMode {
      * [com.wingedsheep.sdk.core.Format.TwoHeadedGiant] format at game start. Built from the same
      * sealed/draft pool-building as any other mode.
      */
-    TWO_HEADED_GIANT;
+    TWO_HEADED_GIANT,
+
+    /**
+     * One Team vs. Team game (CR 808): an even number of lobby players (4/6/8) split into two teams
+     * of equal size — 2v2, 3v3, or 4v4. Shares the Free-for-All single-pod lifecycle and team
+     * assignment plumbing with [TWO_HEADED_GIANT], but runs under
+     * [com.wingedsheep.sdk.core.Format.TeamVsTeam]: each player keeps their own life total and takes
+     * their own turn (CR 808.5 / 808.4), and players are eliminated individually — a team loses only
+     * when all its members are out (CR 104.2c). The only thing teams share is who counts as an
+     * opponent and the last-team-standing win.
+     */
+    TEAM_VS_TEAM;
 }
 
 /**
@@ -299,9 +310,9 @@ class TournamentLobby(
      */
     var attackMode: com.wingedsheep.sdk.core.AttackMode = com.wingedsheep.sdk.core.AttackMode.MULTIPLE,
     /**
-     * Two-Headed Giant only (CR 810): when true (the default) the four seats are split into two
-     * random teams of two at game start, re-rolled each game. When false the host sets the teams
-     * by hand via [teamAssignments]. Ignored outside [gameMode] == TWO_HEADED_GIANT.
+     * Team games only (2HG / Team vs. Team): when true (the default) the seats are split into two
+     * even random teams at game start, re-rolled each game. When false the host sets the teams by
+     * hand via [teamAssignments]. Ignored outside a team [gameMode] (see [isTeamGame]).
      */
     var randomTeams: Boolean = true,
 ) {
@@ -312,10 +323,22 @@ class TournamentLobby(
      * lifecycle (game start, play-again, standings, reconnection, leave-conceding), so the routing
      * branches keyed on this flag cover both. Use [isTwoHeadedGiant] for the team-specific bits.
      */
-    val isFreeForAll: Boolean get() = gameMode == LobbyGameMode.FREE_FOR_ALL || gameMode == LobbyGameMode.TWO_HEADED_GIANT
+    val isFreeForAll: Boolean
+        get() = gameMode == LobbyGameMode.FREE_FOR_ALL ||
+            gameMode == LobbyGameMode.TWO_HEADED_GIANT ||
+            gameMode == LobbyGameMode.TEAM_VS_TEAM
 
     /** True only for a Two-Headed Giant pod (CR 810): four seats, two teams, shared life/turns/combat. */
     val isTwoHeadedGiant: Boolean get() = gameMode == LobbyGameMode.TWO_HEADED_GIANT
+
+    /** True only for a Team vs. Team pod (CR 808): an even count ≥ 4 in two equal teams, no sharing. */
+    val isTeamVsTeam: Boolean get() = gameMode == LobbyGameMode.TEAM_VS_TEAM
+
+    /**
+     * True for any team pod (2HG or Team vs. Team): seats are split into teams and team assignment
+     * (the [randomTeams] / [teamAssignments] controls) applies. Free-for-All is not a team game.
+     */
+    val isTeamGame: Boolean get() = isTwoHeadedGiant || isTeamVsTeam
 
     // =========================================================================
     // Free-for-All mode state (unused in TOURNAMENT mode)
@@ -365,19 +388,19 @@ class TournamentLobby(
     val players = ConcurrentHashMap<EntityId, LobbyPlayerState>()
 
     /**
-     * Two-Headed Giant manual team assignment: playerId -> team index (0 or 1). Only consulted when
-     * [randomTeams] is false. Keyed by player id (not seat) so it survives reordering, reconnects,
-     * and a player leaving/rejoining. Players missing here are balanced into the open team at game
-     * start (see [TwoHeadedGiantTeams.partition]).
+     * Manual team assignment for a team game (2HG / Team vs. Team): playerId -> team index (0 or 1).
+     * Only consulted when [randomTeams] is false. Keyed by player id (not seat) so it survives
+     * reordering, reconnects, and a player leaving/rejoining. Players missing here are balanced into
+     * the open team at game start (see [EvenTeams.partition]).
      */
     @Volatile
     var teamAssignments: Map<EntityId, Int> = emptyMap()
         private set
 
-    /** Replace the manual 2HG team assignment, keeping only current players and valid team indices. */
+    /** Replace the manual team assignment, keeping only current players and valid team indices. */
     fun setTeamAssignments(assignments: Map<EntityId, Int>) {
         teamAssignments = assignments.filter { (id, team) ->
-            id in players.keys && team in 0 until TwoHeadedGiantTeams.TEAM_COUNT
+            id in players.keys && team in 0 until EvenTeams.DEFAULT_TEAM_COUNT
         }
     }
 

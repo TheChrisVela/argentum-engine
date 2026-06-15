@@ -21,14 +21,20 @@ import com.wingedsheep.engine.state.components.player.PlayerLostComponent
  * settle is propagated before [com.wingedsheep.engine.mechanics.sba.game.GameEndCheck] decides the
  * game.
  *
- * In a non-team game every player is a team of one, so this never marks anyone — existing games are
- * unaffected.
+ * This propagation only applies when the format makes players win and lose as a team
+ * ([com.wingedsheep.sdk.core.Format.playersWinLoseAsTeam] — 2HG). Under the normal multiplayer rules
+ * a player is eliminated individually (CR 104.3b) and a team persists until all its members have left
+ * (CR 104.2c), so in **Team vs. Team** (CR 808) and Free-for-All this is a no-op and a single player
+ * can be knocked out while their teammates fight on. In a non-team game every player is a team of one,
+ * so it never marks anyone regardless.
  */
 class TeamLossPropagationCheck : StateBasedActionCheck {
     override val name = "810.8a Team Loss Propagation"
     override val order = SbaOrder.TEAM_LOSS_PROPAGATION
 
     override fun check(state: GameState): ExecutionResult {
+        if (!state.format.playersWinLoseAsTeam) return ExecutionResult.success(state)
+
         var newState = state
         val events = mutableListOf<com.wingedsheep.engine.core.GameEvent>()
 

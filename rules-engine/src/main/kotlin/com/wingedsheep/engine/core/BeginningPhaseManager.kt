@@ -45,8 +45,9 @@ class BeginningPhaseManager(
         val activePlayer = state.activePlayerId
             ?: return ExecutionResult.error(state, "No active player")
         // CR 805.4 — in a shared team turn both teammates untap (and phase in / lose summoning
-        // sickness) together. In a non-team game the active team is just the active player.
-        val activeTeam = state.teamActivePlayers(activePlayer).toHashSet()
+        // sickness) together. Without shared team turns (Team vs. Team — CR 808.4, non-team games)
+        // only the active player untaps on their own turn.
+        val activeTeam = state.sharedTurnTeam(activePlayer).toHashSet()
 
         val events = mutableListOf<GameEvent>()
         var newState = state

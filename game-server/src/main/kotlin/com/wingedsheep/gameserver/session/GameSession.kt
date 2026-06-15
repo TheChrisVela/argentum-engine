@@ -379,6 +379,10 @@ class GameSession(
                     ?.get<com.wingedsheep.engine.state.components.identity.TeamComponent>()
                     ?.teamIndex
                     ?: teams?.indexOfFirst { joinIndex in it }?.takeIf { it >= 0 },
+                // 2HG pools life per team (CR 810.4); Team vs. Team keeps per-player life (CR 808.5).
+                // Prefer the running game's format (set for scenario/hotseat pods too), falling back
+                // to the configured format before the game state exists.
+                teamSharedLife = (state?.format ?: engineFormat).sharesTeamLife,
             )
         }.sortedBy { it.seatIndex }
     }

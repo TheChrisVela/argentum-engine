@@ -192,6 +192,8 @@ class GameInitializer(
             // 2HG shares one 30-life total per team (CR 810.4). The shared pool arrives in a later
             // phase; for now each player is initialized to the team's starting value.
             is Format.TwoHeadedGiant -> f.startingLife
+            // Team vs. Team (CR 808): each player has their own starting life total (no shared pool).
+            is Format.TeamVsTeam -> f.startingLife
             else -> null
         }
 

@@ -69,13 +69,19 @@ sealed interface ServerMessage {
         val isYou: Boolean = false,
         val isAi: Boolean = false,
         /**
-         * Team membership for team variants (Two-Headed Giant — CR 810). Seats sharing a
-         * [teamIndex] are teammates (shared life, shared turns, combined combat). Null in
-         * non-team games (every seat plays alone), so the 2-player / Free-for-All clients
-         * are unaffected; the 2HG client groups and colors the rail by this index and treats
-         * the recipient's same-team, non-[isYou] seat as the ally.
+         * Team membership for team variants (Two-Headed Giant — CR 810; Team vs. Team — CR 808).
+         * Seats sharing a [teamIndex] are teammates. Null in non-team games (every seat plays
+         * alone), so the 2-player / Free-for-All clients are unaffected; a team client groups and
+         * colors the rail by this index and treats the recipient's same-team, non-[isYou] seat as
+         * an ally.
          */
         val teamIndex: Int? = null,
+        /**
+         * True when teammates share one life total (2HG — CR 810.4). False for Team vs. Team
+         * (CR 808.5), where each player has their own life despite being on a team. Game-level (the
+         * same on every seat); lets the client render a shared-life team header vs. per-player life.
+         */
+        val teamSharedLife: Boolean = false,
     )
 
     /**

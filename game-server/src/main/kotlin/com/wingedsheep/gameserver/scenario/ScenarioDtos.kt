@@ -43,14 +43,21 @@ data class ScenarioRequest(
      */
     val players: List<ScenarioSeat>? = null,
     /**
-     * Team assignment for team variants (Two-Headed Giant — CR 810). Each entry is one team:
-     * a list of seat indices into [players] (0-based, turn order). When supplied the seats are
-     * stamped into teams (shared life, shared turns, combined combat) and the game runs under
-     * [com.wingedsheep.sdk.core.Format.TwoHeadedGiant], making a 2HG hotseat bootable for manual
-     * testing before the lobby UI lands. Null = each player plays alone (unchanged). The indices
-     * must partition every seat exactly once. Use with [ScenarioMode.SELF] (single-client hotseat).
+     * Team assignment for team variants (Two-Headed Giant — CR 810; Team vs. Team — CR 808). Each
+     * entry is one team: a list of seat indices into [players] (0-based, turn order). When supplied
+     * the seats are stamped into teams; [teamVsTeam] selects which team format runs (2HG shares
+     * life/turns/combat, Team vs. Team shares nothing). Either team variant is bootable as a hotseat
+     * for manual testing. Null = each player plays alone (unchanged). The indices must partition
+     * every seat exactly once. Use with [ScenarioMode.SELF] (single-client hotseat).
      */
     val teams: List<List<Int>>? = null,
+    /**
+     * When [teams] is supplied, run the pod as Team vs. Team (CR 808 — per-player life/turns,
+     * individual elimination) instead of the default Two-Headed Giant (CR 810 — shared life/turns).
+     * Ignored when [teams] is null. Nullable (like [ScenarioSeat.tapped]) because an absent JSON
+     * field maps to null, which `FAIL_ON_NULL_FOR_PRIMITIVES` would reject for a bare `Boolean`.
+     */
+    val teamVsTeam: Boolean? = false,
     val phase: Phase? = null,
     val step: Step? = null,
     val activePlayer: Int? = null,

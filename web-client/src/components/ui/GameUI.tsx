@@ -756,15 +756,22 @@ function LobbyOverlay({
   // Two-Headed Giant (CR 810): the pod mode that runs two teams of two off the same draft/sealed
   // build. Exactly four players; combat/attack rules are fixed (no per-creature attack picker).
   const is2hg = lobbyState.settings.gameMode === 'TWO_HEADED_GIANT'
-  // 2HG team setup: random by default, or host-assigned (playerId -> team, defaulting to join order).
+  // Team vs. Team (CR 808): two even teams (2v2 / 3v3 / 4v4). Like 2HG but nothing is shared —
+  // each player keeps their own life and turn, and is eliminated individually.
+  const isTeamVsTeam = lobbyState.settings.gameMode === 'TEAM_VS_TEAM'
+  // Any team mode shares the random/manual team-assignment controls below.
+  const isTeamGame = is2hg || isTeamVsTeam
+  // Both team modes split the pod into exactly two even teams; team size follows the player count.
+  const teamSize = Math.max(1, Math.floor(lobbyState.players.length / 2))
+  // Team setup: random by default, or host-assigned (playerId -> team, defaulting to join order).
   const randomTeams = lobbyState.settings.randomTeams ?? true
   const teamAssignments = lobbyState.settings.teamAssignments ?? {}
   const playerTeam = (playerId: string, index: number): number =>
-    teamAssignments[playerId] ?? Math.floor(index / 2)
-  // Manual teams must be an even 2v2 to play as intended (the server otherwise re-balances).
-  const manualTeamsBalanced = lobbyState.players.length === 4 &&
-    [0, 1].every(t => lobbyState.players.filter((p, i) => playerTeam(p.playerId, i) === t).length === 2)
-  // Move one player to the other team, sending the full explicit assignment for all four seats.
+    teamAssignments[playerId] ?? Math.floor(index / teamSize)
+  // Manual teams must be an even split into two equal teams (the server otherwise re-balances).
+  const manualTeamsBalanced = lobbyState.players.length >= 4 && lobbyState.players.length % 2 === 0 &&
+    [0, 1].every(t => lobbyState.players.filter((p, i) => playerTeam(p.playerId, i) === t).length === teamSize)
+  // Move one player to the other team, sending the full explicit assignment for every seat.
   const togglePlayerTeam = (playerId: string, index: number) => {
     const flipped = playerTeam(playerId, index) === 0 ? 1 : 0
     const next: Record<string, number> = {}
@@ -789,6 +796,7 @@ function LobbyOverlay({
     : isGridDraft ? playerCount >= 2 && playerCount <= 4
     : isAnyCommander ? playerCount === 2
     : is2hg ? playerCount === 4
+    : isTeamVsTeam ? playerCount >= 4 && playerCount % 2 === 0
     : playerCount >= 2
   // Premade format: no boosters generated, so set selection is optional. We do require every
   // connected player to have submitted a deck before the host can start.
@@ -840,7 +848,7 @@ function LobbyOverlay({
           </div>
           <h1 className={styles.lobbyTitle}>
             {isPremade
-              ? (is2hg ? 'Premade Decks Two-Headed Giant' : isFfa ? 'Premade Decks Free-for-All' : 'Premade Decks Tournament')
+              ? (is2hg ? 'Premade Decks Two-Headed Giant' : isTeamVsTeam ? 'Premade Decks Team vs. Team' : isFfa ? 'Premade Decks Free-for-All' : 'Premade Decks Tournament')
               : (lobbyState.settings.setNames.join(' + ') || 'Lobby')}
           </h1>
           <p className={styles.lobbySubtitle}>
@@ -861,9 +869,10 @@ function LobbyOverlay({
               if (isPremade) return 'Premade Decks · bring your own ≥40-card deck'
               return distText ?? `${lobbyState.settings.boosterCount} boosters per player`
             })()}
-            {!isFfa && !is2hg && (lobbyState.settings.gamesPerMatch ?? 1) > 1 && ` · ${lobbyState.settings.gamesPerMatch} games per matchup`}
+            {!isFfa && !isTeamGame && (lobbyState.settings.gamesPerMatch ?? 1) > 1 && ` · ${lobbyState.settings.gamesPerMatch} games per matchup`}
             {isFfa && ' · Free-for-All'}
             {is2hg && ' · Two-Headed Giant'}
+            {isTeamVsTeam && ' · Team vs. Team'}
           </p>
         </div>
 
@@ -921,7 +930,7 @@ function LobbyOverlay({
                 <div className={styles.settingsButtons}>
                   <button
                     onClick={() => updateLobbySettings({ gameMode: 'TOURNAMENT' })}
-                    className={`${styles.settingsButton} ${!isFfa && !is2hg ? styles.settingsButtonActive : ''}`}
+                    className={`${styles.settingsButton} ${!isFfa && !isTeamGame ? styles.settingsButtonActive : ''}`}
                     title="Round-robin bracket of 1v1 matches"
                   >
                     Tournament
@@ -942,6 +951,14 @@ function LobbyOverlay({
                   >
                     Two-Headed Giant
                   </button>
+                  <button
+                    onClick={() => playerCount <= 8 && updateLobbySettings({ gameMode: 'TEAM_VS_TEAM' })}
+                    disabled={playerCount > 8}
+                    className={`${styles.settingsButton} ${isTeamVsTeam ? styles.settingsButtonActive : ''}`}
+                    title="Two even teams — 2v2, 3v3, or 4v4. Own life and own turns; last team standing wins."
+                  >
+                    Team vs. Team
+                  </button>
                 </div>
                 {isFfa && (
                   <div className={styles.variantCaption}>
@@ -954,10 +971,17 @@ function LobbyOverlay({
                     together, and attacks and blocks as one. Last team standing wins.
                   </div>
                 )}
+                {isTeamVsTeam && (
+                  <div className={styles.variantCaption}>
+                    An even pod (4/6/8) split into two teams — 2v2, 3v3, or 4v4. Each player keeps their
+                    own 20 life and their own turn; players are knocked out one at a time. The last team
+                    with anyone standing wins.
+                  </div>
+                )}
               </div>
             </div>
-            {/* Two-Headed Giant team setup (CR 810): random teams each game, or host-picked teams. */}
-            {is2hg && (
+            {/* Team setup (2HG — CR 810; Team vs. Team — CR 808): random teams each game, or host-picked teams. */}
+            {isTeamGame && (
               <div className={styles.settingsRow}>
                 <span className={styles.settingsLabel}>Teams</span>
                 <div className={styles.variantGroup}>
@@ -965,7 +989,7 @@ function LobbyOverlay({
                     <button
                       onClick={() => updateLobbySettings({ randomTeams: true })}
                       className={`${styles.settingsButton} ${randomTeams ? styles.settingsButtonActive : ''}`}
-                      title="Shuffle the four players into two teams of two when the game starts (re-rolled each game)"
+                      title="Shuffle the players into two even teams when the game starts (re-rolled each game)"
                     >
                       Random
                     </button>
@@ -982,7 +1006,7 @@ function LobbyOverlay({
                       ? 'Teams are randomised at game start, fresh every game.'
                       : manualTeamsBalanced
                         ? 'Click a player’s team chip below to move them between teams.'
-                        : 'Click each player’s team chip below — each team needs exactly two players.'}
+                        : `Click each player’s team chip below — each team needs exactly ${teamSize} player${teamSize === 1 ? '' : 's'}.`}
                   </div>
                 </div>
               </div>
@@ -1468,9 +1492,10 @@ function LobbyOverlay({
                 <span className={styles.playerName}>
                   {player.playerName}
                 </span>
-                {/* Two-Headed Giant team chip. Random mode: a neutral chip (teams decided at game
-                    start). Manual mode: the assigned team, clickable for the host to reassign. */}
-                {is2hg && randomTeams && (
+                {/* Team-game (2HG / Team vs. Team) team chip. Random mode: a neutral chip (teams
+                    decided at game start). Manual mode: the assigned team, clickable for the host to
+                    reassign. */}
+                {isTeamGame && randomTeams && (
                   <span
                     style={{
                       fontSize: 10,
@@ -1487,7 +1512,7 @@ function LobbyOverlay({
                     Random
                   </span>
                 )}
-                {is2hg && !randomTeams && (() => {
+                {isTeamGame && !randomTeams && (() => {
                   const team = playerTeam(player.playerId, i)
                   const c = teamColor(team)
                   const chipStyle = {

@@ -437,7 +437,9 @@ export function createGameplayHandlers(set: SetState, get: GetState): Pick<Messa
       for (const p of msg.players) {
         if (p.teamIndex != null) seatTeams[p.playerId] = p.teamIndex
       }
-      get().setSeatTeams(seatTeams)
+      // Shared life is a game-level fact (same on every seat); 2HG shares, Team vs. Team doesn't.
+      const sharedLife = msg.players.some((p) => p.teamSharedLife)
+      get().setSeatTeams(seatTeams, sharedLife)
 
       // Load persisted stop overrides and send to server
       try {

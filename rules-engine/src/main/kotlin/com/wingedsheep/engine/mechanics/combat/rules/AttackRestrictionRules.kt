@@ -41,10 +41,12 @@ class MustBeCreatureAttackRule : AttackRestrictionRule {
  */
 class ControlledByAttackerRule : AttackRestrictionRule {
     override fun check(ctx: AttackCheckContext): String? {
-        // CR 805.10b — the attacking team's combined attack may include creatures controlled by any
-        // active-team member, so accept control by any teammate (not just the declaring player).
+        // CR 805.10b — under shared team turns the attacking team's combined attack may include
+        // creatures controlled by any active-team member, so accept control by any teammate. Without
+        // shared team turns (Team vs. Team — CR 808.4, non-team games) only the active player attacks
+        // on their own turn, so sharedTurnTeam collapses to just the declaring player.
         val controller = ctx.projected.getController(ctx.attackerId)
-        if (controller == null || controller !in ctx.state.teamOf(ctx.attackingPlayer)) {
+        if (controller == null || controller !in ctx.state.sharedTurnTeam(ctx.attackingPlayer)) {
             val name = ctx.state.getEntity(ctx.attackerId)?.get<CardComponent>()?.name ?: "Creature"
             return "You don't control $name"
         }

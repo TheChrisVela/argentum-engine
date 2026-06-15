@@ -126,11 +126,17 @@ export interface PlayerSeatInfo {
   readonly isYou: boolean
   readonly isAi: boolean
   /**
-   * Two-Headed Giant (CR 810) team membership: seats sharing a `teamIndex` are teammates
-   * (shared life, shared turns, combined combat). Null/undefined in non-team games. Only sent
-   * in this game-start roster, so the client persists the seat→team map for the whole game.
+   * Team membership for a team variant (Two-Headed Giant — CR 810; Team vs. Team — CR 808): seats
+   * sharing a `teamIndex` are teammates. Null/undefined in non-team games. Only sent in this
+   * game-start roster, so the client persists the seat→team map for the whole game.
    */
   readonly teamIndex?: number | null
+  /**
+   * True when teammates share one life total (2HG). False for Team vs. Team, where teammates each
+   * have their own life. Game-level (the same on every seat); lets the rail choose a shared-life
+   * team header vs. per-player life.
+   */
+  readonly teamSharedLife?: boolean
 }
 
 /**
@@ -1161,7 +1167,7 @@ export interface LobbySettings {
   readonly teamAssignments: Readonly<Record<string, number>>
 }
 
-export type LobbyGameMode = 'TOURNAMENT' | 'FREE_FOR_ALL' | 'TWO_HEADED_GIANT'
+export type LobbyGameMode = 'TOURNAMENT' | 'FREE_FOR_ALL' | 'TWO_HEADED_GIANT' | 'TEAM_VS_TEAM'
 
 /**
  * Free-for-All attack rule (CR 802/803): 'MULTIPLE' = attack any opponent; 'LEFT'/'RIGHT' =

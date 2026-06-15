@@ -130,8 +130,8 @@ class TurnManager(
         // make a skipped turn "proceed past as though it didn't exist", so a skipped turn should not
         // count — the increment lives here, downstream of the SkipNextTurn consumption path. In a
         // shared team turn (CR 805.4) both teammates are taking the turn, so both counters advance;
-        // in a non-team game this is just the active player.
-        for (member in newState.teamActivePlayers(playerId)) {
+        // in a non-team game (and in Team vs. Team, CR 808.4) this is just the active player.
+        for (member in newState.sharedTurnTeam(playerId)) {
             newState = newState.updateEntity(member) { container ->
                 val prev = container.get<PlayerTurnsTakenComponent>() ?: PlayerTurnsTakenComponent()
                 container.with(prev.increment())
@@ -458,9 +458,12 @@ class TurnManager(
         // identical to getNextPlayer.
         var nextPlayer = cleanedState.getNextTeam(currentPlayer)
 
-        // Team-wide skip (CR 805.8): if any member of the next team has a skip marker, the whole
-        // team skips its turn. Clear the marker from every member and move on to the team after.
-        val nextTeam = cleanedState.teamOf(nextPlayer)
+        // Team-wide skip (CR 805.8): if any member of the side taking the next turn has a skip
+        // marker, that turn is skipped. Clear the marker from every such member and move on to the
+        // team after. With shared team turns this is the whole next team; in Team vs. Team / non-team
+        // games it is just the next player (sharedTurnTeam is a singleton there), so a skip is
+        // individual.
+        val nextTeam = cleanedState.sharedTurnTeam(nextPlayer)
         if (nextTeam.any { cleanedState.getEntity(it)?.has<SkipNextTurnComponent>() == true }) {
             for (member in nextTeam) {
                 cleanedState = cleanedState.updateEntity(member) { it.without<SkipNextTurnComponent>() }

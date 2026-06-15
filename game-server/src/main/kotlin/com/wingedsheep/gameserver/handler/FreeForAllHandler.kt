@@ -50,6 +50,9 @@ class FreeForAllHandler(
         if (lobby.playerCount < 2) return false
         // Two-Headed Giant needs a full pod — exactly four players for two teams of two (CR 810).
         if (lobby.isTwoHeadedGiant && lobby.playerCount != 4) return false
+        // Team vs. Team needs an even pod of at least four so it splits into two equal teams
+        // (2v2 / 3v3 / 4v4 — CR 808.1).
+        if (lobby.isTeamVsTeam && (lobby.playerCount < 4 || lobby.playerCount % 2 != 0)) return false
         if (!lobby.allDecksSubmitted()) return false
 
         val playerStates = lobby.players.values.toList()
@@ -87,15 +90,20 @@ class FreeForAllHandler(
         // CR 802 / 803 — the lobby's chosen attack rule applies to this multiplayer game.
         gameSession.attackMode = lobby.attackMode
 
-        // Two-Headed Giant (CR 810): run under the team format and split the four seats into two
-        // teams of two — random by default (re-rolled each game), or the host's manual assignment.
-        // Team indices reference the add-player order below (same order used for the partition);
-        // GameInitializer seats teammates adjacently (CR 805.1). GameSession.teams flows into
-        // GameConfig.teams, which stamps a TeamComponent on each seat — the engine then shares
-        // life/turns/combat per team.
-        if (lobby.isTwoHeadedGiant) {
-            gameSession.engineFormat = com.wingedsheep.sdk.core.Format.TwoHeadedGiant()
-            gameSession.teams = com.wingedsheep.gameserver.lobby.TwoHeadedGiantTeams.partition(
+        // Team games (2HG — CR 810; Team vs. Team — CR 808): run under the team format and split the
+        // pod into two even teams — random by default (re-rolled each game), or the host's manual
+        // assignment. Team indices reference the add-player order below (same order used for the
+        // partition); GameInitializer seats teammates adjacently (CR 805.1 / 808.2). GameSession.teams
+        // flows into GameConfig.teams, which stamps a TeamComponent on each seat. The format's
+        // capability flags then decide what the team shares: 2HG shares life/turns/combat, Team vs.
+        // Team shares nothing but opponent-grouping and the last-team-standing win.
+        if (lobby.isTeamGame) {
+            gameSession.engineFormat = if (lobby.isTwoHeadedGiant) {
+                com.wingedsheep.sdk.core.Format.TwoHeadedGiant()
+            } else {
+                com.wingedsheep.sdk.core.Format.TeamVsTeam()
+            }
+            gameSession.teams = com.wingedsheep.gameserver.lobby.EvenTeams.partition(
                 orderedPlayerIds = playerStates.map { it.identity.playerId },
                 randomTeams = lobby.randomTeams,
                 manualAssignment = lobby.teamAssignments,

@@ -502,6 +502,17 @@ data class GameState(
         }
 
     /**
+     * The players who act together as one side on the active player's turn — every still-in
+     * teammate in a shared-team-turns format (CR 805.4 / 805.10: untap, draw, attack, block as a
+     * unit), otherwise just [playerId] itself. This is the single read surface for "who collaborates
+     * this turn"; it degrades to `[playerId]` whenever [Format.sharesTeamTurns] is false (Free-for-All,
+     * **Team vs. Team**, 1v1, Commander), so a player on a Team-vs-Team team still untaps/draws/
+     * attacks/blocks strictly alone even though they have teammates.
+     */
+    fun sharedTurnTeam(playerId: EntityId): List<EntityId> =
+        if (format.sharesTeamTurns) teamActivePlayers(playerId) else listOf(playerId)
+
+    /**
      * Teams with at least one player still in the game (not lost/left), in turn order. The
      * team-level analogue of [activePlayers] — the game ends when only one of these remains
      * (CR 810.8a). In a non-team game each player is its own team, so this mirrors [activePlayers].
@@ -517,7 +528,10 @@ data class GameState(
      * with no team this is just that player's own poison count.
      */
     fun teamPoison(playerId: EntityId): Int =
-        teamOf(playerId).sumOf { member ->
+        // Poison pools by team only when the team also shares its life total (CR 810.10 is part of
+        // the 2HG shared-pool rules). In Team vs. Team and every non-pooled format each player has
+        // their own poison total.
+        (if (format.sharesTeamLife) teamOf(playerId) else listOf(playerId)).sumOf { member ->
             getEntity(member)
                 ?.get<com.wingedsheep.engine.state.components.battlefield.CountersComponent>()
                 ?.getCount(com.wingedsheep.sdk.core.CounterType.POISON) ?: 0
@@ -542,7 +556,9 @@ data class GameState(
      */
     fun isActiveTurnFor(playerId: EntityId): Boolean {
         val active = activePlayerId ?: return false
-        return teamOf(active).contains(playerId)
+        // Only a shared-team-turns format (CR 805.5a) lets a teammate share turn ownership; in Team
+        // vs. Team (CR 808.4) and every non-team format the active turn belongs to one player.
+        return if (format.sharesTeamTurns) teamOf(active).contains(playerId) else active == playerId
     }
 
     /**
@@ -552,6 +568,9 @@ data class GameState(
      * passes to the next *team*, not to a teammate who shares the same turn (CR 805.4).
      */
     fun getNextTeam(afterPlayer: EntityId): EntityId {
+        // Without shared team turns (Team vs. Team — CR 808.4, Free-for-All, 1v1) each player takes
+        // their own turn, so the turn simply passes to the next still-in player.
+        if (!format.sharesTeamTurns) return getNextPlayer(afterPlayer)
         val teamsList = teams
         if (teamsList.isEmpty()) return afterPlayer
         val curIdx = teamsList.indexOfFirst { afterPlayer in it }
@@ -586,7 +605,10 @@ data class GameState(
      * member of [teamOf] (stable across the game; team membership and turn order never change). For
      * a player with no team this is the player itself.
      */
-    fun teamLifeOwnerOf(playerId: EntityId): EntityId = teamOf(playerId).firstOrNull() ?: playerId
+    fun teamLifeOwnerOf(playerId: EntityId): EntityId =
+        // Only a shared-life format (2HG — CR 810.4/810.9) routes every member's life to one
+        // canonical owner. Team vs. Team (CR 808.5) and every non-team format keep per-player life.
+        if (format.sharesTeamLife) teamOf(playerId).firstOrNull() ?: playerId else playerId
 
     /**
      * [playerId]'s life total — the team's shared total in a team game (CR 810.9a), the player's own

@@ -76,6 +76,8 @@ export function createLobbyHandlers(set: SetState, get: GetState): Pick<MessageH
       for (const p of msg.players) {
         if (p.teamIndex != null) seatTeams[p.playerId] = p.teamIndex
       }
+      // Shared life (2HG) vs. per-player life (Team vs. Team) — game-level, same on every seat.
+      const sharedLife = msg.players.some((p) => p.teamSharedLife)
       set({
         ffaState: {
           lobbyId: msg.lobbyId,
@@ -88,6 +90,7 @@ export function createLobbyHandlers(set: SetState, get: GetState): Pick<MessageH
         sessionId: msg.gameSessionId,
         opponentName,
         teamByPlayerId: seatTeams,
+        teamSharedLife: sharedLife,
       })
     },
 

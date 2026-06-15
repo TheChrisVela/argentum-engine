@@ -139,7 +139,7 @@ class ScenarioBuilderService(
         }
         request.activePlayer?.let { builder.withActivePlayer(it) }
         request.priorityPlayer?.let { builder.withPriorityPlayer(it) }
-        request.teams?.let { builder.withTeams(it) }
+        request.teams?.let { builder.withTeams(it, teamVsTeam = request.teamVsTeam == true) }
 
         val (state, playerIds) = builder.build()
         return ScenarioBuildResult(state, playerIds)
@@ -399,13 +399,14 @@ class ScenarioBuilderService(
         }
 
         /**
-         * Stamp team membership (Two-Headed Giant — CR 810). [teams] entries are lists of 0-based
-         * seat indices; each becomes a team via [TeamComponent]. Also switches the game to
-         * [Format.TwoHeadedGiant] — the only team format today — so shared life, the 15-poison
-         * threshold, and team win/loss read the right rules. Mirrors GameInitializer's stamping for
-         * the freshly-built (lobby/quick-game) path.
+         * Stamp team membership for a team variant. [teams] entries are lists of 0-based seat
+         * indices; each becomes a team via [TeamComponent]. Also switches the game to the matching
+         * format so the engine reads the right rules: [teamVsTeam] = false runs Two-Headed Giant
+         * (CR 810 — shared life/turns, 15-poison threshold), true runs Team vs. Team (CR 808 —
+         * per-player life/turns, individual elimination). Mirrors GameInitializer's stamping for the
+         * freshly-built (lobby/quick-game) path.
          */
-        fun withTeams(teams: List<List<Int>>): ScenarioBuilder {
+        fun withTeams(teams: List<List<Int>>, teamVsTeam: Boolean = false): ScenarioBuilder {
             teams.forEachIndexed { teamIndex, memberIndices ->
                 for (memberIndex in memberIndices) {
                     val pid = playerIds[memberIndex]
@@ -414,7 +415,10 @@ class ScenarioBuilderService(
                     }
                 }
             }
-            state = state.copy(format = com.wingedsheep.sdk.core.Format.TwoHeadedGiant())
+            state = state.copy(
+                format = if (teamVsTeam) com.wingedsheep.sdk.core.Format.TeamVsTeam()
+                else com.wingedsheep.sdk.core.Format.TwoHeadedGiant()
+            )
             return this
         }
 

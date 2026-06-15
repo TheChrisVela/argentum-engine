@@ -16,6 +16,35 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed interface Format {
 
+    /**
+     * CR 810.4 / 810.9 — the players on a team share **one life total** (and one pooled poison
+     * total, CR 810.10). True only for [TwoHeadedGiant]. Every other format — including the
+     * [TeamVsTeam] variant (CR 808.5: "a team's resources … are not shared") and all non-team
+     * formats — keeps a per-player life total, so this stays false.
+     *
+     * The engine resolves every life read/write through
+     * [com.wingedsheep.engine.state.GameState.teamLifeOwnerOf], which collapses to the player itself
+     * whenever this is false.
+     */
+    val sharesTeamLife: Boolean get() = false
+
+    /**
+     * CR 805 — the team takes **one shared turn**: its members untap, draw, attack and block as a
+     * single side (CR 805.4 / 805.10), and either may take sorcery-speed actions while it is the
+     * team's turn (CR 805.5a). True for [TwoHeadedGiant] (and, in future, the Archenemy variant,
+     * CR 904.5). [TeamVsTeam] players take **individual** turns in seat order (CR 808.4), so this is
+     * false — each player only untaps/draws/attacks/blocks on their own turn.
+     */
+    val sharesTeamTurns: Boolean get() = false
+
+    /**
+     * CR 810.8a — players win and lose the game **only as a team**: if one member loses, the whole
+     * team loses. True for [TwoHeadedGiant]. Under the normal multiplayer rules a player is
+     * eliminated individually (CR 104.3b) and a team persists until all its members have left
+     * (CR 104.2c), so [TeamVsTeam] and Free-for-All leave this false.
+     */
+    val playersWinLoseAsTeam: Boolean get() = false
+
     @Serializable
     data object Standard : Format
 
@@ -77,16 +106,13 @@ sealed interface Format {
      *
      * Like [Commander] this is runtime config, not a code path: the engine reads it at game init
      * to set the shared starting life and (via [com.wingedsheep.engine.core.GameConfig.teams]) to
-     * stamp team membership on the player entities.
-     *
-     * **Phasing note.** This Phase 1 type only carries the format config + drives team membership.
-     * The behaviours it *describes* — shared life total (CR 810.4 / 810.9), shared turns and
-     * priority (CR 805), combined combat (CR 805.10 / 810.7), and team win/loss (CR 810.8) — are
-     * implemented in later phases. Until then a 2HG game boots with the right teams and life values
-     * but otherwise runs the standard per-player rules.
+     * stamp team membership on the player entities. The shared behaviours it enables —
+     * [sharesTeamLife] (CR 810.4 / 810.9), [sharesTeamTurns] (CR 805), and [playersWinLoseAsTeam]
+     * (CR 810.8a) — are all gated on these capability flags, so the contrast with [TeamVsTeam]
+     * (every flag false) is data, not a code path.
      *
      * @property startingLife The team's shared starting life total. Regular two-player 2HG is 30
-     *   (CR 810.4). In Phase 1 (no shared pool yet) each player is initialized to this value.
+     *   (CR 810.4); every team member resolves life through the team's canonical owner.
      * @property startingHandSize Cards drawn for each player's opening hand.
      * @property poisonThreshold Poison counters at which a team loses the game (CR 810.8d). 2HG
      *   raises the normal 10 to 15.
@@ -96,6 +122,36 @@ sealed interface Format {
         val startingLife: Int = 30,
         val startingHandSize: Int = 7,
         val poisonThreshold: Int = 15,
+    ) : Format {
+        override val sharesTeamLife: Boolean get() = true
+        override val sharesTeamTurns: Boolean get() = true
+        override val playersWinLoseAsTeam: Boolean get() = true
+    }
+
+    /**
+     * Team vs. Team — the general N-per-team multiplayer variant (CR 808). Two or more teams of any
+     * size (2v2, 3v3, 4v4, …) where, unlike [TwoHeadedGiant], **nothing is shared** (CR 808.5):
+     * each player keeps their own life total, takes their own turn in seat order (CR 808.4), draws
+     * and untaps alone, attacks and blocks only on their own behalf, and is eliminated individually
+     * when their own life hits 0 (CR 104.3b). A team loses only once *all* of its players have left
+     * the game (CR 104.2c) — the last team with a player still in wins.
+     *
+     * It reuses the team **membership** model only: opponents exclude teammates (CR 808 / 802.2),
+     * the win check is by team (last team standing), and teammates are seated adjacently (CR 808.2).
+     * Every shared-team capability flag — [sharesTeamLife], [sharesTeamTurns],
+     * [playersWinLoseAsTeam] — stays at its `false` default, which is the entire behavioural
+     * difference from 2HG.
+     *
+     * Like the other formats this is runtime config, not a code path: the engine reads [startingLife]
+     * at game init and stamps team membership from [com.wingedsheep.engine.core.GameConfig.teams].
+     *
+     * @property startingLife Each player's own starting life total (standard 20).
+     * @property startingHandSize Cards drawn for each player's opening hand.
+     */
+    @Serializable
+    data class TeamVsTeam(
+        val startingLife: Int = 20,
+        val startingHandSize: Int = 7,
     ) : Format
 }
 

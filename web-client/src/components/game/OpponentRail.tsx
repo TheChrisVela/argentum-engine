@@ -9,6 +9,7 @@ import {
   useViewingPlayer,
   useIdentityColor,
   useIsTeamGame,
+  useIsSharedLifeTeamGame,
   useViewerTeamIndex,
 } from '@/store/selectors'
 import { teamColor, type SeatColor } from '@/styles/seatColors'
@@ -68,6 +69,8 @@ export function OpponentRail({
   const teamMap = useGameStore(selectTeamMap)
   const viewerTeam = useViewerTeamIndex()
   const teamMode = isTeamGame && viewerTeam != null && !spectatorMode
+  // Only 2HG pools life per team; Team vs. Team groups by team but shows per-player life on chips.
+  const sharedLife = useIsSharedLifeTeamGame()
 
   if (opponents.length <= 1) return null
 
@@ -130,8 +133,8 @@ export function OpponentRail({
       `}</style>
       {teamMode ? (
         <>
-          {/* Your team: shared-life header, then your "you" chip + your ally chip(s). */}
-          <TeamRailSection label="Your Team" color={teamColor(viewerTeam!)} life={yourTeamLife}>
+          {/* Your team: shared-life header (2HG only), then your "you" chip + your ally chip(s). */}
+          <TeamRailSection label="Your Team" color={teamColor(viewerTeam!)} life={sharedLife ? yourTeamLife : null}>
             {self && <SelfRailChip self={self} />}
             {teammates.map((opponent) => (
               <RailChip
@@ -144,8 +147,8 @@ export function OpponentRail({
               />
             ))}
           </TeamRailSection>
-          {/* Opposing team: their shared life, then their seats. */}
-          <TeamRailSection label="Opponents" color={teamColor(enemyTeam)} life={enemyTeamLife}>
+          {/* Opposing team: their shared life (2HG) above their seats, or per-player life on each. */}
+          <TeamRailSection label="Opponents" color={teamColor(enemyTeam)} life={sharedLife ? enemyTeamLife : null}>
             {enemies.map((opponent) => (
               <RailChip
                 key={opponent.playerId}
@@ -221,9 +224,10 @@ export function OpponentRail({
 }
 
 /**
- * A Two-Headed Giant team grouping in the rail (CR 810): a team-colored banner carrying the
- * label and the team's single shared life total, above that team's member chips. This is where
- * the "one life total per team" reads — the member chips drop their own (identical) life number.
+ * A team grouping in the rail: a team-colored banner with the team label, above that team's member
+ * chips. In Two-Headed Giant (CR 810) it also carries the team's single shared [life] total — and
+ * the member chips drop their own (identical) life number. In Team vs. Team (CR 808) life is
+ * per-player, so [life] is null here and each chip shows its own.
  */
 function TeamRailSection({
   label,
@@ -233,10 +237,10 @@ function TeamRailSection({
 }: {
   label: string
   color: SeatColor
-  life: number
+  life?: number | null
   children: React.ReactNode
 }) {
-  const lifeDanger = life <= 5
+  const lifeDanger = life != null && life <= 5
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, pointerEvents: 'none' }}>
       <div
@@ -268,22 +272,24 @@ function TeamRailSection({
         >
           {label}
         </span>
-        <span
-          title="Shared team life"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 3,
-            flexShrink: 0,
-            fontSize: 14,
-            fontWeight: 800,
-            fontVariantNumeric: 'tabular-nums',
-            color: lifeDanger ? '#ff5555' : '#ffffff',
-          }}
-        >
-          <span aria-hidden style={{ color: '#ff6b6b', fontSize: 12 }}>❤</span>
-          {life}
-        </span>
+        {life != null && (
+          <span
+            title="Shared team life"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 3,
+              flexShrink: 0,
+              fontSize: 14,
+              fontWeight: 800,
+              fontVariantNumeric: 'tabular-nums',
+              color: lifeDanger ? '#ff5555' : '#ffffff',
+            }}
+          >
+            <span aria-hidden style={{ color: '#ff6b6b', fontSize: 12 }}>❤</span>
+            {life}
+          </span>
+        )}
       </div>
       {children}
     </div>
@@ -304,9 +310,10 @@ function SelfRailChip({ self }: { self: ClientPlayer }) {
 
   const playerId = self.playerId
   const seat = useIdentityColor(playerId)
-  // In a team game the shared life lives in the team header above, so the chip drops its own
-  // (identical) life number; it keeps hand/poison/turn/priority signals.
-  const teamMode = useIsTeamGame()
+  // Only when life is shared (2HG) does the team header carry it, so the chip drops its own
+  // (identical) number; in Team vs. Team each chip keeps its own life. Hand/poison/turn/priority
+  // signals are kept either way.
+  const teamMode = useIsSharedLifeTeamGame()
 
   const isActiveTurn = gameState?.activePlayerId === playerId && !self.hasLost
   const hasPriority = gameState?.priorityPlayerId === playerId && !self.hasLost
@@ -554,8 +561,9 @@ function RailChip({
 
   const playerId = opponent.playerId
   const seat = useIdentityColor(playerId)
-  // Team game: the shared life is in the team header, so the chip drops its own life number.
-  const teamMode = useIsTeamGame()
+  // Shared-life team game (2HG): the life is in the team header, so the chip drops its own number.
+  // Team vs. Team keeps per-player life on the chip.
+  const teamMode = useIsSharedLifeTeamGame()
 
   const isActiveTurn = gameState?.activePlayerId === playerId && !opponent.hasLost
   const hasPriority = gameState?.priorityPlayerId === playerId && !opponent.hasLost
