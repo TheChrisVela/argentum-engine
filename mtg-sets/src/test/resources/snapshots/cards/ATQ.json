@@ -209,6 +209,42 @@
     ]
 }
 
+// Argothian Treefolk
+{
+    "name": "Argothian Treefolk",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Creature — Treefolk",
+    "oracleText": "Prevent all damage that would be dealt to this creature by artifact sources.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "PreventDamage",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "RecipientSelf",
+                    "source": {
+                        "type": "SourceMatching",
+                        "filter": "artifact"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "30",
+        "artist": "Amy Weber",
+        "flavorText": "Haunting cries we hear in our dreams As the forest dies, a death from machines.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/d/8db8882e-4db6-4e3c-9e9e-8c71d557a071.jpg?1562924902"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Artifact Blast
 {
     "name": "Artifact Blast",

@@ -2,7 +2,7 @@
 
 **Set Size:** 85 cards
 **Release Date:** March 4, 1994
-**Implemented:** 36 / 85
+**Implemented:** 37 / 85
 | Color       | Count |
 |-------------|-------|
 | White       | 7     |
@@ -58,7 +58,7 @@
 
 ### Green
 - [x] Argothian Pixies
-- [ ] Argothian Treefolk
+- [x] Argothian Treefolk
 - [x] Citanul Druid
 - [ ] Crumble
 - [x] Gaea's Avenger
