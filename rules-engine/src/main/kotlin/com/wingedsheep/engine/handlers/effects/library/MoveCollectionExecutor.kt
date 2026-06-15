@@ -22,6 +22,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.CardOrder
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
+import com.wingedsheep.engine.state.components.stack.capturePermanentSnapshots
 import com.wingedsheep.sdk.scripting.effects.MoveType
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
@@ -736,7 +737,21 @@ class MoveCollectionExecutor(
             emptyMap()
         }
 
-        return EffectResult.success(newState, events).copy(updatedCollections = updatedCollections)
+        // Capture LKI snapshots of permanents sacrificed by this *effect* (Rule 608.2h) so a
+        // following pipeline/composite sibling can read the sacrificed permanent's P/T as it last
+        // existed — e.g. The Gitrog, Ravenous Ride: "draw X cards … where X is the sacrificed
+        // creature's power." Snapshots are taken from the pre-move projected state since the
+        // permanents have already left the battlefield by now. Mirrors the cost-sacrifice path.
+        val sacrificedSnapshots = if (moveType == MoveType.Sacrifice && cards.isNotEmpty()) {
+            capturePermanentSnapshots(cards, state.projectedState)
+        } else {
+            emptyList()
+        }
+
+        return EffectResult.success(newState, events).copy(
+            updatedCollections = updatedCollections,
+            updatedSacrificedPermanents = sacrificedSnapshots,
+        )
     }
 
     /**

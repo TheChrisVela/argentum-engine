@@ -10158,6 +10158,229 @@
     "colorIdentityOverride": []
 }
 
+// Lazav, Familiar Stranger
+{
+    "name": "Lazav, Familiar Stranger",
+    "manaCost": "{1}{U}{B}",
+    "typeLine": "Legendary Creature — Shapeshifter",
+    "oracleText": "Whenever you commit a crime, put a +1/+1 counter on Lazav. Then you may exile a card from a graveyard. If a creature card was exiled this way, you may have Lazav become a copy of that card until end of turn. This ability triggers only once each turn. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime.)",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "CommitCrimeEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Graveyard",
+                                "player": "Each"
+                            },
+                            "storeAs": "gathered1"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered1",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "lazavExiled",
+                            "prompt": "You may exile a card from a graveyard",
+                            "selectedLabel": "Exile",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "lazavExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "lazavExiled",
+                            "filter": {
+                                "type": "MatchesFilter",
+                                "filter": "creature"
+                            },
+                            "storeMatching": "lazavCreature"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "CollectionContainsMatch",
+                                    "collection": "lazavCreature",
+                                    "filter": "creature"
+                                }
+                            },
+                            "then": {
+                                "type": "Gated",
+                                "gate": "Gate.MayDecide",
+                                "then": {
+                                    "type": "EachPermanentBecomesCopyOfTarget",
+                                    "target": {
+                                        "type": "PipelineTarget",
+                                        "collectionName": "lazavCreature"
+                                    },
+                                    "duration": "EndOfTurn",
+                                    "affected": "Self",
+                                    "sourceFromAnyZone": true
+                                },
+                                "descriptionOverride": "You may have Lazav become a copy of that card until end of turn."
+                            }
+                        }
+                    ]
+                },
+                "oncePerTurn": true,
+                "descriptionOverride": "Whenever you commit a crime, put a +1/+1 counter on Lazav. Then you may exile a card from a graveyard. If a creature card was exiled this way, you may have Lazav become a copy of that card until end of turn. This ability triggers only once each turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "216",
+        "rarity": "UNCOMMON",
+        "artist": "Tyler Jacobson",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/0/00293326-3eb2-492c-b565-7abafa037d8c.jpg?1712356143",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Lazav's ability triggers only once each turn, the first time you commit a crime that turn. Committing additional crimes that turn won't cause it to trigger again."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You exile the card from a graveyard and have Lazav become a copy of it all while the ability is resolving."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "Lazav copies the printed values of the exiled creature card (as modified by any copy effects), plus any other copy effects. It keeps its +1/+1 counters and any other counters on it."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "The copy effect lasts until end of turn. After that, Lazav reverts to being Lazav, Familiar Stranger."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
+    ]
+}
+
+// Lilah, Undefeated Slickshot
+{
+    "name": "Lilah, Undefeated Slickshot",
+    "manaCost": "{1}{U}{R}",
+    "typeLine": "Legendary Creature — Human Rogue",
+    "oracleText": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nWhenever you cast a multicolored instant or sorcery spell from your hand, exile that spell instead of putting it into your graveyard as it resolves. If you do, it becomes plotted. (You may cast it as a sorcery on a later turn without paying its mana cost.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "PROWESS"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            },
+                            "IsMulticolored"
+                        ]
+                    },
+                    "requires": [
+                        {
+                            "type": "SpellCastFromZone",
+                            "zone": "Hand"
+                        }
+                    ]
+                },
+                "binding": "ANY",
+                "effect": "MarkSpellPlotOnResolve",
+                "descriptionOverride": "Whenever you cast a multicolored instant or sorcery spell from your hand, exile that spell instead of putting it into your graveyard as it resolves. It becomes plotted."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "217",
+        "rarity": "RARE",
+        "artist": "Andreas Zafiratos",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/2/e21f90ea-5934-4757-8515-38ef116afac1.jpg?1712356151",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Lilah's last ability triggers when you cast a multicolored instant or sorcery spell from your hand. It doesn't matter how the spell resolves; if it resolves, it's exiled and becomes plotted instead of being put into your graveyard."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "If the spell is countered or otherwise fails to resolve, it isn't exiled and doesn't become plotted. It's put into its owner's graveyard."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You can't cast a plotted card the same turn it became plotted."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Lively Dirge
 {
     "name": "Lively Dirge",
@@ -12058,6 +12281,218 @@
     ]
 }
 
+// Oko, the Ringleader
+{
+    "name": "Oko, the Ringleader",
+    "manaCost": "{2}{G}{U}",
+    "typeLine": "Legendary Planeswalker — Oko",
+    "oracleText": "At the beginning of combat on your turn, Oko becomes a copy of up to one target creature you control until end of turn, except he has hexproof.\n+1: Draw two cards. If you've committed a crime this turn, discard a card. Otherwise, discard two cards.\n−1: Create a 3/3 green Elk creature token.\n−5: For each other nonland permanent you control, create a token that's a copy of that permanent.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "BEGIN_COMBAT"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "EachPermanentBecomesCopyOfTarget",
+                            "duration": "EndOfTurn",
+                            "affected": "Self"
+                        },
+                        {
+                            "type": "GrantHexproof",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature ctrl:you"
+                    },
+                    "id": "creature you control"
+                },
+                "descriptionOverride": "At the beginning of combat on your turn, Oko becomes a copy of up to one target creature you control until end of turn, except he has hexproof."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": 1
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": "PlayerCommittedCrimeThisTurn"
+                            },
+                            "then": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            },
+                            "otherwise": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 2
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 2 cards to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -1
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 3,
+                    "toughness": 3,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Elk"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/1/6/1632f3fa-4615-46ee-9768-22bbd9d142d6.jpg?1712316649"
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            },
+            {
+                "id": "ability_4",
+                "cost": {
+                    "type": "CostLoyalty",
+                    "change": -5
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "nonland permanent ctrl:you",
+                            "excludeSelf": true
+                        }
+                    },
+                    "body": {
+                        "type": "CreateTokenCopyOfTarget",
+                        "target": "Self"
+                    }
+                },
+                "timing": "SorcerySpeed",
+                "isPlaneswalkerAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "223",
+        "rarity": "MYTHIC",
+        "artist": "Magali Villeneuve",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/9/396df8d6-e85d-4486-8116-68841b7e1e2e.jpg?1712356176",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "Oko's static ability triggers at the beginning of combat on your turn. If you control no creatures, you may still let the ability resolve; Oko just doesn't become a copy of anything."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "While Oko is a copy of a creature, he's both a planeswalker and a creature. He can attack and be attacked, and his loyalty abilities can still be activated."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "For -5, the tokens enter as copies of the permanents as they currently exist, copying only the copiable values (not counters, Auras, or other effects)."
+            }
+        ]
+    },
+    "startingLoyalty": 3,
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
+}
+
 // Omenport Vigilante
 {
     "name": "Omenport Vigilante",
@@ -13794,6 +14229,140 @@
         "rarity": "RARE",
         "artist": "Wylie Beckert",
         "imageUri": "https://cards.scryfall.io/normal/front/c/7/c7154dca-7e10-4c34-aa56-9f200c6277d1.jpg?1712356184"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
+}
+
+// Rakdos, the Muscle
+{
+    "name": "Rakdos, the Muscle",
+    "manaCost": "{2}{B}{B}{R}",
+    "typeLine": "Legendary Creature — Demon Mercenary",
+    "oracleText": "Flying, trample\nWhenever you sacrifice another creature, exile cards equal to its mana value from the top of target player's library. Until your next end step, you may play those cards, and mana of any type can be spent to cast those spells.\nSacrifice another creature: Rakdos gains indestructible until end of turn. Tap it. Activate only once each turn.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING",
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "creature"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "EntityProperty",
+                                    "entity": "Triggering",
+                                    "numericProperty": "ManaValue"
+                                },
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            },
+                            "storeAs": "rakdosExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rakdosExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile",
+                                "player": {
+                                    "type": "ContextPlayer",
+                                    "index": 0
+                                }
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "rakdosExiled",
+                            "expiry": {
+                                "type": "UntilControllerStep",
+                                "step": "END"
+                            },
+                            "withAnyManaType": true
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                },
+                "descriptionOverride": "Whenever you sacrifice another creature, exile cards equal to its mana value from the top of target player's library. Until your next end step, you may play those cards, and mana of any type can be spent to cast those spells."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomSacrifice",
+                        "filter": "creature",
+                        "excludeSelf": true
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "INDESTRUCTIBLE",
+                            "target": "Self"
+                        },
+                        {
+                            "type": "TapUntap",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "restrictions": [
+                    "OncePerTurn"
+                ],
+                "descriptionOverride": "Sacrifice another creature: Rakdos gains indestructible until end of turn. Tap it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "226",
+        "rarity": "MYTHIC",
+        "artist": "Victor Maury",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/b/bb34babd-1b85-4a7d-a066-a8337805056e.jpg?1712356185",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "The number of cards exiled is determined by the mana value of the sacrificed creature as it last existed on the battlefield."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You can play the exiled cards only until your next end step. Any you don't play remain exiled."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "Playing the exiled cards still uses up your one land play for the turn if any of them are lands."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "Mana of any type can be spent to cast the exiled spells, but you still must pay those costs."
+            }
+        ]
     },
     "colorIdentityOverride": [
         "BLACK",
@@ -18175,6 +18744,141 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// The Gitrog, Ravenous Ride
+{
+    "name": "The Gitrog, Ravenous Ride",
+    "manaCost": "{3}{B}{G}",
+    "typeLine": "Legendary Creature — Frog Horror Mount",
+    "oracleText": "Trample, haste\nWhenever The Gitrog deals combat damage to a player, you may sacrifice a creature that saddled it this turn. If you do, draw X cards, then put up to X land cards from your hand onto the battlefield tapped, where X is the sacrificed creature's power.\nSaddle 1",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "TRAMPLE",
+        "HASTE",
+        "SADDLE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "SADDLE",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "CreaturesThatSaddledSource",
+                            "storeAs": "gathered0"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered0",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "selected1",
+                            "prompt": "You may sacrifice a creature that saddled The Gitrog this turn",
+                            "selectedLabel": "Sacrifice",
+                            "useTargetingUI": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected1",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            },
+                            "moveType": "Sacrifice"
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "EntityProperty",
+                                "entity": "Sacrificed",
+                                "numericProperty": "Power"
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Hand",
+                                "filter": "land"
+                            },
+                            "storeAs": "gathered4"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "gathered4",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "EntityProperty",
+                                    "entity": "Sacrificed",
+                                    "numericProperty": "Power"
+                                }
+                            },
+                            "storeSelected": "selected5",
+                            "prompt": "Put up to X land cards from your hand onto the battlefield tapped"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "selected5",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever The Gitrog deals combat damage to a player, you may sacrifice a creature that saddled it this turn. If you do, draw X cards, then put up to X land cards from your hand onto the battlefield tapped, where X is the sacrificed creature's power."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "206",
+        "rarity": "MYTHIC",
+        "artist": "Johan Grenier",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/82512813-8618-483b-a7f0-e6a611d9d487.jpg?1712356103",
+        "rulings": [
+            {
+                "date": "2024-04-12",
+                "text": "X is determined by the power of the sacrificed creature as it last existed on the battlefield."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "You choose which creature to sacrifice (if any) and then draw and put lands all while the triggered ability resolves."
+            },
+            {
+                "date": "2024-04-12",
+                "text": "If you don't sacrifice a creature, you don't draw cards or put lands onto the battlefield."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
     ]
 }
 

@@ -777,6 +777,18 @@ object Effects {
     )
 
     /**
+     * Mark a spell on the stack so that it is exiled and becomes *plotted* (CR 718) instead of
+     * being put into its owner's graveyard when it resolves. Sibling of
+     * [MarkSpellExileWithCounters] for triggered abilities that read like a replacement effect,
+     * e.g. Lilah, Undefeated Slickshot's "exile that spell instead of putting it into your
+     * graveyard as it resolves. If you do, it becomes plotted." The plot designation is granted
+     * only if the spell actually resolves into exile (not if it is countered or fizzles).
+     */
+    fun MarkSpellPlotOnResolve(
+        target: EffectTarget = EffectTarget.TriggeringEntity,
+    ): Effect = com.wingedsheep.sdk.scripting.effects.MarkSpellPlotOnResolveEffect(target = target)
+
+    /**
      * Put onto the battlefield.
      */
     fun PutOntoBattlefield(target: EffectTarget, tapped: Boolean = false): Effect =
@@ -2886,6 +2898,10 @@ object Effects {
      * single-permanent "target permanent A becomes a copy of target permanent B" shape
      * (Fleeting Reflection) — then only that one resolved permanent becomes a copy of [target],
      * and [filter] / [excludeTarget] are ignored.
+     *
+     * Pass [sourceFromAnyZone] = true to let the copy *source* ([target]) live outside the
+     * battlefield — its copiable characteristics are read wherever it currently is (e.g. a card in
+     * exile). Used by Lazav, Familiar Stranger: "become a copy of that [exiled] card."
      */
     fun EachPermanentBecomesCopyOfTarget(
         target: EffectTarget = EffectTarget.ContextTarget(0),
@@ -2895,7 +2911,10 @@ object Effects {
         duration: Duration = Duration.Permanent,
         excludeTarget: Boolean = false,
         affected: EffectTarget? = null,
-    ): Effect = EachPermanentBecomesCopyOfTargetEffect(target, filter, duration, excludeTarget, affected)
+        sourceFromAnyZone: Boolean = false,
+    ): Effect = EachPermanentBecomesCopyOfTargetEffect(
+        target, filter, duration, excludeTarget, affected, sourceFromAnyZone
+    )
 
     // =========================================================================
     // Pipeline Targeting

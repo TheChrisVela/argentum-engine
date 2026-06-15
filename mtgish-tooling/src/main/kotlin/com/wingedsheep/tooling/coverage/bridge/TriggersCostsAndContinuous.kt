@@ -20,6 +20,15 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     supported("WhenACreatureBlocks", "trigger: blocks (Ydwen Efreet)")
     supported("WhenAPermanentBecomesTapped", "trigger: this permanent becomes tapped (Triggers.BecomesTapped — Wylie Duke, Atiin Hero)")
     supported("WhenACreatureDealsCombatDamageToAPlayer", "trigger: combat damage to player")
+    // "Whenever you sacrifice a/another [filter] …" — the batched sacrifice trigger that fires when a
+    // matching permanent you control is sacrificed (Triggers.YouSacrificeOneOrMore; the first matching
+    // sacrificed permanent is bound as the triggering entity so "its mana value / power" reads from LKI —
+    // Rakdos, the Muscle). You-scope; the emitter recovers the filter or declines -> SCAFFOLD.
+    supported("WhenAPlayerSacrificesAPermanent", "trigger: you sacrifice one or more matching permanents (Triggers.YouSacrificeOneOrMore)")
+    // "At the beginning of combat on your turn, …" (Triggers.BeginCombat — already scoped to your turn).
+    // Oko, the Ringleader's combat-begin copy. You-turn scope only; the emitter renders BeginCombat when
+    // the payoff is renderable (else SCAFFOLD).
+    supported("AtTheBeginningOfCombatDuringAPlayersTurn", "trigger: beginning of combat on your turn (Triggers.BeginCombat)")
     supported("WhenAPlayerCastsASpell", "trigger: a player casts a spell (Triggers.YouCastSpell / AnyPlayerCastsSpell / OpponentCastsSpell + type filters)")
     supported("WhenAPlayerCastsTheirNthSpellInATurn", "trigger: you cast your Nth spell each turn (Triggers.NthSpellCast(N, Player.You) — Rodeo Pyromancers)")
     // DELIBERATE DECLINE — Breeches, the Blastmaker. Its second-spell payoff (NthSpellCast above) is a
@@ -85,6 +94,10 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
 
     // Costs.
     supported("PayMana", "cost: pay mana (universal)")
+    // Planeswalker loyalty cost (CR 606) — the +N / -N ability activation cost. The engine models it
+    // via `loyaltyAbility(loyaltyChange) { }` with `startingLoyalty`. Oko, the Ringleader. The emitter
+    // declines the whole loyalty-ability envelope (Activated) -> SCAFFOLD, so this is capability-only.
+    supported("Loyalty", "cost: planeswalker loyalty +N/-N (loyaltyAbility(change) { })")
     supported("SacrificeAPermanent", "cost: sacrifice")
     supported("SacrificeNumberPermanents", "cost: sacrifice N")
     // "Pay N life" as an activation cost -> Costs.PayLife(n). The emitter renders fixed-integer amounts

@@ -1721,6 +1721,12 @@ class StackResolver(
             newState = applyExileCounters(newState, spellId, exileAfterResolveComp.withCounters, events)
         }
 
+        // Make the exiled card plotted (Lilah, Undefeated Slickshot): "exile that spell instead of
+        // putting it into your graveyard as it resolves. If you do, it becomes plotted."
+        if (destinationZone == Zone.EXILE && exileAfterResolveComp?.makePlotted == true) {
+            newState = applyPlottedToExiledCard(newState, spellId, ownerId, cardComponent?.name ?: "Unknown", events)
+        }
+
         // Link the exiled spell back to the source permanent (Goliath Daydreamer)
         // so the UI can display it tethered under the source and so the attack-trigger
         // free-cast ability can find it via the linked-exile pile.
@@ -2310,26 +2316,46 @@ class StackResolver(
         )
 
         if (makePlotted) {
-            newState = newState.updateEntity(spellId) { c ->
-                c.with(PlottedComponent(controllerId = ownerId, turnPlotted = newState.turnNumber))
-                    .with(PlayWithoutPayingCostComponent(controllerId = ownerId, permanent = true))
-            }
-            val (permId, stateWithPerm) = newState.newEntity()
-            newState = stateWithPerm.addMayPlayPermission(
-                MayPlayPermission(
-                    id = permId,
-                    cardIds = setOf(spellId),
-                    controllerId = ownerId,
-                    sourceId = spellId,
-                    condition = SourcePlottedOnPriorTurn,
-                    permanent = true,
-                    timestamp = newState.timestamp,
-                )
-            )
-            events.add(CardPlottedEvent(ownerId, spellId, cardComponent?.name ?: "Unknown"))
+            newState = applyPlottedToExiledCard(newState, spellId, ownerId, cardComponent?.name ?: "Unknown", events)
         }
 
         return ExecutionResult.success(newState, events)
+    }
+
+    /**
+     * Make a card that already sits in [ownerId]'s exile *plotted* (CR 718): tag it with
+     * [PlottedComponent] + [PlayWithoutPayingCostComponent], grant a permanent may-play
+     * permission gated on [SourcePlottedOnPriorTurn] (a plotted card can't be cast the turn it
+     * was plotted), and emit [CardPlottedEvent]. Shared by [ExileTargetSpellEffect]'s
+     * `makePlotted` path and the [ExileAfterResolveComponent].`makePlotted` self-cast path
+     * (Lilah, Undefeated Slickshot).
+     */
+    private fun applyPlottedToExiledCard(
+        state: GameState,
+        cardId: EntityId,
+        ownerId: EntityId,
+        cardName: String,
+        events: MutableList<GameEvent>,
+    ): GameState {
+        val turnPlotted = state.turnNumber
+        var newState = state.updateEntity(cardId) { c ->
+            c.with(PlottedComponent(controllerId = ownerId, turnPlotted = turnPlotted))
+                .with(PlayWithoutPayingCostComponent(controllerId = ownerId, permanent = true))
+        }
+        val (permId, stateWithPerm) = newState.newEntity()
+        newState = stateWithPerm.addMayPlayPermission(
+            MayPlayPermission(
+                id = permId,
+                cardIds = setOf(cardId),
+                controllerId = ownerId,
+                sourceId = cardId,
+                condition = SourcePlottedOnPriorTurn,
+                permanent = true,
+                timestamp = newState.timestamp,
+            )
+        )
+        events.add(CardPlottedEvent(ownerId, cardId, cardName))
+        return newState
     }
 
     /**

@@ -33,6 +33,12 @@ import kotlinx.serialization.Serializable
  *   permanent B" (Fleeting Reflection: "target creature you control … becomes a copy of up to one
  *   other target creature"). When set, [filter] / [excludeTarget] are ignored. If the [affected]
  *   target resolves to nothing the effect is a no-op.
+ * @property sourceFromAnyZone When true, the copy *source* ([target]) does not have to be on the
+ *   battlefield — its copiable characteristics are read from wherever it currently is (e.g. a card
+ *   in exile). The affected permanents still have to be on the battlefield. Models "become a copy
+ *   of that card" off a card just put into exile — Lazav, Familiar Stranger: "you may exile a card
+ *   from a graveyard. If a creature card was exiled this way, you may have Lazav become a copy of
+ *   that card until end of turn."
  */
 @SerialName("EachPermanentBecomesCopyOfTarget")
 @Serializable
@@ -44,6 +50,7 @@ data class EachPermanentBecomesCopyOfTargetEffect(
     val duration: Duration = Duration.Permanent,
     val excludeTarget: Boolean = false,
     val affected: EffectTarget? = null,
+    val sourceFromAnyZone: Boolean = false,
 ) : Effect {
     override val description: String =
         if (affected != null) {
