@@ -2,7 +2,7 @@
 
 **Set Size:** 85 cards
 **Release Date:** March 4, 1994
-**Implemented:** 25 / 85
+**Implemented:** 26 / 85
 | Color       | Count |
 |-------------|-------|
 | White       | 7     |
@@ -54,7 +54,7 @@
 - [ ] Dwarven Weaponsmith
 - [ ] Goblin Artisans
 - [ ] Orcish Mechanics
-- [ ] Shatterstorm
+- [x] Shatterstorm
 
 ### Green
 - [ ] Argothian Pixies

@@ -880,6 +880,49 @@
     ]
 }
 
+// Shatterstorm
+{
+    "name": "Shatterstorm",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "Destroy all artifacts. They can't be regenerated.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "BattlefieldMatching",
+                        "filter": "artifact"
+                    },
+                    "storeAs": "destroyAll_gathered"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "destroyAll_gathered",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Graveyard"
+                    },
+                    "moveType": "Destroy",
+                    "noRegenerate": true
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "28",
+        "rarity": "RARE",
+        "artist": "Mark Poole",
+        "flavorText": "Chains of leaping fire and sizzling lightning laid waste the artificers' handiwork, sparing not a single device.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/9/0987461a-45c0-4956-8627-cd27a7e038d0.jpg?1562897000"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Staff of Zegon
 {
     "name": "Staff of Zegon",
