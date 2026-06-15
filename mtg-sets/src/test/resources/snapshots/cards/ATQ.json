@@ -371,40 +371,64 @@
     ]
 }
 
-// Shatterstorm
+// Staff of Zegon
 {
-    "name": "Shatterstorm",
-    "manaCost": "{2}{R}{R}",
-    "typeLine": "Sorcery",
-    "oracleText": "Destroy all artifacts. They can't be regenerated.",
+    "name": "Staff of Zegon",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "{3}, {T}: Target creature gets -2/-0 until end of turn.",
     "script": {
-        "spellEffect": {
-            "type": "ForEach",
-            "space": {
-                "type": "IterationSpace.Group",
-                "filter": {
-                    "baseFilter": "artifact"
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
                 },
-                "noRegenerate": true
-            },
-            "body": {
-                "type": "MoveToZone",
-                "target": "Self",
-                "destination": "Graveyard",
-                "byDestruction": true
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": -2
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{3}, {T}: Target creature gets -2/-0 until end of turn."
             }
-        }
+        ]
     },
     "metadata": {
-        "collectorNumber": "28",
-        "rarity": "RARE",
+        "collectorNumber": "65",
         "artist": "Mark Poole",
-        "flavorText": "Chains of leaping fire and sizzling lightning laid waste the artificers' handiwork, sparing not a single device.",
-        "imageUri": "https://cards.scryfall.io/normal/front/0/9/0987461a-45c0-4956-8627-cd27a7e038d0.jpg"
+        "flavorText": "Though Mishra was impressed by the staves Ashnod had created for Zegon's defense, he understood they only hinted at her full potential.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/6/a6bf858d-bba9-4a16-9045-55384b1de633.jpg?1562930132"
     },
-    "colorIdentityOverride": [
-        "RED"
-    ]
+    "colorIdentityOverride": []
 }
 
 // Wall of Spears
