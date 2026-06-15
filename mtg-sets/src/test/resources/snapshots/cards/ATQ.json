@@ -263,6 +263,34 @@
     "colorIdentityOverride": []
 }
 
+// Mightstone
+{
+    "name": "Mightstone",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "Attacking creatures get +1/+0.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 0,
+                "filter": {
+                    "baseFilter": "creature attacking"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "55",
+        "rarity": "UNCOMMON",
+        "artist": "Pete Venters",
+        "flavorText": "While exploring the sacred cave of Koilos with his brother Mishra and their master Tocasia, Urza fell behind in the Hall of Tagsin, where he discovered the remarkable Mightstone.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b28ba599-5299-4831-a118-1712ada10ef6.jpg?1562932633"
+    },
+    "colorIdentityOverride": []
+}
+
 // Onulet
 {
     "name": "Onulet",
