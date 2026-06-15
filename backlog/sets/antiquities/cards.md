@@ -2,7 +2,7 @@
 
 **Set Size:** 85 cards
 **Release Date:** March 4, 1994
-**Implemented:** 24 / 85
+**Implemented:** 25 / 85
 | Color       | Count |
 |-------------|-------|
 | White       | 7     |
@@ -48,7 +48,7 @@
 - [ ] Yawgmoth Demon
 
 ### Red
-- [ ] Artifact Blast
+- [x] Artifact Blast
 - [ ] Atog
 - [ ] Detonate
 - [ ] Dwarven Weaponsmith
