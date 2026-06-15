@@ -66,6 +66,11 @@ internal fun BridgeBuilder.zoneMovement() {
     // mid-resolution CastFromCollectionWithoutPayingCostEffect over a card just exiled by the look
     // pipeline (Sunbird's Invocation / Goliath Daydreamer shape).
     composed("CastExiledCardWithoutPaying", "CastFromCollectionWithoutPayingCost over the exiled card", composes = listOf("CastFromCollectionWithoutPayingCost"))
+    // "You may cast a [filtered] spell from your hand without paying its mana cost" (Kellan, the
+    // Kid). Gather hand -> FilterCollection(ManaValueAtMost(...)) -> CastFromCollectionWithoutPayingCost.
+    // Coverable as a composition even though Kellan's full free-cast-or-play-land body declines to
+    // SCAFFOLD in the emitter.
+    composed("CastASpellFromHandWithoutPaying", "CastFromCollectionWithoutPayingCost over a hand-gathered, MV-bounded collection", composes = listOf("CastFromCollectionWithoutPayingCost"))
     // "Exile target spell" (CR 718 — Aven Interrupter). Not a counter (ignores can't-be-countered);
     // the spell leaves the stack and fails to resolve. Maps to ExileTargetSpellEffect; the paired
     // `CreateExiledCardEffect[IsPlotted]` sub-action sets `makePlotted = true` (the exiled card

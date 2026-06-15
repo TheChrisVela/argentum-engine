@@ -1816,6 +1816,12 @@ matcher branch — `SpellCastEvent` does not grow a new field per axis.
 - `SpellCastPredicate.CastFromZone(zone)` — spell was cast from this zone. Used for Sunbird's
   Invocation (`Zone.HAND`), Goliath Daydreamer's instant/sorcery-from-hand trigger,
   Wildsear's enchantment-from-hand cascade.
+- `SpellCastPredicate.CastFromZoneOtherThan(zone)` — the negation: spell was cast from a known
+  zone that is *not* [zone]. Fires only on an actual cast from a different recorded zone (a spell
+  with no recorded cast zone does not satisfy it). Used by Kellan, the Kid — "Whenever you cast a
+  spell from anywhere other than your hand" (`CastFromZoneOtherThan(Zone.HAND)`): casts from
+  exile (Adventure / plotted), graveyard (flashback), or the top of library all match; hand casts
+  don't.
 - `SpellCastPredicate.WasKicked` — spell was cast with kicker (CR 702.32). Used for
   Hallar / Bloodstone Goblin.
 - `SpellCastPredicate.PaidWithManaFromSubtype(subtype)` — mana from a permanent of this
@@ -3346,6 +3352,13 @@ sibling effect that reads `DynamicAmount.EntityProperty(EntityReference.AmassedA
     `DynamicAmount.TotalManaSpent`, which reads the *current resolving object's own* cast — this
     reads the **triggering** spell's cast (the payoff lives on a separate permanent). Populated
     from `SpellCastEvent.totalManaSpent`; `0` for non-cast triggers.
+  - `TRIGGERING_SPELL_MANA_VALUE` — mana value (CR 202.3) of the spell that fired the trigger
+    (Kellan, the Kid — "a permanent spell with equal or lesser mana value"). Distinct from
+    `MANA_SPENT_ON_TRIGGERING_SPELL` (mana actually paid): this is the spell's printed mana
+    value, unaffected by cost reductions / alternative costs / X. Populated from
+    `SpellCastEvent.manaValue`; `0` for non-cast triggers. Pair with
+    `CollectionFilter.ManaValueAtMost(ContextProperty(TRIGGERING_SPELL_MANA_VALUE))` to bound a
+    gathered collection by the triggering spell's mana value.
   - `TRIGGER_SCRY_COUNT` — cards looked at by the scry that fired the trigger (Celeborn the
     Wise, Elrond Master of Healing). Equals the scry N parameter.
   - `TRIGGER_EXCESS_DAMAGE_AMOUNT` — damage past lethal in the trigger payload (CR 120.4a).

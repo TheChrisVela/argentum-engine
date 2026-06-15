@@ -326,7 +326,8 @@ class StackResolver(
                 wasKicked = wasKicked,
                 totalManaSpent = totalManaSpent,
                 paidWithTreasureMana = paidWithTreasureMana,
-                chosenModesCount = reportedChosenModesCount
+                chosenModesCount = reportedChosenModesCount,
+                manaValue = cardComponent.manaValue
             )
         )
 
@@ -1912,6 +1913,7 @@ class StackResolver(
             triggerExcessDamageAmount = abilityComponent.triggerExcessDamageAmount,
             triggerRecipientToughness = abilityComponent.triggerRecipientToughness,
             triggerManaSpentOnTriggeringSpell = abilityComponent.triggerManaSpentOnTriggeringSpell,
+            triggerManaValueOfTriggeringSpell = abilityComponent.triggerManaValueOfTriggeringSpell,
             xValue = abilityComponent.xValue,
             damageDistribution = abilityComponent.damageDistribution,
             chosenModes = abilityComponent.chosenModes,

@@ -1950,10 +1950,14 @@ object Effects {
 
     /**
      * Cast the (0..1) card stored under [from] without paying its mana cost. The card must
-     * already be in a zone where casting is legal (e.g. exile after a move/copy step).
+     * already be in a zone where casting is legal (e.g. exile after a move/copy step, or the
+     * hand for "you may cast … from your hand without paying its mana cost"). When [storeCastTo]
+     * is set, the cast card's id is published to that pipeline collection on a successful cast,
+     * so an enclosing [IfYouDo] with [SuccessCriterion.CollectionNonEmpty] can gate the
+     * "if you don't, …" branch (Kellan, the Kid).
      */
-    fun CastFromCollectionWithoutPayingCost(from: String): Effect =
-        CastFromCollectionWithoutPayingCostEffect(from = from)
+    fun CastFromCollectionWithoutPayingCost(from: String, storeCastTo: String? = null): Effect =
+        CastFromCollectionWithoutPayingCostEffect(from = from, storeCastTo = storeCastTo)
 
     /**
      * Cast the (0..1) card stored under [from], **paying its normal mana cost** (the "you may
