@@ -1,20 +1,21 @@
 # Outlaws of Thunder Junction — Engine Gap Analysis
 
-Cross-reference of the **254 remaining (unimplemented) OTJ cards** against the engine's actual
-capabilities (SDK reference + source verification, June 2026). Generated to scope what must be
-built before the set can be completed.
+Historical cross-reference of the OTJ engine gaps against the engine's actual capabilities (SDK
+reference + source verification, June 2026). Kept as an implementation log now that the set is
+complete.
 
-**Status:** 17 / 271 implemented (6%). Card list from `scripts/card-status --list --set OTJ`.
+**Status: complete — 271 / 271 implemented, no missing cards.** Verified with
+`scripts/card-status --set OTJ`.
 Oracle text pulled from Scryfall (`set:otj unique:cards`, 276 printings → 271 unique cards + 5
 basics).
 
 ## Bottom line
 
-OTJ is built around a small set of named mechanics, **most of which the engine already supports**:
+OTJ is built around a small set of named mechanics, all of which are now covered well enough for the
+full set implementation:
 Plot, Spree, "commit a crime", the Outlaw creature-type group, Treasure, Crew, **and now Saddle /
-Mount** are all done. With Saddle landed, the overwhelming majority of the set is buildable today
-(standard creatures, removal, Deserts, Plot/Spree spells, crime payoffs, token-makers). What's left
-is a handful of small recurring primitives plus ~12 genuinely one-off cards.
+Mount** are all done. The notes below are retained as the historical gap breakdown that drove the
+implementation.
 
 ### Already supported — no new engine work
 
