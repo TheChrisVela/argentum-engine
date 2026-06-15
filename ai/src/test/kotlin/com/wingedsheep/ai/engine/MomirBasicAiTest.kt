@@ -1,8 +1,10 @@
 package com.wingedsheep.ai.engine
 
 import com.wingedsheep.engine.core.ActivateAbility
+import com.wingedsheep.engine.core.PassPriority
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.player.LandDropsComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.tokens.PredefinedTokens
@@ -61,6 +63,50 @@ class MomirBasicAiTest : ScenarioTestBase() {
             activate.xValue.shouldNotBeNull()
             activate.xValue!! shouldBeGreaterThanOrEqual 1
             // ...and the discard cost was paid with one card.
+            activate.costPayment?.discardedCards?.size shouldBe 1
+        }
+
+        test("AI skips weak early Momir activations on the play") {
+            val game = scenario()
+                .withPlayers()
+                .withFormat(Format.MomirBasic(eligibleCreatureNames = listOf("Savannah Lions")))
+                .withCardInCommandZone(1, avatar)
+                .withLandsOnBattlefield(1, "Forest", 2)
+                .withCardsInHand(1, "Mountain", 6)
+                .withTurnNumber(3)
+                .withActivePlayer(1)
+                .build()
+            game.state = game.state.updateEntity(game.player1Id) { container ->
+                container.with(LandDropsComponent(remaining = 0, maxPerTurn = 1))
+            }
+
+            val ai = AIPlayer.create(aiRegistry, game.player1Id)
+            ai.chooseAction(game.state).shouldBeInstanceOf<PassPriority>()
+        }
+
+        test("AI aims Momir activations at eight drops once more mana is available") {
+            val game = scenario()
+                .withPlayers()
+                .withFormat(
+                    Format.MomirBasic(
+                        eligibleCreatureNames = listOf("Akroma, Angel of Wrath", "Teeka's Dragon")
+                    )
+                )
+                .withCardInCommandZone(1, avatar)
+                .withLandsOnBattlefield(1, "Forest", 9)
+                .withCardsInHand(1, "Mountain", 2)
+                .withTurnNumber(17)
+                .withActivePlayer(1)
+                .build()
+            game.state = game.state.updateEntity(game.player1Id) { container ->
+                container.with(LandDropsComponent(remaining = 0, maxPerTurn = 1))
+            }
+
+            val ai = AIPlayer.create(aiRegistry, game.player1Id)
+            val activate = ai.chooseAction(game.state).shouldBeInstanceOf<ActivateAbility>()
+
+            game.state.getEntity(activate.sourceId)?.get<CardComponent>()?.name shouldBe avatar
+            activate.xValue shouldBe 8
             activate.costPayment?.discardedCards?.size shouldBe 1
         }
     }

@@ -531,11 +531,15 @@ class TriggerProcessor(
         // If the ability is optional (e.g., "you may"), allow selecting 0 targets to decline
         val requirementInfos = allRequirements.mapIndexed { index, req ->
             val effectiveMinTargets = if (ability.optional) 0 else req.effectiveMinCount
+            // "Any number of target ..." (unlimited) caps at however many legal targets exist,
+            // mirroring the cast-time path (TargetEnumerationUtils). Using req.count (always 1
+            // for an unlimited requirement) would wrongly clamp the decision to a single target.
+            val maxTargets = if (req.unlimited) (allLegalTargets[index]?.size ?: 0) else req.count
             TargetRequirementInfo(
                 index = index,
                 description = req.description,
                 minTargets = effectiveMinTargets,
-                maxTargets = req.count,
+                maxTargets = maxTargets,
                 sameOwner = (req as? com.wingedsheep.sdk.scripting.targets.TargetObject)?.sameOwner == true
             )
         }

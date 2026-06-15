@@ -35,6 +35,7 @@ import com.wingedsheep.sdk.scripting.MayPlayLandsFromGraveyard
 import com.wingedsheep.sdk.scripting.MayPlayPermanentsFromGraveyard
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlayLandsAndCastFilteredFromTopOfLibrary
+import com.wingedsheep.sdk.scripting.PlotFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlayersCantCastSpells
 import com.wingedsheep.sdk.scripting.PreventActivatedAbilities
 import com.wingedsheep.sdk.scripting.PreventCycling
@@ -367,6 +368,21 @@ class CastPermissionUtils(
                 if (ability is PlayLandsAndCastFilteredFromTopOfLibrary) {
                     return ability.spellFilter
                 }
+            }
+        }
+        return null
+    }
+
+    /**
+     * If [playerId] controls a permanent granting [PlotFromTopOfLibrary] (Fblthp), the filter the
+     * top card must match to be plottable from the library; null if no such permission is active.
+     */
+    fun getPlotFromTopOfLibraryFilter(state: GameState, playerId: EntityId): GameObjectFilter? {
+        for (entityId in state.getBattlefield(playerId)) {
+            val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
+            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+            for (ability in cardDef.script.staticAbilities) {
+                if (ability is PlotFromTopOfLibrary) return ability.filter
             }
         }
         return null

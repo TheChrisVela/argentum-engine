@@ -429,7 +429,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `GrantPlayWithoutPayingCost(from)` — same, without paying mana costs.
 - `GrantPlayWithCostIncrease(from, amount)` — stamp `PlayWithCostIncreaseComponent(controllerId, amount)` on every card in the collection, so the next cast pays `{amount}` extra generic. Pair with `GrantMayPlayFromExile` for "each spell cast this way costs {N} more" clauses (Lightstall Inquisitor); for target-based "exile this permanent, owner may play it, opponents tax" effects use `Effects.ExileAndGrantOwnerPlayPermission` instead.
 - `GrantFreeCastTargetFromExile(target)` — cast specific exiled card for free.
-- `MakePlotted(from)` — make every card in the named collection *plotted* (CR 718). The cards must already be in exile (chain after a `MoveCollection` to `Zone.EXILE`). Each card gets the plotted designation (`PlottedComponent`) + a permanent free-cast-as-a-sorcery-on-a-later-turn permission (`PlayWithoutPayingCostComponent` + `MayPlayPermission` gated by `SourcePlottedOnPriorTurn`) — the Plot keyword's state without a plot cost. Emits a `CardPlottedEvent` per card so "when this card becomes plotted" triggers fire. No-ops on an empty collection (so an optional "you may exile … it becomes plotted" fork is safe). Used by Make Your Own Luck.
+- `MakePlotted(from, ownerControls = false)` — make every card in the named collection *plotted* (CR 718). The cards must already be in exile (chain after a `MoveCollection` to `Zone.EXILE`). Each card gets the plotted designation (`PlottedComponent`) + a permanent free-cast-as-a-sorcery-on-a-later-turn permission (`PlayWithoutPayingCostComponent` + `MayPlayPermission` gated by `SourcePlottedOnPriorTurn`) — the Plot keyword's state without a plot cost. Emits a `CardPlottedEvent` per card so "when this card becomes plotted" triggers fire. No-ops on an empty collection (so an optional "you may exile … it becomes plotted" fork is safe). With `ownerControls = true` the free-cast permission goes to each card's **owner** rather than the effect's controller (CR 718.2 — for "exile target spell, it becomes plotted" the spell's owner casts it later, not the plotter); default is controller-controls (you plot a card you own, like Make Your Own Luck).
 
 ### Stats & keywords
 
@@ -597,6 +597,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   for Goldvein Hydra's "create a number of tapped Treasure tokens equal to its power").
 - `CreateFood(count?, controller?)` — Food tokens.
 - `CreateLander(count?, controller?)` — Lander land tokens.
+- `CreateMeteorite(count?, tapped?, controller?)` — Meteorite tokens (Roxanne, Starfall Savant): a
+  colorless artifact with "When this token enters, it deals 2 damage to any target." and "{T}: Add
+  one mana of any color." Roxanne creates them `tapped = true`.
 - `CreateMutavault(count?, tapped?, controller?)` — Mutavault tokens.
 - `CreateRoleToken(roleName, target)` — attach a Role aura token.
 - `CreateMapToken(count?)` — Map artifact tokens.
@@ -699,6 +702,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   - `target = CounterTarget.Spell` / `Ability` / `SpellOrAbility` — `SpellOrAbility` dispatches at resolution by inspecting whether the stack entity has a `SpellOnStackComponent`. Used by Teferi's Response.
   - `condition = CounterCondition.UnlessPaysMana(cost, onPaid?)` / `UnlessPaysDynamic(amount, onPaid?)` — "unless its controller pays …" with an optional `onPaid: Effect` rider that fires **only** when the spell's controller pays (Divert Disaster's "If they do, you create a Lander token"). The rider executes with the counter's controller as `controllerId`, so "you" in the rider resolves to the caster of the counter. The rider does not fire when the spell is countered. Facade: `Effects.CounterUnlessPays(cost, onPaid)` / `Effects.CounterUnlessDynamicPays(amount, exileOnCounter, onPaid)`.
 - `CounterAllOnStackEffect(filter?, destination?)` — counter everything matching.
+- `ExileTargetSpellEffect(makePlotted = false)` (facade `Effects.ExileTargetSpell(makePlotted)`) — exile target spell (CR 718 "exile target spell"). **Not a counter:** it removes the spell from the stack and exiles the card even if the spell *can't be countered* (so it works where `CounterEffect(destination = Exile())` no-ops), and it fires no "whenever a spell is countered" trigger — but the spell still fails to resolve because it left the stack. With `makePlotted = true` the exiled card becomes *plotted* for its **owner** (gains `PlottedComponent` + a permanent free-cast-on-a-later-turn `MayPlayPermission` gated by `SourcePlottedOnPriorTurn`, granted to the owner per CR 718.2), emitting a `CardPlottedEvent`. Pair with `Targets.Spell`. Used by **Aven Interrupter** ("When this creature enters, exile target spell. It becomes plotted.").
 - `OpenLifeBid(onWin, participant = Player.AnOpponent)` — open life-bidding auction between you and `participant` (resolved against the effect context). You open at a bid of 1; the two bidders alternate topping the high bid (yes/no to top, then a number for the amount, capped at the bidder's life) until one passes. The high bidder loses that much life; `onWin` runs **only if you win**, with the original targets in context. If `participant` resolves to you (or to nobody), you're the sole bidder and win at the opening bid. For Mages' Contest, bid against the targeted spell's controller and counter it: `Effects.OpenLifeBid(Effects.CounterSpell(), Player.ControllerOf("target spell"))` — pair with a `TargetSpell` requirement.
 - `DestroySourceOfTargetedAbilityEffect` — when the targeted stack object is a permanent's activated/triggered ability, destroy that source permanent. Compose *before* the counter step so the ability component is still readable (Teferi's Response).
 - `CopyTargetSpellEffect(target)` — copy a spell on the stack.
@@ -1213,7 +1217,10 @@ Every `TargetRequirement` carries count semantics (defaults shown):
   no limit and the minimum is 0. Use this instead of a large placeholder `count` (Phyrexian Purge,
   Kaboom, Weaver of Lies). Available on `TargetObject` / `TargetCreature(...)` / `TargetPlayer` and
   on `TargetOpponent` — `TargetOpponent(unlimited = true)` is "any number of target opponents"
-  (Hollow Marauder); pair with `ForEachTargetEffect` to apply a per-opponent body. For "**X** target
+  (Hollow Marauder); pair with `ForEachTargetEffect` to apply a per-opponent body. Works on
+  **triggered abilities** as well as spells — `TargetPlayer(unlimited = true)` on a triggered
+  ability sizes the decision's `maxTargets` to the legal-target count (Tinybones Joins Up's
+  "any number of target players each discard a card"). For "**X** target
   creatures" use `dynamicMaxCount = DynamicAmount.XValue` instead — that clamps the count to the chosen X.
 - `dynamicMaxCount: DynamicAmount?` — evaluated when the spell/ability hits the stack; the resolved
   value becomes the max ("up to X target creatures", X = board state or chosen X).
@@ -2166,7 +2173,8 @@ staticAbility {
 ```
 
 - `target: SpellCostTarget` — `SelfCast`, `YouCast(filter)`, `AnyCaster(filter)`,
-  `OpponentsCastTargeting(GroupFilter)`, `FaceDownYouCast`, `MorphActivation`.
+  `OpponentsCastTargeting(GroupFilter)`, `OpponentsCastFromZones(zones, filter?)`, `FaceDownYouCast`, `MorphActivation`.
+  - `OpponentsCastFromZones(zones, filter = Any)` — spells the source-controller's opponents cast **from one of `zones`** (matched against the spell's actual cast zone, threaded as `fromZone`), matching `filter`. Pair with `CostModification.IncreaseGeneric(n)` for the Aven Interrupter shape: `OpponentsCastFromZones(setOf(Zone.GRAVEYARD, Zone.EXILE))` + `IncreaseGeneric(2)` = "Spells your opponents cast from graveyards or from exile cost {2} more to cast."
 - `modification: CostModification` — `ReduceGeneric(amount)`, `ReduceGenericBy(source)`,
   `ReduceColored(symbols)`, `ReduceColoredPerUnit(symbols, source)`,
   `ReduceColoredIfAnyTargetMatches(symbols, filter)` (target-gated **colored** reduction — the
@@ -2253,7 +2261,10 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   `rider` is an optional non-mana `Effect` resolved inline, controlled by the tapping player
   (`EffectTarget.Controller` = tapper, `EffectTarget.Self` = the static's source). (Lavaleaper = basic-land
   mirror; Badgermole Cub = `+{G}`; **Overabundance** = `GameObjectFilter.Land` mirror + `DealDamage(1,
-  Controller)` rider)
+  Controller)` rider; **Roxanne, Starfall Savant** = `GameObjectFilter.Artifact.token().youControl()`
+  mirror). The mirror fires for both fixed-color producers (handled synchronously) and **any-color**
+  producers whose color is chosen at tap time (e.g. Roxanne's Meteorite "{T}: Add one mana of any
+  color" — the mirror is applied after the color choice resolves, in the color-choice continuation).
 - `ReplaceLandManaColor(filter)` — global: lands matching `filter` produce one mana of a color of their
   controller's choice instead of their normal mana. Implemented by swapping the land's base mana effect
   for "add one mana of any color", so the choice flows through the normal any-color machinery (manual tap
@@ -2335,6 +2346,13 @@ concerns — the `ClientStateTransformer` reveals the top card for `PlayFromTopO
   play, no full public reveal. (Precognition Field = instants/sorceries)
 - `LookAtTopOfLibrary` — *private*: the controller may look at their own top card any time (revealed
   only to them, not opponents). (Lens of Clarity, Vizier of the Menagerie)
+- `PlotFromTopOfLibrary(filter = Nonland)` — the controller may **plot** (CR 718) the top card of
+  their library if it matches `filter`, paying a plot cost equal to the card's mana cost. The plot
+  legal-action enumerator offers the top card as a plot action and `PlotCardHandler` moves it from
+  library → exile and plots it (sorcery-speed special action; can't be cast the turn it's plotted).
+  Grants an *additional* way to plot — a card with its own printed plot cost may still use that. Pair
+  with `LookAtTopOfLibrary` so the controller can see the card. (Fblthp, Lost on the Range =
+  nonland.)
 - `OpponentsPlayWithHandsRevealed` — visibility-only, the opponent-facing sibling of
   `RevealTopOfLibrary`: each opponent of the controller plays with their hand publicly visible to
   that controller (no other game effect). Handled entirely by the client state transformer's

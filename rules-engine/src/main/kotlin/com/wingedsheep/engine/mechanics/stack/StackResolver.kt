@@ -31,11 +31,14 @@ import com.wingedsheep.engine.state.components.identity.HasMorphAbilityComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.engine.state.components.identity.ExileAfterResolveComponent
 import com.wingedsheep.engine.state.components.identity.PlayWithoutPayingCostComponent
+import com.wingedsheep.engine.state.components.identity.PlottedComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.engine.state.components.identity.TextReplacementComponent
+import com.wingedsheep.engine.state.permissions.MayPlayPermission
 import com.wingedsheep.engine.state.permissions.addMayPlayPermission
 import com.wingedsheep.engine.state.permissions.removeMayPlayPermissionsForCard
+import com.wingedsheep.sdk.scripting.conditions.SourcePlottedOnPriorTurn
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.GrantCantBeCountered
 import com.wingedsheep.sdk.scripting.KeywordAbility
@@ -2250,6 +2253,72 @@ class StackResolver(
                 )
             )
         )
+    }
+
+    /**
+     * Exile a spell on the stack (CR 718 "exile target spell" — Aven Interrupter), optionally
+     * making it *plotted* for its owner.
+     *
+     * Unlike [counterSpellToExile] this is **not** a counter: it ignores can't-be-countered
+     * (the spell is exiled regardless — Aven Interrupter's ruling: "Spells that can't be
+     * countered can still be exiled"), and it emits no [SpellCounteredEvent] (so "whenever a
+     * spell is countered" triggers don't fire). The spell still ceases to resolve because it
+     * leaves the stack. A [ZoneChangeEvent] from [Zone.STACK] to [Zone.EXILE] is emitted.
+     *
+     * When [makePlotted] is true the exiled card gets the plotted designation and a permanent
+     * free-cast-on-a-later-turn permission gated by [SourcePlottedOnPriorTurn], granted to the
+     * card's **owner** (CR 718.2 / the reminder text: "Its owner may cast it as a sorcery on a
+     * later turn without paying its mana cost"), and a [CardPlottedEvent] is emitted.
+     */
+    fun exileSpell(
+        state: GameState,
+        spellId: EntityId,
+        makePlotted: Boolean
+    ): ExecutionResult {
+        if (spellId !in state.stack) {
+            return ExecutionResult.error(state, "Spell not on stack: $spellId")
+        }
+        val container = state.getEntity(spellId)
+            ?: return ExecutionResult.error(state, "Spell not found: $spellId")
+        val cardComponent = container.get<CardComponent>()
+        val spellComponent = container.get<SpellOnStackComponent>()
+        val ownerId = cardComponent?.ownerId
+            ?: spellComponent?.casterId
+            ?: return ExecutionResult.error(state, "Cannot determine spell owner")
+
+        // Remove from the stack and put the card into its owner's exile.
+        var newState = state.removeFromStack(spellId)
+        val exileZone = ZoneKey(ownerId, Zone.EXILE)
+        newState = newState.addToZone(exileZone, spellId)
+        newState = newState.updateEntity(spellId) { c ->
+            c.without<SpellOnStackComponent>().without<TargetsComponent>()
+        }
+
+        val events = mutableListOf<GameEvent>(
+            ZoneChangeEvent(spellId, cardComponent?.name ?: "Unknown", Zone.STACK, Zone.EXILE, ownerId)
+        )
+
+        if (makePlotted) {
+            newState = newState.updateEntity(spellId) { c ->
+                c.with(PlottedComponent(controllerId = ownerId, turnPlotted = newState.turnNumber))
+                    .with(PlayWithoutPayingCostComponent(controllerId = ownerId, permanent = true))
+            }
+            val (permId, stateWithPerm) = newState.newEntity()
+            newState = stateWithPerm.addMayPlayPermission(
+                MayPlayPermission(
+                    id = permId,
+                    cardIds = setOf(spellId),
+                    controllerId = ownerId,
+                    sourceId = spellId,
+                    condition = SourcePlottedOnPriorTurn,
+                    permanent = true,
+                    timestamp = newState.timestamp,
+                )
+            )
+            events.add(CardPlottedEvent(ownerId, spellId, cardComponent?.name ?: "Unknown"))
+        }
+
+        return ExecutionResult.success(newState, events)
     }
 
     /**

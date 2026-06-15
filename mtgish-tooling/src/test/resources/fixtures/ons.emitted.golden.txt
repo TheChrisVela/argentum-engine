@@ -13064,7 +13064,7 @@ val WheelAndDeal = card("Wheel and Deal") {
     colorIdentity = "U"
     typeLine = "Instant"
     oracleText = "Any number of target opponents each discard their hands, then draw seven cards.\nDraw a card."
-    // STRUCTURE needs human wiring: target:AnyNumberOfTargetPlayers
+    // STRUCTURE needs human wiring: EachPlayerActions
     metadata {
         rarity = Rarity.RARE
         collectorNumber = "121"

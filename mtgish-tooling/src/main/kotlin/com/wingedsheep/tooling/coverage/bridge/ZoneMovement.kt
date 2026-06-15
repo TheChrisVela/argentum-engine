@@ -66,6 +66,16 @@ internal fun BridgeBuilder.zoneMovement() {
     // mid-resolution CastFromCollectionWithoutPayingCostEffect over a card just exiled by the look
     // pipeline (Sunbird's Invocation / Goliath Daydreamer shape).
     composed("CastExiledCardWithoutPaying", "CastFromCollectionWithoutPayingCost over the exiled card", composes = listOf("CastFromCollectionWithoutPayingCost"))
+    // "Exile target spell" (CR 718 — Aven Interrupter). Not a counter (ignores can't-be-countered);
+    // the spell leaves the stack and fails to resolve. Maps to ExileTargetSpellEffect; the paired
+    // `CreateExiledCardEffect[IsPlotted]` sub-action sets `makePlotted = true` (the exiled card
+    // becomes plotted for its owner).
+    effect("ExileSpell", "ExileTargetSpell")
+    // "It becomes plotted." — the exiled-card designation on a freshly-exiled card (CR 718).
+    // Renders via the `makePlotted` flag on ExileTargetSpell (Aven) or MakePlottedEffect
+    // (Make Your Own Luck); the capability is the plotted designation itself.
+    supported("IsPlotted", "exiled-card effect: becomes plotted (MakePlottedEffect / ExileTargetSpell.makePlotted)")
+    envelope("CreateExiledCardEffect", "envelope: apply an effect to a just-exiled card (capability is the _ExiledCardEffect)")
     composed("ExileEachPermanent", UNIVERSAL, composes = listOf("MoveCollection", "MoveToZone"))
     composed("MillNumberCards", UNIVERSAL, composes = listOf("MoveCollection"))
     composed("MillCards", UNIVERSAL, composes = listOf("MoveCollection"))

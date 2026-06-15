@@ -41,7 +41,7 @@ internal val playerContinuousHandlers: Map<String, ActionHandler> = actionHandle
         call("FlipCoinEffect", arg("lostEffect", edsl))
     }
 
-    on("EachPlayerAction") { node, _, _ -> renderEachPlayer(node) }
+    on("EachPlayerAction", "EachPlayerActions") { node, _, _ -> renderEachPlayer(node) }
     on("PlayerAction", "HavePlayerTakeAction") { node, _, tvar -> renderPlayerAction(node, tvar) }
 
     on("CreateReplaceWouldDealDamageUntil") { node, _, tvar ->
@@ -242,6 +242,16 @@ internal fun EmitCtx.renderPlayerAction(node: JsonObject, tvar: String?): Dsl? {
 
 internal fun EmitCtx.renderEachPlayer(node: JsonObject): Dsl? {
     val blob = compact(node)
+    // "any number of target players each <action(s)>" — EachPlayerAction / EachPlayerActions whose
+    // player scope is Ref_TargetPlayers (the chosen targets of an AnyNumberOfTargetPlayers requirement,
+    // Tinybones Joins Up). This is NOT a static Player.Each fan-out — each affected player is a *target*,
+    // so it renders as ForEachTargetEffect over the chosen players, each inner action bound to
+    // EffectTarget.PlayerRef(Player.ContextPlayer(0)). Only the per-player actions we can render exactly
+    // (discard 1, mill 1, lose N) are supported; anything else declines (-> SCAFFOLD).
+    if (jsonContains(node, "_Players", "Ref_TargetPlayers")) {
+        renderForEachTargetPlayerBody(node)?.let { return it }
+        return null
+    }
     // "each player returns a permanent they control to its owner's hand" (Words of Wind's replacement).
     if (jsonContains(node, "_Players", "AnyPlayer") && "PutAPermanentIntoItsOwnersHand" in blob)
         return call("Effects.EachPlayerReturnPermanentToHand")
@@ -288,4 +298,39 @@ internal fun EmitCtx.renderEachPlayer(node: JsonObject): Dsl? {
     if (jsonContains(node, "_Action", "DrawNumberCards") || jsonContains(node, "_GameNumber", "ValueX"))
         return call("Patterns.Hand.eachPlayerDrawsX", arg("includeController", "true"), arg("includeOpponents", "true"))
     return null
+}
+
+/**
+ * "any number of target players each <action(s)>" body → `ForEachTargetEffect(listOf(<per-player
+ * effects>))`. The acting players are the chosen targets (Ref_TargetPlayers), so each inner action is
+ * applied to `EffectTarget.PlayerRef(Player.ContextPlayer(0))` — the iterated target. Handles both the
+ * single-action `EachPlayerAction` (args = [players, action]) and the list `EachPlayerActions`
+ * (args = [players, [action, …]]). Only the per-player actions we can render exactly are supported
+ * (Tinybones Joins Up: "discard a card"; "mill a card and lose 1 life"); any other inner action
+ * declines so the card scaffolds rather than dropping a clause.
+ */
+internal fun EmitCtx.renderForEachTargetPlayerBody(node: JsonObject): Dsl? {
+    val args = node["args"].asArr ?: return null
+    // args[0] is the {_Players: Ref_TargetPlayers} scope; args[1] is a single action object or a list.
+    val second = args.getOrNull(1)
+    val innerActions: List<JsonObject> = when (second) {
+        is JsonArray -> second.filterIsInstance<JsonObject>()
+        is JsonObject -> listOf(second)
+        else -> return null
+    }
+    if (innerActions.isEmpty()) return null
+    val player = "EffectTarget.PlayerRef(Player.ContextPlayer(0))"
+    val effects = innerActions.map { action ->
+        when (action.strField("_Action")) {
+            "DiscardACard" -> call("Effects.Discard", arg("1"), arg(Lit(player)))
+            "MillACard" -> call("Patterns.Library.mill", arg("1"), arg(Lit(player)))
+            "LoseLife" -> {
+                val amt = amount(action["args"]) ?: return null
+                call("Effects.LoseLife", arg(Lit(amt)), arg(Lit(player)))
+            }
+            else -> return null
+        }
+    }
+    val list = call("listOf", *effects.map { arg(it) }.toTypedArray())
+    return call("ForEachTargetEffect", arg(list))
 }

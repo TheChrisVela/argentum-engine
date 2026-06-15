@@ -1840,6 +1840,15 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
         if (bareSubtype) return "TriggerSpec(EventPattern.DealsDamageEvent(damageType = DamageType.Combat, " +
             "recipient = RecipientFilter.AnyPlayer, sourceFilter = GameObjectFilter.Creature.withSubtype(\"$subtype\")), " +
             "TriggerBinding.ANY)"
+        // "Whenever a [filtered] creature you control deals combat damage to a player, …" — a
+        // controller/supertype-scoped source filter beyond a bare subtype (Vraska Joins Up's
+        // "legendary creature you control"). Recover the source filter via gameObjectFilterDsl, which
+        // declines (-> SCAFFOLD) for any shape it can't round-trip exactly, so we never widen the
+        // source. Only a creature filter renders — the trigger's source is always a creature here.
+        val srcFilter = (trig["args"].asArr?.getOrNull(0) as? JsonObject)?.let { gameObjectFilterDsl(it) }
+        if (srcFilter != null && srcFilter.startsWith("GameObjectFilter.Creature"))
+            return "Triggers.dealsDamage(DamageType.Combat, RecipientFilter.AnyPlayer, " +
+                "sourceFilter = $srcFilter, binding = TriggerBinding.ANY)"
     }
 
     // "Whenever you cast your Nth spell each turn" — WhenAPlayerCastsTheirNthSpellInATurn. The args are

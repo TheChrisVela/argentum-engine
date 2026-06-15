@@ -11,6 +11,7 @@ import com.wingedsheep.engine.legalactions.TargetInfo
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
+import com.wingedsheep.sdk.core.Format
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
@@ -405,10 +406,39 @@ class Strategist(
             return@flatMap listOf(action)
         }
         val discard = chooseActivationDiscard(state, action, playerId)
-        val lowest = maxOf(1, maxX - MAX_X_CANDIDATES + 1)
-        (lowest..maxX).map { x ->
+        if (info?.costType == "DiscardCard" && info.discardCount > 0 && discard == null) {
+            return@flatMap emptyList()
+        }
+        val xCandidates = if (isMomirAvatarActivation(state, action)) {
+            momirXCandidates(state, maxX, playerId)
+        } else {
+            val lowest = maxOf(1, maxX - MAX_X_CANDIDATES + 1)
+            (lowest..maxX).toList()
+        }
+        xCandidates.map { x ->
             action.copy(action = base.copy(xValue = x, costPayment = discard ?: base.costPayment))
         }
+    }
+
+    /**
+     * Momir Basic strategy is mostly resource management: skip the smallest early activations so
+     * the hand lasts long enough to make high-mana creatures, then stop spending extra mana beyond
+     * the strong 8-drop band. This follows common Momir guidance: the starting player skips two
+     * early drops, the drawing player skips one, then both aim to make 8s every turn.
+     */
+    private fun momirXCandidates(state: GameState, maxX: Int, playerId: EntityId): List<Int> {
+        val wentFirst = state.turnOrder.firstOrNull() == playerId
+        val firstStrategicX = if (wentFirst) 3 else 2
+        if (maxX < firstStrategicX) return emptyList()
+        if (maxX >= MOMIR_TARGET_X) return listOf(MOMIR_TARGET_X)
+        return listOf(maxX)
+    }
+
+    private fun isMomirAvatarActivation(state: GameState, action: LegalAction): Boolean {
+        if (state.format !is Format.MomirBasic) return false
+        val activation = action.action as? ActivateAbility ?: return false
+        val card = state.getEntity(activation.sourceId)?.get<CardComponent>() ?: return false
+        return card.name == MOMIR_AVATAR_NAME
     }
 
     /**
@@ -449,5 +479,9 @@ class Strategist(
 
         /** Cap on the number of X values an X-cost ability is expanded into (keeps the highest). */
         const val MAX_X_CANDIDATES = 5
+
+        const val MOMIR_TARGET_X = 8
+
+        const val MOMIR_AVATAR_NAME = "Momir Vig, Simic Visionary"
     }
 }

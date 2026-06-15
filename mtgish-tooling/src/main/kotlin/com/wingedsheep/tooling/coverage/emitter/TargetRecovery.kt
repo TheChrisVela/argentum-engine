@@ -379,6 +379,14 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
     if (ttype == "TargetPlayer") {
         return if (jsonContains(tnode, "_Players", "Opponent")) Call("TargetOpponent") else Call("TargetPlayer")
     }
+    // "any number of target players" / "any number of target opponents" — an unbounded player target
+    // (Tinybones Joins Up). Maps to TargetPlayer/TargetOpponent with `unlimited = true`; pairs with a
+    // ForEachTargetEffect body to apply a per-player effect.
+    if (ttype == "AnyNumberOfTargetPlayers") {
+        return if (jsonContains(tnode, "_Players", "Opponent"))
+            Call("TargetOpponent", listOf(arg("unlimited", "true")))
+        else Call("TargetPlayer", listOf(arg("unlimited", "true")))
+    }
     if (ttype == "AnyTarget" || ttype == "TargetPlayerOrPermanent") {
         val blob = compact(tnode)
         if ("Planeswalker" in blob && "Player" in blob && "Opponent" in blob) return Call("TargetOpponentOrPlaneswalker")

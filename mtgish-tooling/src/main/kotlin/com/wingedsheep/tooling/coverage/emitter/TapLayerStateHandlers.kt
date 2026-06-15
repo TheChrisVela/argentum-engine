@@ -273,6 +273,10 @@ internal fun counterTypeDsl(counterNode: JsonElement?): String? {
         // Keyword counters (CR 122.1c) that grant their keyword via the engine's keyword-counter
         // projection. Only the ones we can name render; anything else scaffolds.
         "FlyingCounter" -> "Counters.FLYING"
+        // Deathtouch counter (CR 122.1c): grants the DEATHTOUCH keyword via the StateProjector's
+        // keyword-counter projection. Adding one is a plain AddCounters(Counters.DEATHTOUCH, …)
+        // (Vraska Joins Up: "put a deathtouch counter on each creature you control").
+        "DeathtouchCounter" -> "Counters.DEATHTOUCH"
         // Stun counter (CR 122.1d): a built-in replacement ("if a permanent with a stun counter would
         // become untapped, instead remove a stun counter from it"), engine-wired via `untapOrConsumeStun`.
         // Adding one is a plain AddCounters(Counters.STUN, …) (Rapier Wit, Fractal Mascot).

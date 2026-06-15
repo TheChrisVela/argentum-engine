@@ -677,7 +677,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                     val freeCastFromGranter = grantAbility.withoutPayingManaCost
                     val costString = if (freeCastFromGranter) "0" else run {
                         val effectiveCost = if (exiledCardDef != null) {
-                            context.costCalculator.calculateEffectiveCost(state, exiledCardDef, playerId)
+                            context.costCalculator.calculateEffectiveCost(state, exiledCardDef, playerId, fromZone = Zone.EXILE)
                         } else {
                             exiledCard.manaCost
                         }
@@ -685,7 +685,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                     }
                     val canAfford = if (freeCastFromGranter) true else run {
                         val effectiveCost = if (exiledCardDef != null) {
-                            context.costCalculator.calculateEffectiveCost(state, exiledCardDef, playerId)
+                            context.costCalculator.calculateEffectiveCost(state, exiledCardDef, playerId, fromZone = Zone.EXILE)
                         } else {
                             exiledCard.manaCost
                         }
@@ -976,7 +976,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                 val hasCorrectTiming = isInstant || context.canPlaySorcerySpeed
                 val castRestrictions = cardDef.script.castRestrictions
                 val meetsRestrictions = context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)
-                val effectiveCost = context.costCalculator.calculateEffectiveCost(state, cardDef, playerId)
+                val effectiveCost = context.costCalculator.calculateEffectiveCost(state, cardDef, playerId, fromZone = Zone.GRAVEYARD)
                 val costString = effectiveCost.toString()
                 val canAfford = context.manaSolver.canPay(state, playerId, effectiveCost, precomputedSources = context.availableManaSources)
 

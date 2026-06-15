@@ -1085,11 +1085,18 @@ data class GrantMayPlayFromExileEffect(
  * to pay — the exile + selection is performed by the preceding pipeline steps.
  *
  * @property from Name of the collection containing the already-exiled card(s) to plot.
+ * @property ownerControls When true, the free-cast permission is granted to each card's *owner*
+ *   rather than the effect's controller. Use this for "exile target spell, it becomes plotted"
+ *   (Aven Interrupter), where the plotted card's owner — not the player who plotted it — may
+ *   later cast it (the card's own reminder text: "Its owner may cast it as a sorcery on a later
+ *   turn without paying its mana cost"). Defaults to controller-controls, matching the Plot
+ *   keyword and effects like Make Your Own Luck where you plot a card you own.
  */
 @SerialName("MakePlotted")
 @Serializable
 data class MakePlottedEffect(
-    val from: String
+    val from: String,
+    val ownerControls: Boolean = false
 ) : Effect {
     override val description: String = "Those cards become plotted"
 }
