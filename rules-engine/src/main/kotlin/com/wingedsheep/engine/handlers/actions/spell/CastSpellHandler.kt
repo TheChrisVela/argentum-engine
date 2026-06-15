@@ -440,7 +440,7 @@ class CastSpellHandler(
                 cardDef,
                 action.playerId,
                 action.targets.map { it.toEntityId() },
-                fromZone = if (hasCommanderCast) Zone.COMMAND else null,
+                fromZone = if (hasCommanderCast) Zone.COMMAND else castSourceZone(state, action.cardId),
             )
         } else {
             cardComponent.manaCost
@@ -785,6 +785,23 @@ class CastSpellHandler(
 
     private fun isCastFromHand(state: GameState, cardId: EntityId): Boolean =
         state.turnOrder.any { ownerId -> cardId in state.getZone(ZoneKey(ownerId, Zone.HAND)) }
+
+    /**
+     * The zone the card is being cast from, used to apply cast-from-zone cost modifiers
+     * (e.g. Aven Interrupter's "spells your opponents cast from graveyards or exile cost {2}
+     * more"). A spell card still occupies its source zone when the cost is computed during
+     * cast validation/execution (it hasn't moved to the stack yet). Stack means it's already
+     * being moved; returns null then. Commander casts are handled separately via the
+     * dedicated `Zone.COMMAND` flag.
+     */
+    private fun castSourceZone(state: GameState, cardId: EntityId): Zone? {
+        for (ownerId in state.turnOrder) {
+            for (zone in listOf(Zone.HAND, Zone.GRAVEYARD, Zone.EXILE, Zone.LIBRARY)) {
+                if (cardId in state.getZone(ZoneKey(ownerId, zone))) return zone
+            }
+        }
+        return null
+    }
 
     private fun validateConspire(
         state: GameState,
@@ -1443,7 +1460,7 @@ class CastSpellHandler(
                 cardDef,
                 action.playerId,
                 action.targets.map { it.toEntityId() },
-                fromZone = if (castingFromCommand) Zone.COMMAND else null,
+                fromZone = if (castingFromCommand) Zone.COMMAND else castSourceZone(currentState, action.cardId),
             )
         } else {
             cardComponent.manaCost

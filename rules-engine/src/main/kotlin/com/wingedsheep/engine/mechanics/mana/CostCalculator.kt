@@ -102,7 +102,7 @@ class CostCalculator(
 
         // Battlefield-sourced ModifySpellCost abilities.
         for ((sourceId, ability) in scanBattlefieldModifySpellCost(state)) {
-            if (!targetMatchesSpell(ability.target, cardDef, casterId, sourceId, state, chosenTargets)) continue
+            if (!targetMatchesSpell(ability.target, cardDef, casterId, sourceId, state, chosenTargets, fromZone)) continue
             if (!gatingApplies(state, casterId, cardDef, ability)) continue
             applyToSpellCast(
                 state, cardDef, casterId, ability.modification, chosenTargets,
@@ -198,6 +198,7 @@ class CostCalculator(
         sourceId: EntityId,
         state: GameState,
         chosenTargets: List<EntityId> = emptyList(),
+        fromZone: Zone? = null,
     ): Boolean {
         return when (target) {
             SpellCostTarget.SelfCast -> false
@@ -209,6 +210,14 @@ class CostCalculator(
             is SpellCostTarget.AnyCaster -> matchesCardDefinition(cardDef, target.filter, sourceId, state, state.projectedState)
             is SpellCostTarget.OpponentsCastTargeting ->
                 opponentsCastTargetingMatches(state, casterId, sourceId, target.targetFilter, chosenTargets)
+            is SpellCostTarget.OpponentsCastFromZones -> {
+                // Source must be controlled by an opponent of the caster, the spell must be cast
+                // from one of the named zones, and the card must match the filter.
+                if (fromZone == null || fromZone !in target.zones) return false
+                val sourceController = state.projectedState.getController(sourceId) ?: return false
+                if (sourceController == casterId) return false
+                matchesCardDefinition(cardDef, target.filter, sourceId, state, state.projectedState)
+            }
             // FaceDown / Morph targets are spell-cast modifiers only when applied to a face-down cast.
             // calculateEffectiveCost is only called for face-up casts; face-down handling is in
             // calculateFaceDownCost / calculateMorphCostIncrease.

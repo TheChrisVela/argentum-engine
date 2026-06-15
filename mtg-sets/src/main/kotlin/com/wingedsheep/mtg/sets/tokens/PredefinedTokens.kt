@@ -55,6 +55,33 @@ object PredefinedTokens {
     }
 
     /**
+     * Meteorite token — a colorless artifact (Roxanne, Starfall Savant) with:
+     * "When this token enters, it deals 2 damage to any target." and
+     * "{T}: Add one mana of any color."
+     */
+    val Meteorite = card("Meteorite") {
+        typeLine = "Artifact"
+
+        triggeredAbility {
+            trigger = Triggers.EntersBattlefield
+            val anyTarget = target("any target", Targets.Any)
+            effect = Effects.DealDamage(2, anyTarget, damageSource = EffectTarget.Self)
+            description = "When this token enters, it deals 2 damage to any target."
+        }
+
+        activatedAbility {
+            cost = Costs.Tap
+            effect = Effects.AddAnyColorMana(1)
+            manaAbility = true
+        }
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/0/0/00b41ca9-0bf0-41fc-af65-854e602ee007.jpg?1712317015"
+            artist = "Ina Wong"
+        }
+    }
+
+    /**
      * Food token — an artifact with:
      * "{2}, {T}, Sacrifice this artifact: You gain 3 life."
      */
@@ -349,6 +376,7 @@ object PredefinedTokens {
      */
     val allTokens: List<CardDefinition> = listOf(
         Treasure,
+        Meteorite,
         Food,
         Lander,
         JustOneGlass,

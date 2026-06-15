@@ -41,6 +41,8 @@ data class ModifySpellCost(
             is SpellCostTarget.AnyCaster -> "${filterAdjective(target.filter)}$noun"
             is SpellCostTarget.OpponentsCastTargeting ->
                 "Spells your opponents cast that target ${target.targetFilter.description}"
+            is SpellCostTarget.OpponentsCastFromZones ->
+                "Spells your opponents cast from ${describeZones(target.zones)}"
             SpellCostTarget.FaceDownYouCast -> "Face-down creature spells you cast"
             SpellCostTarget.MorphActivation -> "All morph costs"
         }
@@ -77,6 +79,22 @@ data class ModifySpellCost(
     private fun filterAdjective(filter: GameObjectFilter): String {
         val desc = filter.description
         return if (desc.isBlank() || desc == "card") "" else "$desc "
+    }
+
+    // Phrase a set of cast-from zones the way the oracle text reads — "graveyards or from exile".
+    private fun describeZones(zones: Set<com.wingedsheep.sdk.core.Zone>): String {
+        val parts = zones.toList().sortedBy { it.ordinal }.map { zone ->
+            when (zone) {
+                com.wingedsheep.sdk.core.Zone.GRAVEYARD -> "graveyards"
+                com.wingedsheep.sdk.core.Zone.EXILE -> "exile"
+                else -> zone.displayName
+            }
+        }
+        return when (parts.size) {
+            0 -> ""
+            1 -> parts[0]
+            else -> parts.dropLast(1).joinToString(", ") + " or from " + parts.last()
+        }
     }
 
     private fun ordinal(n: Int): String = when (n) {
@@ -160,6 +178,28 @@ sealed interface SpellCostTarget {
         override fun applyTextReplacement(replacer: TextReplacer): SpellCostTarget {
             val newFilter = targetFilter.applyTextReplacement(replacer)
             return if (newFilter !== targetFilter) copy(targetFilter = newFilter) else this
+        }
+    }
+
+    /**
+     * Spells opponents of the source's controller cast **from one of [zones]**, matching [filter]
+     * (default: any spell). The zone-of-cast analogue of [OpponentsCastTargeting].
+     *
+     * Used for Aven Interrupter ("Spells your opponents cast from graveyards or from exile cost
+     * {2} more to cast") via `OpponentsCastFromZones(setOf(Zone.GRAVEYARD, Zone.EXILE))` paired
+     * with [CostModification.IncreaseGeneric]. The cost calculator matches it only when the
+     * casting player is an opponent of the source's controller and the spell is being cast from
+     * one of the named zones.
+     */
+    @SerialName("OpponentsCastFromZones")
+    @Serializable
+    data class OpponentsCastFromZones(
+        val zones: Set<com.wingedsheep.sdk.core.Zone>,
+        val filter: GameObjectFilter = GameObjectFilter.Any,
+    ) : SpellCostTarget {
+        override fun applyTextReplacement(replacer: TextReplacer): SpellCostTarget {
+            val newFilter = filter.applyTextReplacement(replacer)
+            return if (newFilter !== filter) copy(filter = newFilter) else this
         }
     }
 

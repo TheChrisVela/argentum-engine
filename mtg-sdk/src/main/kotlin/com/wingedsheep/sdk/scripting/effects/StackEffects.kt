@@ -207,6 +207,32 @@ data class CounterEffect(
     }
 }
 
+/**
+ * Exile target spell on the stack (CR 718 "exile target spell" — Aven Interrupter).
+ *
+ * Distinct from [CounterEffect] with [CounterDestination.Exile]: this is **not** a counter.
+ * It exiles the spell regardless of can't-be-countered (Aven Interrupter's ruling: "Spells that
+ * can't be countered can still be exiled. They won't resolve."), and it fires no
+ * "whenever a spell is countered" trigger. The spell still fails to resolve because it leaves
+ * the stack. The target is the chosen spell ([com.wingedsheep.sdk.dsl.Targets.Spell] supplies
+ * the requirement).
+ *
+ * @property makePlotted When true, the exiled card becomes *plotted* for its **owner** (CR 718.2):
+ *   it gains the plotted designation and a permanent free-cast-on-a-later-turn permission. Pairs
+ *   with [com.wingedsheep.sdk.scripting.effects.MakePlottedEffect]'s owner-controls semantics, but
+ *   reads its subject from the stack instead of a gathered collection.
+ */
+@SerialName("ExileTargetSpell")
+@Serializable
+data class ExileTargetSpellEffect(
+    val makePlotted: Boolean = false
+) : Effect {
+    override val description: String = buildString {
+        append("Exile target spell")
+        if (makePlotted) append(". It becomes plotted")
+    }
+}
+
 // =============================================================================
 // Stack Effects — Counter All
 // =============================================================================
