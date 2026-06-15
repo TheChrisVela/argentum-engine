@@ -280,7 +280,7 @@ class WardCounterEffectExecutor(
         payingPlayerId: EntityId,
         lifeCost: Int
     ): EffectResult {
-        val currentLife = state.getEntity(payingPlayerId)?.get<LifeTotalComponent>()?.life ?: 0
+        val currentLife = state.lifeTotal(payingPlayerId) // CR 810.9a — team's shared total
         if (currentLife < lifeCost) {
             // Can't pay — counter immediately.
             return counterSpellOrAbility(state, spellEntityId, container)

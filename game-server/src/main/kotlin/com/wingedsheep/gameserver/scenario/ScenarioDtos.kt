@@ -42,6 +42,15 @@ data class ScenarioRequest(
      * stay two-seat.
      */
     val players: List<ScenarioSeat>? = null,
+    /**
+     * Team assignment for team variants (Two-Headed Giant — CR 810). Each entry is one team:
+     * a list of seat indices into [players] (0-based, turn order). When supplied the seats are
+     * stamped into teams (shared life, shared turns, combined combat) and the game runs under
+     * [com.wingedsheep.sdk.core.Format.TwoHeadedGiant], making a 2HG hotseat bootable for manual
+     * testing before the lobby UI lands. Null = each player plays alone (unchanged). The indices
+     * must partition every seat exactly once. Use with [ScenarioMode.SELF] (single-client hotseat).
+     */
+    val teams: List<List<Int>>? = null,
     val phase: Phase? = null,
     val step: Step? = null,
     val activePlayer: Int? = null,

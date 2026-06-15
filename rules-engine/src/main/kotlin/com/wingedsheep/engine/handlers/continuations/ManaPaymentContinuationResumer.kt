@@ -177,9 +177,11 @@ class ManaPaymentContinuationResumer(
 
         if (response.choice) {
             val playerId = continuation.payingPlayerId
-            val currentLife = state.getEntity(playerId)
-                ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life
-                ?: return ExecutionResult.error(state, "Paying player has no life total")
+            if (state.getEntity(playerId)
+                    ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>() == null
+            ) return ExecutionResult.error(state, "Paying player has no life total")
+            // CR 810.9a — life paid as a cost comes out of the team's shared total.
+            val currentLife = state.lifeTotal(playerId)
 
             // If the player can't actually pay (e.g., life dropped between trigger and decision),
             // counter the spell. Players can pay life that takes them below 0.
@@ -199,11 +201,7 @@ class ManaPaymentContinuationResumer(
             }
 
             val newLife = currentLife - continuation.lifeCost
-            var newState = state.updateEntity(playerId) { container ->
-                container.with(
-                    com.wingedsheep.engine.state.components.identity.LifeTotalComponent(newLife)
-                )
-            }
+            var newState = state.withLifeTotal(playerId, newLife)
             newState = com.wingedsheep.engine.handlers.effects.DamageUtils
                 .markLifeLostThisTurn(newState, playerId)
 

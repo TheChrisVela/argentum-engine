@@ -886,6 +886,8 @@ enum class GameEndReason {
     DRAW,
     /** Commander format: 21+ combat damage from a single commander (CR 903.10a). */
     COMMANDER_DAMAGE,
+    /** Two-Headed Giant: a player lost with their team (CR 810.8a). */
+    TEAM_DEFEATED,
     /** Rule 104.4c — SBAs never stabilized, treated as an unbreakable infinite loop. */
     INFINITE_LOOP,
     UNKNOWN

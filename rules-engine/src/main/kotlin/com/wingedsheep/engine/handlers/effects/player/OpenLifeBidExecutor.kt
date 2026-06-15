@@ -85,7 +85,7 @@ object OpenLifeBidLogic {
     private val decisionHandler = DecisionHandler()
 
     private fun lifeOf(state: GameState, playerId: EntityId): Int =
-        state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 0
+        state.lifeTotal(playerId) // CR 810.9a — team's shared total
 
     /**
      * Ask [bidderToAsk] whether to top the current [highBid], or resolve the auction if they

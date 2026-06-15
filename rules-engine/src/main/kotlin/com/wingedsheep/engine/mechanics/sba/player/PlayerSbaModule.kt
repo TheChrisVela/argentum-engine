@@ -8,6 +8,7 @@ class PlayerSbaModule : StateBasedActionModule {
         PlayerLifeLossCheck(),
         CommanderDamageLossCheck(),
         PoisonLossCheck(),
+        TeamLossPropagationCheck(),
         PlayerLeavesGameCheck()
     )
 }

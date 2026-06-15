@@ -170,13 +170,16 @@ class ConditionEvaluator(
             is Compare -> evaluateCompareCtx(state, condition, ctx)
             is Exists -> evaluateExistsCtx(state, condition, ctx)
 
-            is IsYourTurn -> ctx.controllerId?.let { state.activePlayerId == it } ?: false
-            is IsNotYourTurn -> ctx.controllerId?.let { state.activePlayerId != it } ?: false
+            // CR 805 — "your turn" is the active team's turn for every member of that team.
+            is IsYourTurn -> ctx.controllerId?.let { state.isActiveTurnFor(it) } ?: false
+            is IsNotYourTurn -> ctx.controllerId?.let { !state.isActiveTurnFor(it) } ?: false
 
             // Board-derived (current step + active player), so it works identically at resolution
             // and under projection — used as a ConditionalStaticAbility gate (Zurgo's end step).
             is IsInStep -> {
-                if (condition.yoursOnly && state.activePlayerId != ctx.controllerId) false
+                val cid = ctx.controllerId
+                val notYourTurn = cid == null || !state.isActiveTurnFor(cid)
+                if (condition.yoursOnly && notYourTurn) false
                 else state.step in condition.steps
             }
 
@@ -274,8 +277,8 @@ class ConditionEvaluator(
             // Existential over all players: some player has at most [threshold] life.
             // Reads each player's LifeTotalComponent from state.turnOrder.
             is APlayerLifeAtMost -> state.turnOrder.any { playerId ->
-                val life = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life
-                life != null && life <= condition.threshold
+                // CR 810.9a — read the team's shared total; existential so teams don't double-count.
+                state.lifeTotal(playerId) <= condition.threshold
             }
 
             // Board-derived only — no targets/triggering/kicker — so it works identically in
@@ -811,7 +814,7 @@ class ConditionEvaluator(
     }
 
     private fun evaluateIsInPhase(state: GameState, condition: IsInPhase, context: EffectContext): Boolean {
-        if (condition.yoursOnly && state.activePlayerId != context.controllerId) return false
+        if (condition.yoursOnly && !state.isActiveTurnFor(context.controllerId)) return false
         return state.phase in condition.phases
     }
 

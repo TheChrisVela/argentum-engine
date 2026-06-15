@@ -122,13 +122,14 @@ class DynamicAmountEvaluator(
             is DynamicAmount.ManaSpentOnX -> context.manaSpentOnXByColor[amount.color] ?: 0
 
             is DynamicAmount.YourLifeTotal -> {
-                state.getEntity(context.controllerId)?.get<LifeTotalComponent>()?.life ?: 0
+                // CR 810.9a — an individual player's life total reads the team's shared total.
+                state.lifeTotal(context.controllerId)
             }
 
             is DynamicAmount.LifeTotal -> {
                 val playerIds = resolveUnifiedPlayerIds(state, amount.player, context)
                 val playerId = playerIds.firstOrNull() ?: return 0
-                state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 0
+                state.lifeTotal(playerId)
             }
 
             is DynamicAmount.StartingLifeTotal -> {

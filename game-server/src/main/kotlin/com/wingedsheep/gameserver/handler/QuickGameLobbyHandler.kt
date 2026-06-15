@@ -166,6 +166,16 @@ class QuickGameLobbyHandler(
             sender.sendError(session, ErrorCode.INVALID_ACTION, "AI opponent is not enabled on this server")
             return
         }
+        // Two-Headed Giant is four human seats; the built-in AI is not team-aware yet (Phase 8),
+        // and 2HG (a rules format) is orthogonal to Momir Basic.
+        if (message.twoHeadedGiant && message.vsAi) {
+            sender.sendError(session, ErrorCode.INVALID_ACTION, "Two-Headed Giant does not support AI opponents yet")
+            return
+        }
+        if (message.twoHeadedGiant && message.momirBasic) {
+            sender.sendError(session, ErrorCode.INVALID_ACTION, "Two-Headed Giant and Momir Basic cannot be combined")
+            return
+        }
 
         val lobby = QuickGameLobby(
             vsAi = message.vsAi,
@@ -175,6 +185,7 @@ class QuickGameLobbyHandler(
             // Momir Basic has no deck-construction restriction; the two flags are mutually exclusive.
             format = if (message.momirBasic) null else message.format,
             momirBasic = message.momirBasic,
+            twoHeadedGiant = message.twoHeadedGiant,
         )
         lobby.players += QuickGameLobbyPlayer(
             playerId = playerSession.playerId,
@@ -387,12 +398,20 @@ class QuickGameLobbyHandler(
             useHandSmoother = gameProperties.handSmoother.enabled,
             debugMode = gameProperties.debugMode,
             printingRegistry = printingRegistry,
+            // Four seats for Two-Headed Giant (CR 810), two otherwise.
+            maxPlayers = lobby.maxPlayers,
         )
         // Commander-shape formats (Commander / Brawl / Standard Brawl) run on the engine's 1v1
         // Commander rules. Other formats fall through to Standard. Brawl-specific tweaks
         // (60 cards, alternative life total) are Phase 4 territory — Phase 1 covers Commander.
         if (lobby.format?.isCommanderShape == true) {
             gameSession.engineFormat = com.wingedsheep.sdk.core.Format.Commander()
+        }
+        // Two-Headed Giant: run under the team format and forward the seat→team partition. The
+        // engine stamps TeamComponent and sets up shared life / turns / combat (Phases 1–5).
+        if (lobby.twoHeadedGiant) {
+            gameSession.engineFormat = com.wingedsheep.sdk.core.Format.TwoHeadedGiant()
+            gameSession.teams = lobby.teamAssignment()
         }
         // Each player can pick their own set for a Random pool. For a vs-AI lobby the AI mirrors
         // the (single) human's set so both sides play the same set. Resolve that set ONCE here —
@@ -510,12 +529,14 @@ class QuickGameLobbyHandler(
             lobbyId = lobby.lobbyId,
             vsAi = lobby.vsAi,
             setCode = lobby.setCode,
-            players = lobby.players.map { it.toView(lobby) },
+            players = lobby.players.mapIndexed { i, p -> p.toView(lobby, i) },
             youPlayerId = playerId,
             canStart = lobby.allReady(),
             isPublic = lobby.isPublic,
             format = lobby.format,
             momirBasic = lobby.momirBasic,
+            twoHeadedGiant = lobby.twoHeadedGiant,
+            maxPlayers = lobby.maxPlayers,
         )
         sender.send(session, msg)
     }
@@ -542,12 +563,14 @@ class QuickGameLobbyHandler(
                 lobbyId = lobby.lobbyId,
                 vsAi = lobby.vsAi,
                 setCode = lobby.setCode,
-                players = lobby.players.map { it.toView(lobby) },
+                players = lobby.players.mapIndexed { i, p -> p.toView(lobby, i) },
                 youPlayerId = player.playerId,
                 canStart = lobby.allReady(),
                 isPublic = lobby.isPublic,
                 format = lobby.format,
                 momirBasic = lobby.momirBasic,
+                twoHeadedGiant = lobby.twoHeadedGiant,
+                maxPlayers = lobby.maxPlayers,
             )
             sender.send(ws, msg)
         }
@@ -580,7 +603,7 @@ class QuickGameLobbyHandler(
         }
     }
 
-    private fun QuickGameLobbyPlayer.toView(lobby: QuickGameLobby): ServerMessage.QuickGameLobbyPlayerView {
+    private fun QuickGameLobbyPlayer.toView(lobby: QuickGameLobby, seatIndex: Int): ServerMessage.QuickGameLobbyPlayerView {
         val total = deckList?.values?.sum() ?: 0
         // Momir Basic has no deckbuilding: every seat plays the fixed 60 basics, so it always counts
         // as "deck selected" and shows a fixed label rather than the deck-picker states.
@@ -598,7 +621,8 @@ class QuickGameLobbyHandler(
             deckSelected = lobby.momirBasic || deckList != null,
             deckCardCount = if (lobby.momirBasic) MomirBasicSetup.COPIES_PER_BASIC * MomirBasicSetup.BASIC_LAND_NAMES.size else total,
             deckLabel = label,
-            setCode = setCode
+            setCode = setCode,
+            teamIndex = lobby.teamIndexOf(seatIndex),
         )
     }
 }

@@ -780,13 +780,13 @@ class ModalAndCloneContinuationResumer(
 
         if (response.choice) {
             // Player chose to pay life
-            val currentLife = newState.getEntity(continuation.controllerId)
-                ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life
-                ?: return ExecutionResult.error(state, "Player has no life total")
+            if (newState.getEntity(continuation.controllerId)
+                    ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>() == null
+            ) return ExecutionResult.error(state, "Player has no life total")
+            // CR 810.9a — life paid as a cost comes out of the team's shared total.
+            val currentLife = newState.lifeTotal(continuation.controllerId)
             val newLife = currentLife - continuation.lifeCost
-            newState = newState.updateEntity(continuation.controllerId) { container ->
-                container.with(com.wingedsheep.engine.state.components.identity.LifeTotalComponent(newLife))
-            }
+            newState = newState.withLifeTotal(continuation.controllerId, newLife)
             newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(
                 newState, continuation.controllerId
             )
@@ -851,13 +851,13 @@ class ModalAndCloneContinuationResumer(
 
         if (response.choice) {
             // Player chose to pay life
-            val currentLife = newState.getEntity(continuation.controllerId)
-                ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life
-                ?: return ExecutionResult.error(state, "Player has no life total")
+            if (newState.getEntity(continuation.controllerId)
+                    ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>() == null
+            ) return ExecutionResult.error(state, "Player has no life total")
+            // CR 810.9a — life paid as a cost comes out of the team's shared total.
+            val currentLife = newState.lifeTotal(continuation.controllerId)
             val newLife = currentLife - continuation.lifeCost
-            newState = newState.updateEntity(continuation.controllerId) { container ->
-                container.with(com.wingedsheep.engine.state.components.identity.LifeTotalComponent(newLife))
-            }
+            newState = newState.withLifeTotal(continuation.controllerId, newLife)
             newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(
                 newState, continuation.controllerId
             )

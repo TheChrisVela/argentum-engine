@@ -400,13 +400,11 @@ class SacrificeAndPayContinuationResumer(
         // Player chose to pay life
         val playerId = continuation.playerId
         val lifeToPay = continuation.requiredCount
-        val playerContainer = state.getEntity(playerId)
-        val currentLife = playerContainer?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life ?: 0
+        // CR 810.9a — life paid as a cost comes out of the team's shared total.
+        val currentLife = state.lifeTotal(playerId)
         val newLife = currentLife - lifeToPay
 
-        var newState = state.updateEntity(playerId) {
-            it.with(com.wingedsheep.engine.state.components.identity.LifeTotalComponent(newLife))
-        }
+        var newState = state.withLifeTotal(playerId, newLife)
         newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(newState, playerId)
 
         val events = listOf(
@@ -626,12 +624,10 @@ class SacrificeAndPayContinuationResumer(
                 }
 
                 val lifeToPay = continuation.requiredCount
-                val currentLife = state.getEntity(playerId)
-                    ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life ?: 0
+                // CR 810.9a — life paid as a cost comes out of the team's shared total.
+                val currentLife = state.lifeTotal(playerId)
                 val newLife = currentLife - lifeToPay
-                var newState = state.updateEntity(playerId) {
-                    it.with(com.wingedsheep.engine.state.components.identity.LifeTotalComponent(newLife))
-                }
+                var newState = state.withLifeTotal(playerId, newLife)
                 newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(newState, playerId)
                 val events = mutableListOf<GameEvent>(
                     LifeChangedEvent(
@@ -728,8 +724,7 @@ class SacrificeAndPayContinuationResumer(
                 }
 
                 is CostAtom.PayLife -> {
-                    val life = state.getEntity(nextPlayerId)
-                        ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life ?: 0
+                    val life = state.lifeTotal(nextPlayerId) // CR 810.9a — team's shared total
                     if (life >= atom.amount) {
                         val decisionId = java.util.UUID.randomUUID().toString()
                         val prompt = "Pay ${atom.amount} life to prevent ${continuation.sourceName}'s effect?"

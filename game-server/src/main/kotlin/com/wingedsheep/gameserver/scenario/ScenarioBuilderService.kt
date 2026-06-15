@@ -111,6 +111,12 @@ class ScenarioBuilderService(
         if (seats.size > 2 && request.effectiveMode != ScenarioMode.SELF) {
             errors += "Pods of more than two seats only support SELF (hotseat) mode."
         }
+        request.teams?.let { teams ->
+            val flat = teams.flatten().sorted()
+            if (flat != seats.indices.toList()) {
+                errors += "teams must partition all ${seats.size} seat indices exactly once (got $flat)."
+            }
+        }
         seats.forEachIndexed { i, (_, config) -> checkPlayer("player${i + 1}", config) }
 
         if (enforceLimits && total > MAX_TOTAL_CARDS) {
@@ -133,6 +139,7 @@ class ScenarioBuilderService(
         }
         request.activePlayer?.let { builder.withActivePlayer(it) }
         request.priorityPlayer?.let { builder.withPriorityPlayer(it) }
+        request.teams?.let { builder.withTeams(it) }
 
         val (state, playerIds) = builder.build()
         return ScenarioBuildResult(state, playerIds)
@@ -388,6 +395,26 @@ class ScenarioBuilderService(
         fun withPriorityPlayer(playerNumber: Int): ScenarioBuilder {
             val playerId = playerFor(playerNumber)
             state = state.copy(priorityPlayerId = playerId)
+            return this
+        }
+
+        /**
+         * Stamp team membership (Two-Headed Giant — CR 810). [teams] entries are lists of 0-based
+         * seat indices; each becomes a team via [TeamComponent]. Also switches the game to
+         * [Format.TwoHeadedGiant] — the only team format today — so shared life, the 15-poison
+         * threshold, and team win/loss read the right rules. Mirrors GameInitializer's stamping for
+         * the freshly-built (lobby/quick-game) path.
+         */
+        fun withTeams(teams: List<List<Int>>): ScenarioBuilder {
+            teams.forEachIndexed { teamIndex, memberIndices ->
+                for (memberIndex in memberIndices) {
+                    val pid = playerIds[memberIndex]
+                    state = state.updateEntity(pid) { container ->
+                        container.with(TeamComponent(teamIndex))
+                    }
+                }
+            }
+            state = state.copy(format = com.wingedsheep.sdk.core.Format.TwoHeadedGiant())
             return this
         }
 

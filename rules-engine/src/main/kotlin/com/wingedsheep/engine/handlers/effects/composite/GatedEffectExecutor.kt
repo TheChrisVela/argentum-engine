@@ -375,7 +375,7 @@ class GatedEffectExecutor(
                 )
             }
             is PayLifeEffect -> {
-                val life = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 0
+                val life = state.lifeTotal(playerId) // CR 810.9a — team's shared total
                 life >= cost.amount
             }
             is CompositeEffect -> cost.effects.all { canAfford(state, playerId, it, context) }

@@ -28,11 +28,12 @@ class PlayerLeavesGameCheck : StateBasedActionCheck {
     override fun check(state: GameState): ExecutionResult {
         if (state.gameOver) return ExecutionResult.success(state)
 
-        // When a loss leaves one or zero players standing, the game is ending — the
-        // game-end SBA settles it and there is nothing to keep playing for, so we don't
-        // tear down the loser's board. Leave-the-game processing only matters when the pod
-        // continues, which keeps a two-player game's end-state byte-identical to before.
-        if (state.activePlayers.size <= 1) return ExecutionResult.success(state)
+        // When a loss leaves one or zero *teams* standing, the game is ending — the game-end SBA
+        // settles it and there is nothing to keep playing for, so we don't tear down the losers'
+        // boards. Leave-the-game processing only matters when the pod continues. In a non-team
+        // game [activeTeams] mirrors the surviving players, keeping a two-player game's end-state
+        // byte-identical to before; in 2HG it stops a wiped team's board being torn down mid-end.
+        if (state.activeTeams.size <= 1) return ExecutionResult.success(state)
 
         val leaver = state.turnOrder.firstOrNull { id ->
             val container = state.getEntity(id) ?: return@firstOrNull false
@@ -54,5 +55,6 @@ internal fun LossReason?.toGameEndReason(): GameEndReason = when (this) {
     LossReason.CONCESSION -> GameEndReason.CONCESSION
     LossReason.CARD_EFFECT -> GameEndReason.CARD_EFFECT
     LossReason.COMMANDER_DAMAGE -> GameEndReason.COMMANDER_DAMAGE
+    LossReason.TEAM_DEFEATED -> GameEndReason.TEAM_DEFEATED
     null -> GameEndReason.UNKNOWN
 }

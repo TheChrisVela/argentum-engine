@@ -577,7 +577,7 @@ class CostEnumerationUtils(
             else -> false
         }
         if (hasPayXLife) {
-            val life = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 0
+            val life = state.lifeTotal(playerId) // CR 810.9a — team's shared total
             maxX = minOf(maxX, life.coerceAtLeast(0))
         }
 

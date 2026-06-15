@@ -141,6 +141,16 @@ class GameSession(
     @Volatile
     var attackMode: com.wingedsheep.sdk.core.AttackMode = com.wingedsheep.sdk.core.AttackMode.MULTIPLE
 
+    /**
+     * Team partitioning for team variants (Two-Headed Giant — CR 810), as lists of seat indices
+     * into the join/turn order; each entry is one team. Set by the lobby / scenario handler before
+     * [startGame] and forwarded to [GameConfig.teams], which stamps [TeamComponent] on each player.
+     * Null = no teams (every seat plays alone), so 2-player / Free-for-All games are unchanged.
+     * Stored on the session for the same reasons as [engineFormat].
+     */
+    @Volatile
+    var teams: List<List<Int>>? = null
+
     /** Player info for persistence (playerId -> (playerName, token)) */
     private val playerPersistenceInfo = mutableMapOf<EntityId, PlayerPersistenceInfo>()
 
@@ -277,10 +287,15 @@ class GameSession(
 
     /**
      * Get every other seated player's ID (all opponents of [playerId]). In a 2-player game this
-     * is a single-element list. Order follows seating/turn order.
+     * is a single-element list. Order follows seating/turn order. In Two-Headed Giant (CR 810)
+     * a teammate is not an opponent, so the player's whole team is excluded; the engine's
+     * [GameState.teamOf] is the single source of truth, and degrades to a singleton in non-team
+     * games so this is unchanged there. Before the game has started (no state yet) every other
+     * seat is treated as an opponent.
      */
     fun getOpponentIds(playerId: EntityId): List<EntityId> {
-        return players.keys.filter { it != playerId }
+        val team = gameState?.teamOf(playerId)?.toHashSet() ?: setOf(playerId)
+        return players.keys.filter { it !in team }
     }
 
     /**
@@ -326,12 +341,16 @@ class GameSession(
     fun getPlayerNames(): List<String> = getPlayers().map { it.playerName }
 
     /**
-     * Current life totals in seat order, for spectator display.
+     * Current life totals in seat order, for spectator display. Routed through
+     * [GameState.lifeTotal] so a Two-Headed Giant team's shared total (CR 810.9a) shows the
+     * same value for both teammates; in non-team games this is the player's own total.
      */
     fun getLifeTotals(): List<Int> {
         val state = gameState ?: return emptyList()
         return getPlayers().map { player ->
-            state.getEntity(player.playerId)?.get<LifeTotalComponent>()?.life ?: 20
+            if (state.getEntity(player.playerId)?.get<LifeTotalComponent>() != null) {
+                state.lifeTotal(player.playerId)
+            } else 20
         }
     }
 
@@ -341,7 +360,8 @@ class GameSession(
      * when given, flags that recipient's own seat ([PlayerSeatInfo.isYou]); spectators pass null.
      */
     fun seatInfos(viewerId: EntityId? = null): List<ServerMessage.PlayerSeatInfo> {
-        val turnOrder = gameState?.turnOrder
+        val state = gameState
+        val turnOrder = state?.turnOrder
         val seated = getPlayers()
         return seated.mapIndexed { joinIndex, player ->
             val seatIndex = turnOrder?.indexOf(player.playerId)?.takeIf { it >= 0 } ?: joinIndex
@@ -351,6 +371,14 @@ class GameSession(
                 seatIndex = seatIndex,
                 isYou = viewerId != null && player.playerId == viewerId,
                 isAi = playerPersistenceInfo[player.playerId]?.isAi == true,
+                // Team membership for Two-Headed Giant (CR 810); null in non-team games. Prefer the
+                // engine's stamped TeamComponent, but fall back to the configured [teams] partition
+                // (join-order indices) so the roster carries teamIndex even before startGame() runs
+                // (the pod sends the seat roster before the game state is initialized).
+                teamIndex = state?.getEntity(player.playerId)
+                    ?.get<com.wingedsheep.engine.state.components.identity.TeamComponent>()
+                    ?.teamIndex
+                    ?: teams?.indexOfFirst { joinIndex in it }?.takeIf { it >= 0 },
             )
         }.sortedBy { it.seatIndex }
     }
@@ -383,6 +411,9 @@ class GameSession(
             useHandSmoother = useHandSmoother,
             format = engineFormat,
             attackMode = attackMode,
+            // Team partitioning for Two-Headed Giant (CR 810); null for non-team games. The seat
+            // indices line up with playerConfigs, which preserves the join/turn order of `players`.
+            teams = teams,
         )
 
         val result = gameInitializer.initializeGame(config)
@@ -1061,17 +1092,22 @@ class GameSession(
             return GameOverReason.DRAW
         }
 
-        // Find the losing player (the one who is not the winner)
-        val loserId = state.turnOrder.find { it != state.winnerId }
-        val lossComponent = loserId?.let { state.getEntity(it)?.get<PlayerLostComponent>() }
+        // Find why the losing side lost. In Two-Headed Giant a whole team is defeated, so prefer a
+        // meaningful cause over the propagated TEAM_DEFEATED marker (CR 810.8a) — mirrors the
+        // engine's GameEndCheck reason derivation. (Team-aware winner display is Phase 6.)
+        val lostReasons = state.turnOrder
+            .mapNotNull { state.getEntity(it)?.get<PlayerLostComponent>()?.reason }
+        val reason = lostReasons.firstOrNull { it != LossReason.TEAM_DEFEATED }
+            ?: lostReasons.firstOrNull()
 
-        return when (lossComponent?.reason) {
+        return when (reason) {
             LossReason.LIFE_ZERO -> GameOverReason.LIFE_ZERO
             LossReason.EMPTY_LIBRARY -> GameOverReason.DECK_OUT
             LossReason.POISON_COUNTERS -> GameOverReason.POISON_COUNTERS
             LossReason.CONCESSION -> GameOverReason.CONCESSION
             LossReason.CARD_EFFECT -> GameOverReason.CARD_EFFECT
             LossReason.COMMANDER_DAMAGE -> GameOverReason.COMMANDER_DAMAGE
+            LossReason.TEAM_DEFEATED -> GameOverReason.CARD_EFFECT
             null -> GameOverReason.LIFE_ZERO // Fallback
         }
     }

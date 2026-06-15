@@ -448,6 +448,13 @@ sealed interface ClientMessage {
          * creature pool. Mutually exclusive with [format] (the constructed-legality restriction).
          */
         val momirBasic: Boolean = false,
+        /**
+         * When true the lobby plays Two-Headed Giant (CR 810): four seats, two teams of two
+         * (seats 0+1 vs 2+3 in join order), shared life / turns / combat. Human-only — the
+         * built-in AI is not team-aware yet (Phase 8), so [vsAi] must be false. Mutually
+         * exclusive with [momirBasic].
+         */
+        val twoHeadedGiant: Boolean = false,
     ) : ClientMessage
 
     /** Join an existing quick-game lobby by its short code. */

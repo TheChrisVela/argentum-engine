@@ -48,7 +48,8 @@ class QuickGameController(
                 PublicQuickGameDTO(
                     lobbyId = lobby.lobbyId,
                     playerCount = lobby.players.count { !it.isAi },
-                    maxPlayers = QuickGameLobby.MAX_PLAYERS,
+                    // Reflects the lobby's actual seat count: 4 for Two-Headed Giant, else 2.
+                    maxPlayers = lobby.maxPlayers,
                     setCode = lobby.setCode ?: host?.setCode,
                     hostName = host?.playerName,
                     format = lobby.format?.name

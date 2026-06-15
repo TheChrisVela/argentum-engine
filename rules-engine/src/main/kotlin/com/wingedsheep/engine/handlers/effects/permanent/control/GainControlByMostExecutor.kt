@@ -109,7 +109,7 @@ class GainControlByMostExecutor : EffectExecutor<GainControlByMostEffect> {
     private fun metricValue(state: GameState, metric: PlayerRankMetric, playerId: EntityId): Int =
         when (metric) {
             is PlayerRankMetric.LifeTotal ->
-                state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 0
+                state.lifeTotal(playerId) // CR 810.9a — team's shared total
             is PlayerRankMetric.CreaturesOfSubtype ->
                 // Projected state so type-changing effects (a permanent animated/typeshifted
                 // into the subtype) and stolen control are counted correctly.

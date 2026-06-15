@@ -68,6 +68,14 @@ sealed interface ServerMessage {
         /** True for the recipient's own seat. Always false in spectator/replay rosters. */
         val isYou: Boolean = false,
         val isAi: Boolean = false,
+        /**
+         * Team membership for team variants (Two-Headed Giant — CR 810). Seats sharing a
+         * [teamIndex] are teammates (shared life, shared turns, combined combat). Null in
+         * non-team games (every seat plays alone), so the 2-player / Free-for-All clients
+         * are unaffected; the 2HG client groups and colors the rail by this index and treats
+         * the recipient's same-team, non-[isYou] seat as the ally.
+         */
+        val teamIndex: Int? = null,
     )
 
     /**
@@ -1054,6 +1062,10 @@ sealed interface ServerMessage {
         val format: com.wingedsheep.sdk.core.DeckFormat? = null,
         /** True for a Momir Basic lobby: fixed 60-basic decks, no deckbuilding, [setCode] scopes the creature pool. */
         val momirBasic: Boolean = false,
+        /** True for a Two-Headed Giant lobby (CR 810): four seats, two teams (see [QuickGameLobbyPlayerView.teamIndex]). */
+        val twoHeadedGiant: Boolean = false,
+        /** How many seats this lobby fills before it can start: 4 for Two-Headed Giant, else 2. */
+        val maxPlayers: Int = 2,
     ) : ServerMessage
 
     /**
@@ -1072,7 +1084,13 @@ sealed interface ServerMessage {
         /** "random" if the player chose to defer to the server's random sealed pool. */
         val deckLabel: String,
         /** Per-player set choice for Random pools; null = "any set". */
-        val setCode: String? = null
+        val setCode: String? = null,
+        /**
+         * Team membership in a Two-Headed Giant lobby (CR 810): seats sharing a [teamIndex] are
+         * teammates. Derived from the seat's join order (0+1 = team 0, 2+3 = team 1). Null in a
+         * non-2HG lobby, so the existing 2-player overlay is unaffected.
+         */
+        val teamIndex: Int? = null,
     )
 
     /** The lobby has been closed (host left, AI failed to spin up, etc.). */

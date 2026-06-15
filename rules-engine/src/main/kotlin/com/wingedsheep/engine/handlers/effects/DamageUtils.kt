@@ -232,14 +232,15 @@ object DamageUtils {
             // to lose that much life, so life-loss replacements (Bloodletter of Aclazotz)
             // modify the life total reduction here. Lifelink and other damage-based effects
             // below still see the unmodified `effectiveAmount`, matching the official ruling.
+            // CR 810.9 (Two-Headed Giant): damage happens to the player individually but the
+            // result applies to the team's shared life total, so read/write through the resolver.
+            val currentLife = newState.lifeTotal(targetId)
             var lifeLossAmount = applyStaticLifeLossModification(newState, targetId, effectiveAmount)
-            lifeLossAmount = applyLifeLossFloors(newState, targetId, lifeComponent.life, lifeLossAmount)
-            val newLife = lifeComponent.life - lifeLossAmount
-            newState = newState.updateEntity(targetId) { container ->
-                container.with(LifeTotalComponent(newLife))
-            }
+            lifeLossAmount = applyLifeLossFloors(newState, targetId, currentLife, lifeLossAmount)
+            val newLife = currentLife - lifeLossAmount
+            newState = newState.withLifeTotal(targetId, newLife)
             newState = trackDamageReceivedByPlayer(newState, targetId, effectiveAmount)
-            events.add(LifeChangedEvent(targetId, lifeComponent.life, newLife, LifeChangeReason.DAMAGE))
+            events.add(LifeChangedEvent(targetId, currentLife, newLife, LifeChangeReason.DAMAGE))
         } else if (projected.isPlaneswalker(targetId)) {
             // It's a planeswalker - remove loyalty counters equal to damage dealt
             val counters = newState.getEntity(targetId)?.get<CountersComponent>() ?: CountersComponent()
@@ -411,17 +412,17 @@ object DamageUtils {
         reason: LifeChangeReason,
         applyLifeLossModification: Boolean = false,
     ): Pair<GameState, LifeChangedEvent?> {
-        val currentLife = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life
-            ?: return state to null
+        // Presence guard stays per-player (every player carries a LifeTotalComponent); the value,
+        // however, is the team's shared total (CR 810.9a) — read/write via the resolver.
+        if (state.getEntity(playerId)?.get<LifeTotalComponent>() == null) return state to null
+        val currentLife = state.lifeTotal(playerId)
         val lossAmount = if (applyLifeLossModification) {
             applyStaticLifeLossModification(state, playerId, amount)
         } else {
             amount
         }
         val newLife = currentLife - lossAmount
-        var newState = state.updateEntity(playerId) { container ->
-            container.with(LifeTotalComponent(newLife))
-        }
+        var newState = state.withLifeTotal(playerId, newLife)
         newState = markLifeLostThisTurn(newState, playerId)
         return newState to LifeChangedEvent(playerId, currentLife, newLife, reason)
     }
@@ -460,12 +461,11 @@ object DamageUtils {
             amount
         }
         if (gainAmount <= 0) return state to null
-        val currentLife = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life
-            ?: return state to null
+        // Presence guard stays per-player; the value is the team's shared total (CR 810.9a).
+        if (state.getEntity(playerId)?.get<LifeTotalComponent>() == null) return state to null
+        val currentLife = state.lifeTotal(playerId)
         val newLife = currentLife + gainAmount
-        var newState = state.updateEntity(playerId) { container ->
-            container.with(LifeTotalComponent(newLife))
-        }
+        var newState = state.withLifeTotal(playerId, newLife)
         newState = markLifeGainedThisTurn(newState, playerId, gainAmount)
         return newState to LifeChangedEvent(playerId, currentLife, newLife, LifeChangeReason.LIFE_GAIN)
     }

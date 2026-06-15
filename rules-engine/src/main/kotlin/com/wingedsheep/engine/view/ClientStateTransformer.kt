@@ -385,8 +385,13 @@ class ClientStateTransformer(
             // affected player sees of their own hand. Spectators never gain visibility.
             // A non-spectator viewer also sees an opponent's hand while they control a
             // permanent that makes their opponents play with hands revealed (Seer's Vision).
+            // In Two-Headed Giant (CR 810.2b) teammates share strategy openly, so a player
+            // always sees their teammate's hand; [teammatesOf] is empty in non-team games, so
+            // this clause is inert for 2-player / Free-for-All. (Library stays hidden — teams
+            // share life and turns, not card knowledge of each other's library order.)
             Zone.HAND -> debugMode || zoneKey.ownerId == viewingPlayerId ||
                 (!isSpectator && state.actorFor(zoneKey.ownerId) == viewingPlayerId) ||
+                (!isSpectator && state.teammatesOf(viewingPlayerId).contains(zoneKey.ownerId)) ||
                 (!isSpectator && zoneKey.ownerId != viewingPlayerId &&
                     revealsOpponentHandsTo(state, viewingPlayerId))
             Zone.BATTLEFIELD,
@@ -1547,7 +1552,8 @@ class ClientStateTransformer(
     ): ClientPlayer {
         val container = state.getEntity(playerId)
         val playerComponent = container?.get<PlayerComponent>()
-        val lifeTotalComponent = container?.get<LifeTotalComponent>()
+        // CR 810.9a — a player's displayed life is the team's shared total in Two-Headed Giant.
+        val displayedLife = if (container?.get<LifeTotalComponent>() != null) state.lifeTotal(playerId) else null
         val landDropsComponent = container?.get<LandDropsComponent>()
         val manaPoolComponent = container?.get<ManaPoolComponent>()
 
@@ -1602,7 +1608,7 @@ class ClientStateTransformer(
         return ClientPlayer(
             playerId = playerId,
             name = playerComponent?.name ?: "Unknown",
-            life = lifeTotalComponent?.life ?: 20,
+            life = displayedLife ?: 20,
             poisonCounters = container?.get<CountersComponent>()?.getCount(CounterType.POISON) ?: 0,
             handSize = handSize,
             librarySize = librarySize,

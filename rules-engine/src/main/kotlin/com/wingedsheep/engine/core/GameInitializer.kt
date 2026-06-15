@@ -244,8 +244,25 @@ class GameInitializer(
             }
         }
 
-        // 2. Set turn order
-        val shuffledOrder = if (config.startingPlayerIndex != null) {
+        // 2. Set turn order. In a team game with shared team turns (CR 805.1) the members of each
+        // team must sit in adjacent seats, so the order is built team-by-team — teammates are never
+        // interleaved; only the order *between* teams is chosen or randomized (CR 805.3, which team
+        // goes first). [config.startingPlayerIndex] selects the starting team (the team containing
+        // that player). Non-team games shuffle individual players exactly as before.
+        val teams = config.teams
+        val shuffledOrder: List<EntityId> = if (teams != null) {
+            val teamMemberIds = teams.map { members -> members.map { playerIds[it] } }
+            val startTeam = config.startingPlayerIndex
+                ?.let { sp -> teams.indexOfFirst { sp in it }.takeIf { it >= 0 } }
+            val orderedTeams = if (startTeam != null) {
+                teamMemberIds.subList(startTeam, teamMemberIds.size) + teamMemberIds.subList(0, startTeam)
+            } else {
+                val (shuffled, shuffledState) = state.nextRandom { shuffle(teamMemberIds) }
+                state = shuffledState
+                shuffled
+            }
+            orderedTeams.flatten()
+        } else if (config.startingPlayerIndex != null) {
             val idx = config.startingPlayerIndex
             playerIds.subList(idx, playerIds.size) + playerIds.subList(0, idx)
         } else {

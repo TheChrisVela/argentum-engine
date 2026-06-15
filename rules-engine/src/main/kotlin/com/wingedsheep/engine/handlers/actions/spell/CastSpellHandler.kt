@@ -618,8 +618,7 @@ class CastSpellHandler(
                 state, action.playerId, action.targets
             )
             if (additionalLifeCost > 0) {
-                val currentLife = state.getEntity(action.playerId)
-                    ?.get<LifeTotalComponent>()?.life ?: 0
+                val currentLife = state.lifeTotal(action.playerId) // CR 810.9a — team's shared total
                 if (currentLife < additionalLifeCost) {
                     return "Not enough life to pay additional life cost ($additionalLifeCost life required)"
                 }
@@ -1067,8 +1066,7 @@ class CastSpellHandler(
                         }
                     }
                     is CostAtom.PayLife -> {
-                        val currentLife = state.getEntity(action.playerId)
-                            ?.get<LifeTotalComponent>()?.life ?: 0
+                        val currentLife = state.lifeTotal(action.playerId) // CR 810.9a — team's shared total
                         // CR 119.4 — you can't pay life unless you have at least that much
                         if (currentLife < atom.amount) {
                             return "Not enough life to pay ${atom.amount} life"
@@ -1301,8 +1299,7 @@ class CastSpellHandler(
                 }
                 is AdditionalCost.PayLifePerTarget -> {
                     val required = additionalCost.amountPerTarget * action.targets.size
-                    val currentLife = state.getEntity(action.playerId)
-                        ?.get<LifeTotalComponent>()?.life ?: 0
+                    val currentLife = state.lifeTotal(action.playerId) // CR 810.9a — team's shared total
                     // CR 119.4 — you can't pay life unless you have at least that much
                     if (currentLife < required) {
                         return "Not enough life to pay $required life for ${action.targets.size} targets"
@@ -1592,12 +1589,9 @@ class CastSpellHandler(
                 else -> continue
             }
             if (lifeToPay == 0) continue
-            val playerEntity = currentState.getEntity(action.playerId)
-            val currentLife = playerEntity?.get<LifeTotalComponent>()?.life ?: 0
+            val currentLife = currentState.lifeTotal(action.playerId) // CR 810.9a — team's shared total
             val newLife = currentLife - lifeToPay
-            currentState = currentState.updateEntity(action.playerId) { c ->
-                c.with(LifeTotalComponent(newLife))
-            }
+            currentState = currentState.withLifeTotal(action.playerId, newLife)
             currentState = DamageUtils.markLifeLostThisTurn(currentState, action.playerId)
             events.add(LifeChangedEvent(action.playerId, currentLife, newLife, LifeChangeReason.PAYMENT))
         }
@@ -2072,12 +2066,9 @@ class CastSpellHandler(
 
         // Pay additional life cost (e.g., Festival of Embers graveyard casting)
         if (action.graveyardLifeCost > 0) {
-            val currentLife = currentState.getEntity(action.playerId)
-                ?.get<LifeTotalComponent>()?.life ?: 0
+            val currentLife = currentState.lifeTotal(action.playerId) // CR 810.9a — team's shared total
             val newLife = currentLife - action.graveyardLifeCost
-            currentState = currentState.updateEntity(action.playerId) { container ->
-                container.with(LifeTotalComponent(newLife))
-            }
+            currentState = currentState.withLifeTotal(action.playerId, newLife)
             events.add(LifeChangedEvent(action.playerId, currentLife, newLife, LifeChangeReason.LIFE_LOSS))
             currentState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(currentState, action.playerId)
         }
@@ -2090,12 +2081,9 @@ class CastSpellHandler(
                 currentState, action.playerId, action.targets
             )
             if (additionalLifeCost > 0) {
-                val currentLife = currentState.getEntity(action.playerId)
-                    ?.get<LifeTotalComponent>()?.life ?: 0
+                val currentLife = currentState.lifeTotal(action.playerId) // CR 810.9a — team's shared total
                 val newLife = currentLife - additionalLifeCost
-                currentState = currentState.updateEntity(action.playerId) { container ->
-                    container.with(LifeTotalComponent(newLife))
-                }
+                currentState = currentState.withLifeTotal(action.playerId, newLife)
                 events.add(LifeChangedEvent(action.playerId, currentLife, newLife, LifeChangeReason.PAYMENT))
                 currentState = DamageUtils.markLifeLostThisTurn(currentState, action.playerId)
             }

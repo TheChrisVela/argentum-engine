@@ -351,6 +351,8 @@ enum class LossReason {
     CARD_EFFECT,
     /** Commander format: 21+ combat damage from a single commander (CR 903.10a). */
     COMMANDER_DAMAGE,
+    /** Two-Headed Giant: this player's team lost, so they lose with it (CR 810.8a). */
+    TEAM_DEFEATED,
 }
 
 /**
