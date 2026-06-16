@@ -14,6 +14,8 @@ import { useDeckLibrary, buildDraftedDeckSave, type SavedDeckEntry } from '@/sto
 import { DeckPicker } from './DeckPicker'
 import { BanListEditor } from './BanListEditor'
 import { SetPickerModal } from './SetPickerModal'
+import { JoinQrModal } from './JoinQrModal'
+import { buildJoinUrl } from '@/utils/joinLink'
 import { labelForFormat } from '@/utils/deckLegality'
 import styles from './GameUI.module.css'
 
@@ -876,23 +878,26 @@ function LobbyOverlay({
           </p>
         </div>
 
-        {/* Invite code */}
-        <div
-          onClick={copyLobbyId}
-          className={`${styles.inviteBox} ${copied ? styles.inviteBoxCopied : ''}`}
-          style={{ alignSelf: 'stretch', justifyContent: 'space-between' }}
-        >
-          <div>
-            <div style={{ color: 'var(--text-disabled)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>
-              Invite Code
+        {/* Invite code + scannable QR to pull another device straight into the lobby */}
+        <div style={{ alignSelf: 'stretch', display: 'flex', alignItems: 'stretch', gap: 8 }}>
+          <div
+            onClick={copyLobbyId}
+            className={`${styles.inviteBox} ${copied ? styles.inviteBoxCopied : ''}`}
+            style={{ flex: 1, marginBottom: 0, justifyContent: 'space-between' }}
+          >
+            <div>
+              <div style={{ color: 'var(--text-disabled)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>
+                Invite Code
+              </div>
+              <div className={styles.inviteCode} data-testid="invite-code">
+                {lobbyState.lobbyId}
+              </div>
             </div>
-            <div className={styles.inviteCode} data-testid="invite-code">
-              {lobbyState.lobbyId}
-            </div>
+            <span className={`${styles.inviteCopyLabel} ${copied ? styles.inviteCopyLabelCopied : ''}`} style={{ flexShrink: 0, marginLeft: 12 }}>
+              {copied ? 'Copied!' : 'Copy'}
+            </span>
           </div>
-          <span className={`${styles.inviteCopyLabel} ${copied ? styles.inviteCopyLabelCopied : ''}`} style={{ flexShrink: 0, marginLeft: 12 }}>
-            {copied ? 'Copied!' : 'Copy'}
-          </span>
+          <JoinQrModal url={buildJoinUrl(lobbyState.lobbyId)} />
         </div>
 
         {/* Settings (host only) */}

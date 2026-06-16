@@ -7,6 +7,7 @@ import 'mana-font/css/mana.min.css'
 import 'keyrune/css/keyrune.min.css'
 import App from './App'
 import { TournamentEntryPage } from './components/tournament/TournamentEntryPage'
+import { JoinLobbyPage } from './components/lobby/JoinLobbyPage'
 import { AdminPage } from './components/admin/AdminPage'
 import { ReplayPage } from './components/replay/ReplayPage'
 import { DeckbuilderPage } from './components/deckbuilder/DeckbuilderPage'
@@ -27,6 +28,7 @@ createRoot(rootElement).render(
     <BrowserRouter>
       <Routes>
         <Route path="/tournament/:lobbyId" element={<TournamentEntryPage />} />
+        <Route path="/join/:lobbyId" element={<JoinLobbyPage />} />
         <Route path="/replay/:gameId" element={<ReplayPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/deckbuilder" element={<DeckbuilderPage />} />
