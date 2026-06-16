@@ -3575,6 +3575,22 @@ If the evaluated cap is `0` the effect resolves as a no-op. Used by Riku of Many
 where the cap is `ContextProperty(MODES_CHOSEN_ON_TRIGGERING_SPELL)`. Equivalent raw shape:
 `ModalEffect(modes, chooseCount = modes.size, minChooseCount = 0, dynamicChooseCount = …)`.
 
+**Cast-time mode-selection UX (Spree / "choose one or more").** A choose-N modal *spell* cast
+by a human is presented as a **single mode-selection panel** (web client), not a sequential
+one-mode-at-a-time prompt. The enumerator emits one `CastSpellModal` legal action carrying a
+`modalEnumeration` payload (each mode's description, `+ {cost}`, availability, and target
+requirements); the client's cast pipeline opens the panel from that payload, lets the player
+toggle the mode subset (respecting `minChooseCount`/`chooseCount`, and a count stepper when
+`allowRepeat`), shows the live combined additional/total mana cost, and submits a `CastSpell`
+with `chosenModes` populated but **targets deferred**. The engine then drives per-mode
+on-battlefield target selection (`CastSpellHandler` pauses via the existing
+`CastModalTargetSelectionContinuation`) before cost payment — so `validate()`/`execute()` accept
+"modes chosen, targets deferred" as a legitimate intermediate cast state. Server-synthesized
+free casts (Cascade, Sunbird's Invocation) and the AI still use the sequential server-side
+mode-selection pause; choose-1 modal spells remain client-local `CastSpellMode` actions. No SDK
+change is needed to author a Spree card — it is a plain `ModalEffect` with per-mode
+`additionalManaCost` (see Trash the Town).
+
 ### Permanent enters-with-choice (Sieges)
 
 ```kotlin
