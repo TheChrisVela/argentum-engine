@@ -792,7 +792,13 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
             // A ManaValueIs clause we couldn't render as a `<=` cap (any other comparison/X) must decline
             // rather than widen the target to any permanent card in the graveyard.
             if ("ManaValueIs" in blob && mvCap == null) return null
-            var g: Dsl = Lit("GameObjectFilter.Permanent")
+            // "target NONLAND permanent card from your graveyard" (Moment of Reckoning's reanimate mode)
+            // arrives as `IsPermanent` AND `IsNonCardtype "Land"`. Render the nonland-permanent group so
+            // the "nonland" restriction isn't silently dropped (which would let it reanimate lands); any
+            // other negated cardtype on a permanent-card target has no rendering here, so decline.
+            val isNonland = args.argWordsTagged("IsNonCardtype") == listOf("Land")
+            if (args.hasTag("IsNonCardtype") && !isNonland) return null
+            var g: Dsl = if (isNonland) Lit("GameObjectFilter.NonlandPermanent") else Lit("GameObjectFilter.Permanent")
             when {
                 "\"You\"" in blob -> g = g.dot("ownedByYou")
                 "\"Opponent\"" in blob -> g = g.dot("ownedByOpponent")
@@ -963,6 +969,13 @@ internal fun EmitCtx.gameObjectFilterExpr(filterNode: JsonElement?): Dsl? {
     // as GameObjectFilter.Permanent and widen the effect to EVERY permanent, so decline (-> SCAFFOLD):
     // a target-reference group has no static GroupFilter rendering.
     if ("Ref_TargetPermanent" in blob) return null
+    // "the permanents tapped this way" (`ThePermanentsTappedThisWay`, e.g. Homesickness's "put a stun
+    // counter on each of them") is a PIPELINE reference to the just-tapped permanents, NOT a static
+    // battlefield filter. The bare `"Permanent" in blob` arm below would misread it (the substring is
+    // inside `ThePermanentsTappedThisWay`) as GameObjectFilter.Permanent and widen the effect to EVERY
+    // permanent on the battlefield. There is no static GroupFilter rendering for a "this way" pipeline
+    // group, so decline (-> SCAFFOLD) rather than emit a confidently-wrong board-wide effect.
+    if ("ThePermanentsTappedThisWay" in blob) return null
     // "...that was dealt damage this turn" has no GroupFilter helper — decline rather than widen the group.
     if ("WasDealtDamageThisTurn" in blob) return null
     // "creatures you control WITH +1/+1 counters on them" (Badgermole's trample lord): a
