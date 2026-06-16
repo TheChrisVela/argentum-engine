@@ -446,17 +446,16 @@
                     ]
                 },
                 "effect": {
-                    "type": "ForEachTarget",
-                    "effects": [
-                        {
-                            "type": "TapUntap",
-                            "target": {
-                                "type": "ContextTarget",
-                                "index": 0
-                            },
-                            "tap": false
-                        }
-                    ]
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "TapUntap",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "tap": false
+                    }
                 },
                 "targetRequirements": [
                     {
@@ -502,7 +501,7 @@
                             "IsArtifact"
                         ]
                     },
-                    "player": "Opponent"
+                    "player": "EachOpponent"
                 },
                 "binding": "ANY",
                 "effect": {
@@ -703,25 +702,30 @@
             "type": "Composite",
             "effects": [
                 {
-                    "type": "CantBeRegenerated",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "artifact with mana value X"
-                    }
-                },
-                {
-                    "type": "MoveToZone",
-                    "target": {
-                        "type": "BoundVariable",
-                        "name": "artifact with mana value X"
-                    },
-                    "destination": "Graveyard",
-                    "byDestruction": true
-                },
-                {
                     "type": "DealDamage",
                     "amount": "XValue",
                     "target": "TargetController"
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CantBeRegenerated",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "artifact with mana value X"
+                            }
+                        },
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "artifact with mana value X"
+                            },
+                            "destination": "Graveyard",
+                            "byDestruction": true
+                        }
+                    ]
                 }
             ]
         },
@@ -931,7 +935,7 @@
             "type": "DynamicWithOffset",
             "source": {
                 "type": "AggregateBattlefield",
-                "player": "Opponent",
+                "player": "EachOpponent",
                 "filter": "artifact"
             },
             "offset": 1
@@ -940,7 +944,7 @@
             "type": "DynamicWithOffset",
             "source": {
                 "type": "AggregateBattlefield",
-                "player": "Opponent",
+                "player": "EachOpponent",
                 "filter": "artifact"
             },
             "offset": 1
