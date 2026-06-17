@@ -5450,6 +5450,70 @@
     ]
 }
 
+// Matterbending Mage
+{
+    "name": "Matterbending Mage",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "When this creature enters, return up to one other target creature to its owner's hand.\nWhenever you cast a spell with {X} in its mana cost, this creature can't be blocked this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "other creature"
+                    },
+                    "destination": "Hand"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature",
+                        "excludeSelf": true
+                    },
+                    "id": "other creature"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "requires": [
+                        "SpellHasXInCost"
+                    ]
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "CANT_BE_BLOCKED",
+                    "target": "Self"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "59",
+        "rarity": "UNCOMMON",
+        "artist": "Flavio Greco Paglia",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/6/460c6afd-cddf-4fea-925f-b27517ff250a.jpg?1775937321"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Melancholic Poet
 {
     "name": "Melancholic Poet",
@@ -8653,6 +8717,91 @@
     ]
 }
 
+// Spectacular Skywhale
+{
+    "name": "Spectacular Skywhale",
+    "manaCost": "{2}{U}{R}",
+    "typeLine": "Creature — Elemental Whale",
+    "oracleText": "Flying\nOpus — Whenever you cast an instant or sorcery spell, this creature gets +3/+0 until end of turn. If five or more mana was spent to cast that spell, put three +1/+1 counters on this creature instead.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "ContextProperty",
+                                "key": "MANA_SPENT_ON_TRIGGERING_SPELL"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 5
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 3,
+                        "target": "Self"
+                    },
+                    "otherwise": {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "target": "Self"
+                    }
+                },
+                "descriptionOverride": "Opus — Whenever you cast an instant or sorcery spell, this creature gets +3/+0 until end of turn. If five or more mana was spent to cast that spell, put 3 +1/+1 counters on this creature instead."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "229",
+        "rarity": "UNCOMMON",
+        "artist": "Serena Malyon",
+        "flavorText": "Rootha was humbled in the whale's presence. It was glorious and beautiful, all on its own terms.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/9/c90366d5-b4ba-4772-a3c5-f138bbe7f305.jpg?1775938597"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Spellbook Seeker
 {
     "name": "Spellbook Seeker",
@@ -8768,6 +8917,145 @@
     },
     "colorIdentityOverride": [
         "WHITE",
+        "RED"
+    ]
+}
+
+// Stadium Tidalmage
+{
+    "name": "Stadium Tidalmage",
+    "manaCost": "{2}{U}{R}",
+    "typeLine": "Creature — Djinn Sorcerer",
+    "oracleText": "Whenever this creature enters or attacks, you may draw a card. If you do, discard a card.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "232",
+        "artist": "Ioannis Fiore",
+        "flavorText": "The Prismari team takes the direction to \"flood the zone\" literally.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/6/a689289e-7141-4950-8a87-82e9bd6846fe.jpg?1775938619"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
         "RED"
     ]
 }
@@ -9852,6 +10140,95 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Thunderdrum Soloist
+{
+    "name": "Thunderdrum Soloist",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Dwarf Bard",
+    "oracleText": "Reach\nOpus — Whenever you cast an instant or sorcery spell, this creature deals 1 damage to each opponent. If five or more mana was spent to cast that spell, this creature deals 3 damage to each opponent instead.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "REACH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "ContextProperty",
+                                "key": "MANA_SPENT_ON_TRIGGERING_SPELL"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 5
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "EachOpponent"
+                        },
+                        "damageSource": "Self"
+                    },
+                    "otherwise": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "EachOpponent"
+                        },
+                        "damageSource": "Self"
+                    }
+                },
+                "descriptionOverride": "Opus — Whenever you cast an instant or sorcery spell, this creature deals 1 damage to each opponent. If five or more mana was spent to cast that spell, this creature deals 3 damage to each opponent instead."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "134",
+        "rarity": "UNCOMMON",
+        "artist": "Edgar Sánchez Hidalgo",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/9/590d1d95-ed13-4121-899f-f5a2d8a6617a.jpg?1775937905"
+    },
+    "colorIdentityOverride": [
+        "RED"
     ]
 }
 

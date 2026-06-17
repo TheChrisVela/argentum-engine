@@ -274,6 +274,26 @@ internal fun EmitCtx.creatureFilterExpr(filterNode: JsonElement?): Dsl? {
             return Lit("TargetFilter.OtherCreatureYouControl")
         }
     }
+    // "up to one OTHER target creature" with no controller restriction — `And(Other(<self/entering>),
+    // IsCardtype Creature)`. The named TargetFilter constant `OtherCreature` composes excludeSelf, so
+    // render it directly (Rimekin Recluse, Matterbending Mage). Guard strictly: only when the sole
+    // predicates are Other + Creature, with no controller clause or extra subtype / colour / power /
+    // keyword / state clause that the bare constant wouldn't carry — anything else falls through to the
+    // strict decline below.
+    run {
+        val otherCreatureExtras = listOf(
+            "IsCreatureType", "IsNonCreatureType", "IsArtifactType", "IsLandType", "IsEnchantmentType",
+            "IsNonCardtype", "IsColor", "IsNonColor", "PowerIs", "ToughnessIs", "ManaValueIs", "HasAbility",
+            "DoesntHaveAbility", "IsTapped", "IsUntapped", "IsAttacking", "IsBlocking", "IsFaceDown",
+            "IsNonToken", "HasACounterOfType", "WasDealtDamageThisTurn", "ControlledByAPlayer", "ControlledByPlayer",
+        )
+        if (jsonContains(filterNode, "_Permanents", "Other") &&
+            "Creature" in filterNode.argWordsTagged("IsCardtype") &&
+            otherCreatureExtras.none { it in blob }
+        ) {
+            return Lit("TargetFilter.OtherCreature")
+        }
+    }
     // "ANOTHER target creature you control" — an `Other(ThisPermanent)` self-exclusion. The TargetFilter
     // surface built here doesn't compose excludeSelf, so silently dropping it would let the source target
     // itself (an illegal target). Decline (-> SCAFFOLD) rather than emit a target missing the "another"

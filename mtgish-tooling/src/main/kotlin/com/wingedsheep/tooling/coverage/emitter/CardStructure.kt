@@ -1499,6 +1499,17 @@ internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false
     opusTriggerBlock(rule, oncePerTurn, triggerCondition)?.let { return it }
     if (isOpusShaped(rule)) { reasons.add("opus"); return null }
 
+    // "Whenever this creature enters OR attacks, …" — an `Or` of sibling self-triggers sharing one
+    // effect body (Stadium Tidalmage, Dragonhawk's enters/attacks). One `TriggerSpec` can't express the
+    // union (each arm has its own event + binding), so the hand-authored idiom is N separate
+    // `triggeredAbility` blocks sharing the same rendered effect. Recognise the exact shape — an `Or`
+    // trigger whose every arm is itself recoverable by [triggerSpecFor] — rewrite the rule per arm
+    // (each carrying the same actions / targets envelope) and recurse, concatenating the blocks. Any
+    // arm [triggerSpecFor] can't render whole declines the WHOLE union -> SCAFFOLD (never a partial that
+    // silently drops an arm). Done before [unwrapIfGatedTrigger], whose single-trigger assumption the
+    // `Or` node would otherwise break.
+    orTriggerBlocks(rule, oncePerTurn, triggerCondition)?.let { return it }
+
     // A Mount's "while saddled" attack trigger nests the intervening-if (CR 603.4) *inside* the
     // TriggerA's trigger slot: `args[0]` is an `If { <gate> } <realTrigger>` node rather than a bare
     // `_Trigger`. Recognise the exact "this permanent is saddled" gate, unwrap it to the inner real
@@ -1545,6 +1556,39 @@ internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false
     if (tvar != null) stmts.add(targetLocal(tnode!!))
     stmts.add(Assign("effect", edsl))
     return listOf(Sub(Block("triggeredAbility", stmts)))
+}
+
+/**
+ * "Whenever ~ enters OR attacks, …" — a `TriggerA` whose trigger (`args[0]`) is an `Or` of two-plus
+ * sibling sub-triggers that share one effect body. Returns N `triggeredAbility` blocks (one per arm,
+ * each rendered through [triggerBlock] with the same actions/targets envelope), or null when this isn't
+ * an Or-trigger or any arm can't be rendered whole.
+ *
+ * Each arm rule is the original rule with `args[0]` replaced by that arm's `_Trigger` node — every other
+ * field (the actions envelope at `args[1]`, the rule kind) is preserved — so [triggerBlock] renders each
+ * arm exactly as if it were written as its own ability, sharing the identical effect tree. This mirrors
+ * the hand-authored idiom (two `triggeredAbility { }` blocks sharing one `effect` val, e.g. Dragonhawk,
+ * Stadium Tidalmage). If even one arm declines, the whole union returns null so the card scaffolds rather
+ * than silently dropping an arm.
+ */
+private fun EmitCtx.orTriggerBlocks(rule: JsonObject, oncePerTurn: Boolean, triggerCondition: String?): List<Stmt>? {
+    val args = rule["args"].asArr ?: return null
+    val trig = args.getOrNull(0) as? JsonObject ?: return null
+    if (trig.strField("_Trigger") != "Or") return null
+    val arms = trig["args"].asArr?.filterIsInstance<JsonObject>() ?: return null
+    if (arms.size < 2) return null
+    if (arms.any { it.strField("_Trigger") == null || it.strField("_Trigger") == "Or" }) return null
+
+    val out = mutableListOf<Stmt>()
+    for (arm in arms) {
+        val armRule = buildJsonObject {
+            rule.forEach { (k, v) -> if (k != "args") put(k, v) }
+            put("args", JsonArray(listOf<JsonElement>(arm) + args.drop(1)))
+        }
+        val block = triggerBlock(armRule, oncePerTurn, triggerCondition) ?: return null
+        out.addAll(block)
+    }
+    return out
 }
 
 /**
@@ -2119,11 +2163,13 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
         val argv = trig["args"].asArr
         val scope = castScope(argv?.getOrNull(0) as? JsonObject) ?: return null
         val spellsNode = argv?.getOrNull(1) as? JsonObject
-        // "a spell with {X} in its mana cost" (Geometer's Arthropod) — a bare HasXInCost filter,
-        // expressed as a cast-time `SpellCastPredicate.HasXInCost` (the X value of the triggering
-        // spell is read in the payoff via DynamicAmounts.xValueOfTriggeringSpell()). Only the You
-        // scope has the matching Triggers facade today; any other scope declines -> SCAFFOLD.
-        if (spellsNode?.strField("_Spells") == "HasXInCost") {
+        // "a spell with {X} in its mana cost" (Geometer's Arthropod, Matterbending Mage) — a bare
+        // HasXInCost / HasXInManaCost filter (the IR uses both spellings interchangeably for the same
+        // "{X} in its mana cost" predicate), expressed as a cast-time `SpellCastPredicate.HasXInCost`
+        // (the X value of the triggering spell is read in the payoff via
+        // DynamicAmounts.xValueOfTriggeringSpell()). Only the You scope has the matching Triggers facade
+        // today; any other scope declines -> SCAFFOLD.
+        if (spellsNode?.strField("_Spells") in setOf("HasXInCost", "HasXInManaCost")) {
             return if (scope == CastScope.YOU)
                 "Triggers.youCastSpell(requires = setOf(SpellCastPredicate.HasXInCost))"
             else null

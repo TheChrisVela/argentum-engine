@@ -1112,6 +1112,11 @@ internal fun EmitCtx.createValueXDealsDamageEffect(actions: List<JsonObject>, tv
  * we can express as an *effect* (currently the self-discard `DiscardACard` -> `Patterns.Hand.discardCards(1)`),
  * the gate must be exactly `If(CostWasPaid, [then])` with no else-branch, and the then-actions must render.
  * Anything else returns null so the caller falls through to the normal per-action path (no lossy emit).
+ *
+ * The "you may draw a card. If you do, discard a card." loot (`MayCost(DrawACard)` +
+ * `If(CostWasPaid, [DiscardACard])`, e.g. Stadium Tidalmage / Jeskai Elder) is special-cased to the
+ * canonical `MayEffect(Patterns.Hand.loot())` — the exact gameplay tree the hand-authored cards use —
+ * rather than the generic IfYouDo form, since `loot()` is the named MTG loot mechanic.
  */
 internal fun EmitCtx.mayCostIfYouDoEffect(may: JsonObject, ifAct: JsonObject, tvar: String?): Dsl? {
     if (may.strField("_Action") != "MayCost" || ifAct.strField("_Action") != "If") return null
@@ -1121,9 +1126,14 @@ internal fun EmitCtx.mayCostIfYouDoEffect(may: JsonObject, ifAct: JsonObject, tv
     if (ifArgs.getOrNull(2) != null) return null
     val thenActions = (ifArgs.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>() ?: return null
     if (thenActions.isEmpty()) return null
+    val cost = (may["args"] as? JsonObject)?.strField("_Cost")
+    // "you may draw a card. If you do, discard a card." — the canonical loot mechanic.
+    if (cost == "DrawACard" && thenActions.singleOrNull()?.strField("_Action") == "DiscardACard") {
+        return call("MayEffect", arg(call("Patterns.Hand.loot")))
+    }
     // Render the paid cost as the IfYouDo's `action`. Only the self-discard cost is modeled today; any
     // other cost (sacrifice, pay life, exile, mana) declines -> the pair stays uncollapsed.
-    val costAction = when ((may["args"] as? JsonObject)?.strField("_Cost")) {
+    val costAction = when (cost) {
         "DiscardACard" -> call("Patterns.Hand.discardCards", arg("1"))
         else -> return null
     }

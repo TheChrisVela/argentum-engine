@@ -131,15 +131,29 @@ class TargetRecoveryTest : StringSpec({
         ctx.targetDsl(obj("""{"_Target":"TargetSpell","args":{"_Spells":"TargetsAPermanent","args":{"_Permanents":"IsCardtype","args":"Creature"}}}""")).shouldBeNull()
     }
 
-    "creatureFilterDsl declines an 'another' creature target (excludeSelf not composed, Deserter's Disciple)" {
-        // "Another target creature you control" — an Other(ThisPermanent) self-exclusion the TargetFilter
-        // surface can't compose; dropping it would let the source target itself. Decline -> SCAFFOLD.
+    "creatureFilterDsl recovers a bare 'another' creature target as TargetFilter.OtherCreature (Rimekin Recluse)" {
+        // "up to one OTHER target creature" — an Other(ThisPermanent) self-exclusion with no controller
+        // clause. The named TargetFilter.OtherCreature constant composes excludeSelf, so render it
+        // directly rather than dropping the "another" restriction (Rimekin Recluse, Matterbending Mage).
         val anotherCreature = obj(
             """{"_Permanents":"And","args":[""" +
                 """{"_Permanents":"IsCardtype","args":"Creature"},""" +
                 """{"_Permanents":"Other","args":{"_Permanent":"ThisPermanent"}}]}""",
         )
-        ctx.creatureFilterDsl(anotherCreature).shouldBeNull()
+        ctx.creatureFilterDsl(anotherCreature) shouldBe "TargetFilter.OtherCreature"
+    }
+
+    "creatureFilterDsl declines an 'another' creature target with an extra predicate (excludeSelf + state not composed)" {
+        // "Another tapped creature" — Other(ThisPermanent) + IsTapped. TargetFilter.OtherCreature carries
+        // no extra state clause, so the named constant can't express it; dropping IsTapped would widen the
+        // target. Decline -> SCAFFOLD rather than emit a target missing the tapped restriction.
+        val anotherTapped = obj(
+            """{"_Permanents":"And","args":[""" +
+                """{"_Permanents":"IsCardtype","args":"Creature"},""" +
+                """{"_Permanents":"IsTapped"},""" +
+                """{"_Permanents":"Other","args":{"_Permanent":"ThisPermanent"}}]}""",
+        )
+        ctx.creatureFilterDsl(anotherTapped).shouldBeNull()
     }
 
     "gameObjectFilterDsl declines a '+1/+1 counters on them' group (Badgermole's trample lord)" {
