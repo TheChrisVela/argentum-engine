@@ -95,6 +95,19 @@ internal val damageDrawLifeHandlers: Map<String, ActionHandler> = actionHandlers
         call("DividedDamageEffect", arg("totalDamage", "$total"))
     }
 
+    on("Fight") { _, args, tvar ->
+        // "<creature> fights <creature>" (Savage Punch, Dragonclaw Strike, Chelonian Tackle's
+        // "Then it fights up to one target creature an opponent controls"). The IR carries two
+        // `_Permanent` refs — typically the two chosen targets of a multi-target spell. Resolve both
+        // to their bound-target locals and render `Effects.Fight(t1, t2)`. Decline (-> SCAFFOLD) if
+        // either ref can't be resolved exactly, so we never emit a fight against the wrong creature.
+        val refs = args.objects().mapNotNull { it.strField("_Permanent") }.toList()
+        if (refs.size != 2) return@on null
+        val t1 = refTargetFromRef(refs[0], tvar) ?: return@on null
+        val t2 = refTargetFromRef(refs[1], tvar) ?: return@on null
+        call("Effects.Fight", arg(Lit(t1)), arg(Lit(t2)))
+    }
+
     on("GainLifeForEach") { _, args, _ ->
         val dyn = dynamicAmountExpr(gainForEachAmount(args)) ?: return@on null
         call("GainLifeEffect", arg(dyn))

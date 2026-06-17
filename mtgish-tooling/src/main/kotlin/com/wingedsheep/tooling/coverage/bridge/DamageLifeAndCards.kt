@@ -14,6 +14,8 @@ internal fun BridgeBuilder.damageLifeAndCards() {
         tag = "DealDamage",
     )
     effect("SpellDealsDistributedDamage", "DividedDamage")
+    // "<creature> fights <creature>" (Savage Punch, Dragonclaw Strike, Chelonian Tackle) -> FightEffect.
+    effect("Fight", "Fight")
 
     // "where X is …" — mtgish binds the value with a CreateValueX action, then a later action spends
     // `ValueX`. Argentum has no separate "set X" step for a one-shot spell: the computed DynamicAmount
