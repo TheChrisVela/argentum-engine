@@ -229,7 +229,7 @@ internal fun EmitCtx.lifeAmountExpr(args: JsonElement?): Dsl? {
  *  `2` of "2ˣ"), which would emit a confidently-wrong fixed count. */
 internal fun strictCardCount(amountNode: JsonElement?, forX: String? = null): String? =
     when ((amountNode as? JsonObject)?.strField("_GameNumber")) {
-        "Integer" -> (amountNode as JsonObject)["args"].asInt()?.toString()
+        "Integer" -> amountNode["args"].asInt()?.toString()
         "XValue", "X", "ValueX" -> forX
         else -> null
     }
@@ -831,7 +831,7 @@ internal fun EmitCtx.paycostDsl(costNode: JsonElement?): String? {
         // Pitlord). That is rarely the card's own printed cost, so render the literal symbols rather
         // than collapsing to OwnManaCost (which resolves against the source's printed cost). Decline
         // if any symbol is unrecognised so we scaffold instead of emitting a wrong cost.
-        val mana = renderMana((costNode as? JsonObject)?.get("args"))
+        val mana = renderMana(costNode["args"])
         if (mana.isBlank() || "{?}" in mana) return null
         return "Costs.pay.Mana(\"$mana\")"
     }

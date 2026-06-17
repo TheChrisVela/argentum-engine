@@ -125,7 +125,7 @@ object LimitedPickScorer {
             }
         return when {
             offColor -> "Off-color for your current picks"
-            card.rarity?.uppercase() == "MYTHIC" || card.rarity?.uppercase() == "RARE" -> "High-impact ${card.rarity?.lowercase()}"
+            card.rarity?.uppercase() == "MYTHIC" || card.rarity?.uppercase() == "RARE" -> "High-impact ${card.rarity.lowercase()}"
             oracle.contains("destroy") || oracle.contains("exile") || oracle.contains("fight") -> "Removal — premium in limited"
             oracle.contains("flying") || oracle.contains("menace") || oracle.contains("trample") -> "Evasive threat"
             oracle.contains("draw") -> "Card advantage"

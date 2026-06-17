@@ -1305,13 +1305,6 @@ class CostHandler(
             }
         }
     }
-
-    private fun com.wingedsheep.sdk.scripting.CostZone.toZone(): Zone = when (this) {
-        com.wingedsheep.sdk.scripting.CostZone.HAND -> Zone.HAND
-        com.wingedsheep.sdk.scripting.CostZone.GRAVEYARD -> Zone.GRAVEYARD
-        com.wingedsheep.sdk.scripting.CostZone.LIBRARY -> Zone.LIBRARY
-        com.wingedsheep.sdk.scripting.CostZone.BATTLEFIELD -> Zone.BATTLEFIELD
-    }
 }
 
 /**

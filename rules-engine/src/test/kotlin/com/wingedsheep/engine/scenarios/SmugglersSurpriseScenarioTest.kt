@@ -66,7 +66,7 @@ class SmugglersSurpriseScenarioTest : FunSpec({
         val select = driver.pendingDecision
         select.shouldBeInstanceOf<SelectCardsDecision>()
         // Three creature/land cards among the four milled are eligible (the instant is filtered out).
-        (select as SelectCardsDecision).options.size shouldBe 3
+        select.options.size shouldBe 3
 
         driver.submitDecision(
             me,

@@ -31,7 +31,7 @@ class ReturnCreaturesPutInGraveyardThisTurnExecutor : EffectExecutor<ReturnCreat
         effect: ReturnCreaturesPutInGraveyardThisTurnEffect,
         context: EffectContext
     ): EffectResult {
-        val playerId = resolvePlayer(effect.player, context, state) ?: return EffectResult.success(state)
+        val playerId = resolvePlayer(effect.player, context, state)
         val graveyardKey = ZoneKey(playerId, Zone.GRAVEYARD)
         val graveyardIds = state.getZone(graveyardKey)
 

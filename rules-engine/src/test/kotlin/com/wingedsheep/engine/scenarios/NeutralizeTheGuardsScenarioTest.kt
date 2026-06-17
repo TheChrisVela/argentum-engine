@@ -70,7 +70,7 @@ class NeutralizeTheGuardsScenarioTest : FunSpec({
         driver.isPaused shouldBe true
         val select = driver.pendingDecision
         select.shouldBeInstanceOf<SelectCardsDecision>()
-        (select as SelectCardsDecision).options.size shouldBe 2
+        select.options.size shouldBe 2
 
         // Mill the top card; reorder the rest.
         driver.submitDecision(me, CardsSelectedResponse(decisionId = select.id, selectedCards = listOf(top1)))

@@ -56,7 +56,7 @@ class DraftsimAdvisorTest : FunSpec({
 
     test("deckbuild advisor builds a ~40-card deck from an LTR pool") {
         // A pool large enough to support a build: all booster-legal LTR spells (one copy each).
-        val pool = ltr.cards.filter { it.metadata.let { m -> m.rarity != null } && !it.typeLine.isBasicLand }
+        val pool = ltr.cards.filter { !it.typeLine.isBasicLand }
         val result = DraftsimDeckBuildAdvisor.buildDeck(
             DeckBuildRequest(pool = pool, targetSize = 40, setCodes = listOf("LTR")),
         )
@@ -75,7 +75,7 @@ class DraftsimAdvisorTest : FunSpec({
     }
 
     test("deckbuild advisor completes a partial deck without dropping the locked cards") {
-        val pool = ltr.cards.filter { it.metadata.let { m -> m.rarity != null } && !it.typeLine.isBasicLand }
+        val pool = ltr.cards.filter { !it.typeLine.isBasicLand }
         // Lock a handful of real nonland spells from the pool; "Complete Deck" must keep every one.
         val locked = pool.filterNot { it.typeLine.isLand }.take(6).associate { it.name to 1 }
 

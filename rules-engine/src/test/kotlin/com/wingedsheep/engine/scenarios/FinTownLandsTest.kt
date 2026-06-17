@@ -37,7 +37,6 @@ class FinTownLandsTest : FunSpec({
         Color.BLACK -> pool.black
         Color.RED -> pool.red
         Color.GREEN -> pool.green
-        else -> pool.colorless
     }
 
     // (card, name, ability[0] color, ability[1] color) — colors in declared ability order.

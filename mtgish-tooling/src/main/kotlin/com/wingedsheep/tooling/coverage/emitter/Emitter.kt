@@ -161,12 +161,12 @@ object Emitter {
                 // the self put-into-graveyard shape; any other TriggerA on an Aura still scaffolds).
                 if (rn == "TriggerA" &&
                     jsonContains(r, "_Trigger", "WhenAPermanentIsPutIntoAPlayersGraveyard") &&
-                    ctx.triggerBlock(r as JsonObject) != null
+                    ctx.triggerBlock(r) != null
                 ) return@forEach
                 // In partial mode the offending ability becomes a located hole and is skipped in the
                 // main loop below (so the generic activated/trigger emitter doesn't render it wrongly).
                 gap("aura-with-$rn", addReason = "aura-with-$rn")?.let { return it }
-                skipRules.add(r as JsonObject)
+                skipRules.add(r)
             }
         }
 
@@ -281,7 +281,7 @@ object Emitter {
                 rname != null && pascalToUpperSnake(rname) in keywords && rule["args"] == null -> continue
                 else -> { gap(rname ?: "unknown-rule", addReason = rname ?: "unknown-rule")?.let { return it }; continue }
             }
-            if (block == null) { gap(rname ?: "ability")?.let { return it }; continue }
+            if (block == null) { gap(rname)?.let { return it }; continue }
             parts++
             body.addAll(block)
         }

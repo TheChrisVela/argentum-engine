@@ -85,10 +85,10 @@ class ErietteTheBeguilerScenarioTest : ScenarioTestBase() {
                 val bears = game.findPermanent("Grizzly Bears")
                 bears.shouldNotBeNull()
                 withClue("Bears starts under opponent's control") {
-                    game.state.getEntity(bears!!)?.get<ControllerComponent>()?.playerId shouldBe game.player2Id
+                    game.state.getEntity(bears)?.get<ControllerComponent>()?.playerId shouldBe game.player2Id
                 }
 
-                game.castSpell(1, "Test Cheap Aura", bears!!).error shouldBe null
+                game.castSpell(1, "Test Cheap Aura", bears).error shouldBe null
                 game.resolveStack()
 
                 withClue("Player 1 gained control of the enchanted Bears via Eriette") {

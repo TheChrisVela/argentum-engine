@@ -242,7 +242,7 @@ class MomirBasicScenarioTest : ScenarioTestBase() {
             decision.shouldNotBeNull()
             (decision is ChooseColorDecision).shouldBeTrue()
 
-            game.submitDecision(ColorChosenResponse(decision!!.id, Color.RED))
+            game.submitDecision(ColorChosenResponse(decision.id, Color.RED))
             game.resolveStack()
 
             val token = game.findPermanents("Alloy Golem").single()

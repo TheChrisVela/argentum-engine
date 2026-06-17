@@ -42,10 +42,10 @@ import java.net.http.HttpResponse
     ],
 )
 class DevScenarioAiTest(
-    @Autowired private val gameRepository: GameRepository,
-    @Autowired private val sessionRegistry: SessionRegistry,
-    @Autowired private val aiGameManager: AiGameManager,
-    @LocalServerPort private val port: Int,
+    @param:Autowired private val gameRepository: GameRepository,
+    @param:Autowired private val sessionRegistry: SessionRegistry,
+    @param:Autowired private val aiGameManager: AiGameManager,
+    @param:LocalServerPort private val port: Int,
 ) : FunSpec({
 
     val http = HttpClient.newHttpClient()

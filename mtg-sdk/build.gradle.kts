@@ -10,4 +10,6 @@ dependencies {
     testImplementation(libs.kotestRunner)
     testImplementation(libs.kotestAssertions)
     testImplementation(libs.kotestProperty)
+    // CostAtomSerializationTest enumerates sealed subclasses via kotlin-reflect (sealedSubclasses).
+    testImplementation(kotlin("reflect"))
 }

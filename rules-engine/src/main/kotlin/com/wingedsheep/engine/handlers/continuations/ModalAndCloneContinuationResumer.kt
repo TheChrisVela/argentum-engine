@@ -703,7 +703,7 @@ class ModalAndCloneContinuationResumer(
             ?.sortedBy { it.choiceType.ordinal }
             ?.firstOrNull { it.choiceType.ordinal > continuation.choiceType.ordinal }
 
-        if (nextChoice != null && cardComponent != null) {
+        if (nextChoice != null) {
             val result = com.wingedsheep.engine.handlers.effects.PermanentEntryReplacements.pauseForEntersWithChoice(
                 newState, entityId, continuation.controllerId, cardComponent, nextChoice, continuation.fromZone
             )

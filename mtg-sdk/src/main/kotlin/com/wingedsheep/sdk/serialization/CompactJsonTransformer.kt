@@ -3,6 +3,7 @@ package com.wingedsheep.sdk.serialization
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.PolymorphicKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.StructureKind
@@ -29,6 +30,7 @@ import kotlinx.serialization.serializer
  * This transformation is applied at the CardExporter/CardLoader boundary, keeping the core
  * kotlinx.serialization infrastructure unchanged.
  */
+@OptIn(ExperimentalSerializationApi::class) // SerialDescriptor.kind/PolymorphicKind introspection
 object CompactJsonTransformer {
 
     /**

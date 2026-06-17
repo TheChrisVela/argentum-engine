@@ -34,9 +34,9 @@ import java.net.http.HttpResponse
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ScenarioControllerTest(
-    @Autowired private val gameRepository: GameRepository,
-    @Autowired private val scenarioBuilderService: ScenarioBuilderService,
-    @LocalServerPort private val port: Int,
+    @param:Autowired private val gameRepository: GameRepository,
+    @param:Autowired private val scenarioBuilderService: ScenarioBuilderService,
+    @param:LocalServerPort private val port: Int,
 ) : FunSpec({
 
     val http = HttpClient.newHttpClient()

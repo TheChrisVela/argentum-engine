@@ -56,7 +56,7 @@ class LivelyDirgeScenarioTest : FunSpec({
         driver.isPaused shouldBe true
         val select = driver.pendingDecision
         select.shouldBeInstanceOf<SelectCardsDecision>()
-        val courser = (select as SelectCardsDecision).options.first()
+        val courser = select.options.first()
 
         driver.submitDecision(
             me,
@@ -98,7 +98,7 @@ class LivelyDirgeScenarioTest : FunSpec({
         driver.submitDecision(
             me,
             CardsSelectedResponse(
-                decisionId = (select as SelectCardsDecision).id,
+                decisionId = select.id,
                 selectedCards = listOf(courser, lions)
             )
         )
@@ -136,7 +136,7 @@ class LivelyDirgeScenarioTest : FunSpec({
         driver.isPaused shouldBe true
         val searchSelect = driver.pendingDecision
         searchSelect.shouldBeInstanceOf<SelectCardsDecision>()
-        val found = (searchSelect as SelectCardsDecision).options.first()
+        val found = searchSelect.options.first()
         driver.submitDecision(
             me,
             CardsSelectedResponse(decisionId = searchSelect.id, selectedCards = listOf(found))
@@ -149,7 +149,7 @@ class LivelyDirgeScenarioTest : FunSpec({
         driver.submitDecision(
             me,
             CardsSelectedResponse(
-                decisionId = (reanimateSelect as SelectCardsDecision).id,
+                decisionId = reanimateSelect.id,
                 selectedCards = listOf(found)
             )
         )

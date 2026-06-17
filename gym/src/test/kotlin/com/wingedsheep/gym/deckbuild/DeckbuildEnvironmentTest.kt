@@ -97,7 +97,7 @@ class DeckbuildEnvironmentTest : FunSpec({
         o.legalActions.isEmpty().shouldBeTrue()
         o.deckScore.shouldNotBeNull()
         // Three rated creatures contribute a positive score; basics contribute nothing.
-        o.deckScore!! shouldBeGreaterThan 0.0
+        o.deckScore shouldBeGreaterThan 0.0
         env.isTerminal.shouldBeTrue()
         env.finalDeck shouldBe mapOf("Grizzly" to 1, "Runeclaw" to 1, "Balduvian" to 1, "Forest" to 2)
     }

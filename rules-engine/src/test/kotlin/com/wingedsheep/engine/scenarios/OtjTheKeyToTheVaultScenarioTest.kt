@@ -83,7 +83,7 @@ class OtjTheKeyToTheVaultScenarioTest : FunSpec({
         // Exile Savannah Lions, then it is cast for free during the trigger's resolution.
         driver.submitDecision(
             me,
-            CardsSelectedResponse(decisionId = (look as SelectCardsDecision).id, selectedCards = listOf(lions))
+            CardsSelectedResponse(decisionId = look.id, selectedCards = listOf(lions))
         )
         var safety = 0
         while (driver.isPaused && safety++ < 10) driver.bothPass()
@@ -109,7 +109,7 @@ class OtjTheKeyToTheVaultScenarioTest : FunSpec({
         // Decline to exile anything.
         driver.submitDecision(
             me,
-            CardsSelectedResponse(decisionId = (look as SelectCardsDecision).id, selectedCards = emptyList<EntityId>())
+            CardsSelectedResponse(decisionId = look.id, selectedCards = emptyList<EntityId>())
         )
         var safety = 0
         while (driver.isPaused && safety++ < 10) driver.bothPass()

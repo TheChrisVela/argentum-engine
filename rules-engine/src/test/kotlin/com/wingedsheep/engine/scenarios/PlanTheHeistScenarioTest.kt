@@ -70,7 +70,7 @@ class PlanTheHeistScenarioTest : FunSpec({
         driver.isPaused shouldBe true
         val select = driver.pendingDecision
         select.shouldBeInstanceOf<SelectCardsDecision>()
-        (select as SelectCardsDecision).options.size shouldBe 3
+        select.options.size shouldBe 3
 
         // Mill the top card.
         driver.submitDecision(me, CardsSelectedResponse(decisionId = select.id, selectedCards = listOf(surveilTop)))

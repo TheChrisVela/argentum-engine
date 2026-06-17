@@ -26,6 +26,9 @@ class WebConfig : WebMvcConfigurer {
         explicitNulls = false
     }
 
+    // Spring deprecated extendMessageConverters in favour of the builder-based configureMessageConverters,
+    // but inserting our converter at a fixed index in the post-default list is exactly what we want here.
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun extendMessageConverters(converters: MutableList<HttpMessageConverter<*>>) {
         // extendMessageConverters runs after the defaults are registered;
         // inserting at index 0 makes our converter win over the default

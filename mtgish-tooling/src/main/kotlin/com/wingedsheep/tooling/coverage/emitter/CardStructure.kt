@@ -942,7 +942,7 @@ private fun EmitCtx.modalArmBody(arm: JsonObject): List<Stmt>? {
     }
     if (kind != "Targeted") return null
     val (targets, actions) = targetedArms(arm) ?: return null
-    if (targets == null || actions == null) return null
+    if (targets == null) return null
     if (targets.size != 1) return null
     val target = targets[0]
 
@@ -1052,7 +1052,7 @@ private fun EmitCtx.modalArmEffectExpr(arm: JsonObject, bullet: String): Dsl? {
         }
         "Targeted" -> {
             val (targets, actions) = targetedArms(arm) ?: return null
-            if (targets == null || actions == null || targets.size != 1) return null
+            if (targets == null || targets.size != 1) return null
             val tnode = targetExpr(targets[0], actions)
                 ?: run { reasons.add("target:${targets[0].strField("_Target")}"); return null }
             val effect = renderEffectList(actions, "EffectTarget.ContextTarget(0)") ?: return null
@@ -1139,7 +1139,7 @@ internal fun EmitCtx.spreeSpellBlock(rule: JsonObject): List<Stmt>? {
             }
             "Targeted" -> {
                 val (targets, actions) = targetedArms(actionsNode) ?: run { reasons.add("Spree"); return null }
-                if (targets == null || actions == null || targets.isEmpty()) { reasons.add("Spree"); return null }
+                if (targets == null || targets.isEmpty()) { reasons.add("Spree"); return null }
                 when (targets.size) {
                     1 -> {
                         val tnode = targetExpr(targets[0], actions)
@@ -2099,7 +2099,7 @@ private fun EmitCtx.triggerSpecFor(rule: JsonObject): String? {
         val scope = castScope(argv?.getOrNull(0) as? JsonObject)
         val comparison = argv?.getOrNull(1) as? JsonObject
         val spells = argv?.getOrNull(2) as? JsonObject
-        val n = (comparison?.field("args") as? JsonElement).let { findInteger(it) } as? Int
+        val n = comparison?.field("args").let { findInteger(it) } as? Int
         if (scope == CastScope.YOU &&
             comparison?.strField("_Comparison") == "EqualTo" &&
             spells?.strField("_Spells") == "AnySpell" &&
