@@ -3605,6 +3605,77 @@
     ]
 }
 
+// Honorbound Page
+{
+    "name": "Honorbound Page",
+    "manaCost": "{3}{W}",
+    "typeLine": "Creature — Cat Cleric",
+    "oracleText": "First strike\nThis creature enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FIRST_STRIKE",
+        "PREPARED"
+    ],
+    "metadata": {
+        "collectorNumber": "19",
+        "artist": "Paolo Parente",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/9/79a70863-860f-4a7b-9cb2-d3546b689d44.jpg?1775937039"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Forum's Favor",
+            "manaCost": "{W}",
+            "typeLine": "Sorcery",
+            "oracleText": "Target creature gets +1/+0 and gains flying until end of turn.",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "FLYING",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        }
+                    }
+                ]
+            }
+        }
+    ]
+}
+
 // Hungry Graffalon
 {
     "name": "Hungry Graffalon",
@@ -5575,6 +5646,106 @@
     ]
 }
 
+// Practiced Offense
+{
+    "name": "Practiced Offense",
+    "manaCost": "{2}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Put a +1/+1 counter on each creature target player controls. Target creature gains your choice of double strike or lifelink until end of turn.\nFlashback {1}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+    "keywords": [
+        "FLASHBACK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Flashback",
+            "cost": "{1}{W}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ],
+                                "controllerPredicate": {
+                                    "type": "ControlledByReferencedPlayer",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "player"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "body": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                },
+                {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "GrantKeyword",
+                                "keyword": "DOUBLE_STRIKE",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "creature"
+                                }
+                            },
+                            "description": "Double strike"
+                        },
+                        {
+                            "effect": {
+                                "type": "GrantKeyword",
+                                "keyword": "LIFELINK",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "creature"
+                                }
+                            },
+                            "description": "Lifelink"
+                        }
+                    ],
+                    "countsAsModalSpell": false
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "player"
+            },
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "25",
+        "rarity": "RARE",
+        "artist": "Raluca Marinescu",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/9/79c7cf94-c0a1-432d-90d7-7f0599c2e7a8.jpg?1775937087"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Primary Research
 {
     "name": "Primary Research",
@@ -6531,6 +6702,131 @@
     ]
 }
 
+// Rubble Rouser
+{
+    "name": "Rubble Rouser",
+    "manaCost": "{2}{R}",
+    "typeLine": "Creature — Dwarf Sorcerer",
+    "oracleText": "When this creature enters, you may discard a card. If you do, draw a card.\n{T}, Exile a card from your graveyard: Add {R}. When you do, this creature deals 1 damage to each opponent.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.DoAction",
+                            "action": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        },
+                        "then": {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    }
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomExileFrom",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "ReflexiveTrigger",
+                    "action": {
+                        "type": "AddMana",
+                        "color": "RED"
+                    },
+                    "optional": false,
+                    "reflexiveEffect": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "EachOpponent"
+                        },
+                        "damageSource": "Self"
+                    },
+                    "descriptionOverride": "Add {R}. When you do, this creature deals 1 damage to each opponent."
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "128",
+        "artist": "Craig J Spearing",
+        "flavorText": "\"History is patient. I am not.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/f/afe61957-a9bb-42b0-98e8-b5fa418cbaff.jpg?1775937860"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Send in the Pest
 {
     "name": "Send in the Pest",
@@ -7197,6 +7493,88 @@
     "colorIdentityOverride": [
         "RED",
         "WHITE"
+    ]
+}
+
+// Stirring Honormancer
+{
+    "name": "Stirring Honormancer",
+    "manaCost": "{2}{W}{W/B}{B}",
+    "typeLine": "Creature — Rhino Bard",
+    "oracleText": "When this creature enters, look at the top X cards of your library, where X is the number of creatures you control. Put one of those cards into your hand and the rest into your graveyard.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "AggregateBattlefield",
+                                    "player": "You",
+                                    "filter": "creature"
+                                }
+                            },
+                            "storeAs": "looked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "looked",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "kept",
+                            "storeRemainder": "rest",
+                            "selectedLabel": "Put in hand",
+                            "remainderLabel": "Put in graveyard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "kept",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "rest",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "234",
+        "rarity": "UNCOMMON",
+        "artist": "April Prime",
+        "flavorText": "\"Speak as though the world will be a better place after your words are in it.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/e/ee84b04d-78fc-416f-9166-72e5417c3e17.jpg?1775938634"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
     ]
 }
 

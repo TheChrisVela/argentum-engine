@@ -717,6 +717,23 @@ internal fun EmitCtx.renderLook(node: JsonObject, args: JsonElement?, tvar: Stri
             ),
         ))
     }
+    // "Look at the top X cards ... Put one of them into your hand and the rest into your graveyard."
+    // (Stirring Honormancer). One generic card kept to hand, the remainder milled — and the look count
+    // may be dynamic ("the number of creatures you control"). `lookAtTopAndKeep` already defaults its
+    // keep destination to HAND and its rest destination to GRAVEYARD, so the keepCount=1 call renders
+    // this exactly with no destination overrides. The X here is a battlefield aggregate (creatures you
+    // control), not a cast-time chosen value, so a complete render is safe.
+    if ("PutAGenericCardIntoHand" in blob &&
+        "PutTheRemainingCardsIntoGraveyard" in blob
+    ) {
+        val count = findInteger(node)?.toString()?.let { "DynamicAmount.Fixed($it)" }
+            ?: dynamicAmount(amountNode(node)) ?: return null
+        return call(
+            "Patterns.Library.lookAtTopAndKeep",
+            arg("count", count),
+            arg("keepCount", "DynamicAmount.Fixed(1)"),
+        )
+    }
     // "Look at the top X cards ... Put one of them into your hand and the rest on the bottom of your
     // library in a random order." (Pillage the Bog). One generic card kept to hand, the remainder
     // bottomed at random — and the look count may be dynamic ("twice the number of lands you control").
