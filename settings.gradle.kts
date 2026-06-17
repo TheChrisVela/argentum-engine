@@ -16,6 +16,20 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
+// Relocate the local build cache to a CI-controlled directory so it can be persisted across runs.
+// gradle/actions/setup-gradle stores the build cache in the Gradle user home and only restores it on
+// an *exact* key match, so the populated (~50 MB) cache it saves on main is never restored — every run
+// recompiles and retests everything from cold. When GRADLE_BUILD_CACHE_DIR is set (see .github/workflows/ci.yml),
+// we point the build cache at a workspace path that ci.yml caches with a prefix-matched actions/cache key,
+// giving real cross-commit reuse. Unset locally, so developer builds keep the default Gradle user-home cache.
+System.getenv("GRADLE_BUILD_CACHE_DIR")?.let { cacheDir ->
+    buildCache {
+        local {
+            directory = java.io.File(cacheDir)
+        }
+    }
+}
+
 // Include subprojects in the build.
 // If there are changes in only one of the projects, Gradle will rebuild only the one that has changed.
 // Learn more about structuring projects with Gradle - https://docs.gradle.org/8.7/userguide/multi_project_builds.html

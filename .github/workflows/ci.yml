@@ -13,6 +13,11 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+    env:
+      # Relocate Gradle's local build cache into the workspace so the step below can persist it
+      # across runs (settings.gradle.kts reads this var). setup-gradle's own build cache only
+      # restores on an exact key match, so it never reuses the populated cache saved on main.
+      GRADLE_BUILD_CACHE_DIR: ${{ github.workspace }}/.gradle/build-cache
 
     steps:
       - name: Checkout repository
@@ -26,6 +31,19 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
+
+      # Persist the Gradle build cache (compiled classes + test results) across runs. Unlike
+      # setup-gradle's exact-key build cache, actions/cache restore-keys do prefix matching and
+      # pick the most-recent entry, so a PR warms from the latest main build (or a prior push on
+      # the same branch). For a typical card PR — which only touches mtg-sets — every other module's
+      # compile and test tasks then resolve FROM-CACHE instead of re-running.
+      - name: Cache Gradle build outputs
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.gradle/build-cache
+          key: gradle-build-cache-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            gradle-build-cache-${{ runner.os }}-
 
       - name: Build and test
         # Wrapped in a watchdog: if the build hasn't finished within the timeout it is almost
