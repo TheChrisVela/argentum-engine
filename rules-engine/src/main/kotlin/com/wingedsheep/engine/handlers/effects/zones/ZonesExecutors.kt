@@ -15,7 +15,7 @@ class ZonesExecutors(
     private val targetFinder: TargetFinder = TargetFinder()
 ) : ExecutorModule {
     override fun executors(): List<EffectExecutor<*>> = listOf(
-        MoveToZoneEffectExecutor(cardRegistry),
+        MoveToZoneEffectExecutor(cardRegistry, targetFinder),
         ExileAndGrantOwnerPlayPermissionExecutor(),
         WarpExileExecutor(),
         ForceExileMultiZoneExecutor(),

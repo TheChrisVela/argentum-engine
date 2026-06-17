@@ -1,8 +1,14 @@
 package com.wingedsheep.engine.handlers.effects.zones
 
 import com.wingedsheep.engine.core.CardsRevealedEvent
+import com.wingedsheep.engine.core.ChooseTargetsDecision
+import com.wingedsheep.engine.core.DecisionContext
+import com.wingedsheep.engine.core.DecisionPhase
 import com.wingedsheep.engine.core.EffectResult
+import com.wingedsheep.engine.core.PutOntoBattlefieldAttachedToChosenContinuation
+import com.wingedsheep.engine.core.TargetRequirementInfo
 import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.EntersWithCountersHelper
 import com.wingedsheep.engine.handlers.effects.LibraryPlacement
@@ -17,9 +23,11 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
+import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -30,7 +38,8 @@ import kotlin.reflect.KClass
  * Delegates all zone movement to [ZoneTransitionService] for consistent cleanup.
  */
 class MoveToZoneEffectExecutor(
-    private val cardRegistry: CardRegistry
+    private val cardRegistry: CardRegistry,
+    private val targetFinder: TargetFinder = TargetFinder()
 ) : EffectExecutor<MoveToZoneEffect> {
 
     override val effectType: KClass<MoveToZoneEffect> = MoveToZoneEffect::class
@@ -72,6 +81,17 @@ class MoveToZoneEffectExecutor(
             context.resolveTarget(controllerOverride, state) ?: ownerId
         } else {
             ownerId
+        }
+
+        // CR 303.4g — an Aura entering the battlefield by any means other than resolving as an
+        // Aura spell (here: reanimation / return from graveyard, exile, etc.) has its controller
+        // choose what it enchants as it enters. Without that choice the Aura would enter
+        // unattached and immediately die to a state-based action (CR 704.5n). Cast Auras attach
+        // during stack resolution and never reach this executor, and the explicit
+        // "attached to ..." effect has its own executor, so a generic move-to-battlefield of an
+        // Aura is always the choose-as-it-enters case.
+        if (effect.destination == Zone.BATTLEFIELD && !effect.faceDown && cardComponent.typeLine.isAura) {
+            return attachAuraOnEnter(state, targetId, cardComponent, controllerId, context)
         }
 
         // Build ZoneEntryOptions based on placement and effect properties
@@ -127,6 +147,66 @@ class MoveToZoneEffectExecutor(
         )
 
         return EffectResult.success(resultState, transitionResult.events + extraEvents + revealEvents)
+    }
+
+    /**
+     * Handle an Aura that is being put onto the battlefield by something other than resolving as
+     * an Aura spell (CR 303.4g). The controller chooses what it enchants from among everything it
+     * can legally enchant (CR 303.4f — targeting restrictions like hexproof/shroud are ignored for
+     * this choice). The actual move-and-attach happens in
+     * [PutOntoBattlefieldAttachedToChosenContinuation], reused from the explicit "attached to"
+     * effect so both paths wire `AttachedToComponent`, the host's `AttachmentsComponent`, and the
+     * Aura's continuous/replacement effects identically.
+     */
+    private fun attachAuraOnEnter(
+        state: GameState,
+        cardId: EntityId,
+        cardComponent: CardComponent,
+        controllerId: EntityId,
+        context: EffectContext
+    ): EffectResult {
+        val auraTarget = cardRegistry.getCard(cardComponent.cardDefinitionId)?.script?.auraTarget
+        val legalHosts = if (auraTarget == null) emptyList() else targetFinder.findLegalTargets(
+            state = state,
+            requirement = auraTarget,
+            controllerId = controllerId,
+            sourceId = cardId,
+            ignoreTargetingRestrictions = true
+        )
+
+        // No legal host — the Aura can't enter and stays in its current zone (CR 303.4g).
+        if (legalHosts.isEmpty()) {
+            return EffectResult.success(state)
+        }
+
+        val cardName = cardComponent.name
+        val decisionId = UUID.randomUUID().toString()
+        val decision = ChooseTargetsDecision(
+            id = decisionId,
+            playerId = controllerId,
+            prompt = "Choose what $cardName attaches to",
+            context = DecisionContext(
+                sourceId = context.sourceId,
+                sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name },
+                phase = DecisionPhase.RESOLUTION
+            ),
+            targetRequirements = listOf(
+                TargetRequirementInfo(
+                    index = 0,
+                    description = "what $cardName attaches to",
+                    minTargets = 1,
+                    maxTargets = 1
+                )
+            ),
+            legalTargets = mapOf(0 to legalHosts)
+        )
+        val continuation = PutOntoBattlefieldAttachedToChosenContinuation(
+            decisionId = decisionId,
+            cardId = cardId,
+            controllerId = controllerId
+        )
+        val newState = state.withPendingDecision(decision).pushContinuation(continuation)
+        return EffectResult(state = newState, events = emptyList(), pendingDecision = decision)
     }
 
     private fun autoRevealForReturn(
