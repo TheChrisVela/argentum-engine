@@ -53,6 +53,7 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     supported("ReflexiveTrigger", "reflexive 'when you do' trigger (ReflexiveTriggerEffect — Boilerbilges Ripper); other shapes scaffold")
     supported("AtTheBeginningOfAPlayersUpkeep", "trigger: upkeep (Triggers.YourUpkeep / EachUpkeep / EachOpponentUpkeep)")
     supported("AtTheBeginningOfAPlayersEndStep", "trigger: end step (Triggers.YourEndStep / EachEndStep)")
+    supported("AtTheBeginningOfAPlayersSecondMainPhase", "trigger: your second (postcombat) main phase (Triggers.YourPostcombatMain — Survival ability word)")
     supported("WhenAPlayerGainsLife", "trigger: you gain life (Triggers.YouGainLife — Pest Mascot, Essence Channeler)")
     supported("WhenAPlayerGainsLifeForTheFirstTimeEachTurn", "trigger: you gain life for the first time each turn (Triggers.YouGainLifeFirstTimeEachTurn — Leech Collector)")
     // OTJ Plot (CR 718) — "When this card becomes plotted, …" (Triggers.BecomesPlotted, Aloe Alchemist).
@@ -103,6 +104,12 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // OTJ crime (CR Outlaws of Thunder Junction) — "you've committed a crime this turn" ->
     // Conditions.YouCommittedCrimeThisTurn, gating a cost reduction or a resolution-time effect.
     supported("CommitedACrimeThisTurn", "predicate: player has committed a crime this turn (YouCommittedCrimeThisTurn)")
+    // Delirium (ability word) — "there are four or more card types among cards in your graveyard."
+    // Both the static "as long as …" gate (NumCardTypesInGraveyardIs) and the activated-ability
+    // "Activate only if …" gate (ThereAreNumberCardTypesInPlayersGraveyard) map to Conditions.Delirium(N)
+    // (DISTINCT_TYPES aggregation over your graveyard). Spineseeker Centipede, Balustrade Wurm.
+    supported("NumCardTypesInGraveyardIs", "predicate: N or more card types among cards in your graveyard (Conditions.Delirium)")
+    supported("ThereAreNumberCardTypesInPlayersGraveyard", "condition: N or more card types in a player's graveyard (Conditions.Delirium)")
     // "if you do" / "if [the cost] was paid" — the IfYouDoEffect linkage after a MayCost(DiscardACard)
     // loot, rendered by the emitter as MayEffect(IfYouDoEffect(...)). Universal condition vocabulary.
     supported("CostWasPaid", "condition: the optional cost was paid (IfYouDoEffect linkage)")

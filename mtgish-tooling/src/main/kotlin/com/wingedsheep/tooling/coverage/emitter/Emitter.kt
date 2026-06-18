@@ -211,6 +211,12 @@ object Emitter {
                     else { gap("CDA_Toughness", addReason = "CDA_Toughness")?.let { return it }; continue }
                 rname == "Activated" || rname == "ActivatedWithModifiers" -> block = ctx.activatedBlock(rule)
                 rname == "Cycling" -> block = manaKeywordCost(rule)?.let { listOf(Eval(call("keywordAbility", arg(call("KeywordAbility.cycling", arg("\"$it\"")))))) }
+                // Typecycling (CR 702.29) — the land-type "Forestcycling"/"Swampcycling"/… forms carry
+                // `[Cards IsLandType <Type>, Cost PayMana {cost}]`. Render the subtype-cycling builder
+                // `KeywordAbility.typecycling("<Type>", ManaCost.parse("{cost}"))`; the engine reuses the
+                // Cycling handler with that search filter. Pure-mana cost only; a non-mana typecycling
+                // cost (none printed) declines -> scaffold.
+                rname == "TypeCycling" -> block = ctx.typecyclingLine(rule)
                 rname == "Morph" -> block = manaKeywordCost(rule)?.let { listOf(Assign("morph", Lit("\"$it\""))) }
                 // FlashForCasters (conditional flash, CR 702.8) — "<this> has flash as long as you
                 // control a [filter]" (Colossal Rattlewurm: "...as long as you control a Desert"). The

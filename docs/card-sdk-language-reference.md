@@ -3528,6 +3528,15 @@ default to "you" so card authors don't need to pass it explicitly.
   `PlayerDescendedThisTurnComponent`, incremented in `ZoneTransitionService` whenever a
   permanent (nontoken) card lands in a player's graveyard, and cleared by
   `CleanupPhaseManager` at end of turn.
+- `Delirium(count = 4)` — the Delirium ability word: "there are `count` or more card types among
+  cards in your graveyard." Composes through `Compare(DynamicAmount.AggregateZone(Player.You,
+  Zone.GRAVEYARD, GameObjectFilter.Any, Aggregation.DISTINCT_TYPES), GTE, Fixed(count))` — the
+  distinct-card-type count over your graveyard (artifact, battle, creature, enchantment, instant,
+  land, planeswalker, sorcery); a single card with several types contributes each type once. The
+  printed threshold is always four, but `count` is parameterized. Works as a static "as long as …"
+  gate (`staticAbility { ability = ModifyStats(...); condition = Conditions.Delirium() }` —
+  Spineseeker Centipede) and as an activated-ability `ActivationRestriction.OnlyIfCondition`
+  ("Activate only if there are four or more card types …" — Balustrade Wurm).
 - `CreatureDiedThisTurn` — intervening-if "if a creature died this turn", **global** (any player's
   control; sums every player's `CreaturesDiedThisTurnComponent`).
 - `ControlledCreatureDiedThisTurn` — intervening-if "if a creature died **under your control** this

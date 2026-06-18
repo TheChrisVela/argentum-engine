@@ -145,6 +145,84 @@
     ]
 }
 
+// Balustrade Wurm
+{
+    "name": "Balustrade Wurm",
+    "manaCost": "{3}{G}{G}",
+    "typeLine": "Creature — Wurm",
+    "oracleText": "This spell can't be countered.\nTrample, haste\nDelirium — {2}{G}{G}: Return this card from your graveyard to the battlefield with a finality counter on it. Activate only if there are four or more card types among cards in your graveyard and only as a sorcery.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "TRAMPLE",
+        "HASTE"
+    ],
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{2}{G}{G}"
+                    }
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": "Self",
+                            "destination": "Battlefield",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "finality",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "timing": "SorcerySpeed",
+                "restrictions": [
+                    {
+                        "type": "ActivationOnlyIfCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "AggregateZone",
+                                "player": "You",
+                                "zone": "Graveyard",
+                                "aggregation": "DISTINCT_TYPES"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    }
+                ],
+                "activateFromZone": "Graveyard"
+            }
+        ],
+        "cantBeCountered": true
+    },
+    "metadata": {
+        "collectorNumber": "168",
+        "rarity": "RARE",
+        "artist": "Maxime Minard",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/6/76610e6e-b60f-494f-bb11-68371eb494f2.jpg?1726286482"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Baseball Bat
 {
     "name": "Baseball Bat",
@@ -566,6 +644,51 @@
     },
     "colorIdentityOverride": [
         "BLACK",
+        "GREEN"
+    ]
+}
+
+// Cautious Survivor
+{
+    "name": "Cautious Survivor",
+    "manaCost": "{3}{G}",
+    "typeLine": "Creature — Elf Survivor",
+    "oracleText": "Survival — At the beginning of your second main phase, if this creature is tapped, you gain 2 life.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "POSTCOMBAT_MAIN"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": "tapped"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "172",
+        "artist": "Jodie Muir",
+        "flavorText": "She came back alone, with her recorder broken and its footage scrambled. Whatever she had experienced, she never spoke of again.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/e/ee2b4c1a-e058-4e06-bc46-e250fd9c9b54.jpg?1726286500"
+    },
+    "colorIdentityOverride": [
         "GREEN"
     ]
 }
@@ -2848,6 +2971,165 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Slavering Branchsnapper
+{
+    "name": "Slavering Branchsnapper",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Creature — Lizard",
+    "oracleText": "Trample\nForestcycling {2}",
+    "creatureStats": {
+        "power": 7,
+        "toughness": 6
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}",
+            "searchFilter": {
+                "cardPredicates": [
+                    {
+                        "type": "HasSubtype",
+                        "subtype": "Forest"
+                    }
+                ]
+            },
+            "displayPrefix": "Forestcycling"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "198",
+        "artist": "John Tedrick",
+        "flavorText": "\"Hey, look! It made us a nice big path through the hedge maze!\"\n—Zimone",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/e/5ed7ca4d-5895-4074-8315-656363d14862.jpg?1726286606"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Spineseeker Centipede
+{
+    "name": "Spineseeker Centipede",
+    "manaCost": "{2}{G}",
+    "typeLine": "Creature — Insect",
+    "oracleText": "When this creature enters, search your library for a basic land card, reveal it, put it into your hand, then shuffle.\nDelirium — This creature gets +1/+2 and has vigilance as long as there are four or more card types among cards in your graveyard.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "basicland"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary"
+                    ]
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "ModifyStats",
+                    "powerBonus": 1,
+                    "toughnessBonus": 2,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateZone",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "aggregation": "DISTINCT_TYPES"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "VIGILANCE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateZone",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "aggregation": "DISTINCT_TYPES"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "199",
+        "artist": "Dave Kendall",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/5/b50d697c-8358-429b-8f79-7ad9d01a5edd.jpg?1726286608"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

@@ -536,6 +536,27 @@ object Conditions {
     fun GraveyardContainsSubtype(subtype: Subtype): ConditionInterface =
         Exists(Player.You, Zone.GRAVEYARD, GameObjectFilter.Any.withSubtype(subtype))
 
+    /**
+     * Delirium (ability word) — if there are [count] or more card types among cards in your
+     * graveyard. The count uses the card types (artifact, battle, creature, enchantment,
+     * instant, land, planeswalker, sorcery); a single card with multiple types (e.g. an
+     * artifact creature) contributes each of its types once, and the same type across many
+     * cards still counts once. The printed threshold is always four, but [count] is
+     * parameterized for "N or more card types" variants.
+     * Used by Delirium cards (Spineseeker Centipede, Balustrade Wurm).
+     */
+    fun Delirium(count: Int = 4): ConditionInterface =
+        Compare(
+            DynamicAmount.AggregateZone(
+                player = Player.You,
+                zone = Zone.GRAVEYARD,
+                filter = GameObjectFilter.Any,
+                aggregation = Aggregation.DISTINCT_TYPES
+            ),
+            ComparisonOperator.GTE,
+            DynamicAmount.Fixed(count)
+        )
+
     // =========================================================================
     // Source Conditions
     // =========================================================================

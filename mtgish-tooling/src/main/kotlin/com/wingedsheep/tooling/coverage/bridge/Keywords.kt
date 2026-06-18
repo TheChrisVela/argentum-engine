@@ -75,6 +75,11 @@ internal fun BridgeBuilder.keywords() {
     // keyword (PascalCase auto-resolve would look for a non-existent CYCLING enum and block it). The emitter renders
     // the canonical pure-mana shape (see Emitter.kt `rname == "Cycling"`).
     composed("Cycling", "cycling: KeywordAbility.cycling(cost) -> 'Discard this card: Draw a card' activated ability", composes = listOf("DrawCards"))
+    // Typecycling (CR 702.29) — the subtype/land-type cycling variants ("Forestcycling", "Slivercycling", …).
+    // `KeywordAbility.typecycling(subtype, cost)` synthesises a "Discard this card: search your library for a
+    // <subtype> card" activated ability. Composed like Cycling/Equip (no CYCLING enum); the emitter renders the
+    // pure-mana land-type/creature-type shape (see Emitter.kt `rname == "TypeCycling"` + EmitCtx.typecyclingLine).
+    composed("TypeCycling", "typecycling: KeywordAbility.typecycling(subtype, cost) -> 'Discard this card: search for a <subtype> card' activated ability", composes = listOf("MoveCollection", "ShuffleLibrary"))
 
     // Station (CR 702.184, Edge of Eternities). Three IR rules. Like Saddle, these are activated/static
     // abilities the engine fully supports but that aren't bare card keywords, so they're `supported`
