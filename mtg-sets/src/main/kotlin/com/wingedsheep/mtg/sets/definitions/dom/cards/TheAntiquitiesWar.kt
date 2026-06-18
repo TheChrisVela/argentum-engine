@@ -77,8 +77,8 @@ val TheAntiquitiesWar = card("The Antiquities War") {
             filter = GroupFilter(GameObjectFilter.Artifact.youControl()),
             effect = BecomeCreatureEffect(
                 target = EffectTarget.Self,
-                power = 5,
-                toughness = 5,
+                power = DynamicAmount.Fixed(5),
+                toughness = DynamicAmount.Fixed(5),
                 duration = Duration.EndOfTurn
             )
         )

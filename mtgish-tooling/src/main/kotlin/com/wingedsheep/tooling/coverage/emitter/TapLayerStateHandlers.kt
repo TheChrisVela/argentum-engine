@@ -589,14 +589,17 @@ internal fun EmitCtx.becomeCreatureLayerEffect(
     // durationless animate path opts into the extended grants (AddCreatureType / AddCardtype Creature /
     // AddAbility <keyword>) used by "becomes a N/N [type] creature with [keyword] in addition to its
     // other types" (Emergent Haunting).
-    val baseKinds = setOf("SetPT", "SetColor", "SetCreatureType")
+    // SetPT carries fixed ints; SetPowerAndToughnessBoth carries a single dynamic GameNumber applied to
+    // both P and T ("base power and toughness each equal to X plus 1" — Fractalize's Fractal animate).
+    // BecomeCreature now takes DynamicAmount P/T, so both render through the same effect.
+    val baseKinds = setOf("SetPT", "SetPowerAndToughnessBoth", "SetColor", "SetCreatureType")
     val extendedKinds = setOf("AddCreatureType", "AddCardtype", "AddAbility")
     val recognised = if (allowExtendedGrants) baseKinds + extendedKinds else baseKinds
     val typeOrColourKinds = if (allowExtendedGrants) setOf("SetColor", "SetCreatureType", "AddCreatureType", "AddCardtype", "AddAbility")
                             else setOf("SetColor", "SetCreatureType")
     val effects = layerEffects.filterIsInstance<JsonObject>()
     if (effects.size != layerEffects.size) return null
-    if (effects.none { it.strField("_LayerEffect") == "SetPT" }) return null
+    if (effects.none { it.strField("_LayerEffect") in setOf("SetPT", "SetPowerAndToughnessBoth") }) return null
     if (effects.any { it.strField("_LayerEffect") !in recognised }) return null
     // A BARE SetPT ("becomes a 5/1 until end of turn", no type/colour/keyword change) is a base-P/T set,
     // not a "becomes a creature" — keep it as SetBasePowerToughnessEffect (the per-layer renderer). Only
@@ -604,8 +607,10 @@ internal fun EmitCtx.becomeCreatureLayerEffect(
     // to BecomeCreature.
     if (effects.none { it.strField("_LayerEffect") in typeOrColourKinds }) return null
 
-    var power: Int? = null
-    var toughness: Int? = null
+    // P/T are rendered as DynamicAmount expressions so both the fixed (SetPT → Fixed(n)) and the
+    // dynamic (SetPowerAndToughnessBoth → e.g. Add(XValue, Fixed(1))) forms feed BecomeCreature.
+    var power: Dsl? = null
+    var toughness: Dsl? = null
     val creatureTypes = mutableListOf<String>()
     val colors = mutableListOf<String>()
     val grantedKeywords = mutableListOf<String>()
@@ -614,8 +619,18 @@ internal fun EmitCtx.becomeCreatureLayerEffect(
             "SetPT" -> {
                 val pt = (le["args"] as? JsonObject)?.get("args").asArr ?: return null
                 if (pt.size != 2) return null
-                power = pt[0].asInt() ?: return null
-                toughness = pt[1].asInt() ?: return null
+                val p = pt[0].asInt() ?: return null
+                val t = pt[1].asInt() ?: return null
+                power = call("DynamicAmount.Fixed", arg("$p"))
+                toughness = call("DynamicAmount.Fixed", arg("$t"))
+            }
+            "SetPowerAndToughnessBoth" -> {
+                // A single dynamic value applied to BOTH power and toughness ("base power and
+                // toughness each equal to X plus 1"). Both must render exactly or the whole shape
+                // declines (-> SCAFFOLD) rather than emit a wrong P/T.
+                val amt = dynamicAmountExpr(le["args"]) ?: return null
+                power = amt
+                toughness = amt
             }
             "SetCreatureType", "AddCreatureType" -> {
                 val sub = le["args"].asStr() ?: return null
@@ -636,7 +651,7 @@ internal fun EmitCtx.becomeCreatureLayerEffect(
     }
     if (power == null || toughness == null) return null
 
-    val parts = mutableListOf(arg("target", Lit(target)), arg("power", "$power"), arg("toughness", "$toughness"))
+    val parts = mutableListOf(arg("target", Lit(target)), arg("power", power), arg("toughness", toughness))
     if (grantedKeywords.isNotEmpty()) {
         parts.add(arg("keywords", call("setOf", *grantedKeywords.map { arg(Lit("Keyword.$it")) }.toTypedArray())))
     }

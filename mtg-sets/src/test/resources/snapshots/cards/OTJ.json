@@ -5535,8 +5535,14 @@
                 "binding": "ANY",
                 "effect": {
                     "type": "BecomeCreature",
-                    "power": 3,
-                    "toughness": 3,
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
                     "keywords": [
                         "FLYING"
                     ],
@@ -12163,8 +12169,14 @@
                             "type": "ContextTarget",
                             "index": 0
                         },
-                        "power": 0,
-                        "toughness": 1,
+                        "power": {
+                            "type": "Fixed",
+                            "amount": 0
+                        },
+                        "toughness": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
                         "creatureTypes": [
                             "Rabbit"
                         ],

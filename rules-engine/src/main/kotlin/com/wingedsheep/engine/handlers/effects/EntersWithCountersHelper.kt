@@ -168,9 +168,18 @@ object EntersWithCountersHelper {
                         if (!effect.otherOnly) continue
                         if (!matchesEnterFilter(effect.appliesTo, enteringEntityId, sourceControllerId, newState)) continue
                         val counterType = resolveCounterType(effect.counterType)
+                        // An "enters with N counters" count always describes the ENTERING object,
+                        // not the replacement source — the counters go on the entering permanent and
+                        // any "it" in the count refers to it (CR 121.6 / 614). Mirror the self path
+                        // (StackResolver.applyEntersWithCounters uses sourceId = the entering entity)
+                        // so amounts like DistinctColorsManaSpent ("...colors of mana spent to cast
+                        // IT") read the entering creature's own cast, not the source's. controllerId
+                        // stays the source's controller so player-scoped counts (Gev's
+                        // TurnTracking(Player.You)) keep reading the source controller's trackers.
                         val context = EffectContext(
-                            sourceId = sourceId,
+                            sourceId = enteringEntityId,
                             controllerId = sourceControllerId,
+                            affectedEntityId = enteringEntityId,
                         )
                         val count = dynamicAmountEvaluator.evaluate(newState, effect.count, context)
                         if (count > 0) {

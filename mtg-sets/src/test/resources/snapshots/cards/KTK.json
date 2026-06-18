@@ -9731,8 +9731,14 @@
                 },
                 "effect": {
                     "type": "BecomeCreature",
-                    "power": 4,
-                    "toughness": 4,
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
                     "keywords": [
                         "FLYING",
                         "INDESTRUCTIBLE",

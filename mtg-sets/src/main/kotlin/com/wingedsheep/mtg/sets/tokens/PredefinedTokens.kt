@@ -20,6 +20,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantKeyword
 import com.wingedsheep.sdk.scripting.ModifyStats
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Predefined token CardDefinitions.
@@ -267,8 +268,8 @@ object PredefinedTokens {
             cost = Costs.Mana("{1}")
             effect = BecomeCreatureEffect(
                 target = EffectTarget.Self,
-                power = 2,
-                toughness = 2,
+                power = DynamicAmount.Fixed(2),
+                toughness = DynamicAmount.Fixed(2),
                 keywords = setOf(Keyword.CHANGELING)
             )
         }

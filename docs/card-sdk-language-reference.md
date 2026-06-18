@@ -836,7 +836,15 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 - `PreventDamageEffect(amount, direction, scope, sourceFilter, onPrevented, gainLifeFromColors, duration)` — prevention shield. `amount = null` prevents all. `sourceFilter` can be `ChosenSource` (player picks any source on resolution) or `ChosenColoredSource` (player picks a source on resolution, but only colored sources are offered — "a source of your choice that shares a color with the mana spent"; a colorless source qualifies for nothing, so it's never offered — Protective Sphere). `onPrevented: Effect?` is an **arbitrary follow-up effect** run when a single-instance `ChosenSource` shield prevents an instance of damage (see below). `gainLifeFromColors: Set<Color>` makes the shield's controller gain that much life whenever it prevents damage from a source of one of those colors (Samite Ministration). Facades: `Effects.PreventNextDamage`, `Effects.PreventNextDamageFromChosenSource(amount, target)`, `Effects.PreventNextDamageFromChosenSource(onPrevented)`, `Effects.PreventAllDamageFromChosenSource(target, gainLifeFromColors)`, `Effects.PreventAllDamageFromChosenColoredSource(target)`, `Effects.DeflectNextDamageFromChosenSource()`, `Effects.ReflectNextDamageFromChosenSourceToController()`. The `preventDamage` flag (default true) — when **false**, the chosen-source shield does NOT prevent the damage (it still hits in full) but still fires its `onPrevented` reaction with the captured amount; this is the "instead it still deals that damage to you AND deals that much to its controller" shape (Eye for an Eye), as opposed to the deflect/prevent shape (Deflecting Palm).
   - **Prevent-and-react (`onPrevented`)** — instead of a bespoke reaction type, the chosen-source shield runs **any composed effect** when it fires, as a real triggered ability on the stack ("When damage is prevented this way, …", CR-faithful — opponents get priority and can respond). Mechanically: on resolution the shield is created **and** a linked event-based delayed triggered ability (`CreateDelayedTriggerEffect`-style) whose `effect` is `onPrevented`; when the shield prevents an instance it emits an internal `DamagePreventedEvent` that fires only that delayed trigger (matched by id). Inside the trigger the prevented amount is `DynamicAmounts.preventedDamage()` ("that much"/"that many") and the prevented source's controller is `EffectTarget.ControllerOfTriggeringEntity` ("that source's controller") — the same pair Tephraderm uses. So Deflecting Palm's `onPrevented` = `DealDamage(ControllerOfTriggeringEntity, preventedDamage())`; New Way Forward's = `Composite(DealDamage(ControllerOfTriggeringEntity, preventedDamage()), DrawCards(preventedDamage()))`. Because the payoff is a normal stack ability, it may be interactive (targets, replacements) like any other.
-- `BecomeCreatureEffect(target, p, t, subtypes, keywords, duration)` — animate non-creature (lands, artifacts).
+- `Effects.BecomeCreature(target, power, toughness, keywords, creatureTypes, removeTypes, colors, duration)`
+  (`BecomeCreatureEffect`) — animate / "becomes a creature." Adds CREATURE (Layer 4), *sets* creature
+  subtypes to `creatureTypes` (replacing all others), removes `removeTypes`, *sets* `colors` (Layer 5,
+  replacing all others; `null` = keep), grants `keywords` (Layer 6), and sets base P/T (Layer 7b set
+  values). **`power`/`toughness` are `DynamicAmount`** (evaluated once at resolution, CR 613.4c, then
+  stamped as a fixed set-P/T floating effect); an `Int` convenience overload wraps them in
+  `DynamicAmount.Fixed`. Sarkhan's "4/4 Dragon" (fixed); Fractalize's "green and blue Fractal with
+  base power and toughness each equal to X plus 1, losing all other colors and creature types"
+  (`power = toughness = Add(XValue, Fixed(1))`, `creatureTypes = {"Fractal"}`, `colors = {GREEN, BLUE}`).
 - `BecomeArtifactEffect(target, cardTypes = {"ARTIFACT"}, subtypes, colors = emptySet(), loseAllAbilities = true, grantedAbility?, duration = Permanent)` — the general "becomes a Treasure/Food/Clue/artifact" transform: stacks continuous floating effects on `target` — Layer 4 `SetCardTypes` (replaces *all* card types) + `SetAllSubtypes` (replaces *all* subtypes), Layer 5 color (`emptySet()` = colorless), Layer 6 `RemoveAllAbilities` when `loseAllAbilities` — plus an optional single `grantedAbility` recorded durably in `grantedActivatedAbilities` (so it survives the ability wipe; the enumerators read it after the projected `lostAllAbilities` check). `Duration.Permanent` ends only when the permanent leaves the battlefield. Differs from `BecomeCreatureEffect` (which *adds* CREATURE + sets P/T): this fully replaces types/subtypes so the result is exactly the named artifact. (Vraska, the Silencer: a dead opponent's creature returns as a bare colorless Treasure with the sac-for-mana ability.)
 - `BecomeSaddledEffect(target = Self)` (facade `Effects.BecomeSaddled()`) — target permanent becomes saddled until end of turn (CR 702.171b). The resolving half of a Saddle ability: stamps the transient `SaddledComponent` marker (cleared at end of turn / on leaving the battlefield; not copiable) and emits `BecameSaddledEvent`. No P/T or type change — read the marker with `Conditions.SourceIsSaddled` / `.saddled()`.
 - `BecomePreparedEffect(target = Self)` (facade `Effects.BecomePrepared()`) — target permanent becomes prepared (Secrets of Strixhaven). The target must be a `CardLayout.PREPARE` permanent on the battlefield; becoming prepared creates a castable copy of its prepare spell in exile (shared `PreparationLogic.makePrepared`, the same path used when a `Keyword.PREPARED` creature enters prepared). A creature already prepared, not on the battlefield, or not a preparation card does nothing. Used by Leech Collector ("Whenever you gain life for the first time each turn, this creature becomes prepared").
@@ -4234,6 +4242,23 @@ replacementEffect {
   `Effects.MayRevealCardFromHand` to build SOI shadow lands or other "as ~ enters" choices.
   **Scope today:** only wired into the land-play path (`PlayLandHandler`). When the first non-land
   permanent needs this, also wire it into `StackResolver.enterPermanentOnBattlefield`.
+- `EntersWithCounters(counterType?, count, selfOnly?, condition?, appliesTo?)` /
+  `EntersWithDynamicCounters(counterType?, count, otherOnly?, appliesTo?)` — "[permanent] enters with
+  N counters." `EntersWithCounters` takes a fixed `count: Int` (Master Biomancer, Metallic Mimic);
+  `EntersWithDynamicCounters` takes a `count: DynamicAmount` (Stag Beetle; the SOS Converge "Archaic"
+  cycle via `convergeEntersWithCounters()` → `count = DistinctColorsManaSpent`). `appliesTo` defaults
+  to "creatures you control entering the battlefield." Two scopes:
+  - **Self** (default) — applies to the permanent that owns the replacement. Reserve a *dynamic* count
+    for "this creature enters with a counter for each color of mana spent to cast **it**" / "for each X
+    it has".
+  - **`otherOnly = true`** — applies to *other* matching creatures entering (Gev, Scaled Scorch:
+    "Other creatures you control enter with additional counters"; Wildgrowth Archaic: "whenever you
+    cast a creature spell, that creature enters with X additional +1/+1 counters … where X is the
+    number of colors of mana spent to cast **it**"). The `count` is always evaluated against the
+    **entering object**, not the replacement source — so an entering-object amount like
+    `DistinctColorsManaSpent` reads the new creature's own cast (and a token / reanimated creature that
+    wasn't cast spent no mana → 0). Player-scoped counts (`TurnTracking(Player.You)`, Gev) still read
+    the replacement source's controller.
 - `EntersWithDevour(multiplier, sacrificeFilter, counterType, variant)` — Devour (CR 702.82) and its
   printed variants. As the permanent resolves from the stack, the controller is prompted to pick any
   number of their own permanents matching `sacrificeFilter`. Those permanents are sacrificed and the

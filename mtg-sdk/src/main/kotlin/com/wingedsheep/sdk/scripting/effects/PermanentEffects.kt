@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.text.TextReplacer
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -56,20 +57,26 @@ data class AnimateLandEffect(
  * - Layer.POWER_TOUGHNESS + Sublayer.SET_VALUES: SetPowerToughness
  *
  * @property target The permanent to animate
- * @property power The base power to set
- * @property toughness The base toughness to set
+ * @property power The base power to set (a [DynamicAmount]; use `DynamicAmount.Fixed(n)` for a
+ *   constant — Sarkhan's "4/4 Dragon" — or a live amount like `X plus 1` for Fractalize's Fractal).
+ *   The amount is evaluated once when the effect resolves and stamped as a fixed base-P/T floating
+ *   effect (CR 613.4c — the value is locked in when the effect starts applying), so it does not keep
+ *   recomputing if the underlying amount changes later.
+ * @property toughness The base toughness to set (a [DynamicAmount]; same evaluation as [power]).
  * @property keywords Keywords to grant (e.g., flying, indestructible, haste)
- * @property creatureTypes Creature subtypes to set (e.g., "Dragon")
+ * @property creatureTypes Creature subtypes to *set*, replacing all existing subtypes (e.g.,
+ *   "Dragon"; "Fractal" loses all other creature types — Layer 4 set effect)
  * @property removeTypes Types to remove (e.g., "PLANESWALKER")
- * @property colors Colors to set (null = keep existing)
+ * @property colors Colors to set, replacing all existing colors (null = keep existing). An explicit
+ *   set loses all other colors (e.g. green+blue for a Fractal).
  * @property duration How long the effect lasts
  */
 @SerialName("BecomeCreature")
 @Serializable
 data class BecomeCreatureEffect(
     val target: EffectTarget = EffectTarget.Self,
-    val power: Int,
-    val toughness: Int,
+    val power: DynamicAmount,
+    val toughness: DynamicAmount,
     val keywords: Set<Keyword> = emptySet(),
     val creatureTypes: Set<String> = emptySet(),
     val removeTypes: Set<String> = emptySet(),
@@ -77,10 +84,17 @@ data class BecomeCreatureEffect(
     val duration: Duration = Duration.EndOfTurn
 ) : Effect {
     override val description: String = buildString {
-        append("${target.description} becomes a $power/$toughness creature")
+        append("${target.description} becomes a ${power.description}/${toughness.description} creature")
         if (creatureTypes.isNotEmpty()) append(" ${creatureTypes.joinToString("/")}")
         if (keywords.isNotEmpty()) append(" with ${keywords.joinToString(", ") { it.name.lowercase() }}")
         if (duration.description.isNotEmpty()) append(" ${duration.description}")
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect {
+        val newPower = power.applyTextReplacement(replacer)
+        val newToughness = toughness.applyTextReplacement(replacer)
+        return if (newPower !== power || newToughness !== toughness)
+            copy(power = newPower, toughness = newToughness) else this
     }
 }
 

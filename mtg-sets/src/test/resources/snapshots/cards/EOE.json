@@ -16309,8 +16309,14 @@
                         "type": "BoundVariable",
                         "name": "up to one other target artifact you control"
                     },
-                    "power": 2,
-                    "toughness": 2,
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
                     "keywords": [
                         "FLYING"
                     ]
@@ -17626,8 +17632,14 @@
                                             "type": "ContextTarget",
                                             "index": 0
                                         },
-                                        "power": 0,
-                                        "toughness": 0,
+                                        "power": {
+                                            "type": "Fixed",
+                                            "amount": 0
+                                        },
+                                        "toughness": {
+                                            "type": "Fixed",
+                                            "amount": 0
+                                        },
                                         "creatureTypes": [
                                             "Robot"
                                         ],

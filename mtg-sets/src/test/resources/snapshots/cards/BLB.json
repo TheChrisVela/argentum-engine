@@ -19537,8 +19537,14 @@
                 },
                 "effect": {
                     "type": "BecomeCreature",
-                    "power": 6,
-                    "toughness": 6
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 6
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 6
+                    }
                 }
             }
         ]

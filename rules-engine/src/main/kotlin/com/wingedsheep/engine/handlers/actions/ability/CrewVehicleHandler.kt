@@ -18,6 +18,7 @@ import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComp
 import com.wingedsheep.sdk.model.CharacteristicValue
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.effects.BecomeCreatureEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import kotlin.reflect.KClass
@@ -166,8 +167,8 @@ class CrewVehicleHandler(
         val baseToughness = (stats?.toughness as? CharacteristicValue.Fixed)?.value ?: 0
         val crewEffect = BecomeCreatureEffect(
             target = EffectTarget.Self,
-            power = basePower,
-            toughness = baseToughness,
+            power = DynamicAmount.Fixed(basePower),
+            toughness = DynamicAmount.Fixed(baseToughness),
             keywords = cardDef.keywords
         )
 

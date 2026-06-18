@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.handlers.effects.permanent.types
 
 import com.wingedsheep.engine.core.EffectResult
+import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.layers.Layer
@@ -19,6 +20,8 @@ import kotlin.reflect.KClass
  * Creates all floating effects atomically to avoid validation issues with intermediate states.
  */
 class BecomeCreatureExecutor : EffectExecutor<BecomeCreatureEffect> {
+
+    private val amountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator()
 
     override val effectType: KClass<BecomeCreatureEffect> = BecomeCreatureEffect::class
 
@@ -90,11 +93,15 @@ class BecomeCreatureExecutor : EffectExecutor<BecomeCreatureEffect> {
             )
         }
 
-        // Layer 7b (POWER_TOUGHNESS, SET_VALUES): Set base P/T
+        // Layer 7b (POWER_TOUGHNESS, SET_VALUES): Set base P/T. The dynamic amounts are evaluated
+        // once, now, and stamped as a fixed set-value floating effect (CR 613.4c — the value is
+        // locked in when the effect begins to apply; it does not keep recomputing).
+        val powerValue = amountEvaluator.evaluate(newState, effect.power, context)
+        val toughnessValue = amountEvaluator.evaluate(newState, effect.toughness, context)
         newState = newState.addFloatingEffect(
             layer = Layer.POWER_TOUGHNESS,
             sublayer = Sublayer.SET_VALUES,
-            modification = SerializableModification.SetPowerToughness(effect.power, effect.toughness),
+            modification = SerializableModification.SetPowerToughness(powerValue, toughnessValue),
             affectedEntities = affectedEntities,
             duration = effect.duration,
             context = context

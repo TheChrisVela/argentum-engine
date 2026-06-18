@@ -3697,6 +3697,65 @@
     ]
 }
 
+// Fractalize
+{
+    "name": "Fractalize",
+    "manaCost": "{X}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Until end of turn, target creature becomes a green and blue Fractal with base power and toughness each equal to X plus 1. (It loses all other colors and creature types.)",
+    "script": {
+        "spellEffect": {
+            "type": "BecomeCreature",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            },
+            "power": {
+                "type": "Add",
+                "left": "XValue",
+                "right": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            },
+            "toughness": {
+                "type": "Add",
+                "left": "XValue",
+                "right": {
+                    "type": "Fixed",
+                    "amount": 1
+                }
+            },
+            "creatureTypes": [
+                "Fractal"
+            ],
+            "colors": [
+                "GREEN",
+                "BLUE"
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "rarity": "UNCOMMON",
+        "artist": "Andrew Mar",
+        "flavorText": "\"Return your lizards to their natural size before class ends. We don't want another incident.\"\n—Professor Berta",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/3/e3c3b19b-01b6-4f5a-b428-513b778c5d89.jpg?1775937264"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Garrison Excavator
 {
     "name": "Garrison Excavator",
@@ -11561,6 +11620,60 @@
     ]
 }
 
+// Together as One
+{
+    "name": "Together as One",
+    "manaCost": "{6}",
+    "typeLine": "Sorcery",
+    "oracleText": "Converge — Target player draws X cards, Together as One deals X damage to any target, and you gain X life, where X is the number of colors of mana spent to cast this spell.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "DrawCards",
+                    "count": "DistinctColorsManaSpent",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target player"
+                    }
+                },
+                {
+                    "type": "DealDamage",
+                    "amount": "DistinctColorsManaSpent",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "any target"
+                    },
+                    "damageSource": "Self"
+                },
+                {
+                    "type": "GainLife",
+                    "amount": "DistinctColorsManaSpent"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetPlayer",
+                "id": "target player"
+            },
+            {
+                "type": "AnyTarget",
+                "id": "any target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "4",
+        "rarity": "RARE",
+        "artist": "Néstor Ossandón Leal",
+        "flavorText": "By himself, Lluwen couldn't have hoped to calm the Dawning Archaic—but any time it really mattered, he was never alone.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/c/ac2a8a66-e38c-42ab-83e1-d2d99ee48861.jpg?1775936940"
+    },
+    "colorIdentityOverride": []
+}
+
 // Tome Blast
 {
     "name": "Tome Blast",
@@ -11763,6 +11876,104 @@
     "colorIdentityOverride": [
         "BLACK"
     ]
+}
+
+// Transcendent Archaic
+{
+    "name": "Transcendent Archaic",
+    "manaCost": "{7}",
+    "typeLine": "Creature — Avatar",
+    "oracleText": "Vigilance\nConverge — When this creature enters, you may draw X cards, where X is the number of colors of mana spent to cast this spell. If you draw one or more cards this way, discard two cards.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": "DistinctColorsManaSpent"
+                            },
+                            {
+                                "type": "Gated",
+                                "gate": {
+                                    "type": "Gate.WhenCondition",
+                                    "condition": {
+                                        "type": "Compare",
+                                        "left": "DistinctColorsManaSpent",
+                                        "operator": "GTE",
+                                        "right": {
+                                            "type": "Fixed",
+                                            "amount": 1
+                                        }
+                                    }
+                                },
+                                "then": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": {
+                                                "type": "FromZone",
+                                                "zone": "Hand"
+                                            },
+                                            "storeAs": "hand"
+                                        },
+                                        {
+                                            "type": "SelectFromCollection",
+                                            "from": "hand",
+                                            "selection": {
+                                                "type": "ChooseExactly",
+                                                "count": {
+                                                    "type": "Fixed",
+                                                    "amount": 2
+                                                }
+                                            },
+                                            "storeSelected": "discarded",
+                                            "prompt": "Choose 2 cards to discard"
+                                        },
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "discarded",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Graveyard"
+                                            },
+                                            "moveType": "Discard"
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Converge — When this creature enters, you may draw X cards, where X is the number of colors of mana spent to cast this spell. If you draw one or more cards this way, discard two cards."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "5",
+        "rarity": "UNCOMMON",
+        "artist": "Chris Rahn",
+        "flavorText": "Even as most archaics raged across Arcavios, others seemed to sink into contemplation.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/6/1624c680-502b-474a-b9b2-888fe3ca008c.jpg?1775936948"
+    },
+    "colorIdentityOverride": []
 }
 
 // Traumatic Critique
@@ -12262,6 +12473,44 @@
         "collectorNumber": "167",
         "artist": "Lie Setiawan",
         "imageUri": "https://cards.scryfall.io/normal/front/0/4/04fdfabc-c247-4384-a5bb-f49035f8aae0.jpg?1775938142"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Wildgrowth Archaic
+{
+    "name": "Wildgrowth Archaic",
+    "manaCost": "{2/G}{2/G}",
+    "typeLine": "Creature — Avatar",
+    "oracleText": "Trample, reach\nConverge — This creature enters with a +1/+1 counter on it for each color of mana spent to cast it.\nWhenever you cast a creature spell, that creature enters with X additional +1/+1 counters on it, where X is the number of colors of mana spent to cast it.",
+    "creatureStats": {
+        "power": 0,
+        "toughness": 0
+    },
+    "keywords": [
+        "TRAMPLE",
+        "REACH"
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "EntersWithDynamicCounters",
+                "count": "DistinctColorsManaSpent"
+            },
+            {
+                "type": "EntersWithDynamicCounters",
+                "count": "DistinctColorsManaSpent",
+                "otherOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "168",
+        "rarity": "RARE",
+        "artist": "Loïc Canavaggia",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0e6e2188-7203-4d10-a838-27233f283cd5.jpg?1775938149"
     },
     "colorIdentityOverride": [
         "GREEN"

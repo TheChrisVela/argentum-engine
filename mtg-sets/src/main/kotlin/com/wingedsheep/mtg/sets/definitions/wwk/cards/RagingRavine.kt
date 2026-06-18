@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.BecomeCreatureEffect
 import com.wingedsheep.sdk.scripting.effects.GrantTriggeredAbilityEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.dsl.Effects
 
 /**
@@ -58,8 +59,8 @@ val RagingRavine = card("Raging Ravine") {
             listOf(
                 BecomeCreatureEffect(
                     target = EffectTarget.Self,
-                    power = 3,
-                    toughness = 3,
+                    power = DynamicAmount.Fixed(3),
+                    toughness = DynamicAmount.Fixed(3),
                     creatureTypes = setOf("Elemental"),
                     colors = setOf(Color.RED.name, Color.GREEN.name),
                     duration = Duration.EndOfTurn,

@@ -103,9 +103,26 @@ class EffectHandlerTest : StringSpec({
                 """{"_LayerEffect":"SetCreatureType","args":"Rabbit"},""" +
                 """{"_LayerEffect":"SetPT","args":{"_PT":"PT","args":[0,1]}}],{"_Expiration":"UntilEndOfTurn"}]}""",
             "EffectTarget.ContextTarget(0)",
-        ) shouldBe "Effects.BecomeCreature(target = EffectTarget.ContextTarget(0), power = 0, " +
-            "toughness = 1, creatureTypes = setOf(\"Rabbit\"), colors = setOf(Color.WHITE.name), " +
+        ) shouldBe "Effects.BecomeCreature(target = EffectTarget.ContextTarget(0), " +
+            "power = DynamicAmount.Fixed(0), toughness = DynamicAmount.Fixed(1), " +
+            "creatureTypes = setOf(\"Rabbit\"), colors = setOf(Color.WHITE.name), " +
             "duration = Duration.EndOfTurn)"
+    }
+
+    "'becomes a Fractal with base P/T each equal to X plus 1' renders dynamic BecomeCreature" {
+        // SetPowerAndToughnessBoth with a dynamic GameNumber (X plus 1) applied to BOTH P and T —
+        // the WAR/Simic "Fractal" animate. BecomeCreature now takes DynamicAmount P/T.
+        layer(
+            """{"_Action":"CreatePermanentLayerEffectUntil","args":[{"_Permanent":"Ref_TargetPermanent"},""" +
+                """[{"_LayerEffect":"SetCreatureType","args":"Fractal"},""" +
+                """{"_LayerEffect":"SetPowerAndToughnessBoth","args":{"_GameNumber":"Plus","args":[""" +
+                """{"_GameNumber":"ValueX"},{"_GameNumber":"Integer","args":1}]}}],""" +
+                """{"_Expiration":"UntilEndOfTurn"}]}""",
+            "EffectTarget.ContextTarget(0)",
+        ) shouldBe "Effects.BecomeCreature(target = EffectTarget.ContextTarget(0), " +
+            "power = DynamicAmount.Add(DynamicAmount.XValue, DynamicAmount.Fixed(1)), " +
+            "toughness = DynamicAmount.Add(DynamicAmount.XValue, DynamicAmount.Fixed(1)), " +
+            "creatureTypes = setOf(\"Fractal\"), duration = Duration.EndOfTurn)"
     }
 
     // --- PutExiledCardOntoBattlefield (the return half of the exile-then-return blink) -------------

@@ -3091,9 +3091,23 @@ object Effects {
         Endure(DynamicAmount.Fixed(amount), target)
 
     /**
-     * Target permanent becomes a creature with specified characteristics.
-     * More general than AnimateLand — can remove types, grant keywords, set subtypes, change color.
+     * Target permanent becomes a creature with specified characteristics, with a **dynamic** base
+     * power/toughness. More general than AnimateLand — can remove types, grant keywords, set
+     * subtypes, change color. The base P/T amounts are evaluated once when the effect resolves
+     * (CR 613.4c) — e.g. `DynamicAmount.Add(XValue, Fixed(1))` for Fractalize's "X plus 1" Fractal.
      */
+    fun BecomeCreature(
+        target: EffectTarget = EffectTarget.Self,
+        power: DynamicAmount,
+        toughness: DynamicAmount,
+        keywords: Set<Keyword> = emptySet(),
+        creatureTypes: Set<String> = emptySet(),
+        removeTypes: Set<String> = emptySet(),
+        colors: Set<String>? = null,
+        duration: Duration = Duration.EndOfTurn
+    ): Effect = BecomeCreatureEffect(target, power, toughness, keywords, creatureTypes, removeTypes, colors, duration)
+
+    /** Fixed-P/T sugar for [BecomeCreature] — Sarkhan's "4/4 Dragon" and similar constant animates. */
     fun BecomeCreature(
         target: EffectTarget = EffectTarget.Self,
         power: Int,
@@ -3103,7 +3117,10 @@ object Effects {
         removeTypes: Set<String> = emptySet(),
         colors: Set<String>? = null,
         duration: Duration = Duration.EndOfTurn
-    ): Effect = BecomeCreatureEffect(target, power, toughness, keywords, creatureTypes, removeTypes, colors, duration)
+    ): Effect = BecomeCreatureEffect(
+        target, DynamicAmount.Fixed(power), DynamicAmount.Fixed(toughness),
+        keywords, creatureTypes, removeTypes, colors, duration,
+    )
 
     /**
      * Target permanent becomes saddled until end of turn (CR 702.171b) — the resolving effect of
