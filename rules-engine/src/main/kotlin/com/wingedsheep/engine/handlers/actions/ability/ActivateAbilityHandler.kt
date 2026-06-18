@@ -663,7 +663,10 @@ class ActivateAbilityHandler(
             val sacrificeCandidates = costHandler
                 .findMatchingCardsUnified(state, state.getBattlefield(action.playerId), sacrificeCost.filter, action.playerId)
                 .let { if (sacrificeCost.excludeSelf) it.filter { id -> id != action.sourceId } else it }
-            if (sacrificeCandidates.size > sacrificeCost.count) {
+            // Normally we only pause when there's a real choice (candidates > count); the forced
+            // case auto-picks. But "with different names" is always a real choice — the player must
+            // pick a distinctly-named set even when candidates == count — so always pause for it.
+            if (sacrificeCandidates.size > sacrificeCost.count || sacrificeCost.distinctNames) {
                 val decisionId = java.util.UUID.randomUUID().toString()
                 val prompt = "Select ${sacrificeCost.count} permanent${if (sacrificeCost.count > 1) "s" else ""} to sacrifice for ${cardComponent.name}"
                 val decision = com.wingedsheep.engine.core.SelectCardsDecision(
@@ -683,7 +686,8 @@ class ActivateAbilityHandler(
                     decisionId = decisionId,
                     action = action,
                     sacrificeCandidates = sacrificeCandidates,
-                    sacrificeCount = sacrificeCost.count
+                    sacrificeCount = sacrificeCost.count,
+                    distinctNames = sacrificeCost.distinctNames
                 )
                 val pausedState = state
                     .withPendingDecision(decision)
@@ -2218,6 +2222,14 @@ class ActivateAbilityHandler(
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
             val classLevel = container.get<com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent>()?.currentLevel
             for (ability in cardDef.script.effectiveStaticAbilities(classLevel)) {
+                // Territory Forge: "this permanent has all activated abilities of the exiled card".
+                if (ability is com.wingedsheep.sdk.scripting.HasAllActivatedAbilitiesOfLinkedExiledCard) {
+                    if (permanentId != entityId) continue
+                    for (granted in com.wingedsheep.engine.legalactions.utils.linkedExiledActivatedAbilities(state, permanentId, cardRegistry)) {
+                        result.add(granted to permanentId)
+                    }
+                    continue
+                }
                 if (ability !is GrantActivatedAbility) continue
                 when (ability.filter.scope) {
                     is Scope.Battlefield -> {

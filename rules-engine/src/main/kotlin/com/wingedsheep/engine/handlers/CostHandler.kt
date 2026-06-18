@@ -560,7 +560,12 @@ class CostHandler(
         is CostAtom.Sacrifice -> {
             val candidates = findMatchingPermanentsUnified(state, controllerId, atom.filter)
             val eligible = if (atom.excludeSelf) candidates.filter { it != sourceId } else candidates
-            eligible.size >= atom.count
+            if (atom.distinctNames) {
+                // "Sacrifice N ... with different names" — need at least N distinctly-named candidates.
+                eligible.mapNotNull { state.getEntity(it)?.get<CardComponent>()?.name }.toSet().size >= atom.count
+            } else {
+                eligible.size >= atom.count
+            }
         }
         is CostAtom.Discard -> {
             val handZone = ZoneKey(controllerId, Zone.HAND)
@@ -605,7 +610,8 @@ class CostHandler(
         }
         is CostAtom.Sacrifice -> paySacrificeList(
             state, choices.sacrificeChoices, atom.filter,
-            requiredCount = atom.count, excludeSelf = atom.excludeSelf, sourceId, controllerId, manaPool
+            requiredCount = atom.count, excludeSelf = atom.excludeSelf, sourceId, controllerId, manaPool,
+            distinctNames = atom.distinctNames
         )
         is CostAtom.Discard -> {
             var workState = state
@@ -655,6 +661,7 @@ class CostHandler(
         sourceId: EntityId,
         controllerId: EntityId,
         manaPool: ManaPool,
+        distinctNames: Boolean = false,
     ): CostPaymentResult {
         // When no choice was supplied, auto-pick from the legal candidates — but ONLY when the
         // choice is forced (candidates <= requiredCount). When candidates > requiredCount it's a
@@ -668,7 +675,9 @@ class CostHandler(
             if (candidates.size < requiredCount) {
                 return CostPaymentResult.failure("Not enough sacrifice targets chosen (need $requiredCount, got ${candidates.size})")
             }
-            if (candidates.size > requiredCount) {
+            // "With different names" requires a real choice (ActivateAbilityHandler always pauses
+            // for it), so an empty selection here means the cost wasn't paid — never auto-pick.
+            if (candidates.size > requiredCount || distinctNames) {
                 // A real choice reached the cost path with no selection — fail rather than guess.
                 return CostPaymentResult.failure("Not enough sacrifice targets chosen (need $requiredCount, got 0)")
             }
@@ -678,6 +687,13 @@ class CostHandler(
         }
         if (toSacrificeList.size < requiredCount) {
             return CostPaymentResult.failure("Not enough sacrifice targets chosen (need $requiredCount, got ${toSacrificeList.size})")
+        }
+        // "Sacrifice N ... with different names" — the chosen permanents must be pairwise distinct.
+        if (distinctNames) {
+            val names = toSacrificeList.mapNotNull { state.getEntity(it)?.get<CardComponent>()?.name }
+            if (names.size != toSacrificeList.size || names.toSet().size != names.size) {
+                return CostPaymentResult.failure("Sacrificed permanents must all have different names")
+            }
         }
         val context = PredicateContext(controllerId = controllerId)
         val projected = state.projectedState

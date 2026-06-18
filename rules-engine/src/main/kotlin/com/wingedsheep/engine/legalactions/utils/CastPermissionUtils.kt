@@ -778,6 +778,15 @@ class CastPermissionUtils(
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
             val classLevel = container.get<com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent>()?.currentLevel
             for (ability in cardDef.script.effectiveStaticAbilities(classLevel)) {
+                // "This permanent has all activated abilities of the exiled card" (Territory Forge):
+                // pull every activated ability off each linked-exiled card and grant it to the source.
+                if (ability is com.wingedsheep.sdk.scripting.HasAllActivatedAbilitiesOfLinkedExiledCard) {
+                    if (permanentId != entityId) continue
+                    for (granted in linkedExiledActivatedAbilities(state, permanentId, cardRegistry)) {
+                        result.add(StaticGrantedAbility(granted, permanentId))
+                    }
+                    continue
+                }
                 if (ability !is com.wingedsheep.sdk.scripting.GrantActivatedAbility) continue
                 when (val scope = ability.filter.scope) {
                     is com.wingedsheep.sdk.scripting.filters.unified.Scope.Battlefield -> {
@@ -969,3 +978,28 @@ data class StaticGrantedAbility(
     val ability: com.wingedsheep.sdk.scripting.ActivatedAbility,
     val granterId: EntityId
 )
+
+/**
+ * The activated abilities of every card in [sourceId]'s linked-exile pile — the engine half of
+ * [com.wingedsheep.sdk.scripting.HasAllActivatedAbilitiesOfLinkedExiledCard] (Territory Forge).
+ *
+ * Reads the source's [com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent],
+ * looks up each exiled card's definition, and returns its `activatedAbilities`. The caller grants
+ * each with [sourceId] as the granter so the ability activates against the source permanent (its
+ * `{T}` taps the source, self-references bind to the source — CR-faithful to the Territory Forge
+ * ruling that the exiled card's "this card" references become references to the source).
+ */
+fun linkedExiledActivatedAbilities(
+    state: GameState,
+    sourceId: EntityId,
+    cardRegistry: CardRegistry
+): List<com.wingedsheep.sdk.scripting.ActivatedAbility> {
+    val exiledIds = state.getEntity(sourceId)
+        ?.get<com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent>()
+        ?.exiledIds ?: return emptyList()
+    return exiledIds.flatMap { exiledId ->
+        val defId = state.getEntity(exiledId)?.get<CardComponent>()?.cardDefinitionId
+        val cardDef = defId?.let { cardRegistry.getCard(it) }
+        cardDef?.script?.activatedAbilities ?: emptyList()
+    }
+}

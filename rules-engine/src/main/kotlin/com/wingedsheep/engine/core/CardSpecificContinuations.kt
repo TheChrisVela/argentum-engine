@@ -579,11 +579,14 @@ data class ActivateAbilityOpponentTargetContinuation(
  * @property sacrificeCandidates The matching battlefield permanents offered to the player as
  *   options; used to validate the response is a subset of the originally legal candidates.
  * @property sacrificeCount Exact number of permanents the player must pick (`count` from the cost).
+ * @property distinctNames When true the chosen permanents must all have different names
+ *   ("sacrifice three artifact tokens with different names" — Transmutation Font).
  */
 @Serializable
 data class ActivateAbilitySacrificeContinuation(
     override val decisionId: String,
     val action: ActivateAbility,
     val sacrificeCandidates: List<EntityId>,
-    val sacrificeCount: Int
+    val sacrificeCount: Int,
+    val distinctNames: Boolean = false
 ) : ContinuationFrame

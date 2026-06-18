@@ -64,19 +64,25 @@ sealed interface CostAtom : TextReplaceable<CostAtom> {
      * @property excludeSelf when true the cost's source permanent is excluded from the candidate
      *   pool — "sacrifice another [filter]" (an activated-ability shape; spell additional costs
      *   have no single source permanent to exclude, so they leave this false).
+     * @property distinctNames when true the [count] sacrificed permanents must all have different
+     *   names — "sacrifice three artifact tokens with different names" (Transmutation Font). The
+     *   cost is only payable when at least [count] candidates with distinct names exist, and the
+     *   payment is rejected unless the chosen permanents are pairwise distinctly named.
      */
     @SerialName("AtomSacrifice")
     @Serializable
     data class Sacrifice(
         val filter: GameObjectFilter = GameObjectFilter.Any,
         val count: Int = 1,
-        val excludeSelf: Boolean = false
+        val excludeSelf: Boolean = false,
+        val distinctNames: Boolean = false
     ) : CostAtom {
         override val selectionCount: Int get() = count
         override val description: String get() = buildString {
             append("sacrifice ")
             if (excludeSelf && count == 1) append("another ${filter.description}")
             else append(quantify(count, filter.description))
+            if (distinctNames) append(" with different names")
         }
 
         override fun applyTextReplacement(replacer: TextReplacer): CostAtom {

@@ -98,9 +98,16 @@ object Costs {
 
     /**
      * Sacrifice multiple permanents matching the filter.
+     *
+     * @param distinctNames when true the sacrificed permanents must all have different names
+     *   ("sacrifice three artifact tokens with different names" — Transmutation Font).
      */
-    fun SacrificeMultiple(count: Int, filter: GameObjectFilter = GameObjectFilter.Any): AbilityCost =
-        AbilityCost.Atom(CostAtom.Sacrifice(filter, count = count))
+    fun SacrificeMultiple(
+        count: Int,
+        filter: GameObjectFilter = GameObjectFilter.Any,
+        distinctNames: Boolean = false
+    ): AbilityCost =
+        AbilityCost.Atom(CostAtom.Sacrifice(filter, count = count, distinctNames = distinctNames))
 
     // =========================================================================
     // Discard Costs

@@ -59,3 +59,22 @@ data class GrantActivatedAbility(
         return if (newFilter !== filter || newAbility !== ability) copy(filter = newFilter, ability = newAbility) else this
     }
 }
+
+/**
+ * Grants the source permanent **all activated abilities of the card(s) it exiled** (its linked
+ * exile pile). Models "This permanent has all activated abilities of the exiled card"
+ * (Territory Forge).
+ *
+ * Resolution is dynamic: the engine reads the source's linked-exile pile at activation-legality
+ * time, pulls every activated ability off each exiled card's definition, and surfaces them as
+ * activatable on the source permanent (with the source as the ability's controller/source, so
+ * self-references and `{T}` resolve against this permanent — CR-faithful to the Territory Forge
+ * ruling that the exiled card's "this card" references become references to Territory Forge).
+ *
+ * It grants only *activated* abilities — not triggered, static, or replacement abilities.
+ */
+@SerialName("HasAllActivatedAbilitiesOfLinkedExiledCard")
+@Serializable
+data object HasAllActivatedAbilitiesOfLinkedExiledCard : StaticAbility {
+    override val description: String = "this permanent has all activated abilities of the exiled card"
+}

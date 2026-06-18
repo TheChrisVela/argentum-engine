@@ -145,6 +145,11 @@ data class GameObjectFilter(
                 CardPredicate.Or(listOf(CardPredicate.IsCreature, CardPredicate.IsArtifact))
             )
         )
+        val ArtifactOrLand = GameObjectFilter(
+            cardPredicates = listOf(
+                CardPredicate.Or(listOf(CardPredicate.IsArtifact, CardPredicate.IsLand))
+            )
+        )
         val ArtifactCreature = GameObjectFilter(
             cardPredicates = listOf(CardPredicate.IsArtifact, CardPredicate.IsCreature)
         )
@@ -184,6 +189,11 @@ data class GameObjectFilter(
     /** Match the color chosen during the current effect's resolution (e.g. via ChooseColorThen). */
     fun withChosenColor() = copy(
         cardPredicates = cardPredicates + CardPredicate.HasChosenColor
+    )
+
+    /** Restrict to monocolored objects (exactly one color). Colorless objects do not match. */
+    fun monocolored() = copy(
+        cardPredicates = cardPredicates + CardPredicate.IsMonocolored
     )
 
     /** Add a subtype requirement */

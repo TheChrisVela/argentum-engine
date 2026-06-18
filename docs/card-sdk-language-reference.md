@@ -180,6 +180,7 @@ excluded.
   state-based action).
 - `Costs.Sacrifice(filter)` — sacrifice a permanent matching the filter (may include self).
 - `Costs.SacrificeAnother(filter)` — sacrifice a *different* permanent matching the filter.
+- `Costs.SacrificeMultiple(count, filter = Any, distinctNames = false)` — sacrifice `count` matching permanents. With `distinctNames = true` the chosen permanents must all have **different names** ("sacrifice three artifact tokens with different names" — Transmutation Font); the cost is only payable when ≥ `count` distinctly-named candidates exist, and the activation always pauses for the selection (it's a real choice even when candidates == count).
 - `Costs.DiscardCard` — discard a card you choose (any card).
 - `Costs.Discard(filter, count = 1, atRandom = false)` — discard `count` cards matching the filter.
   When `atRandom` is true the engine picks the cards (no player selection); otherwise the player
@@ -400,6 +401,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `ExileAndGrantOwnerPlayPermission(target, until?)` — exile + owner may play it (Garth-style).
 - `ExileOpponentsGraveyards()` — exile every card in each opponent's graveyard.
 - `ExileUntilLeaves(target)` — linked exile; returns when source leaves the battlefield.
+- `ExileLinkedToSource(target)` — exile a target **permanently** and record it in the source's linked-exile pile (`LinkedExileComponent`). Unlike `ExileUntilLeaves` there's no automatic return — the link just lets later abilities reference the exiled card (Territory Forge's "this permanent has all activated abilities of the exiled card").
 - `ExileGroupAndLink(filter, storeAs?)` — exile all matching permanents into source's linked exile pile.
 - `ExileFromTopRepeating(count, repeatCondition)` — keep exiling top cards while a condition holds.
 - `ExileLibraryUntilManaValue(manaValue)` — exile from library until mana value ≤ N.
@@ -664,6 +666,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   (the latter evaluated at resolution, e.g. `CreateTreasure(DynamicAmounts.sourcePower(), tapped = true)`
   for Goldvein Hydra's "create a number of tapped Treasure tokens equal to its power").
 - `CreateFood(count?, controller?)` — Food tokens.
+- `CreateBlood(count?, controller?)` — Blood tokens (artifact with "{1}, {T}, Discard a card, Sacrifice this artifact: Draw a card.").
 - `CreateClue(count?, controller?)` / `Investigate(count?, controller?)` — Clue tokens (artifact with
   "{2}, Sacrifice this token: Draw a card."). `Investigate` is the keyword-action spelling (CR 701.36) so
   card text "investigate" maps directly; both create the same predefined `Clue` token — Malcolm, the Eyes.
@@ -1346,6 +1349,7 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
 - `Targets.Artifact` — any artifact.
 - `Targets.Enchantment` — any enchantment.
 - `Targets.Land` — any land.
+- `Targets.ArtifactOrLand` — any artifact or land (Territory Forge).
 - `Targets.BasicLand` — any basic land.
 - `Targets.Spell` — any spell on the stack.
 - `Targets.ActivatedOrTriggeredAbility` / `Targets.ActivatedAbility` — an ability on the stack (Stifle).
@@ -1603,6 +1607,7 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   `StatePredicate.CrewedOrSaddledSourceThisTurn` (see Object-state predicates). For
   "target/choose/return a creature that crewed/saddled it this turn".
 - `.nontoken()` / `.token()` — token vs printed.
+- `.monocolored()` — restrict to monocolored objects (exactly one color, CR 105.2); colorless objects don't match. ("for each color among monocolored permanents you control" — Tarnation Vista.)
 - `.faceDown()` — face-down state.
 - `.card(filter)` — defer to a card-shape filter for off-battlefield checks.
 
@@ -2659,6 +2664,13 @@ staticAbility {
   (Cursed Totem → `GameObjectFilter.Creature`). With `nonManaAbilitiesOnly = true`, mana abilities
   stay usable and only non-mana abilities are blocked — the "… can't be activated unless they're
   mana abilities" wording (Sharkey, Tyrant of the Shire → `GameObjectFilter.Land.opponentControls()`).
+- `HasAllActivatedAbilitiesOfLinkedExiledCard` (data object) — the source permanent gains **all
+  activated abilities of every card in its linked-exile pile** (`LinkedExileComponent`). Resolved
+  dynamically at activation-legality time: the engine pulls each exiled card's `activatedAbilities`
+  and surfaces them on the source, with the source as granter (so `{T}` taps the source and
+  "this card" self-references bind to the source — CR-faithful). Grants *activated* abilities only,
+  not triggered/static/replacement. Pair with `Effects.ExileLinkedToSource(target)` to fill the
+  pile. (Territory Forge.)
 - `SuppressEntersTriggers(filter = GameObjectFilter.Creature)` — permanents matching `filter`
   entering the battlefield don't cause abilities to trigger (CR 603.6 enters-the-battlefield
   triggers). Suppresses both the entering permanent's *own* ETB triggers and any other permanent's

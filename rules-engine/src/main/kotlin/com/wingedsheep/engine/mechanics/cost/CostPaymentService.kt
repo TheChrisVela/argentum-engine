@@ -463,7 +463,11 @@ class CostPaymentService(private val services: EngineServices) {
                     is CostAtom.Discard -> cardsInHand(state, payerId, atom.filter).size >= atom.count
                     is CostAtom.ExileFrom -> cardsInZone(state, payerId, atom.filter, atom.zone).size >= atom.count
                     is CostAtom.RevealFromHand -> cardsInHand(state, payerId, atom.filter).size >= atom.count
-                    is CostAtom.Sacrifice -> controlledMatching(state, payerId, atom.filter, sourceId).size >= atom.count
+                    is CostAtom.Sacrifice -> {
+                        val candidates = controlledMatching(state, payerId, atom.filter, sourceId)
+                        if (atom.distinctNames) distinctNameCount(state, candidates) >= atom.count
+                        else candidates.size >= atom.count
+                    }
                     is CostAtom.ReturnToHand -> controlledMatching(state, payerId, atom.filter, sourceId).size >= atom.count
                     is CostAtom.TapPermanents -> controlledUntapped(state, payerId, atom.filter, sourceId).size >= atom.count
                 }
@@ -513,6 +517,16 @@ class CostPaymentService(private val services: EngineServices) {
             BattlefieldFilterUtils.findMatchingOnBattlefield(
                 state, filter.youControl().untapped(), PredicateContext(controllerId = playerId), excludeSelfId = sourceId
             )
+
+        /** Number of distinct card names among [candidates] — for "with different names" costs. */
+        fun distinctNameCount(state: GameState, candidates: List<EntityId>): Int =
+            candidates.mapNotNull { state.getEntity(it)?.get<CardComponent>()?.name }.toSet().size
+
+        /** Whether [selected] permanents all have pairwise-different names. */
+        fun allDistinctNames(state: GameState, selected: List<EntityId>): Boolean {
+            val names = selected.mapNotNull { state.getEntity(it)?.get<CardComponent>()?.name }
+            return names.size == selected.size && names.toSet().size == names.size
+        }
     }
 }
 

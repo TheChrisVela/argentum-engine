@@ -103,6 +103,28 @@ object PredefinedTokens {
     }
 
     /**
+     * Blood token — an artifact with:
+     * "{1}, {T}, Discard a card, Sacrifice this artifact: Draw a card."
+     */
+    val Blood = card("Blood") {
+        typeLine = "Artifact — Blood"
+
+        activatedAbility {
+            cost = Costs.Composite(
+                Costs.Mana("{1}"),
+                Costs.Tap,
+                Costs.DiscardCard,
+                Costs.SacrificeSelf
+            )
+            effect = Effects.DrawCards(1)
+        }
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/9/2/92a3afe7-bd9f-43f9-adc3-4819e60dc7a5.jpg?1743236443"
+        }
+    }
+
+    /**
      * Clue token — an artifact with:
      * "{2}, Sacrifice this token: Draw a card."
      * Created by the Investigate keyword action ([Effects.Investigate]).
@@ -399,6 +421,7 @@ object PredefinedTokens {
         Treasure,
         Meteorite,
         Food,
+        Blood,
         Clue,
         Lander,
         JustOneGlass,

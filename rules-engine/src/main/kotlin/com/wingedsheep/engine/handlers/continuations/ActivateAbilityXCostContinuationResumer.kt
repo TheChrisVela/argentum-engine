@@ -188,6 +188,15 @@ class ActivateAbilityXCostContinuationResumer(
         if (response.selectedCards.any { it !in continuation.sacrificeCandidates }) {
             return ExecutionResult.error(state, "Selected permanent is not in the list of valid sacrifice candidates")
         }
+        // "Sacrifice N ... with different names" — the chosen permanents must be pairwise distinct.
+        if (continuation.distinctNames) {
+            val names = response.selectedCards.mapNotNull {
+                state.getEntity(it)?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()?.name
+            }
+            if (names.size != response.selectedCards.size || names.toSet().size != names.size) {
+                return ExecutionResult.error(state, "Sacrificed permanents must all have different names")
+            }
+        }
 
         val action = continuation.action
         val replay = action.copy(

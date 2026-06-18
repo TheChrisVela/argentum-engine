@@ -581,6 +581,16 @@ object Effects {
         ExileUntilLeavesEffect(target)
 
     /**
+     * Exile a target permanently and link it to the source permanent via
+     * `LinkedExileComponent` (the source's linked-exile pile). Unlike [ExileUntilLeaves]
+     * there is no automatic return — the link only records which card the source exiled, so
+     * later abilities can reference it (e.g. Territory Forge's "this permanent has all
+     * activated abilities of the exiled card").
+     */
+    fun ExileLinkedToSource(target: EffectTarget): Effect =
+        MoveToZoneEffect(target, Zone.EXILE, linkToSource = true)
+
+    /**
      * Exile all permanents matching a filter that the controller controls and link
      * them to the source permanent. Used for Day of the Dragons-style effects.
      * The count is available as DynamicAmount.VariableReference("{storeAs}_count").
@@ -1660,6 +1670,16 @@ object Effects {
      */
     fun CreateFood(count: Int = 1, controller: EffectTarget? = null): Effect =
         CreatePredefinedTokenEffect("Food", count, controller)
+
+    /**
+     * Create Blood artifact tokens.
+     * "{1}, {T}, Discard a card, Sacrifice this artifact: Draw a card."
+     *
+     * @param count Number of tokens to create
+     * @param controller Who controls the tokens (null = spell controller)
+     */
+    fun CreateBlood(count: Int = 1, controller: EffectTarget? = null): Effect =
+        CreatePredefinedTokenEffect("Blood", count, controller)
 
     /**
      * Create Clue artifact tokens.
