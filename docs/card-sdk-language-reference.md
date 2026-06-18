@@ -5236,8 +5236,9 @@ levels, saga chapters, faces — is covered automatically. What it checks:
   `targetRequirement`; granted/token abilities against their own requirements only.
 - **Choice slots** — a `ChoiceSlot` read (`CastChoiceMade`, `DynamicAmount.CastChoice`,
   `HasChosenColor`, `SourceChosenModeIs`, …) needs a declarer on the card (`EntersWithChoice`,
-  kicker, blight, sneak, `ChooseColorThen`/`ChooseColorForTarget`); `SourceChosenModeIs` ids
-  must match a declared `modeOptions` id.
+  kicker, blight, sneak, `ChooseColorThen`/`ChooseColorForTarget`, or `ChooseNumberForSource`,
+  which declares the slot named in its `slot` field); `SourceChosenModeIs` ids must match a
+  declared `modeOptions` id.
 - **Registry hygiene** — a string field whose name follows the dataflow conventions (`store*`,
   `from`, `collectionName`, `variableName`, …) on a node type the linter doesn't know is itself
   an error: **when you add an SDK type that reads or writes a named pipeline variable, classify

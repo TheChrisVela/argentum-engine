@@ -313,6 +313,13 @@ object CardLinter {
     /** Node types whose `slot` field names the slot they read. */
     private val slotFieldReaders = setOf("CastChoice", "CastChoiceMade", "CastChoiceIs")
 
+    /**
+     * Node types whose `slot` field names the slot they *declare* (write durably on the source).
+     * [com.wingedsheep.sdk.scripting.effects.ChooseNumberForSourceEffect] records a number under the
+     * named slot (e.g. `CHOSEN_NUMBER` for Shapeshifter), which a `CastChoice` read then resolves.
+     */
+    private val slotFieldDeclarers = setOf("ChooseNumberForSource")
+
     private class SlotUsage {
         val declared = mutableSetOf<String>()
         val declaredModeIds = mutableSetOf<String>()
@@ -338,6 +345,10 @@ object CardLinter {
                 if (type in slotFieldReaders) {
                     (element["slot"] as? JsonPrimitive)?.contentOrNull
                         ?.let { slots.reads.add(it to type.orEmpty()) }
+                }
+                if (type in slotFieldDeclarers) {
+                    (element["slot"] as? JsonPrimitive)?.contentOrNull
+                        ?.let { slots.declared.add(it) }
                 }
                 if (type == "SourceChosenModeIs") {
                     (element["modeId"] as? JsonPrimitive)?.contentOrNull

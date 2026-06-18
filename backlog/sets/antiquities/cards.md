@@ -2,7 +2,7 @@
 
 **Set Size:** 85 cards
 **Release Date:** March 4, 1994
-**Implemented:** 53 / 85
+**Implemented:** 54 / 85
 | Color       | Count |
 |-------------|-------|
 | White       | 7     |
@@ -101,7 +101,7 @@
 - [ ] Tawnos's Coffin
 - [x] Tawnos's Wand
 - [ ] Tawnos's Weaponry
-- [ ] Tetravus
+- [x] Tetravus
 - [ ] The Rack
 - [x] Triskelion
 - [ ] Urza's Avenger
