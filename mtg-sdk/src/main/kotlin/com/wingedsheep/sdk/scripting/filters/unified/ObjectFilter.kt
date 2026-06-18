@@ -572,6 +572,14 @@ data class GameObjectFilter(
         statePredicates = statePredicates + StatePredicate.IsBlockingSource
     )
 
+    /**
+     * Must be a token created by the effect's source permanent (CR 111 provenance), recognized via
+     * the source's stamped `CreatedByComponent`. "Tokens created with this creature" (Tetravus).
+     */
+    fun createdBySource() = copy(
+        statePredicates = statePredicates + StatePredicate.CreatedBySource
+    )
+
     /** Must be attacking or blocking */
     fun attackingOrBlocking() = copy(
         statePredicates = statePredicates + StatePredicate.Or(

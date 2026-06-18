@@ -551,6 +551,14 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   that many plus one +1/+1 counters on it instead." → `GrantCounterPlacementModifier()` with all defaults.
 - `RemoveCounters(type, count, target)` — remove N counters.
 - `RemoveAnyNumberOfCounters(target)` — player removes 0 or more.
+- `ConvertCountersToTokensEffect(counterType = +1/+1, tokenFactory)` — "remove any number of `counterType`
+  counters from this permanent; for each removed, create one token." Prompts for `0..(count on source)`,
+  removes that many, then mints exactly that many tokens from `tokenFactory` (its own `count` is ignored).
+  Set `tokenFactory.stampCreator = true` to make the minted tokens recognizable later. The
+  counters→tokens half of Tetravus; the reverse (exile any number of those tokens, add that many counters
+  back) **composes** from a pipeline — `gather(CardSource.BattlefieldMatching(filter = ….createdBySource(),
+  player = You))` → `chooseAnyNumber` → `exile` → `run(AddDynamicCounters("+1/+1",
+  VariableReference("<slot>_count"), Self))` — so no dedicated token→counters effect exists.
 - `RemoveAllCounters(target)` — wipe every counter.
 - `RemoveAllCountersOfType(type, target)` — wipe one kind.
 - `MoveAllLastKnownCounters(target)` — Hooded Hydra / Essence Channeler — move every counter kind from source's
@@ -666,7 +674,11 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   gets +1/+0 until end of turn. Activate only as a sorcery.\"" passes a single
   `ActivatedAbility(cost = AbilityCost.Tap, effect = Effects.ModifyStats(1, 0), targetRequirements =
   listOf(Targets.CreatureYouControl), timing = TimingRule.SorcerySpeed)`. (Remember a token is a
-  creature, so a `{T}` ability is summoning-sick the turn the token enters.)
+  creature, so a `{T}` ability is summoning-sick the turn the token enters.) The raw constructor also
+  exposes `stampCreator: Boolean` — when true each minted token records the creating permanent (the
+  effect's source) so later abilities can recognize "tokens created with this permanent" via the
+  `StatePredicate.CreatedBySource` filter (`.createdBySource()`). Tetravus uses it to reabsorb only the
+  Tetravite tokens it minted; off by default.
 - `CreateDynamicToken(dynamicPower, dynamicToughness, colors?, creatureTypes, keywords?, count?, controller?, imageUri?)` —
   tokens whose P/T is computed at resolution (e.g. Pure Reflection's X/X Reflection where X = the cast spell's mana
   value, via `DynamicAmounts.triggeringManaValue()`). `controller` directs who gets the token (e.g.
@@ -1845,6 +1857,12 @@ work for abilities-on-stack (which carry no `CardComponent`).
   for "Whenever this becomes blocked, it deals N damage to each creature blocking it" (Battle-Scarred
   Goblin). Resolves in resolution-time effect contexts (where the source is carried); inert in
   group/projection, untap, and trigger-gating contexts.
+- `CreatedBySource` (filter builder `createdBySource()`) — source-relative (CR 111 provenance): matches a
+  token whose stamped `CreatedByComponent.creatorId` equals the effect's `PredicateContext.sourceId` — a
+  token *created by the source permanent*. Stamped at creation by a `CreateTokenEffect` with
+  `stampCreator = true`. Backs "tokens created with this creature" (Tetravus reabsorbing its own Tetravite
+  tokens), which `"{filter} tokens you control"` can't express when several sources mint the same token.
+  Yields false for non-tokens / unstamped tokens / no source context.
 - `CrewedOrSaddledSourceThisTurn` (filter builder `crewedOrSaddledSourceThisTurn()`) —
   source-relative (CR 702.122 / 702.171): matches a creature that crewed or saddled the effect's
   source permanent this turn (i.e. one tapped to pay that permanent's Crew/Saddle cost). Resolves

@@ -821,6 +821,16 @@ class PredicateEvaluator {
                     container.get<BlockingComponent>()?.blockedAttackerIds?.contains(sourceId) == true
             }
 
+            // Token created by the effect's source permanent (CR 111). Source-relative: the
+            // candidate's stamped CreatedByComponent.creatorId equals context.sourceId. Inert with
+            // no source context or for tokens with no recorded creator.
+            StatePredicate.CreatedBySource -> {
+                val sourceId = context?.sourceId
+                sourceId != null &&
+                    container.get<com.wingedsheep.engine.state.components.identity.CreatedByComponent>()
+                        ?.creatorId == sourceId
+            }
+
             // Crewed/saddled the effect's source permanent this turn (CR 702.122 / 702.171).
             // Source-relative: reads the source's CrewSaddleContributorsComponent and checks
             // membership. Inert with no source context.
