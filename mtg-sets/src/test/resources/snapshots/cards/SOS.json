@@ -656,6 +656,49 @@
     ]
 }
 
+// Bogwater Lumaret
+{
+    "name": "Bogwater Lumaret",
+    "manaCost": "{B}{G}",
+    "typeLine": "Creature — Spirit Frog",
+    "oracleText": "Whenever this creature or another creature you control enters, you gain 1 life.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GainLife",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Whenever this creature or another creature you control enters, you gain 1 life."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "177",
+        "artist": "Lie Setiawan",
+        "flavorText": "\"You will hear rumors that licking lumarets grants prophetic visions. That is untrue. Please refrain from licking the lumarets.\"\n—Witherbloom student handbook",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7a42f51a-3377-47bb-b6fb-c0515bf1dcfb.jpg?1775938216"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
 // Borrowed Knowledge
 {
     "name": "Borrowed Knowledge",
@@ -6496,6 +6539,120 @@
     ]
 }
 
+// Moseo, Vein's New Dean
+{
+    "name": "Moseo, Vein's New Dean",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Bird Skeleton Warlock",
+    "oracleText": "Flying\nWhen Moseo enters, create a 1/1 black and green Pest creature token with \"Whenever this token attacks, you gain 1 life.\"\nInfusion — At the beginning of your end step, if you gained life this turn, return up to one target creature card with mana value X or less from your graveyard to the battlefield, where X is the amount of life you gained this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "BLACK",
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Pest"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/b/a/ba854032-6ad2-4654-990a-64006e7f92fd.jpg?1777982237",
+                    "triggeredAbilities": [
+                        {
+                            "id": "ability_2",
+                            "trigger": "AttackEvent",
+                            "effect": {
+                                "type": "GainLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When Moseo enters, create a 1/1 black and green Pest creature token with \"Whenever this token attacks, you gain 1 life.\""
+            },
+            {
+                "id": "ability_3",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target creature card with mana value X or less from your graveyard"
+                    },
+                    "destination": "Battlefield"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature",
+                                {
+                                    "type": "ManaValueAtMostDynamic",
+                                    "amount": {
+                                        "type": "TurnTracking",
+                                        "player": "You",
+                                        "tracker": "LIFE_GAINED"
+                                    }
+                                }
+                            ],
+                            "controllerPredicate": "OwnedByYou"
+                        },
+                        "zone": "Graveyard"
+                    },
+                    "id": "up to one target creature card with mana value X or less from your graveyard"
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "TurnTracking",
+                        "player": "You",
+                        "tracker": "LIFE_GAINED"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "descriptionOverride": "Infusion — At the beginning of your end step, if you gained life this turn, return up to one target creature card with mana value X or less from your graveyard to the battlefield, where X is the amount of life you gained this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "91",
+        "rarity": "RARE",
+        "artist": "Abz J Harding",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/8/6877180c-22a1-4c4d-9178-316f4c34661b.jpg?1775937545"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Muse Seeker
 {
     "name": "Muse Seeker",
@@ -7455,6 +7612,130 @@
         "rarity": "RARE",
         "artist": "Nino Vecia",
         "imageUri": "https://cards.scryfall.io/normal/front/1/7/174f5d7e-5d36-4d13-96bf-9b12cd644716.jpg?1775937558"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Pox Plague
+{
+    "name": "Pox Plague",
+    "manaCost": "{B}{B}{B}{B}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Each player loses half their life, then discards half the cards in their hand, then sacrifices half the permanents they control of their choice. Round down each time.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "ActivePlayerFirst"
+                    },
+                    "body": {
+                        "type": "LoseLife",
+                        "amount": {
+                            "type": "Divide",
+                            "numerator": {
+                                "type": "LifeTotal",
+                                "player": "You"
+                            },
+                            "denominator": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "roundUp": false
+                        },
+                        "target": "Controller"
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "ActivePlayerFirst"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Hand"
+                                },
+                                "storeAs": "hand"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "hand",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Divide",
+                                        "numerator": {
+                                            "type": "AggregateZone",
+                                            "player": "You",
+                                            "zone": "Hand"
+                                        },
+                                        "denominator": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        },
+                                        "roundUp": false
+                                    }
+                                },
+                                "storeSelected": "discarded",
+                                "prompt": "Choose cards to discard"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "discarded",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                },
+                                "moveType": "Discard"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "ActivePlayerFirst"
+                    },
+                    "body": {
+                        "type": "ForceSacrifice",
+                        "filter": "permanent",
+                        "target": "Controller",
+                        "dynamicCount": {
+                            "type": "Divide",
+                            "numerator": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "permanent"
+                            },
+                            "denominator": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "roundUp": false
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "94",
+        "rarity": "RARE",
+        "artist": "Camille Alquier",
+        "flavorText": "The darkest corners of the Detention Bog hide natural laboratories that quietly spawn deadly infections.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c99c17b-ad3a-4859-97e8-469718b81cd9.jpg?1775937566"
     },
     "colorIdentityOverride": [
         "BLACK"
@@ -12392,6 +12673,119 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Witherbloom Charm
+{
+    "name": "Witherbloom Charm",
+    "manaCost": "{B}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• You may sacrifice a permanent. If you do, draw two cards.\n• You gain 5 life.\n• Destroy target nonland permanent with mana value 2 or less.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": {
+                        "type": "Gated",
+                        "gate": "Gate.MayDecide",
+                        "then": {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.DoAction",
+                                "action": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": {
+                                                "type": "BattlefieldMatching",
+                                                "filter": "permanent",
+                                                "player": "You"
+                                            },
+                                            "storeAs": "gathered0"
+                                        },
+                                        {
+                                            "type": "SelectFromCollection",
+                                            "from": "gathered0",
+                                            "selection": {
+                                                "type": "ChooseExactly",
+                                                "count": {
+                                                    "type": "Fixed",
+                                                    "amount": 1
+                                                }
+                                            },
+                                            "storeSelected": "selected1",
+                                            "prompt": "Choose a permanent to sacrifice",
+                                            "useTargetingUI": true
+                                        },
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "selected1",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Graveyard"
+                                            },
+                                            "moveType": "Sacrifice"
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            }
+                        },
+                        "descriptionOverride": "You may sacrifice a permanent. If you do, draw two cards."
+                    },
+                    "description": "You may sacrifice a permanent. If you do, draw two cards"
+                },
+                {
+                    "effect": {
+                        "type": "GainLife",
+                        "amount": {
+                            "type": "Fixed",
+                            "amount": 5
+                        }
+                    }
+                },
+                {
+                    "effect": {
+                        "type": "MoveToZone",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target nonland permanent with mana value 2 or less"
+                        },
+                        "destination": "Graveyard",
+                        "byDestruction": true
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "nonland permanent mv<=2"
+                            },
+                            "id": "target nonland permanent with mana value 2 or less"
+                        }
+                    ],
+                    "description": "Destroy target nonland permanent with mana value 2 or less"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "244",
+        "rarity": "UNCOMMON",
+        "artist": "Florian Herold",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/5/254437f7-7a8a-4b11-9cea-e8e7ea23c59e.jpg?1775938703"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
     ]
 }
 
