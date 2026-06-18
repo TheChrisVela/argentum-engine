@@ -3023,6 +3023,77 @@
     "colorIdentityOverride": []
 }
 
+// Tawnos's Coffin
+{
+    "name": "Tawnos's Coffin",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "You may choose not to untap this artifact during your untap step.\n{3}, {T}: Exile target creature and all Auras attached to it. Note the number and kind of counters that were on that creature. When this artifact leaves the battlefield or becomes untapped, return that exiled card to the battlefield under its owner's control tapped with the noted number and kind of counters on it. If you do, return the other exiled cards to the battlefield under their owner's control attached to that permanent.",
+    "flags": [
+        "MAY_NOT_UNTAP"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": "ReturnNotedExileTappedWithAuras"
+            },
+            {
+                "id": "ability_2",
+                "trigger": "UntapEvent",
+                "effect": "ReturnNotedExileTappedWithAuras"
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "ExileWithAurasNotingCounters",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{3}, {T}: Exile target creature and all Auras attached to it, noting its counters."
+            }
+        ]
+    },
+    "setCode": "ATQ",
+    "metadata": {
+        "collectorNumber": "68",
+        "rarity": "RARE",
+        "artist": "Christopher Rush",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c27bc1de-8246-4dc8-af51-ec21def9e226.jpg?1562936148"
+    },
+    "colorIdentityOverride": []
+}
+
 // Tawnos's Wand
 {
     "name": "Tawnos's Wand",

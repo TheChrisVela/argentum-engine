@@ -2,7 +2,7 @@
 
 **Set Size:** 85 cards
 **Release Date:** March 4, 1994
-**Implemented:** 62 / 85
+**Implemented:** 63 / 85
 | Color       | Count |
 |-------------|-------|
 | White       | 7     |
@@ -98,7 +98,7 @@
 - [x] Staff of Zegon
 - [x] Su-Chi
 - [x] Tablet of Epityr
-- [ ] Tawnos's Coffin
+- [x] Tawnos's Coffin
 - [x] Tawnos's Wand
 - [ ] Tawnos's Weaponry
 - [x] Tetravus
