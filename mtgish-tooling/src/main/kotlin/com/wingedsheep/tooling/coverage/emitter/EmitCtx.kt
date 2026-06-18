@@ -155,12 +155,15 @@ internal fun EmitCtx.renderAction(node: JsonObject, tvar: String?): Dsl? =
 internal fun EmitCtx.renderEffectList(actions: List<JsonObject>, tvar: String?): Dsl? {
     echoEffect(actions)?.let { return it }
     counterUnlessPaysEffect(actions)?.let { return it }
+    counterUnlessPaysWithRiderEffect(actions)?.let { return it }
     mayCostReflexiveDamageEffect(actions)?.let { return it }
     erodeDestroyControllerFetchEffect(actions)?.let { return it }
     heatedArgumentExileRiderEffect(actions)?.let { return it }
     manaSculptCounterWizardManaEffect(actions)?.let { return it }
     discardHandThenDrawEffect(actions)?.let { return it }
     renderSpeechlessDiscardCountersEffect(actions)?.let { return it }
+    runBehindOwnerTopOrBottomEffect(actions, tvar)?.let { return it }
+    dinasGuidanceSearchHandOrGraveyardEffect(actions)?.let { return it }
     becomeCreatureTypeEffect(actions, tvar)?.let { return it }
     chooseAbilityGrantEffect(actions, tvar)?.let { return it }
     chooseTypeModifyStatsEffect(actions)?.let { return it }
@@ -1178,5 +1181,44 @@ internal fun EmitCtx.counterUnlessPaysEffect(actions: List<JsonObject>): Dsl? {
     return call(
         "CounterEffect",
         arg("condition", Lit("CounterCondition.UnlessPaysMana(ManaCost.parse(\"$cost\"))"))
+    )
+}
+
+/**
+ * `[PlayerMayCost(ControllerOfSpell, PayMana {N}),
+ *   IfElse(CostWasPaid, [<onPaid actions>], [CounterSpell(Ref_TargetSpell)])]`
+ * -> `CounterEffect(condition = CounterCondition.UnlessPaysMana(ManaCost.parse("{N}"), <onPaid>))`
+ *
+ * "Counter target spell unless its controller pays {N}. If they do, <onPaid>." (Don't Make a Sound:
+ * `<onPaid>` is `Surveil 2`; Divert Disaster: create a Lander). The else-branch must be exactly the
+ * `CounterSpell` of the same targeted spell — the negative side of "unless they pay" — so the whole
+ * `IfElse` collapses into the engine's `onPaid` rider rather than two separate forks. The then-branch
+ * (the rider) renders through the normal effect-list path; if it can't render whole, decline (-> SCAFFOLD).
+ * Only a *generic* mana cost is modeled (sibling of [counterUnlessPaysEffect]); anything else declines.
+ */
+internal fun EmitCtx.counterUnlessPaysWithRiderEffect(actions: List<JsonObject>): Dsl? {
+    if (actions.size != 2) return null
+    val (a0, a1) = actions
+    if (a0.strField("_Action") != "PlayerMayCost" || a1.strField("_Action") != "IfElse") return null
+    // The payer must be the controller of the targeted spell.
+    if (!jsonContains(a0["args"], "_Player", "ControllerOfSpell")) return null
+    val ifArgs = a1["args"].asArr ?: return null
+    if (ifArgs.size != 3) return null
+    // The gate must be exactly CostWasPaid.
+    if (!jsonContains(ifArgs[0], "_Condition", "CostWasPaid")) return null
+    val thenActions = ifArgs[1].asArr?.filterIsInstance<JsonObject>() ?: return null
+    val elseActions = ifArgs[2].asArr?.filterIsInstance<JsonObject>() ?: return null
+    // The else-branch is the "they didn't pay" outcome: a lone CounterSpell of the targeted spell.
+    if (elseActions.size != 1 || elseActions[0].strField("_Action") != "CounterSpell") return null
+    if (!jsonContains(elseActions[0]["args"], "_Spell", "Ref_TargetSpell")) return null
+    // The then-branch is the "they paid" rider; render it whole or decline.
+    if (thenActions.isEmpty()) return null
+    val onPaid = renderEffectList(thenActions, null) ?: return null
+    val payMana = (a0["args"].asArr ?: return null).firstOrNull { it.strField("_Cost") == "PayMana" } ?: return null
+    val cost = renderMana(payMana.field("args"))
+    if (cost.isEmpty() || "{?}" in cost || "{X}" in cost) return null
+    return call(
+        "CounterEffect",
+        arg("condition", Lit("CounterCondition.UnlessPaysMana(ManaCost.parse(\"$cost\"), ${render(onPaid)})"))
     )
 }

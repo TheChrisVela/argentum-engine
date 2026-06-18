@@ -852,6 +852,91 @@
     ]
 }
 
+// Don't Make a Sound
+{
+    "name": "Don't Make a Sound",
+    "manaCost": "{1}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target spell unless its controller pays {2}. If they do, surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)",
+    "script": {
+        "spellEffect": {
+            "type": "Counter",
+            "condition": {
+                "type": "CounterCondition.UnlessPaysMana",
+                "cost": "{2}",
+                "onPaid": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeAs": "surveiled"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "surveiled",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeSelected": "toGraveyard",
+                            "storeRemainder": "toTop",
+                            "selectedLabel": "Put in graveyard",
+                            "remainderLabel": "Put on top"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toGraveyard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toTop",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Top"
+                            },
+                            "order": "ControllerChooses"
+                        }
+                    ]
+                }
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                },
+                "id": "target spell"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "49",
+        "artist": "Zezhou Chen",
+        "flavorText": "Jace kept his mouth shut, but he couldn't shake the feeling that the strange creatures could hear the screaming in his mind.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/5/b5f42e59-7315-41cb-9c41-346e44f0c5fb.jpg?1726286037"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Emerge from the Cocoon
 {
     "name": "Emerge from the Cocoon",
@@ -993,6 +1078,68 @@
         "artist": "Tyler Walpole",
         "flavorText": "Clad in the light of conviction and hope, Linette strode forth to face Duskmourn's terrors without fear.",
         "imageUri": "https://cards.scryfall.io/normal/front/f/d/fd0e8a82-0201-483e-a976-5f29764b35a4.jpg?1726285881"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Exorcise
+{
+    "name": "Exorcise",
+    "manaCost": "{1}{W}",
+    "typeLine": "Sorcery",
+    "oracleText": "Exile target artifact, enchantment, or creature with power 4 or greater.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target artifact, enchantment, or creature with power 4 or greater"
+            },
+            "destination": "Exile"
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "Or",
+                                        "predicates": [
+                                            "IsArtifact",
+                                            "IsEnchantment"
+                                        ]
+                                    },
+                                    {
+                                        "type": "And",
+                                        "predicates": [
+                                            "IsCreature",
+                                            {
+                                                "type": "PowerAtLeast",
+                                                "min": 4
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "id": "target artifact, enchantment, or creature with power 4 or greater"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "8",
+        "rarity": "UNCOMMON",
+        "artist": "Dominik Mayer",
+        "flavorText": "\"Strictly speaking, you can't kill what's already dead, but trapping and disintegrating it is pretty close.\"\n—Garden, survivor technologist",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f49006f2-a097-417d-8eb0-b8016ff2e0d5.jpg?1726285887"
     },
     "colorIdentityOverride": [
         "WHITE"
@@ -3010,6 +3157,48 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Spectral Snatcher
+{
+    "name": "Spectral Snatcher",
+    "manaCost": "{4}{B}{B}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Ward—Discard a card. (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player discards a card.)\nSwampcycling {2} ({2}, Discard this card: Search your library for a Swamp card, reveal it, put it into your hand, then shuffle.)",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 5
+    },
+    "keywords": [
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": "WardCost.Discard"
+        },
+        {
+            "type": "Cycling",
+            "cost": "{2}",
+            "searchFilter": {
+                "cardPredicates": [
+                    {
+                        "type": "HasSubtype",
+                        "subtype": "Swamp"
+                    }
+                ]
+            },
+            "displayPrefix": "Swampcycling"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "116",
+        "artist": "Domenico Cava",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/8/68f90f57-94a0-4ee1-9383-093e8fca52ea.jpg?1726286280"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
