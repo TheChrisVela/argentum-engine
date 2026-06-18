@@ -10475,7 +10475,11 @@
         "rarity": "MYTHIC",
         "artist": "Jonas De Ro",
         "imageUri": "https://cards.scryfall.io/normal/front/b/5/b5bc71a1-2344-4bc6-aa60-658cec19d0d6.jpg?1686970382"
-    }
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "RED"
+    ]
 }
 
 // Mushroom Watchdogs
