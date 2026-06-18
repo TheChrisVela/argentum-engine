@@ -314,13 +314,12 @@ class TargetRecoveryTest : StringSpec({
         ctx.gameObjectFilterDsl(youDontControl) shouldBe "GameObjectFilter.Creature.opponentControls()"
     }
 
-    "gameObjectFilterDsl declines a cardtype union it can't express (Splatter Technique's creature+planeswalker)" {
-        // "each creature and planeswalker" — Or[Creature, Planeswalker]. There is no CreatureOrPlaneswalker
-        // GroupFilter, so keeping only the Creature half would silently drop planeswalkers. Decline instead.
+    "gameObjectFilterDsl renders the creature+planeswalker union (Splatter Technique's 'each creature and planeswalker')" {
+        // "each creature and planeswalker" — Or[Creature, Planeswalker] → GameObjectFilter.CreatureOrPlaneswalker.
         val creatureOrPlaneswalker = obj(
             """{"_Permanents":"Or","args":[{"_Permanents":"IsCardtype","args":"Creature"},""" +
                 """{"_Permanents":"IsCardtype","args":"Planeswalker"}]}""",
         )
-        ctx.gameObjectFilterDsl(creatureOrPlaneswalker).shouldBeNull()
+        ctx.gameObjectFilterDsl(creatureOrPlaneswalker) shouldBe "GameObjectFilter.CreatureOrPlaneswalker"
     }
 })

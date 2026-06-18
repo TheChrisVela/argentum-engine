@@ -1055,13 +1055,15 @@ internal fun EmitCtx.gameObjectFilterExpr(filterNode: JsonElement?): Dsl? {
     // silently drop the other half, so decline the compound rather than emit half the filter
     // (Great Divide Guide).
     if (creatureSubs.isNotEmpty() && (types - "Creature").any { it in setOf("Land", "Artifact", "Enchantment", "Planeswalker") }) return null
-    // Several cardtypes that aren't one of the renderable unions (e.g. Or[Creature, Planeswalker] —
-    // Splatter Technique's "each creature and planeswalker") have no single GameObjectFilter; the
+    // Several cardtypes that aren't one of the renderable unions have no single GameObjectFilter; the
     // single-type branches below would keep only the first and silently drop the rest. Decline
-    // (-> SCAFFOLD) rather than misrender a too-narrow mass filter.
+    // (-> SCAFFOLD) rather than misrender a too-narrow mass filter. `Or[Creature, Planeswalker]`
+    // (Splatter Technique's "each creature and planeswalker") IS renderable —
+    // GameObjectFilter.CreatureOrPlaneswalker — so it's included.
     val renderableTypeUnions = setOf(
         setOf("Creature", "Land"), setOf("Creature", "Artifact"),
         setOf("Creature", "Enchantment"), setOf("Artifact", "Enchantment"),
+        setOf("Creature", "Planeswalker"),
     )
     if (types.size > 1 && types !in renderableTypeUnions) return null
     var node: Dsl = when {
@@ -1092,6 +1094,7 @@ internal fun EmitCtx.gameObjectFilterExpr(filterNode: JsonElement?): Dsl? {
         types == setOf("Creature", "Artifact") -> Lit("GameObjectFilter.CreatureOrArtifact")
         types == setOf("Creature", "Enchantment") -> Lit("GameObjectFilter.CreatureOrEnchantment")
         types == setOf("Artifact", "Enchantment") -> Lit("GameObjectFilter.ArtifactOrEnchantment")
+        types == setOf("Creature", "Planeswalker") -> Lit("GameObjectFilter.CreatureOrPlaneswalker")
         "Creature" in types || "\"Creature\"" in blob -> Lit("GameObjectFilter.Creature")
         "Land" in types || "\"Land\"" in blob -> Lit("GameObjectFilter.Land")
         "Artifact" in types || "\"Artifact\"" in blob -> Lit("GameObjectFilter.Artifact")
