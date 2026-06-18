@@ -3952,6 +3952,54 @@
     "colorIdentityOverride": []
 }
 
+// Urza's Miter
+{
+    "name": "Urza's Miter",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever an artifact you control is put into a graveyard from the battlefield, if it wasn't sacrificed, you may pay {3}. If you do, draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard",
+                    "excludeSacrifice": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{3}"
+                        }
+                    },
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "setCode": "ATQ",
+    "metadata": {
+        "collectorNumber": "76",
+        "rarity": "RARE",
+        "artist": "Randy Asplund-Faith",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/3/438f0c61-a61d-4a9e-b21f-4e86420c7913.jpg?1562908986"
+    },
+    "colorIdentityOverride": []
+}
+
 // Urza's Power Plant
 {
     "name": "Urza's Power Plant",
