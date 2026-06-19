@@ -144,7 +144,12 @@ internal fun keywordLines(card: JsonObject, keywords: Set<String>, oracleText: S
     // to match Scryfall's `keywords:["Eerie"]` (Balemurk Leech, Optimistic Scavenger). Detect it from the
     // ability-word prefix in the printed oracle text — the only place the IR exposes it — and emit it only
     // when the SDK actually has the EERIE enum value, so the line round-trips against the golden.
-    if (oracleText != null && "EERIE" in keywords && oracleText.startsWith("Eerie —")) out.add("EERIE")
+    // The ability word always begins its own line, but other intrinsic keyword lines can precede it
+    // ("Flying\nEerie — …" on Skullsnap Nuisance, "Flying, vigilance\nEerie — …" on Erratic Apparition),
+    // so match the prefix at the start of ANY line, not only the whole oracle text. Emit it AFTER the
+    // intrinsic keyword rules below so the rendered order matches the printed order (Flying, then Eerie).
+    val hasEerie = oracleText != null && "EERIE" in keywords &&
+        oracleText.lineSequence().any { it.startsWith("Eerie —") }
     // Only TOP-LEVEL rules are intrinsic card keywords. A keyword nested inside an Activated/Triggered
     // ability is GRANTED to a target ("target creature gains forestwalk"), not a card keyword — the old
     // whole-tree scan wrongly stamped it on the card (Elvish Pathcutter, Spurred Wolverine, Krosan Groundshaker).
@@ -171,6 +176,7 @@ internal fun keywordLines(card: JsonObject, keywords: Set<String>, oracleText: S
         // by the Emitter — stamping it bare here would drop its parameter (e.g. "Crew" without the N).
         else if (auto in keywords && r["args"] == null) out.add(auto)
     }
+    if (hasEerie) out.add("EERIE")
     return out
 }
 

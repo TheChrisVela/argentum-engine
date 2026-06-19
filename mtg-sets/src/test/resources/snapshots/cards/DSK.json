@@ -514,6 +514,45 @@
     ]
 }
 
+// Bedhead Beastie
+{
+    "name": "Bedhead Beastie",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)\nMountaincycling {2} ({2}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 6
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}",
+            "searchFilter": {
+                "cardPredicates": [
+                    {
+                        "type": "HasSubtype",
+                        "subtype": "Mountain"
+                    }
+                ]
+            },
+            "displayPrefix": "Mountaincycling"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "125",
+        "artist": "David Auden Nash",
+        "flavorText": "It had heard monsters were supposed to hide under beds, and it did its best.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/7/77c72b5b-dd81-4eb4-80d9-a0124e27e1dc.jpg?1726286314"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Blazemire Verge
 {
     "name": "Blazemire Verge",
@@ -1155,6 +1194,99 @@
     ]
 }
 
+// Cult Healer
+{
+    "name": "Cult Healer",
+    "manaCost": "{2}{W}",
+    "typeLine": "Creature — Human Doctor",
+    "oracleText": "Eerie — Whenever an enchantment you control enters and whenever you fully unlock a Room, this creature gains lifelink until end of turn.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "EERIE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "enchantment ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "target": "Self"
+                },
+                "descriptionOverride": "Eerie — Whenever an enchantment you control enters, this creature gains lifelink until end of turn."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "RoomFullyUnlockedEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "target": "Self"
+                },
+                "descriptionOverride": "Eerie — Whenever you fully unlock a Room, this creature gains lifelink until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "2",
+        "artist": "Diana Franco",
+        "flavorText": "\"Oh, we don't need to operate. I've just always wanted to try it.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c9b8fbe-8a5e-4b62-b53f-9ead8147bbbb.jpg?1726285862"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Daggermaw Megalodon
+{
+    "name": "Daggermaw Megalodon",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Creature — Shark",
+    "oracleText": "Vigilance\nIslandcycling {2} ({2}, Discard this card: Search your library for an Island card, reveal it, put it into your hand, then shuffle.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 7
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}",
+            "searchFilter": {
+                "cardPredicates": [
+                    {
+                        "type": "HasSubtype",
+                        "subtype": "Island"
+                    }
+                ]
+            },
+            "displayPrefix": "Islandcycling"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "48",
+        "artist": "Helge C. Balzer",
+        "flavorText": "Valgavoth's evil aura turned the shark from an apex predator into an inescapable terror of the deeps.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/7/e72a38b9-29aa-4804-ab27-4c40321f0bc3.jpg?1726286036"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Demonic Counsel
 {
     "name": "Demonic Counsel",
@@ -1522,6 +1654,76 @@
         "artist": "Chris Rallis",
         "flavorText": "Though she was used to stepping into the unknown, something about this strange doorway made the Wanderer shiver as she crossed the threshold.",
         "imageUri": "https://cards.scryfall.io/normal/front/c/f/cf5479c7-9e46-4a57-abe7-8cc670de89e4.jpg"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Erratic Apparition
+{
+    "name": "Erratic Apparition",
+    "manaCost": "{2}{U}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "Flying, vigilance\nEerie — Whenever an enchantment you control enters and whenever you fully unlock a Room, this creature gets +1/+1 until end of turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING",
+        "VIGILANCE",
+        "EERIE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "enchantment ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Eerie — Whenever an enchantment you control enters, this creature gets +1/+1 until end of turn."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "RoomFullyUnlockedEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Eerie — Whenever you fully unlock a Room, this creature gets +1/+1 until end of turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "54",
+        "artist": "Miranda Meeks",
+        "flavorText": "\"What's got you all bent out of shape?\"\n—Joseph, comedian, last words",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/7/a74fd612-2890-4333-a379-5bf7650fbb87.jpg?1726286058"
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -3989,6 +4191,105 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Patchwork Beastie
+{
+    "name": "Patchwork Beastie",
+    "manaCost": "{G}",
+    "typeLine": "Artifact Creature — Beast",
+    "oracleText": "Delirium — This creature can't attack or block unless there are four or more card types among cards in your graveyard.\nAt the beginning of your upkeep, you may mill a card. (You may put the top card of your library into your graveyard.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeAs": "milled"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "milled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "You may mill a card."
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantAttackUnless",
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateZone",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "aggregation": "DISTINCT_TYPES"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            },
+            {
+                "type": "CantBlockUnless",
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateZone",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "aggregation": "DISTINCT_TYPES"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "195",
+        "rarity": "UNCOMMON",
+        "artist": "John Tedrick",
+        "flavorText": "It doesn't know it isn't real.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/895de583-36d2-43fd-927f-8876d4302c73.jpg?1726286592"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
