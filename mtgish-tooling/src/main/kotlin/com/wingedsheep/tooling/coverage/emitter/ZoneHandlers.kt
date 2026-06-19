@@ -155,6 +155,57 @@ internal val zoneHandlers: Map<String, ActionHandler> = actionHandlers {
         ))
     }
 
+    // "Reveal cards from the top of your library until you reveal an instant or sorcery card. Put that
+    // card into your hand and the rest on the bottom of your library in a random order." (Secrets of
+    // Strixhaven — Page, Loose Leaf's Grandeur ability). IR args are
+    // [<the stop filter>, [<reveal-actions>]]. The engine idiom walks the library with
+    // GatherUntilMatchEffect (stops at the first match, stashing the matched card + every revealed card),
+    // reveals the pile, then splits it with two filtered MoveCollectionEffects: the matched
+    // instant/sorcery -> hand, the non-matching rest -> the bottom of the library in a random order.
+    // Renders ONLY this exact shape — an instant-or-sorcery stop filter, the matched card to hand, the
+    // rest to the bottom at random; any other filter, reveal-action set, or destination declines
+    // (-> SCAFFOLD) rather than emit a lossy approximation.
+    on("RevealCardsFromTheTopOfLibraryUntilACardOfTypeIsRevealed") { _, args, _ ->
+        val arr = args.asArr ?: return@on null
+        if (arr.size != 2) return@on null
+        // 1. The stop filter must be exactly "Or(IsCardtype Instant, IsCardtype Sorcery)".
+        val filterBlob = compact(arr.getOrNull(0))
+        val isInstantOrSorcery = "\"Or\"" in filterBlob &&
+            "IsCardtype" in filterBlob && "\"Instant\"" in filterBlob && "\"Sorcery\"" in filterBlob
+        if (!isInstantOrSorcery) return@on null
+        // 2. The two reveal-actions must be exactly "found card -> hand" + "rest -> bottom at random".
+        val revealActions = (arr.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>()
+            ?.map { it.strField("_RevealTheTopNumberCardsOfLibraryAction") } ?: return@on null
+        if (revealActions != listOf(
+                "PutTheCardFoundThisWayIntoHand",
+                "PutTheRemainingCardsOnTheBottomOfLibraryInARandomOrder",
+            )
+        ) return@on null
+        Composite(listOf(
+            Lit(
+                "GatherUntilMatchEffect(filter = GameObjectFilter.InstantOrSorcery, " +
+                    "storeMatch = \"spell\", storeRevealed = \"revealed\")",
+            ),
+            Lit("RevealCollectionEffect(from = \"revealed\")"),
+            Lit(
+                "MoveCollectionEffect(from = \"revealed\", filter = GameObjectFilter.InstantOrSorcery, " +
+                    "destination = CardDestination.ToZone(Zone.HAND))",
+            ),
+            Raw(
+                "MoveCollectionEffect(\n" +
+                    "                from = \"revealed\",\n" +
+                    "                filter = GameObjectFilter(\n" +
+                    "                    cardPredicates = listOf(\n" +
+                    "                        CardPredicate.Not(CardPredicate.Or(listOf(CardPredicate.IsInstant, CardPredicate.IsSorcery)))\n" +
+                    "                    )\n" +
+                    "                ),\n" +
+                    "                destination = CardDestination.ToZone(Zone.LIBRARY, placement = ZonePlacement.Bottom),\n" +
+                    "                order = CardOrder.Random,\n" +
+                    "            )",
+            ),
+        ))
+    }
+
     // "Return the exiled card to the battlefield under its owner's control" (the second half of the
     // exile-then-return idiom — Conciliator's Duelist, Parting Gust). `TheCardExiledThisWay` refers to
     // the same bound target that was exiled earlier in the ability, so it resolves to the ability's

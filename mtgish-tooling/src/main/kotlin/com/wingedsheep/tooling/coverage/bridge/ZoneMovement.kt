@@ -89,6 +89,17 @@ internal fun BridgeBuilder.zoneMovement() {
     // MoveCollection -> graveyard; paired with a MayPlayCardsMilledThisWay grant (which honours the
     // card sitting in the graveyard).
     composed("MillACard", "Gather(top of library) + MoveCollection -> graveyard (mill-then-play)", composes = listOf("MoveCollection"))
+    // "Reveal cards from the top of your library until you reveal an instant or sorcery card. Put that
+    // card into your hand and the rest on the bottom of your library in a random order." (Secrets of
+    // Strixhaven — Page, Loose Leaf's Grandeur). GatherUntilMatch(top of library, stop at first match) +
+    // RevealCollection + two filtered MoveCollections (matched -> hand; rest -> library bottom, random).
+    // The emitter renders ONLY the instant-or-sorcery-stop / matched-to-hand / rest-to-bottom-random
+    // shape; any other filter or reveal-action set declines -> SCAFFOLD.
+    composed(
+        "RevealCardsFromTheTopOfLibraryUntilACardOfTypeIsRevealed",
+        "GatherUntilMatch(top of library) + RevealCollection + MoveCollection (matched->hand, rest->library bottom random)",
+        composes = listOf("MoveCollection"),
+    )
     // "Exile the top N cards of target player's library" — the parameterized impulse-exile from any
     // player's library (Laughing Jasper Flint from a target opponent; Rakdos, the Muscle from target
     // player). Gather(top N of that player's library) + MoveCollection -> that player's exile, paired

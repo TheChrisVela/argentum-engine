@@ -21,6 +21,7 @@ import com.wingedsheep.tooling.coverage.call
 import com.wingedsheep.tooling.coverage.compact
 import com.wingedsheep.tooling.coverage.field
 import com.wingedsheep.tooling.coverage.findInteger
+import com.wingedsheep.tooling.coverage.firstArgStringTagged
 import com.wingedsheep.tooling.coverage.jsonContains
 import com.wingedsheep.tooling.coverage.nodesTagged
 import com.wingedsheep.tooling.coverage.render
@@ -3448,6 +3449,18 @@ internal fun EmitCtx.abilityCostDsl(node: JsonElement?): String? {
         // "Discard a card at random" — a fixed, no-choice cost (the engine picks): Costs.DiscardAtRandom(1).
         // It carries no value selection / X / inherited choice, so it is safe to render exactly (Canyon Drake).
         "DiscardACardAtRandom" -> "Costs.DiscardAtRandom(1)"
+        // "Discard another card named ~" — the Grandeur cost (Secrets of Strixhaven — Page, Loose Leaf,
+        // CR 207.2c). The mtgish filter is `IsNamed(NamedCard "<name>")`. The discard cost draws from the
+        // controller's hand, where the source on the battlefield is never a candidate, so the printed
+        // "another" is satisfied automatically by a bare name filter — `Costs.Discard(Any.named(<name>))`.
+        // Only this exact bare-name shape renders; any other filter constraint declines (-> SCAFFOLD) so
+        // we never approximate a richer discard cost as a plain name match.
+        "DiscardACardOfType" -> {
+            val filter = obj.field("args") as? JsonObject ?: return null
+            if (filter.strField("_Cards") != "IsNamed") return null
+            val name = filter.field("args").firstArgStringTagged("NamedCard") ?: return null
+            "Costs.Discard(GameObjectFilter.Any.named(\"${ktStr(name)}\"))"
+        }
         "TapPermanent" ->
             if (obj.field("args").strField("_Permanent") == "ThisPermanent") "Costs.Tap" else null
         "SacrificePermanent" ->
