@@ -1184,6 +1184,14 @@ object Effects {
         AddCountersToCollectionEffect(collectionName, counterType, count)
 
     /**
+     * Add a resolution-time–evaluated number of counters to all entities in a named collection —
+     * "create a token, then put X counters on it, where X is [amount]" (Emil, Vastlands Roamer).
+     * Pair with a token-creating effect that publishes the well-known `CREATED_TOKENS` collection.
+     */
+    fun AddCountersToCollection(collectionName: String, counterType: String, amount: DynamicAmount): Effect =
+        AddCountersToCollectionEffect(collectionName, counterType, amount = amount)
+
+    /**
      * Distribute any number of counters from this creature onto other creatures.
      * Used for Forgotten Ancient's upkeep ability.
      */

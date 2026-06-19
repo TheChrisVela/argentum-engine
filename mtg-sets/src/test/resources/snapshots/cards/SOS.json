@@ -1026,6 +1026,93 @@
     ]
 }
 
+// Aziza, Mage Tower Captain
+{
+    "name": "Aziza, Mage Tower Captain",
+    "manaCost": "{R}{W}",
+    "typeLine": "Legendary Creature — Djinn Sorcerer",
+    "oracleText": "Whenever you cast an instant or sorcery spell, you may tap three untapped creatures you control. If you do, copy that spell. You may choose new targets for the copy.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    "IsInstant",
+                                    "IsSorcery"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "ControlledPermanents",
+                                        "filter": "creature untapped"
+                                    },
+                                    "storeAs": "azizaTapPool"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "azizaTapPool",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 3
+                                        }
+                                    },
+                                    "storeSelected": "azizaToTap",
+                                    "prompt": "Tap three untapped creatures you control",
+                                    "useTargetingUI": true
+                                },
+                                {
+                                    "type": "TapUntapCollection",
+                                    "collectionName": "azizaToTap"
+                                }
+                            ]
+                        }
+                    },
+                    "then": {
+                        "type": "CopyTargetSpell",
+                        "target": "TriggeringEntity"
+                    },
+                    "descriptionOverride": "You may tap three untapped creatures you control. If you do, copy that spell. You may choose new targets for the copy."
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "174",
+        "rarity": "RARE",
+        "artist": "Aurore Folny",
+        "flavorText": "\"Good play, team! Now let's run it again until it's perfect!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/2/6261e89a-dbf1-481a-823e-6bb00be57195.jpg?1775938194"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Banishing Betrayal
 {
     "name": "Banishing Betrayal",
@@ -4349,6 +4436,95 @@
     ]
 }
 
+// Emil, Vastlands Roamer
+{
+    "name": "Emil, Vastlands Roamer",
+    "manaCost": "{2}{G}",
+    "typeLine": "Legendary Creature — Elf Druid",
+    "oracleText": "Creatures you control with +1/+1 counters on them have trample.\n{4}{G}, {T}: Create a 0/0 green and blue Fractal creature token. Put X +1/+1 counters on it, where X is the number of differently named lands you control.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{4}{G}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "power": 0,
+                            "toughness": 0,
+                            "colors": [
+                                "GREEN",
+                                "BLUE"
+                            ],
+                            "creatureTypes": [
+                                "Fractal"
+                            ]
+                        },
+                        {
+                            "type": "AddCountersToCollection",
+                            "collectionName": "createdTokens",
+                            "counterType": "+1/+1",
+                            "amount": {
+                                "type": "AggregateBattlefield",
+                                "player": "You",
+                                "filter": "land",
+                                "aggregation": "DISTINCT_NAMES"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantKeyword",
+                "keyword": "TRAMPLE",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "HasCounter",
+                                "counterType": "+1/+1"
+                            }
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "146",
+        "rarity": "UNCOMMON",
+        "artist": "Kai Carpenter",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/6/3654416d-8558-4af2-9e10-18dbc8f2b376.jpg?1775937993"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Encouraging Aviator
 {
     "name": "Encouraging Aviator",
@@ -7631,6 +7807,132 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Jadzi, Steward of Fate
+{
+    "name": "Jadzi, Steward of Fate",
+    "manaCost": "{2}{U}",
+    "typeLine": "Legendary Creature — Human Wizard",
+    "oracleText": "Jadzi enters prepared. (While it's prepared, you may cast a copy of its spell. Doing so unprepares it.)\nWhen Jadzi enters, draw two cards, then discard two cards.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "keywords": [
+        "PREPARED"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 2
+                            }
+                        },
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "FromZone",
+                                        "zone": "Hand"
+                                    },
+                                    "storeAs": "hand"
+                                },
+                                {
+                                    "type": "SelectFromCollection",
+                                    "from": "hand",
+                                    "selection": {
+                                        "type": "ChooseExactly",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        }
+                                    },
+                                    "storeSelected": "discarded",
+                                    "prompt": "Choose 2 cards to discard"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "discarded",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Discard"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "55",
+        "rarity": "RARE",
+        "artist": "Martina Fačková",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/9/a95b6baf-01e6-49c3-9a26-394b127d53c3.jpg?1775937293"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ],
+    "layout": "PREPARE",
+    "cardFaces": [
+        {
+            "name": "Oracle's Gift",
+            "manaCost": "{X}{X}{U}",
+            "typeLine": "Sorcery",
+            "oracleText": "Create X 0/0 green and blue Fractal creature tokens, then put X +1/+1 counters on each Fractal you control.",
+            "script": {
+                "spellEffect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "CreateToken",
+                            "count": "XValue",
+                            "power": 0,
+                            "toughness": 0,
+                            "colors": [
+                                "GREEN",
+                                "BLUE"
+                            ],
+                            "creatureTypes": [
+                                "Fractal"
+                            ]
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature Fractal ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "AddDynamicCounters",
+                                "counterType": "+1/+1",
+                                "amount": "XValue",
+                                "target": "Self"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
     ]
 }
 
@@ -17429,6 +17731,61 @@
         "rarity": "UNCOMMON",
         "artist": "Florian Herold",
         "imageUri": "https://cards.scryfall.io/normal/front/2/5/254437f7-7a8a-4b11-9cea-e8e7ea23c59e.jpg?1775938703"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
+    ]
+}
+
+// Witherbloom, the Balancer
+{
+    "name": "Witherbloom, the Balancer",
+    "manaCost": "{6}{B}{G}",
+    "typeLine": "Legendary Creature — Elder Dragon",
+    "oracleText": "Affinity for creatures (This spell costs {1} less to cast for each creature you control.)\nFlying, deathtouch\nInstant and sorcery spells you cast have affinity for creatures.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING",
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "PermanentsYouControlMatching",
+                        "filter": "creature"
+                    }
+                }
+            },
+            {
+                "type": "ModifySpellCost",
+                "target": {
+                    "type": "YouCast",
+                    "filter": "instant|sorcery"
+                },
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "PermanentsYouControlMatching",
+                        "filter": "creature"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "245",
+        "rarity": "MYTHIC",
+        "artist": "Chris Rahn",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/d/ed7b2361-97c6-49e2-bf0b-4770f4ffe2f0.jpg?1775938710"
     },
     "colorIdentityOverride": [
         "BLACK",

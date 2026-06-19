@@ -145,10 +145,21 @@ data class RemoveAllCountersEffect(
 data class AddCountersToCollectionEffect(
     val collectionName: String,
     val counterType: String,
-    val count: Int = 1
+    val count: Int = 1,
+    /**
+     * Optional resolution-time count. When non-null it overrides [count] — the executor
+     * evaluates it once and places that many counters on each permanent in the collection.
+     * Used for "create a token, then put X +1/+1 counters on it, where X is …" shapes
+     * (Emil, Vastlands Roamer) over the well-known `CREATED_TOKENS` collection.
+     */
+    val amount: DynamicAmount? = null,
 ) : Effect {
     override val description: String =
-        "Put $count $counterType counter${if (count != 1) "s" else ""} on each of those permanents"
+        if (amount != null) {
+            "Put ${amount.description} $counterType counters on each of those permanents"
+        } else {
+            "Put $count $counterType counter${if (count != 1) "s" else ""} on each of those permanents"
+        }
 }
 
 /**

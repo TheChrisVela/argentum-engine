@@ -76,6 +76,14 @@ object DynamicAmounts {
          */
         fun distinctValues(property: CardNumericProperty): DynamicAmount =
             DynamicAmount.AggregateBattlefield(player, filter, Aggregation.DISTINCT_VALUES, property)
+
+        /**
+         * The number of differently named matched permanents — e.g. `distinctNames()` over
+         * `GameObjectFilter.Land` for "the number of differently named lands you control"
+         * (Emil, Vastlands Roamer). Two permanents sharing a name count once.
+         */
+        fun distinctNames(): DynamicAmount =
+            DynamicAmount.AggregateBattlefield(player, filter, Aggregation.DISTINCT_NAMES)
     }
 
     // =========================================================================

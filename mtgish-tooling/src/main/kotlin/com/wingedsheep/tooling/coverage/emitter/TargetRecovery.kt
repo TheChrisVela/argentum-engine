@@ -1060,10 +1060,14 @@ internal fun EmitCtx.gameObjectFilterExpr(filterNode: JsonElement?): Dsl? {
     // covers both — without it the `And(Creature, DealtDamageThisTurn)` cost filter silently collapsed
     // to a bare Creature group, widening the sacrifice to any creature.
     if ("DealtDamageThisTurn" in blob) return null
-    // "creatures you control WITH +1/+1 counters on them" (Badgermole's trample lord): a
-    // `HasACounterOfType` predicate this flat GroupFilter can't express. Dropping it would widen the
-    // grant to every creature you control, so decline (-> SCAFFOLD) rather than misrender.
-    if ("HasACounterOfType" in blob) return null
+    // "creatures you control WITH +1/+1 counters on them" (Emil, Vastlands Roamer / Badgermole's
+    // trample lord): a `HasACounterOfType` predicate. The SDK expresses it via
+    // `.withCounter(Counters.X)`; recover the counter kind here and compose it onto the base node
+    // below. Decline (-> SCAFFOLD) only when the counter can't be named exactly, so the restriction
+    // is never silently dropped (which would widen the grant to every creature).
+    val counterFilterDsl: String? = filterNode.nodesTagged("HasACounterOfType").firstOrNull()?.let {
+        counterTypeDsl(it["args"]) ?: return null
+    }
     // An enchantment subtype ("another Shrine you control", "each Shrine") has no rendering on this
     // surface — widening it to GameObjectFilter.Enchantment/Permanent would silently drop the subtype.
     // Decline rather than emit a too-broad filter (The Spirit Oasis / Kyoshi Island Plaza Shrine triggers).
@@ -1182,6 +1186,8 @@ internal fun EmitCtx.gameObjectFilterExpr(filterNode: JsonElement?): Dsl? {
     if ("EnteredTheBattlefieldThisTurn" in blob) {
         node = node.dot("enteredThisTurn")
     }
+    // "...with a <kind> counter on it" (HasACounterOfType, recovered above) -> `.withCounter(Counters.X)`.
+    if (counterFilterDsl != null) node = node.dot("withCounter", arg(counterFilterDsl))
     // The `.youControl()`/`.opponentControls()` suffix is a *controller* predicate — only a
     // `ControlledByAPlayer` clause carries it. Inspect that clause's player scope directly rather than
     // scanning the whole blob, so a bare `"You"` elsewhere (e.g. a graveyard count's

@@ -539,6 +539,9 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `DistributeCountersAmongTargets(total, type?, minPerTarget?)` — divvy N counters among chosen targets.
 - `Proliferate()` — add one counter of each kind already present on chosen permanents/players (CR 701.27).
 - `AddCountersToCollection(name, type, count)` — add counters to cards held in a pipeline collection.
+  An overload takes a `DynamicAmount` instead of an `Int` count, evaluated once at resolution — "create
+  a token, then put X +1/+1 counters on it, where X is …" over the `CREATED_TOKENS` collection (Emil,
+  Vastlands Roamer).
 
 ### Color & type
 
@@ -3757,6 +3760,9 @@ Numbers computed at resolution time.
   "the number of different powers among creatures you control" via
   `aggregation = DISTINCT_VALUES, property = POWER`; two permanents sharing a value count once).
   Builder shortcut: `DynamicAmounts.battlefield(player, filter).distinctValues(CardNumericProperty.POWER)`.
+  `DISTINCT_NAMES` counts *differently named* matched permanents (two sharing a name count once) —
+  "the number of differently named lands you control" (Emil, Vastlands Roamer) via
+  `DynamicAmounts.battlefield(Player.You, GameObjectFilter.Land).distinctNames()`.
   `excludeSelf = true` drops the aggregate's own source/affected entity ("among *other* …"), e.g.
   Loot, the Key to Everything's "the number of card types among other nonland permanents you control"
   (`filter = GameObjectFilter.NonlandPermanent, aggregation = DISTINCT_TYPES, excludeSelf = true`).

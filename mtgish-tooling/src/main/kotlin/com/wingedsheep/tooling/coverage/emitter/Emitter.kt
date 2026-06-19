@@ -275,6 +275,11 @@ object Emitter {
                 // PermanentsYouControlMatching primitive). Only the group filters we can render exactly
                 // produce a block; anything else declines -> scaffold.
                 rname == "Affinity" -> block = ctx.affinityBlock(rule)
+                // "Instant and sorcery spells you cast have affinity for creatures" (Witherbloom, the
+                // Balancer) — a StackSpellsEffect granting a spell effect to a class of spells you cast.
+                // Only the granted-affinity shape over the Instant/Sorcery filter renders; anything else
+                // declines -> SCAFFOLD.
+                rname == "StackSpellsEffect" -> block = ctx.stackSpellsEffectBlock(rule)
                 // Station keyword ability (CR 702.184a) — fully fixed, renders the no-arg builder.
                 rname == "Station" -> block = listOf(Eval(call("station")))
                 // Increment (Secrets of Strixhaven) — a keyword whose whole mechanic ("whenever you cast

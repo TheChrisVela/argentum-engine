@@ -424,6 +424,47 @@ internal fun EmitCtx.affinityBlock(rule: JsonObject): List<Stmt>? {
     return listOf(staticAbilityStmt(ability))
 }
 
+/**
+ * A `StackSpellsEffect(<spell filter>, [<spell effect>])` static rule -> one
+ * `staticAbility { ability = ModifySpellCost(YouCast(<spell filter>), …) }`. Currently the only spell
+ * effect rendered is **Affinity** — "Instant and sorcery spells you cast have affinity for creatures"
+ * (Witherbloom, the Balancer). CR 702.41a: granting affinity to a class of spells is mechanically a
+ * battlefield-sourced [SpellCostTarget.YouCast] generic reduction equal to the matching permanents you
+ * control (the same lowering as Sami, Wildcat Captain) — no dedicated "granted affinity" engine path
+ * is needed. The spell filter is rendered only for the exact Instant/Sorcery `Or` shape; any other
+ * spell filter or spell effect declines -> SCAFFOLD rather than guess.
+ */
+internal fun EmitCtx.stackSpellsEffectBlock(rule: JsonObject): List<Stmt>? {
+    val args = rule["args"].asArr ?: run { reasons.add("StackSpellsEffect"); return null }
+    val spellFilterNode = args.getOrNull(0) as? JsonObject
+    val spellFilterDsl = instantOrSorcerySpellFilter(spellFilterNode)
+        ?: run { reasons.add("StackSpellsEffect"); return null }
+    val effects = (args.getOrNull(1) as? JsonArray)?.filterIsInstance<JsonObject>()
+    val affinity = effects?.singleOrNull()?.takeIf { it.strField("_SpellEffect") == "Affinity" }
+        ?: run { reasons.add("StackSpellsEffect"); return null }
+    val group = gameObjectFilterDsl(affinity["args"]) ?: run { reasons.add("StackSpellsEffect"); return null }
+    val ability = call(
+        "ModifySpellCost",
+        arg("target", call("SpellCostTarget.YouCast", arg(Lit(spellFilterDsl)))),
+        arg("modification", call(
+            "CostModification.ReduceGenericBy",
+            arg(call("CostReductionSource.PermanentsYouControlMatching", arg(Lit(group)))),
+        )),
+    )
+    return listOf(staticAbilityStmt(ability))
+}
+
+/** The exact `Or[IsCardtype Instant, IsCardtype Sorcery]` spell filter -> `GameObjectFilter.InstantOrSorcery`;
+ *  null for any other shape (so the caller declines rather than widening). */
+private fun instantOrSorcerySpellFilter(spellFilter: JsonObject?): String? {
+    if (spellFilter?.strField("_Spells") != "Or") return null
+    val orTypes = (spellFilter["args"].asArr?.filterIsInstance<JsonObject>() ?: return null)
+        .filter { it.strField("_Spells") == "IsCardtype" }
+        .mapNotNull { it["args"].asStr() }
+        .toSet()
+    return if (orTypes == setOf("Instant", "Sorcery")) "GameObjectFilter.InstantOrSorcery" else null
+}
+
 private fun EmitCtx.additionalCostLine(rule: JsonObject): String? {
     val node = rule["args"] as? JsonObject ?: return null
     if (node.strField("_CastEffect") != "AdditionalCastingCost") return null

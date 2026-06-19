@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers.effects.permanent.counters
 
 import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.EffectResult
+import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
@@ -32,6 +33,11 @@ class AddCountersToCollectionExecutor : EffectExecutor<AddCountersToCollectionEf
 
         val counterType = resolveCounterType(effect.counterType)
 
+        // A dynamic [amount] overrides the static [count] — evaluated once at resolution.
+        val baseCount = effect.amount?.let { DynamicAmountEvaluator().evaluate(state, it, context) }
+            ?: effect.count
+        if (baseCount <= 0) return EffectResult.success(state)
+
         var currentState = state
         val events = mutableListOf<CountersAddedEvent>()
 
@@ -40,7 +46,7 @@ class AddCountersToCollectionExecutor : EffectExecutor<AddCountersToCollectionEf
 
             val current = currentState.getEntity(entityId)?.get<CountersComponent>() ?: CountersComponent()
             val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(
-                currentState, entityId, counterType, effect.count, placerId = context.controllerId
+                currentState, entityId, counterType, baseCount, placerId = context.controllerId
             )
 
             val firstThisTurn = DamageUtils.isFirstCounterThisTurn(currentState, entityId)
