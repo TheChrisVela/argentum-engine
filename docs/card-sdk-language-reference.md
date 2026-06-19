@@ -1791,7 +1791,16 @@ work for abilities-on-stack (which carry no `CardComponent`).
 
 ## 8. Triggered abilities (`Triggers.*`)
 
-`triggeredAbility { trigger; effect; target?; triggerCondition?; optional?; elseEffect?; checkOnNextState?; dealsDamageBeforeResolve?; controlledByTriggeringEntityController? }`.
+`triggeredAbility { trigger; effect; target?; triggerCondition?; optional?; elseEffect?; checkOnNextState?; dealsDamageBeforeResolve?; controlledByTriggeringEntityController?; oncePerTurn?; triggersOnce? }`.
+
+**`oncePerTurn` vs `triggersOnce` — two firing caps.** `oncePerTurn = true` caps the ability to one
+fire per turn ("This ability triggers only once each turn", e.g. Scavenger's Talent), tracked by a
+per-turn component cleared in cleanup. `triggersOnce = true` is the lifetime cap ("This ability
+triggers only once", e.g. Acrobatic Cheerleader): once the source has fired it, it never fires again
+while that permanent stays on the battlefield — tracked by a `TriggeredAbilityFiredEverComponent`
+that is **not** cleared at end of turn (it lives on the entity, so re-entering the battlefield as a
+new object — a distinct game object — triggers afresh). Both caps share one detection-time filter and
+collapse simultaneous fires of the same `(source, ability)` to a single instance.
 
 **`optional` + `elseEffect` = "you may [effect]. If you don't, [elseEffect]."** For a **targeted**
 trigger, `optional` lets the player choose 0 targets to decline, and `elseEffect` runs on decline or

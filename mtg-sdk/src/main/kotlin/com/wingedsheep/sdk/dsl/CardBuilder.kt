@@ -1157,6 +1157,9 @@ class TriggeredAbilityBuilder {
     var controlledByTriggeringEntityController: Boolean = false
     /** When true, this triggered ability triggers at most once each turn. */
     var oncePerTurn: Boolean = false
+    /** When true, this triggered ability triggers at most once over the source's lifetime on the
+     * battlefield ("This ability triggers only once"). Unlike [oncePerTurn] it is never reset. */
+    var triggersOnce: Boolean = false
     /** Optional human-readable description that overrides the auto-generated one. */
     var description: String? = null
 
@@ -1196,6 +1199,7 @@ class TriggeredAbilityBuilder {
             triggerCondition = triggerCondition,
             controlledByTriggeringEntityController = controlledByTriggeringEntityController,
             oncePerTurn = oncePerTurn,
+            triggersOnce = triggersOnce,
             descriptionOverride = description
         )
     }

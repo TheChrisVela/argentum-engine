@@ -6,6 +6,7 @@ import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFiredEverComponent
 import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFiredThisTurnComponent
 import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import com.wingedsheep.engine.state.components.stack.abilityIdentityOf
@@ -269,6 +270,11 @@ class TriggerProcessor(
         // Mark once-per-turn triggers as fired so they don't trigger again this turn
         if (ability.oncePerTurn) {
             currentState = markTriggerFired(currentState, trigger.sourceId, ability.id)
+        }
+        // Mark "triggers only once" abilities as fired so they never trigger again while the
+        // source stays on the battlefield (tracker persists across turns, unlike oncePerTurn).
+        if (ability.triggersOnce) {
+            currentState = markTriggerFiredEver(currentState, trigger.sourceId, ability.id)
         }
 
         val targetRequirement = ability.targetRequirement
@@ -890,6 +896,18 @@ class TriggerProcessor(
         val entity = state.getEntity(sourceId) ?: return state
         val tracker = entity.get<TriggeredAbilityFiredThisTurnComponent>()
             ?: TriggeredAbilityFiredThisTurnComponent()
+        val updated = tracker.withFired(abilityId)
+        return state.updateEntity(sourceId) { it.with(updated) }
+    }
+
+    /**
+     * Mark a "triggers only once" triggered ability as fired on its source entity. The tracker
+     * persists for the permanent's lifetime (not cleared at end of turn).
+     */
+    private fun markTriggerFiredEver(state: GameState, sourceId: EntityId, abilityId: AbilityId): GameState {
+        val entity = state.getEntity(sourceId) ?: return state
+        val tracker = entity.get<TriggeredAbilityFiredEverComponent>()
+            ?: TriggeredAbilityFiredEverComponent()
         val updated = tracker.withFired(abilityId)
         return state.updateEntity(sourceId) { it.with(updated) }
     }

@@ -460,6 +460,24 @@ data class TriggeredAbilityFiredThisTurnComponent(
 }
 
 /**
+ * Tracks which triggered abilities have fired over this permanent's lifetime on the battlefield,
+ * for "This ability triggers only once" restrictions (e.g. Acrobatic Cheerleader).
+ * Unlike [TriggeredAbilityFiredThisTurnComponent] this is NOT cleared at end of turn — it persists
+ * for as long as the permanent stays on the battlefield. It lives on the entity, so it is dropped
+ * automatically when the permanent leaves (the permanent re-enters as a new game object, which
+ * triggers afresh).
+ */
+@Serializable
+data class TriggeredAbilityFiredEverComponent(
+    val abilityIds: Set<AbilityId> = emptySet()
+) : Component {
+    fun withFired(abilityId: AbilityId): TriggeredAbilityFiredEverComponent =
+        copy(abilityIds = abilityIds + abilityId)
+
+    fun hasFired(abilityId: AbilityId): Boolean = abilityId in abilityIds
+}
+
+/**
  * Per-permanent latch state for [com.wingedsheep.sdk.scripting.StateTriggeredAbility]
  * instances (CR 603.8). An [AbilityId] is in [latched] iff the engine has fired this
  * state trigger and the condition has not yet become false again — preventing repeat

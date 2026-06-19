@@ -190,6 +190,7 @@ object Emitter {
                 rname == "SpellActions_Spree" -> block = ctx.spreeSpellBlock(rule)
                 rname == "TriggerA" -> block = ctx.triggerBlock(rule)
                 rname == "TriggerI" -> block = ctx.triggerIBlock(rule)
+                rname == "TriggerIOnce" -> block = ctx.triggerIOnceBlock(rule)
                 rname == "TriggerOnceEachTurn" -> block = ctx.triggerBlock(rule, oncePerTurn = true)
                 rname == "TriggerMayOnceEachTurn" -> block = ctx.triggerMayOnceEachTurnBlock(rule)
                 rname == "PermanentRuleEffect" -> block = ctx.staticBlock(rule)

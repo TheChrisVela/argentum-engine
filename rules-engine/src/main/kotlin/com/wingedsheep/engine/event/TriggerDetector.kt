@@ -24,6 +24,7 @@ import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.SagaComponent
+import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFiredEverComponent
 import com.wingedsheep.engine.state.components.battlefield.TriggeredAbilityFiredThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
@@ -366,14 +367,23 @@ class TriggerDetector(
         state: GameState,
         triggers: List<PendingTrigger>
     ): List<PendingTrigger> {
-        val seenOncePerTurn = HashSet<Pair<EntityId, com.wingedsheep.sdk.scripting.AbilityId>>()
+        val seenCapped = HashSet<Pair<EntityId, com.wingedsheep.sdk.scripting.AbilityId>>()
         return triggers.filter { trigger ->
-            if (!trigger.ability.oncePerTurn) return@filter true
+            val ability = trigger.ability
+            // Same capping logic for "once each turn" (per-turn tracker) and "triggers only once"
+            // (lifetime tracker): drop if already fired, then collapse simultaneous fires.
+            if (!ability.oncePerTurn && !ability.triggersOnce) return@filter true
             val entity = state.getEntity(trigger.sourceId)
-            val tracker = entity?.get<TriggeredAbilityFiredThisTurnComponent>()
-            if (tracker != null && tracker.hasFired(trigger.ability.id)) return@filter false
+            if (ability.oncePerTurn) {
+                val tracker = entity?.get<TriggeredAbilityFiredThisTurnComponent>()
+                if (tracker != null && tracker.hasFired(ability.id)) return@filter false
+            }
+            if (ability.triggersOnce) {
+                val everTracker = entity?.get<TriggeredAbilityFiredEverComponent>()
+                if (everTracker != null && everTracker.hasFired(ability.id)) return@filter false
+            }
             // Collapse simultaneous fires of the same ability from the same source.
-            seenOncePerTurn.add(trigger.sourceId to trigger.ability.id)
+            seenCapped.add(trigger.sourceId to ability.id)
         }
     }
 

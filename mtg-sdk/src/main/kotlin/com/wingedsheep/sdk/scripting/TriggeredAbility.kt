@@ -37,6 +37,11 @@ data class TriggeredAbility(
     /** When true, this triggered ability triggers at most once each turn.
      * Used for cards like Scavenger's Talent: "This ability triggers only once each turn." */
     val oncePerTurn: Boolean = false,
+    /** When true, this triggered ability triggers at most once over the source permanent's
+     * lifetime on the battlefield — a permanent (not per-turn) cap. Used for cards like
+     * Acrobatic Cheerleader: "This ability triggers only once." Tracked by a component that,
+     * unlike the [oncePerTurn] tracker, is NOT cleared at end of turn. */
+    val triggersOnce: Boolean = false,
     /** Optional human-readable description that overrides the auto-generated one. */
     val descriptionOverride: String? = null
 ) : TextReplaceable<TriggeredAbility> {
@@ -104,6 +109,7 @@ data class TriggeredAbility(
             triggerCondition: Condition? = null,
             controlledByTriggeringEntityController: Boolean = false,
             oncePerTurn: Boolean = false,
+            triggersOnce: Boolean = false,
             descriptionOverride: String? = null
         ): TriggeredAbility =
             TriggeredAbility(
@@ -119,6 +125,7 @@ data class TriggeredAbility(
                 triggerCondition = triggerCondition,
                 controlledByTriggeringEntityController = controlledByTriggeringEntityController,
                 oncePerTurn = oncePerTurn,
+                triggersOnce = triggersOnce,
                 descriptionOverride = descriptionOverride
             )
     }

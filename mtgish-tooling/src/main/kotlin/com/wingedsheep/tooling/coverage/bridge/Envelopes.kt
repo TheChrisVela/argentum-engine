@@ -22,6 +22,11 @@ internal fun BridgeBuilder.structuralEnvelopes() {
     // unrenderable condition declines to a scaffold (Canyon Crab's "if you haven't cast a spell from
     // your hand this turn").
     envelope("TriggerI", "envelope: triggered ability with intervening-if condition")
+    // TriggerIOnce — a TriggerI ([trigger, condition, actions]) that ALSO carries the lifetime cap
+    // "This ability triggers only once" (the SDK's `triggersOnce = true`). Same intervening-if recovery
+    // as TriggerI, plus a `triggersOnce = true` rider; an unrenderable condition declines to a scaffold
+    // (DSK Survival cards: Acrobatic Cheerleader, Pearl Collector, Jet Collector).
+    envelope("TriggerIOnce", "envelope: triggered ability with intervening-if that triggers only once (lifetime)")
     envelope("TriggerOnceEachTurn", "envelope: triggered ability that triggers only once each turn")
     // "you may [do X]. Do this only once each turn." — a once-per-turn triggered ability whose body the
     // once-each-turn tag also frames as a "you may". The capability is the nested actions (the emitter

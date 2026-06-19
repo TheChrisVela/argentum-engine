@@ -1799,10 +1799,17 @@ private fun isFiveOrMoreManaSpentCondition(cond: JsonObject): Boolean {
 
 /** A TriggerA rule (self-triggered) -> triggeredAbility { trigger; [triggerCondition]; [target]; effect }.
  *  [oncePerTurn] is set by the `TriggerOnceEachTurn` rule envelope, whose body is otherwise shaped
- *  identically to a TriggerA. [triggerCondition] is an optional intervening-if condition DSL (CR 603.4)
- *  supplied by an enclosing gate (e.g. the "while saddled" `If` wrapper passes
+ *  identically to a TriggerA. [triggersOnce] is the lifetime cap ("This ability triggers only once"),
+ *  set by the `TriggerIOnce` envelope; like oncePerTurn it just rides through as a `triggersOnce = true`
+ *  line on an otherwise TriggerA-shaped body. [triggerCondition] is an optional intervening-if condition
+ *  DSL (CR 603.4) supplied by an enclosing gate (e.g. the "while saddled" `If` wrapper passes
  *  `Conditions.SourceIsSaddled`); it renders as a `triggerCondition = …` line. */
-internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false, triggerCondition: String? = null): List<Stmt>? {
+internal fun EmitCtx.triggerBlock(
+    rule: JsonObject,
+    oncePerTurn: Boolean = false,
+    triggerCondition: String? = null,
+    triggersOnce: Boolean = false,
+): List<Stmt>? {
     // A "choose one —" modal triggered ability hosts its modal as a plain effect:
     // `triggeredAbility { trigger = …; effect = ModalEffect.chooseOne(Mode.…, Mode.…) }`. Render the
     // `Modal_ChooseOne` arms via [modalChooseOneEffectExpr] (the inline `Mode.*` form), per-mode targets
@@ -1878,6 +1885,7 @@ internal fun EmitCtx.triggerBlock(rule: JsonObject, oncePerTurn: Boolean = false
     val triggerCond = effTriggerCondition ?: condFromIf
     if (triggerCond != null) stmts.add(Assign("triggerCondition", Lit(triggerCond)))
     if (oncePerTurn) stmts.add(Assign("oncePerTurn", Lit("true")))
+    if (triggersOnce) stmts.add(Assign("triggersOnce", Lit("true")))
     if (mayWrapped && !selfOptional) stmts.add(Assign("optional", Lit("true")))
     if (tvar != null) stmts.add(targetLocal(tnode!!))
     stmts.add(Assign("effect", edsl))
@@ -2080,6 +2088,25 @@ internal fun EmitCtx.triggerIBlock(rule: JsonObject): List<Stmt>? {
         put("args", JsonArray(listOfNotNull(args.getOrNull(0)) + listOfNotNull(args.getOrNull(2))))
     }
     return triggerBlock(triggerA, triggerCondition = condDsl)
+}
+
+/**
+ * A `TriggerIOnce` rule — a TriggerI ([trigger, condition, actions]) that ALSO carries the lifetime cap
+ * "This ability triggers only once" (CR 603.6e-style permanent latch). Same recovery path as
+ * [triggerIBlock] (intervening-if condition lifted out, body re-keyed to a TriggerA), with the extra
+ * `triggersOnce = true` rider threaded through. The DSK Survival cards Acrobatic Cheerleader / Pearl
+ * Collector / Jet Collector use this shape: "Survival — At the beginning of your second main phase, if
+ * <condition>, <effect>. This ability triggers only once."
+ */
+internal fun EmitCtx.triggerIOnceBlock(rule: JsonObject): List<Stmt>? {
+    val args = rule["args"].asArr ?: run { reasons.add("TriggerIOnce"); return null }
+    val cond = args.getOrNull(1) as? JsonObject
+    val condDsl = interveningIfDsl(cond) ?: run { reasons.add("TriggerIOnce"); return null }
+    val triggerA = buildJsonObject {
+        put("_Rule", JsonPrimitive("TriggerA"))
+        put("args", JsonArray(listOfNotNull(args.getOrNull(0)) + listOfNotNull(args.getOrNull(2))))
+    }
+    return triggerBlock(triggerA, triggerCondition = condDsl, triggersOnce = true)
 }
 
 /**
