@@ -1871,6 +1871,43 @@
     ]
 }
 
+// Fear of Exposure
+{
+    "name": "Fear of Exposure",
+    "manaCost": "{2}{G}",
+    "typeLine": "Enchantment Creature — Nightmare",
+    "oracleText": "As an additional cost to cast this spell, tap two untapped creatures and/or lands you control.\nTrample",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 4
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomTapPermanents",
+                    "count": 2,
+                    "filter": "creature|land untapped ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "177",
+        "rarity": "UNCOMMON",
+        "artist": "Josu Hernaiz",
+        "flavorText": "A mouth like that can never keep secrets.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/3/93bb4abc-5af1-4cf5-919b-244b6a36f8ec.jpg?1726286520"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Fear of Failed Tests
 {
     "name": "Fear of Failed Tests",
@@ -1912,6 +1949,76 @@
     ]
 }
 
+// Fear of Falling
+{
+    "name": "Fear of Falling",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Enchantment Creature — Nightmare",
+    "oracleText": "Flying\nWhenever this creature attacks, target creature defending player controls gets -2/-0 and loses flying until your next turn.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": -2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature defending player controls"
+                            },
+                            "duration": "UntilYourNextTurn"
+                        },
+                        {
+                            "type": "RemoveKeyword",
+                            "keyword": "FLYING",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature defending player controls"
+                            },
+                            "duration": "UntilYourNextTurn"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "target creature defending player controls"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "56",
+        "rarity": "UNCOMMON",
+        "artist": "Maxime Minard",
+        "flavorText": "It had been months since Jakob had started falling but only a few weeks since he'd run out of breath to scream.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0e814e48-cd9d-428f-90e2-74d97cb9c8f1.jpg?1726286065"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Fear of Isolation
 {
     "name": "Fear of Isolation",
@@ -1942,6 +2049,66 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Fear of Lost Teeth
+{
+    "name": "Fear of Lost Teeth",
+    "manaCost": "{B}",
+    "typeLine": "Enchantment Creature — Nightmare",
+    "oracleText": "When this creature dies, it deals 1 damage to any target and you gain 1 life.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "any target"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "AnyTarget",
+                    "id": "any target"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "97",
+        "artist": "Oriana Menendez",
+        "flavorText": "As it drew closer, Sam felt her own teeth wriggle in their sockets, as if they wanted to leap out and join the thing.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/5/259045fe-f349-4be1-bf29-465d084ed35e.jpg?1726286211"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -3768,6 +3935,67 @@
     "colorIdentityOverride": [
         "WHITE",
         "RED"
+    ]
+}
+
+// Monstrous Emergence
+{
+    "name": "Monstrous Emergence",
+    "manaCost": "{1}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "As an additional cost to cast this spell, choose a creature you control or reveal a creature card from your hand.\nMonstrous Emergence deals damage equal to the power of the creature you chose or the card you revealed to target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "EntityProperty",
+                "entity": {
+                    "type": "FromCostStorage",
+                    "collectionName": "chosen"
+                },
+                "numericProperty": "Power"
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "creature"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "creature"
+            }
+        ],
+        "additionalCosts": [
+            {
+                "type": "ChooseEntity",
+                "zoneFilters": {
+                    "Battlefield": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ]
+                    },
+                    "Hand": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ]
+                    }
+                },
+                "captureSnapshot": true,
+                "descriptionOverride": "choose a creature you control or reveal a creature card from your hand"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "191",
+        "artist": "Loïc Canavaggia",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/9/b999eb47-b842-47f1-be91-c79fc46e1896.jpg?1726328518"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -6408,6 +6636,95 @@
         "imageUri": "https://cards.scryfall.io/normal/front/6/5/65ff914e-3f3e-4b7a-b69d-73575b68fb8e.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Vanish from Sight
+{
+    "name": "Vanish from Sight",
+    "manaCost": "{3}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Target nonland permanent's owner puts it on their choice of the top or bottom of their library. Surveil 1. (Look at the top card of your library. You may put it into your graveyard.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "PutOnLibraryPositionOfChoice",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target nonland permanent"
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "surveiled"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "surveiled",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "toGraveyard",
+                            "storeRemainder": "toTop",
+                            "selectedLabel": "Put in graveyard",
+                            "remainderLabel": "Put on top"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toGraveyard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toTop",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Top"
+                            },
+                            "order": "ControllerChooses"
+                        }
+                    ]
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "nonland permanent"
+                },
+                "id": "target nonland permanent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "82",
+        "artist": "Billy Christian",
+        "flavorText": "The Wanderer flung out her hand, but too late—Kaito had vanished into the House's maw.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/2/5254988b-3113-42f7-b751-517ffb3b40f0.jpg?1727205055"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Vengeful Possession
