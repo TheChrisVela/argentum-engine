@@ -4680,6 +4680,77 @@
     "colorIdentityOverride": []
 }
 
+// Xenic Poltergeist
+{
+    "name": "Xenic Poltergeist",
+    "manaCost": "{1}{B}{B}",
+    "typeLine": "Creature — Spirit",
+    "oracleText": "{T}: Until your next upkeep, target noncreature artifact becomes an artifact creature with power and toughness each equal to its mana value.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "BecomeCreature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target noncreature artifact"
+                    },
+                    "power": 0,
+                    "toughness": 0,
+                    "addTypes": [
+                        "ARTIFACT"
+                    ],
+                    "duration": "UntilYourNextUpkeep",
+                    "dynamicPower": {
+                        "type": "EntityProperty",
+                        "entity": "AffectedEntity",
+                        "numericProperty": "ManaValue"
+                    },
+                    "dynamicToughness": {
+                        "type": "EntityProperty",
+                        "entity": "AffectedEntity",
+                        "numericProperty": "ManaValue"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsArtifact",
+                                    {
+                                        "type": "Not",
+                                        "predicate": "IsCreature"
+                                    }
+                                ]
+                            }
+                        },
+                        "id": "target noncreature artifact"
+                    }
+                ],
+                "descriptionOverride": "{T}: Until your next upkeep, target noncreature artifact becomes an artifact creature with power and toughness each equal to its mana value."
+            }
+        ]
+    },
+    "setCode": "ATQ",
+    "metadata": {
+        "collectorNumber": "20",
+        "rarity": "UNCOMMON",
+        "artist": "Dan Frazier",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/1/5149ffff-d38f-458e-bcfa-a4b6b332a0b4.jpg?1562911994"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Yawgmoth Demon
 {
     "name": "Yawgmoth Demon",

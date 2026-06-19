@@ -2,7 +2,7 @@
 
 **Set Size:** 85 cards
 **Release Date:** March 4, 1994
-**Implemented:** 68 / 85
+**Implemented:** 69 / 85
 | Color       | Count |
 |-------------|-------|
 | White       | 7     |
@@ -44,7 +44,7 @@
 - [x] Haunting Wind
 - [ ] Phyrexian Gremlins
 - [x] Priest of Yawgmoth
-- [ ] Xenic Poltergeist
+- [x] Xenic Poltergeist
 - [x] Yawgmoth Demon
 
 ### Red
