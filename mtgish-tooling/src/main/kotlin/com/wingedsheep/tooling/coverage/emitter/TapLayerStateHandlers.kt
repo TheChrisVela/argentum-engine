@@ -15,6 +15,7 @@ import com.wingedsheep.tooling.coverage.dot
 import com.wingedsheep.tooling.coverage.field
 import com.wingedsheep.tooling.coverage.findInteger
 import com.wingedsheep.tooling.coverage.firstArgWordTagged
+import com.wingedsheep.tooling.coverage.firstWordAtKey
 import com.wingedsheep.tooling.coverage.jsonContains
 import com.wingedsheep.tooling.coverage.pascalToUpperSnake
 import com.wingedsheep.tooling.coverage.strField
@@ -604,7 +605,18 @@ internal fun EmitCtx.renderLayerEffect(node: JsonObject, action: String, tvar: S
                     }
                 }
             }
-            else -> return null  // any other layer effect (e.g. add card type, lose abilities) -> SCAFFOLD
+            "LosesAbility" -> {
+                // "loses <keyword>" (e.g. Fear of Falling's "and loses flying until your next turn") ->
+                // Effects.RemoveKeyword over the affected permanent for the shared duration. Only a bare,
+                // nameable keyword renders; a parameterized or non-keyword ability (`_CheckHasable` that
+                // isn't a known Keyword) declines so the card scaffolds rather than drop the ability loss.
+                val kw = leObj.firstWordAtKey("_CheckHasable")?.let(::pascalToUpperSnake) ?: return null
+                if (kw !in keywords) return null
+                val rkArgs = mutableListOf(arg("Keyword.$kw"), arg(Lit(target)))
+                if (duration.isNotEmpty()) rkArgs.add(arg(Lit(duration)))
+                inner.add(Call("Effects.RemoveKeyword", rkArgs))
+            }
+            else -> return null  // any other layer effect (e.g. add card type) -> SCAFFOLD
         }
     }
     if (inner.isEmpty()) return null
@@ -857,8 +869,28 @@ private fun expirationDsl(node: JsonObject): String? =
     when (firstExpiration(node)) {
         null, "UntilEndOfTurn" -> ""
         "ForAsLongAsPermanentRemainsTapped" -> "Duration.WhileSourceTapped()"
+        // "until your next turn" — the start of your next turn (CR 514.2; distinct from "until the END
+        // of your next turn"). Only the controller-scoped (You) form maps to Duration.UntilYourNextTurn;
+        // another player's-next-turn scope declines so the emitter never substitutes the wrong window.
+        "UntilPlayersNextTurn" ->
+            if (jsonContains(firstExpirationNode(node)?.get("args"), "_Player", "You")) "Duration.UntilYourNextTurn"
+            else null
         else -> null
     }
+
+/** The first node carrying an `_Expiration` discriminator anywhere in the subtree (so its `_Player`
+ *  scope can be inspected), or null. */
+private fun firstExpirationNode(node: JsonElement?): JsonObject? {
+    when (node) {
+        is JsonObject -> {
+            if (node.containsKey("_Expiration")) return node
+            node.values.forEach { firstExpirationNode(it)?.let { v -> return v } }
+        }
+        is JsonArray -> node.forEach { firstExpirationNode(it)?.let { v -> return v } }
+        else -> {}
+    }
+    return null
+}
 
 /** The first `_Expiration` discriminator value anywhere in the subtree. */
 private fun firstExpiration(node: JsonElement?): String? {

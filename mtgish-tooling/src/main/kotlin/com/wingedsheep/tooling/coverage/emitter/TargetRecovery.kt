@@ -613,6 +613,7 @@ internal fun EmitCtx.targetExpr(tnode: JsonObject, actionContext: List<JsonObjec
             }
             var f: Dsl = Lit(singleType.getValue(types.first()))
             if (nonbasic) f = f.dot("nonbasic")
+            controller?.let { f = f.dot(it) }  // "land you control" -> TargetFilter.Land.youControl()
             val parts = mutableListOf(arg("filter", f))
             if (ttype in setOf("NumberTargetPermanents", "UptoNumberTargetPermanents") && countInt is Int) parts.add(0, arg("count", "$countInt"))
             if (ttype == "UptoNumberTargetPermanents" || isUpToOne) parts.add(0, arg("optional", "true"))

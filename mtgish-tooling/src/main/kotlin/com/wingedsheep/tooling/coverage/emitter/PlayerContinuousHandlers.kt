@@ -149,6 +149,19 @@ internal fun EmitCtx.renderPlayerAction(node: JsonObject, tvar: String?): Dsl? {
         // Path of Peace: destroyed permanent's owner gains N
         return call("OwnerGainsLifeEffect", arg("${findInteger(args)}"))
     }
+    // "Target permanent's owner puts it on their choice of the top or bottom of their library" (Vanish
+    // from Sight). PutOnTopOrBottomOfLibrary already pauses for the permanent's OWNER to choose
+    // top/bottom, so the OwnerOfPermanent wrapper collapses onto the bound target. (The single-action
+    // Run Behind shape is also recognised whole-spell by runBehindOwnerTopOrBottomEffect; this per-action
+    // case additionally lets it compose with siblings, e.g. Vanish's "Surveil 1".) Only the
+    // owner-of-the-bound-target shape renders; any other subject declines via the OwnerOfPermanent catch.
+    if (jsonContains(node, "_Player", "OwnerOfPermanent") &&
+        jsonContains(node, "_Action", "ReturnPermanentToTopOrBottomOfLibrary")
+    ) {
+        val inner = innerAction(node) ?: return null
+        val target = refTarget(inner["args"], tvar) ?: return null
+        return call("Effects.PutOnTopOrBottomOfLibrary", arg(Lit(target)))
+    }
     // "Its controller creates …" — the acting player is the CONTROLLER of the targeted permanent
     // (ControllerOfPermanent(Ref_TargetPermanent)). After "Destroy target …", the destroyed permanent's
     // controller resolves at resolution time via EffectTarget.TargetController (Beast Within precedent),
