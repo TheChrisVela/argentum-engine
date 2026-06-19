@@ -875,6 +875,116 @@
     ]
 }
 
+// Demonic Counsel
+{
+    "name": "Demonic Counsel",
+    "manaCost": "{1}{B}",
+    "typeLine": "Sorcery",
+    "oracleText": "Search your library for a Demon card, reveal it, put it into your hand, then shuffle.\nDelirium — If there are four or more card types among cards in your graveyard, instead search your library for any card, put it into your hand, then shuffle.",
+    "script": {
+        "spellEffect": {
+            "type": "Gated",
+            "gate": {
+                "type": "Gate.WhenCondition",
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateZone",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "aggregation": "DISTINCT_TYPES"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            },
+            "then": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "GatherCards",
+                        "source": {
+                            "type": "FromZone",
+                            "zone": "Library"
+                        },
+                        "storeAs": "searchable"
+                    },
+                    {
+                        "type": "SelectFromCollection",
+                        "from": "searchable",
+                        "selection": {
+                            "type": "ChooseUpTo",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        "storeSelected": "found"
+                    },
+                    {
+                        "type": "MoveCollection",
+                        "from": "found",
+                        "destination": {
+                            "type": "ToZone",
+                            "zone": "Hand"
+                        }
+                    },
+                    "ShuffleLibrary"
+                ]
+            },
+            "otherwise": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "GatherCards",
+                        "source": {
+                            "type": "FromZone",
+                            "zone": "Library",
+                            "filter": "Demon"
+                        },
+                        "storeAs": "searchable"
+                    },
+                    {
+                        "type": "SelectFromCollection",
+                        "from": "searchable",
+                        "selection": {
+                            "type": "ChooseUpTo",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        "storeSelected": "found"
+                    },
+                    {
+                        "type": "MoveCollection",
+                        "from": "found",
+                        "destination": {
+                            "type": "ToZone",
+                            "zone": "Hand"
+                        },
+                        "revealed": true
+                    },
+                    "ShuffleLibrary"
+                ]
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "92",
+        "rarity": "RARE",
+        "artist": "Babs Webb",
+        "flavorText": "Valgavoth whispered into Marina's ear until he was all she could hear.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/f/ff79c845-4115-4fbf-b20f-37470f2bf7fb.jpg?1726286193"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Diversion Specialist
 {
     "name": "Diversion Specialist",
@@ -2321,6 +2431,87 @@
         "artist": "Chris Cold",
         "flavorText": "\"We set it on fire. It lived. We cut off its head. It lived. We fell to it, one by one. It lives.\"\n—Sunrise, survivor sentry",
         "imageUri": "https://cards.scryfall.io/normal/front/c/1/c175c998-7b80-4187-bdbc-5b6e0d7eac91.jpg"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// House Cartographer
+{
+    "name": "House Cartographer",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Human Scout Survivor",
+    "oracleText": "Survival — At the beginning of your second main phase, if this creature is tapped, reveal cards from the top of your library until you reveal a land card. Put that card into your hand and the rest on the bottom of your library in a random order.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "POSTCOMBAT_MAIN"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherUntilMatch",
+                            "filter": "land",
+                            "storeMatch": "revealedLand",
+                            "storeRevealed": "allRevealed"
+                        },
+                        {
+                            "type": "RevealCollection",
+                            "from": "allRevealed"
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "allRevealed",
+                            "filter": {
+                                "type": "ExcludeOtherCollection",
+                                "otherCollectionName": "revealedLand"
+                            },
+                            "storeMatching": "nonLandRevealed"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "revealedLand",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "nonLandRevealed",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Library",
+                                "placement": "Bottom"
+                            },
+                            "order": "Random"
+                        }
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": "tapped"
+                },
+                "descriptionOverride": "Survival — At the beginning of your second main phase, if this creature is tapped, reveal cards from the top of your library until you reveal a land card. Put that card into your hand and the rest on the bottom of your library in a random order."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "185",
+        "rarity": "UNCOMMON",
+        "artist": "Kai Carpenter",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/a/2a534918-a009-4f7d-87c9-5ef600b6e7c2.jpg?1726286553"
     },
     "colorIdentityOverride": [
         "GREEN"
