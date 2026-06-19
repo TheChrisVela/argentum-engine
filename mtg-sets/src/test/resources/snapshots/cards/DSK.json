@@ -727,6 +727,53 @@
     ]
 }
 
+// Clammy Prowler
+{
+    "name": "Clammy Prowler",
+    "manaCost": "{3}{U}",
+    "typeLine": "Enchantment Creature — Horror",
+    "oracleText": "Whenever this creature attacks, another target attacking creature can't be blocked this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "GrantKeyword",
+                    "keyword": "CANT_BE_BLOCKED",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "another target attacking creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetOther",
+                    "baseRequirement": {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature attacking"
+                        }
+                    },
+                    "id": "another target attacking creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "45",
+        "artist": "John Tedrick",
+        "flavorText": "Sometimes, survivors in the Floodpits hear their own drowning voices crying out for help. Only the ones who flee immediately live to speak of it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/3/237f0b93-f12e-4c5f-a3d7-83e8f20f8493.jpg?1726286023"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Clockwork Percussionist
 {
     "name": "Clockwork Percussionist",
@@ -1785,6 +1832,69 @@
         "imageUri": "https://cards.scryfall.io/normal/front/8/2/82b142be-4586-487a-8dd8-a55eff776458.jpg?1726286797"
     },
     "colorIdentityOverride": []
+}
+
+// Get Out
+{
+    "name": "Get Out",
+    "manaCost": "{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Choose one —\n• Counter target creature or enchantment spell.\n• Return one or two target creatures and/or enchantments you own to your hand.",
+    "script": {
+        "spellEffect": {
+            "type": "Modal",
+            "modes": [
+                {
+                    "effect": "Counter",
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature|enchantment",
+                                "zone": "Stack"
+                            }
+                        }
+                    ],
+                    "description": "Counter target creature or enchantment spell."
+                },
+                {
+                    "effect": {
+                        "type": "ForEach",
+                        "space": "IterationSpace.Targets",
+                        "body": {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "ContextTarget",
+                                "index": 0
+                            },
+                            "destination": "Hand"
+                        }
+                    },
+                    "targetRequirements": [
+                        {
+                            "type": "TargetObject",
+                            "count": 2,
+                            "minCount": 1,
+                            "filter": {
+                                "baseFilter": "creature|enchantment own:you"
+                            }
+                        }
+                    ],
+                    "description": "Return one or two target creatures and/or enchantments you own to your hand."
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "60",
+        "rarity": "UNCOMMON",
+        "artist": "Mirko Failoni",
+        "flavorText": "Kaito's blade brought the light of another plane into Duskmourn, and with it, a brief chance to escape.",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/d/5d9471c8-2db9-4ce3-a1e5-42b85134cb8e.jpg?1726286080"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Give In to Violence
