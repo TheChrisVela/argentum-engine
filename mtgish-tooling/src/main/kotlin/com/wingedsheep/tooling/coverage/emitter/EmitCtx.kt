@@ -109,6 +109,17 @@ class EmitCtx(val keywords: Set<String>, val oracleText: String? = null) {
      * Set/cleared only by [triggerBlock]; default false on every other path.
      */
     var triggeringEntityIsSpell: Boolean = false
+
+    /**
+     * True while rendering the effect of an activated ability whose cost sacrifices or exiles the
+     * source itself. In that context the source's counters are wiped at cost-payment time
+     * (CR 122.2), so "for each counter on this creature" must read the pre-cost count as last-known
+     * information (`DynamicAmount.LastKnownSourceCounters`, snapshotted by the engine at activation)
+     * rather than `countersOnSelf`, which would read zero. Set/cleared only by [activatedAbilityStmts];
+     * default false on every other path (the source is still on the battlefield). Twitching Doll,
+     * Lost Isle Calling.
+     */
+    var sourceSacrificedByCost: Boolean = false
 }
 
 internal val SELF_REFS = setOf(
@@ -368,6 +379,23 @@ internal fun EmitCtx.dynamicAmountExpr(node: JsonElement?): Dsl? {
             return if (creaturesYouControl) {
                 call("DynamicAmounts.battlefield", arg("Player.You"), arg("GameObjectFilter.Creature")).dot("maxPower")
             } else null
+        }
+        // "the number of counters on this creature" (Twitching Doll's "a Spider token for each counter
+        // on this creature"). When no counter kind is named the count spans ALL counter kinds. The
+        // source-relative reader depends on whether the enclosing ability sacrifices/exiles the source:
+        // when it does (Twitching Doll's "{T}, Sacrifice this creature"), the cost wipes the counters
+        // before the effect resolves, so the count must read the pre-cost snapshot via
+        // DynamicAmounts.lastKnownSourceCounters; otherwise the source is still present and
+        // DynamicAmounts.countersOnSelf reads the live count. Only the ThisPermanent subject with no
+        // named counter type renders; a specific counter kind or any other permanent subject declines
+        // (-> SCAFFOLD) rather than miscount.
+        "NumCountersOnPermanent" -> {
+            if (!jsonContains(node["args"], "_Permanent", "ThisPermanent") ||
+                "_CounterType" in compact(node["args"])
+            ) return null
+            val reader = if (sourceSacrificedByCost) "DynamicAmounts.lastKnownSourceCounters"
+                         else "DynamicAmounts.countersOnSelf"
+            return call(reader, arg("CounterTypeFilter.Any"))
         }
         "LifeTotalOfPlayer" -> {
             val player = if (jsonContains(node, "_Player", "Opponent")) "Player.EachOpponent" else "Player.You"
@@ -754,8 +782,20 @@ internal fun EmitCtx.actionConditionDsl(cond: JsonObject?): String? {
         if (args != null && (args.getOrNull(0) as? JsonObject)?.strField("_Player") == "You") {
             val controls = args.getOrNull(1) as? JsonObject
             if (controls?.strField("_Players") == "ControlsA") {
-                val filter = gameObjectFilterDsl(controls["args"])
-                if (filter != null) return render(call("Conditions.YouControl", arg(Lit(filter))))
+                // "you control ANOTHER <filter>" (Splitskin Doll's "another creature with power 2 or
+                // less"): the filter's `And` carries an `Other(<self>)` clause. The flat GameObjectFilter
+                // can't carry excludeSelf, so peel that clause off and render the remaining filter under
+                // Conditions.YouControl(filter, excludeSelf = true). Without this the "another" restriction
+                // would be silently dropped.
+                val (innerFilter, excludeSelf) = stripSelfOtherClause(controls["args"])
+                val filter = gameObjectFilterDsl(innerFilter)
+                if (filter != null) {
+                    return render(
+                        if (excludeSelf)
+                            call("Conditions.YouControl", arg(Lit(filter)), arg("excludeSelf", "true"))
+                        else call("Conditions.YouControl", arg(Lit(filter)))
+                    )
+                }
             }
             // "if you control no <filter>" -> Conditions.YouControl(<filter>, negate = true)
             // (Glimmer Seeker: "If you don't control a Glimmer creature, create a … token.").
@@ -796,6 +836,32 @@ internal fun EmitCtx.actionConditionDsl(cond: JsonObject?): String? {
     // another instant or sorcery this turn", …) reuse the shared condition renderer; declining beats
     // widening. These power the resolution-time `on("If")` action handler.
     return interveningIfDsl(cond)
+}
+
+/**
+ * Peel a self-`Other` clause off a permanent filter. A filter for "another <thing>" carries an
+ * `Other(<self ref>)` clause (e.g. `And(Other(ThatEnteringPermanent), IsCardtype Creature, …)`) the
+ * flat GameObjectFilter can't represent. Returns the filter with that clause removed and `true` when an
+ * `And` contained exactly one self-`Other` clause (so the caller can render `excludeSelf = true`);
+ * otherwise returns the filter unchanged with `false`. Any non-self `Other` (e.g. `Other(You)`, handled
+ * elsewhere as a controller predicate) is left in place so it isn't misread as excludeSelf.
+ */
+internal fun stripSelfOtherClause(filterNode: JsonElement?): Pair<JsonElement?, Boolean> {
+    val obj = filterNode as? JsonObject ?: return filterNode to false
+    if (obj.strField("_Permanents") != "And") return filterNode to false
+    val arms = obj["args"].asArr ?: return filterNode to false
+    fun isSelfOther(arm: JsonElement?): Boolean {
+        val a = arm as? JsonObject ?: return false
+        return a.strField("_Permanents") == "Other" &&
+            (a["args"] as? JsonObject)?.strField("_Permanent") in SELF_REFS
+    }
+    if (arms.none { isSelfOther(it) }) return filterNode to false
+    val remaining = arms.filterNot { isSelfOther(it) }
+    val rebuilt = buildJsonObject {
+        put("_Permanents", JsonPrimitive("And"))
+        put("args", buildJsonArray { remaining.forEach { add(it) } })
+    }
+    return rebuilt to true
 }
 
 /**

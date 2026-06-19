@@ -352,6 +352,16 @@ internal fun EmitCtx.renderEachPlayer(node: JsonObject): Dsl? {
             arg("effects", "Patterns.Library.mill($amt).effects"),
         )
     }
+    // "each player draws a card" (Friendly Teddy's dies trigger) — AnyPlayer scope + DrawACard (a
+    // fixed single draw). Scoped to every player via EffectTarget.PlayerRef(Player.Each); the
+    // dynamic/X-count variants are handled by the eachPlayerDrawsX shape below.
+    if (jsonContains(node, "_Players", "AnyPlayer") && jsonContains(node, "_Action", "DrawACard")) {
+        val inner = node["args"].asArr?.filterIsInstance<JsonObject>()
+            ?.firstOrNull { it.strField("_Action") == "DrawACard" } ?: return null
+        // Only the bare "draw a card" renders here; any richer draw action declines.
+        if (inner["args"] != null) return null
+        return call("Effects.DrawCards", arg("1"), arg("EffectTarget.PlayerRef(Player.Each)"))
+    }
     if (jsonContains(node, "_Action", "DrawNumberCards") || jsonContains(node, "_GameNumber", "ValueX"))
         return call("Patterns.Hand.eachPlayerDrawsX", arg("includeController", "true"), arg("includeOpponents", "true"))
     return null

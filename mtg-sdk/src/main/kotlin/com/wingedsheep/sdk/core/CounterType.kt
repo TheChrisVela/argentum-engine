@@ -50,7 +50,8 @@ enum class CounterType {
     INFLUENCE,
     BURDEN,
     LOOT,
-    WIND
+    WIND,
+    NEST
 }
 
 /**
@@ -142,6 +143,13 @@ object Counters {
      * count to scale its pay-or-sacrifice cost and the damage it deals. No inherent rule.
      */
     const val WIND = "wind"
+
+    /**
+     * Nest counter (DSK — Twitching Doll). Passive storage counter with no inherent rule; the
+     * card's own abilities accumulate it (a mana-ability adds one per activation) and read the
+     * count to scale a token-creation payoff. No inherent rule.
+     */
+    const val NEST = "nest"
 
     /**
      * Wildcard sentinel for triggers/events that fire on counters of *any* type, e.g.

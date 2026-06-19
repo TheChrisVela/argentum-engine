@@ -3300,7 +3300,17 @@ private fun EmitCtx.activatedAbilityStmts(
     hasWaterbend: Boolean = false,
 ): List<Stmt>? {
     val (tnode, tvar) = spellTargetExpr(targets, actions) ?: return null
-    val edsl = renderEffectList(actions, tvar) ?: return null
+    // When the activation cost sacrifices/exiles the source, its counters are wiped before the
+    // effect resolves; flag that so a "for each counter on this" count renders as last-known
+    // information rather than reading the (now-zero) live count. Scoped to this ability's effect
+    // rendering only.
+    val prevSacrificed = sourceSacrificedByCost
+    sourceSacrificedByCost = cost.contains("SacrificeSelf") || cost.contains("ExileSelf")
+    val edsl = try {
+        renderEffectList(actions, tvar) ?: return null
+    } finally {
+        sourceSacrificedByCost = prevSacrificed
+    }
     val stmts = mutableListOf<Stmt>(Assign("cost", Lit(cost)))
     if (hasWaterbend) stmts.add(Assign("hasWaterbend", Lit("true")))
     activationRestrictionLines(rule)?.let { lines -> lines.forEach { stmts.add(RawLine(it)) } } ?: return null

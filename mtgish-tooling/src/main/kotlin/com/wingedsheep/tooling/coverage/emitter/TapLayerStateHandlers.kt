@@ -390,6 +390,10 @@ internal fun counterTypeDsl(counterNode: JsonElement?): String? {
         // rule; the card's own static ability reads the count ("as long as there are five or more
         // growth counters …"). Adding one is a plain AddCounters(Counters.GROWTH, …).
         "GrowthCounter" -> "Counters.GROWTH"
+        // Nest counter (DSK — Twitching Doll): a passive storage counter with no inherent rule; the
+        // card's own abilities accumulate it and read the count to scale a token payoff. Adding one
+        // is a plain AddCounters(Counters.NEST, …).
+        "NestCounter" -> "Counters.NEST"
         else -> null
     }
 }

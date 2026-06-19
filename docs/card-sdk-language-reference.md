@@ -3251,7 +3251,9 @@ answer it and would silently return `false`.
 
 ### Battlefield state
 
-- `YouControl(filter)` — you control ≥1 matching permanent.
+- `YouControl(filter, negate = false, excludeSelf = false)` — you control ≥1 matching permanent.
+  Set `excludeSelf = true` for "another …" wording, which excludes the resolving source from the
+  search (e.g. Splitskin Doll's "another creature with power 2 or less").
 - `YouControlAtLeast(count, filter)` — you control `count` or more matching permanents (the
   filtered-count generalization of `ControlCreaturesAtLeast`/`ControlLandsAtLeast`; e.g.
   `YouControlAtLeast(3, GameObjectFilter.Creature.attacking())` for Stormbeacon Blade).
@@ -4423,9 +4425,11 @@ substitution.
   — a permanent with one doesn't untap during its controller's untap step; model the restriction with
   `GrantKeyword(AbilityFlag.DOESNT_UNTAP.name, GroupFilter(... .withCounter(Counters.HOURGLASS)))` so it stays
   projection-scoped.) (`hope` / `verse` / `influence` / `burden`: LTR — Dawn of a New Age / Lost Isle Calling /
-  Palantír of Orthanc / The One Ring. `loot`: OTJ — Bandit's Haul. Pure passive counters with no inherent rule; the
-  cards that use them accumulate/spend them via their own abilities and read the count via
-  `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.X))`.)
+  Palantír of Orthanc / The One Ring. `loot`: OTJ — Bandit's Haul. `nest` (`Counters.NEST`): DSK — Twitching Doll,
+  whose mana ability accumulates one per activation and whose sacrifice ability reads the count to scale a token
+  payoff. Pure passive counters with no inherent rule; the cards that use them accumulate/spend them via their own
+  abilities and read the count via `DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.X))` — or, when a
+  self-sacrifice/exile cost wipes them first, `DynamicAmounts.lastKnownSourceCounters(...)` (CR 112.7a; see §13).)
 - `stun` — CR 122.1d, a built-in replacement: "If a permanent with a stun counter on it would become untapped,
   instead remove a stun counter from it." Engine-wired through `untapOrConsumeStun` (`rules-engine/core/UntapHelpers.kt`),
   which is invoked from the untap step (`BeginningPhaseManager`), from `TapUntapExecutor`'s untap branch, and from the

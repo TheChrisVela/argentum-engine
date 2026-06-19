@@ -1711,6 +1711,48 @@
     ]
 }
 
+// Friendly Teddy
+{
+    "name": "Friendly Teddy",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Bear Toy",
+    "oracleText": "When this creature dies, each player draws a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "Each"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "247",
+        "artist": "Johann Bodin",
+        "flavorText": "Best friends are great to share secrets with—like where the matches are, or how to find a human heart.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/2/82b142be-4586-487a-8dd8-a55eff776458.jpg?1726286797"
+    },
+    "colorIdentityOverride": []
+}
+
 // Give In to Violence
 {
     "name": "Give In to Violence",
@@ -3861,6 +3903,102 @@
     ]
 }
 
+// Splitskin Doll
+{
+    "name": "Splitskin Doll",
+    "manaCost": "{1}{W}",
+    "typeLine": "Artifact Creature — Toy",
+    "oracleText": "When this creature enters, draw a card. Then discard a card unless you control another creature with power 2 or less.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Not",
+                                    "condition": {
+                                        "type": "Exists",
+                                        "player": "You",
+                                        "zone": "Battlefield",
+                                        "filter": "creature pow<=2",
+                                        "excludeSelf": true
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "33",
+        "rarity": "UNCOMMON",
+        "artist": "Diana Franco",
+        "flavorText": "Those who mock its ragged surface and seeping eyes have a curious tendency to go missing.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/4/0453be94-e59b-48f1-a488-7a9fd96a627e.jpg?1726285979"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // The Wandering Rescuer
 {
     "name": "The Wandering Rescuer",
@@ -3960,6 +4098,79 @@
     },
     "colorIdentityOverride": [
         "RED",
+        "GREEN"
+    ]
+}
+
+// Twitching Doll
+{
+    "name": "Twitching Doll",
+    "manaCost": "{1}{G}",
+    "typeLine": "Artifact Creature — Spider Toy",
+    "oracleText": "{T}: Add one mana of any color. Put a nest counter on this creature.\n{T}, Sacrifice this creature: Create a 2/2 green Spider creature token with reach for each counter on this creature. Activate only as a sorcery.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        "AddManaOfChoice",
+                        {
+                            "type": "AddCounters",
+                            "counterType": "nest",
+                            "count": 1,
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "LastKnownSourceCounters",
+                        "counterType": "CounterAny"
+                    },
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "GREEN"
+                    ],
+                    "creatureTypes": [
+                        "Spider"
+                    ],
+                    "keywords": [
+                        "REACH"
+                    ],
+                    "imageUri": "https://cards.scryfall.io/normal/front/4/f/4f8852eb-1318-40c2-aa2a-8c0e830cca71.jpg?1726236714"
+                },
+                "timing": "SorcerySpeed"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "201",
+        "rarity": "RARE",
+        "artist": "Warren Mahy",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/1/416c025b-e40e-4d95-a774-ba3961f43808.jpg?1726286615"
+    },
+    "colorIdentityOverride": [
         "GREEN"
     ]
 }

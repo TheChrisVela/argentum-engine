@@ -188,9 +188,16 @@ object Conditions {
      * General-purpose battlefield existence check — pass any [GameObjectFilter]
      * (e.g. `GameObjectFilter.Creature.copy(statePredicates = listOf(StatePredicate.HasAnyCounter))`
      * for "a creature with a counter on it").
+     *
+     * Set [excludeSelf] for "another …" wording — the resolving source is excluded from the
+     * search (e.g. Splitskin Doll's "another creature with power 2 or less").
      */
-    fun YouControl(filter: GameObjectFilter, negate: Boolean = false): ConditionInterface =
-        Exists(Player.You, Zone.BATTLEFIELD, filter, negate = negate)
+    fun YouControl(
+        filter: GameObjectFilter,
+        negate: Boolean = false,
+        excludeSelf: Boolean = false
+    ): ConditionInterface =
+        Exists(Player.You, Zone.BATTLEFIELD, filter, negate = negate, excludeSelf = excludeSelf)
 
     /**
      * If you control an enchantment.

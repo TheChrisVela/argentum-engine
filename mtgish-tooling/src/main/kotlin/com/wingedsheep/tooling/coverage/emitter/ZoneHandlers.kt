@@ -371,6 +371,34 @@ internal val zoneHandlers: Map<String, ActionHandler> = actionHandlers {
         )
     }
 
+    // Inline `Unless{cond}[actions]` action -> a `ConditionalEffect` that runs [actions] only when the
+    // condition is FALSE ("do X unless <cond>"). The condition resolves via [actionConditionDsl]; the
+    // "unless" is the negation, so it renders as `Conditions.Not(<cond>)`. Splitskin Doll: "draw a card.
+    // Then discard a card unless you control another creature with power 2 or less." — the discard runs
+    // only when you DON'T control such a creature. Anything the condition or the actions can't render
+    // declines (-> SCAFFOLD) rather than dropping the clause. The cost-side `Unless` (CostWasPaid +
+    // sacrifice/counter) is collapsed by the MayCost/PlayerMayCost pair recognizers before reaching here.
+    on("Unless") { _, args, tvar ->
+        val a = args.asArr ?: return@on null
+        val cond = a.getOrNull(0) as? JsonObject ?: return@on null
+        // Only the resolution-time state conditions actionConditionDsl renders are supported. A
+        // CostWasPaid condition belongs to the echo / counter-unless-pays pair handlers, not here.
+        if (cond.strField("_Condition") == "CostWasPaid") return@on null
+        val condDsl = actionConditionDsl(cond) ?: return@on null
+        val inner = when (val second = a.getOrNull(1)) {
+            is JsonArray -> second.filterIsInstance<JsonObject>()
+            is JsonObject -> listOf(second)
+            else -> return@on null
+        }
+        if (inner.isEmpty()) return@on null
+        val edsl = renderEffectList(inner, tvar) ?: return@on null
+        call(
+            "ConditionalEffect",
+            arg("condition", call("Conditions.Not", arg(Lit(condDsl)))),
+            arg("effect", edsl),
+        )
+    }
+
     on("Scry") { _, args, _ ->  // "Scry N" -> look-top, reorder/bottom pipeline
         (findInteger(args) as? Int)?.let { call("Patterns.Library.scry", arg("$it")) }
     }
