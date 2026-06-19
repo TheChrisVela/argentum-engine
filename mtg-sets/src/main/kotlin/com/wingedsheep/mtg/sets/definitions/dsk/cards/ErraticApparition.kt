@@ -24,12 +24,12 @@ val ErraticApparition = card("Erratic Apparition") {
     typeLine = "Creature — Spirit"
     power = 1
     toughness = 3
-    oracleText = "Flying, vigilance\nEerie — Whenever an enchantment you control enters and whenever " +
-        "you fully unlock a Room, this creature gets +1/+1 until end of turn."
+    oracleText = "Flying, vigilance\nEerie — Whenever an enchantment you control enters and " +
+        "whenever you fully unlock a Room, this creature gets +1/+1 until end of turn."
 
     keywords(Keyword.FLYING, Keyword.VIGILANCE, Keyword.EERIE)
 
-    // Eerie trigger — part 1: whenever an enchantment you control enters.
+    // Eerie trigger — part 1: whenever an enchantment you control enters
     triggeredAbility {
         trigger = Triggers.entersBattlefield(
             filter = GameObjectFilter.Enchantment.youControl(),
@@ -39,7 +39,7 @@ val ErraticApparition = card("Erratic Apparition") {
         description = "Eerie — Whenever an enchantment you control enters, this creature gets +1/+1 until end of turn."
     }
 
-    // Eerie trigger — part 2: whenever you fully unlock a Room.
+    // Eerie trigger — part 2: whenever you fully unlock a Room
     triggeredAbility {
         trigger = Triggers.RoomFullyUnlocked
         effect = Effects.ModifyStats(1, 1, EffectTarget.Self)

@@ -514,6 +514,45 @@
     ]
 }
 
+// Bedhead Beastie
+{
+    "name": "Bedhead Beastie",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Creature — Beast",
+    "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)\nMountaincycling {2} ({2}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 6
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}",
+            "searchFilter": {
+                "cardPredicates": [
+                    {
+                        "type": "HasSubtype",
+                        "subtype": "Mountain"
+                    }
+                ]
+            },
+            "displayPrefix": "Mountaincycling"
+        }
+    ],
+    "metadata": {
+        "collectorNumber": "125",
+        "artist": "David Auden Nash",
+        "flavorText": "It had heard monsters were supposed to hide under beds, and it did its best.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/7/77c72b5b-dd81-4eb4-80d9-a0124e27e1dc.jpg?1726286314"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Blazemire Verge
 {
     "name": "Blazemire Verge",
@@ -4152,6 +4191,105 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Patchwork Beastie
+{
+    "name": "Patchwork Beastie",
+    "manaCost": "{G}",
+    "typeLine": "Artifact Creature — Beast",
+    "oracleText": "Delirium — This creature can't attack or block unless there are four or more card types among cards in your graveyard.\nAt the beginning of your upkeep, you may mill a card. (You may put the top card of your library into your graveyard.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeAs": "milled"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "milled",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                }
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "You may mill a card."
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantAttackUnless",
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateZone",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "aggregation": "DISTINCT_TYPES"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            },
+            {
+                "type": "CantBlockUnless",
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateZone",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "aggregation": "DISTINCT_TYPES"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "195",
+        "rarity": "UNCOMMON",
+        "artist": "John Tedrick",
+        "flavorText": "It doesn't know it isn't real.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/9/895de583-36d2-43fd-927f-8876d4302c73.jpg?1726286592"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

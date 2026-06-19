@@ -12,8 +12,8 @@ import com.wingedsheep.sdk.scripting.KeywordAbility
  * Creature — Shark
  * 5/7
  * Vigilance
- * Islandcycling {2} ({2}, Discard this card: Search your library for an Island card, reveal it,
- * put it into your hand, then shuffle.)
+ * Islandcycling {2} ({2}, Discard this card: Search your library for an Island card,
+ * reveal it, put it into your hand, then shuffle.)
  */
 val DaggermawMegalodon = card("Daggermaw Megalodon") {
     manaCost = "{4}{U}{U}"
@@ -21,8 +21,9 @@ val DaggermawMegalodon = card("Daggermaw Megalodon") {
     typeLine = "Creature — Shark"
     power = 5
     toughness = 7
-    oracleText = "Vigilance\nIslandcycling {2} ({2}, Discard this card: Search your library for an " +
-        "Island card, reveal it, put it into your hand, then shuffle.)"
+    oracleText = "Vigilance\n" +
+        "Islandcycling {2} ({2}, Discard this card: Search your library for an Island card, " +
+        "reveal it, put it into your hand, then shuffle.)"
 
     keywords(Keyword.VIGILANCE)
     keywordAbility(KeywordAbility.typecycling("Island", ManaCost.parse("{2}")))

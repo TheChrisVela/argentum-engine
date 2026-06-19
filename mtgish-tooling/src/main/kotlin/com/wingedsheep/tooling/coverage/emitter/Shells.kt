@@ -137,6 +137,19 @@ internal fun findLandwalkKeywords(node: JsonElement?, keywords: Set<String>, out
 
 internal fun keywordLines(card: JsonObject, keywords: Set<String>, oracleText: String? = null): Set<String> {
     val out = mutableSetOf<String>()
+    // Ability words that the SDK models as a (rules-inert) Keyword but the mtgish IR carries only as the
+    // triggered/effect shape, with NO top-level `_Rule` to scan for. Eerie is the lone such word so far:
+    // it's an ability word (CR 207.2c — no rules meaning) whose Room/enchantment-enters trigger union is
+    // already rendered by triggerSpecFor, but the hand-authored golden still stamps `keywords(Keyword.EERIE)`
+    // to match Scryfall's `keywords:["Eerie"]` (Balemurk Leech, Optimistic Scavenger). Detect it from the
+    // ability-word prefix in the printed oracle text — the only place the IR exposes it — and emit it only
+    // when the SDK actually has the EERIE enum value, so the line round-trips against the golden.
+    // The ability word always begins its own line, but other intrinsic keyword lines can precede it
+    // ("Flying\nEerie — …" on Skullsnap Nuisance, "Flying, vigilance\nEerie — …" on Erratic Apparition),
+    // so match the prefix at the start of ANY line, not only the whole oracle text. Emit it AFTER the
+    // intrinsic keyword rules below so the rendered order matches the printed order (Flying, then Eerie).
+    val hasEerie = oracleText != null && "EERIE" in keywords &&
+        oracleText.lineSequence().any { it.startsWith("Eerie —") }
     // Only TOP-LEVEL rules are intrinsic card keywords. A keyword nested inside an Activated/Triggered
     // ability is GRANTED to a target ("target creature gains forestwalk"), not a card keyword — the old
     // whole-tree scan wrongly stamped it on the card (Elvish Pathcutter, Spurred Wolverine, Krosan Groundshaker).
@@ -163,19 +176,7 @@ internal fun keywordLines(card: JsonObject, keywords: Set<String>, oracleText: S
         // by the Emitter — stamping it bare here would drop its parameter (e.g. "Crew" without the N).
         else if (auto in keywords && r["args"] == null) out.add(auto)
     }
-    // Eerie is an ability word (CR 207.2c — no rules meaning) that the SDK still models as a
-    // rules-inert Keyword, but the mtgish IR carries only its triggered/effect shape with NO top-level
-    // `_Rule` to scan for. Its Room/enchantment-enters trigger union is already rendered by
-    // triggerSpecFor; the hand-authored golden additionally stamps `keywords(Keyword.EERIE)` to match
-    // Scryfall's `keywords:["Eerie"]` (Balemurk Leech, Optimistic Scavenger, Cult Healer). Detect it
-    // from the ability-word prefix in the printed oracle text — the only place the IR exposes it — and
-    // emit it only when the SDK actually has the EERIE enum value, so the line round-trips against the
-    // golden. Appended AFTER the rule-scanned keywords so printed order is preserved: cards with
-    // keywords above it read "Flying, vigilance\nEerie — …" (Erratic Apparition) or "Flying\nEerie — …"
-    // (Skullsnap Nuisance), whose goldens list EERIE last.
-    if (oracleText != null && "EERIE" in keywords &&
-        oracleText.lineSequence().any { it.trimStart().startsWith("Eerie —") }
-    ) out.add("EERIE")
+    if (hasEerie) out.add("EERIE")
     return out
 }
 
