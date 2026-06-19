@@ -1781,6 +1781,7 @@ const passiveCounterPalette: Record<string, CounterBadgePalette> = {
   LOOT: { bg: 'rgba(70, 55, 15, 0.95)', border: 'rgba(230, 200, 90, 0.7)', color: '#e8cf68', glow: 'rgba(230, 200, 90, 0.55)' },
   WIND: { bg: 'rgba(20, 60, 55, 0.95)', border: 'rgba(120, 220, 200, 0.6)', color: '#9ce0d0' },
   NEST: { bg: 'rgba(25, 55, 25, 0.95)', border: 'rgba(120, 200, 110, 0.65)', color: '#a8e090', glow: 'rgba(120, 200, 110, 0.55)' },
+  PAGE: { bg: 'rgba(35, 30, 55, 0.95)', border: 'rgba(160, 150, 220, 0.65)', color: '#bcb4e8', glow: 'rgba(160, 150, 220, 0.5)' },
 }
 
 const fallbackCounterPalette: CounterBadgePalette = { bg: 'rgba(40, 40, 40, 0.95)', border: 'rgba(180, 180, 180, 0.6)', color: '#e0e0e0' }

@@ -85,6 +85,10 @@ internal fun BridgeBuilder.zoneMovement() {
     // "Exile the top card of your library" — the impulse-draw exile half (Irascible Wolverine, Alania's
     // Pathmaker). Gather(top of library) + MoveCollection -> exile; paired with a MayPlayExiledCard grant.
     composed("ExileTopCardOfLibrary", "Gather(top of library) + MoveCollection -> exile (impulse)", composes = listOf("MoveCollection"))
+    // "Mill a card" — the mill-then-play half (Tablet of Discovery). Gather(top of library) +
+    // MoveCollection -> graveyard; paired with a MayPlayCardsMilledThisWay grant (which honours the
+    // card sitting in the graveyard).
+    composed("MillACard", "Gather(top of library) + MoveCollection -> graveyard (mill-then-play)", composes = listOf("MoveCollection"))
     // "Exile the top N cards of target player's library" — the parameterized impulse-exile from any
     // player's library (Laughing Jasper Flint from a target opponent; Rakdos, the Muscle from target
     // player). Gather(top N of that player's library) + MoveCollection -> that player's exile, paired

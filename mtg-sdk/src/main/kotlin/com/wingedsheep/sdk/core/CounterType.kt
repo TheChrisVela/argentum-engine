@@ -51,7 +51,8 @@ enum class CounterType {
     BURDEN,
     LOOT,
     WIND,
-    NEST
+    NEST,
+    PAGE
 }
 
 /**
@@ -150,6 +151,13 @@ object Counters {
      * count to scale a token-creation payoff. No inherent rule.
      */
     const val NEST = "nest"
+
+    /**
+     * Page counter (SOS — Diary of Dreams). Passive storage counter with no inherent rule; the
+     * card's own abilities accumulate it (an instant/sorcery-cast trigger adds one) and read the
+     * count to reduce an activated ability's cost. No inherent rule.
+     */
+    const val PAGE = "page"
 
     /**
      * Wildcard sentinel for triggers/events that fire on counters of *any* type, e.g.

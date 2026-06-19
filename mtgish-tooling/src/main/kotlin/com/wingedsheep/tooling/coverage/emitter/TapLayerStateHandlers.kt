@@ -345,6 +345,21 @@ internal val tapLayerStateHandlers: Map<String, ActionHandler> = actionHandlers 
             }
             return@on call("GrantMayPlayFromExileEffect", arg("\"impulseExiled\""), arg(Lit(expiry)))
         }
+        // "You may play that card this turn." — the second half of the mill-then-play idiom (Tablet of
+        // Discovery). The grant reads the card the paired `MillACard` action stashed under "milledThisWay";
+        // the milled card sits in the graveyard, which the cast-from-zone enumerator honours just like an
+        // exile may-play. Only the controller-scoped grant for the two named expirations renders.
+        if (jsonContains(node, "_PlayerEffect", "MayPlayCardsMilledThisWay") &&
+            jsonContains(node, "_Player", "You")
+        ) {
+            val expiry = when (firstExpiration(node)) {
+                "UntilEndOfTurn" -> "MayPlayExpiry.EndOfTurn"
+                "UntilEndOfNextTurn", "UntilPlayersNextTurn", "UntilTheEndOfPlayersNextTurn" ->
+                    "MayPlayExpiry.UntilEndOfNextTurn"
+                else -> return@on null
+            }
+            return@on call("GrantMayPlayFromExileEffect", arg("\"milledThisWay\""), arg(Lit(expiry)))
+        }
         null
     }
 
@@ -394,6 +409,10 @@ internal fun counterTypeDsl(counterNode: JsonElement?): String? {
         // card's own abilities accumulate it and read the count to scale a token payoff. Adding one
         // is a plain AddCounters(Counters.NEST, …).
         "NestCounter" -> "Counters.NEST"
+        // Page counter (SOS — Diary of Dreams): a passive storage counter with no inherent rule; the
+        // card's cast-an-instant-or-sorcery trigger accumulates it and its activated ability reads the
+        // count to reduce its own cost. Adding one is a plain AddCounters(Counters.PAGE, …).
+        "PageCounter" -> "Counters.PAGE"
         else -> null
     }
 }

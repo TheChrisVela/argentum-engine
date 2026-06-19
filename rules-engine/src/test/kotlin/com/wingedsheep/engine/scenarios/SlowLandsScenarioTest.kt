@@ -7,6 +7,8 @@ import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.vow.cards.DeathcapGlade
 import com.wingedsheep.mtg.sets.definitions.vow.cards.DreamrootCascade
+import com.wingedsheep.mtg.sets.definitions.vow.cards.ShatteredSanctum
+import com.wingedsheep.mtg.sets.definitions.vow.cards.StormcarvedCoast
 import com.wingedsheep.mtg.sets.definitions.vow.cards.SundownPass
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
@@ -24,7 +26,7 @@ class SlowLandsScenarioTest : FunSpec({
 
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
-        driver.registerCards(TestCards.all + DeathcapGlade + DreamrootCascade + SundownPass)
+        driver.registerCards(TestCards.all + DeathcapGlade + DreamrootCascade + SundownPass + ShatteredSanctum + StormcarvedCoast)
         return driver
     }
 
@@ -148,5 +150,73 @@ class SlowLandsScenarioTest : FunSpec({
         driver.playLand(p1, pass).isSuccess shouldBe true
 
         driver.state.getEntity(pass)?.has<TappedComponent>() shouldBe true
+    }
+
+    test("Shattered Sanctum enters untapped with two other lands and taps for white and black") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 40))
+        val p1 = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        driver.putLandOnBattlefield(p1, "Plains")
+        driver.putLandOnBattlefield(p1, "Swamp")
+        val sanctum = driver.putCardInHand(p1, "Shattered Sanctum")
+        driver.playLand(p1, sanctum).isSuccess shouldBe true
+        driver.state.getEntity(sanctum)?.has<TappedComponent>() shouldBe false
+
+        val white = driver.putPermanentOnBattlefield(p1, "Shattered Sanctum")
+        driver.submit(ActivateAbility(p1, white, ShatteredSanctum.activatedAbilities[0].id)).isSuccess shouldBe true
+        driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.white shouldBe 1
+
+        val black = driver.putPermanentOnBattlefield(p1, "Shattered Sanctum")
+        driver.submit(ActivateAbility(p1, black, ShatteredSanctum.activatedAbilities[1].id)).isSuccess shouldBe true
+        driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.black shouldBe 1
+    }
+
+    test("Shattered Sanctum enters tapped with only one other land") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 40))
+        val p1 = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        driver.putLandOnBattlefield(p1, "Plains")
+        val sanctum = driver.putCardInHand(p1, "Shattered Sanctum")
+        driver.playLand(p1, sanctum).isSuccess shouldBe true
+
+        driver.state.getEntity(sanctum)?.has<TappedComponent>() shouldBe true
+    }
+
+    test("Stormcarved Coast enters untapped with two other lands and taps for blue and red") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Island" to 40))
+        val p1 = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        driver.putLandOnBattlefield(p1, "Island")
+        driver.putLandOnBattlefield(p1, "Mountain")
+        val coast = driver.putCardInHand(p1, "Stormcarved Coast")
+        driver.playLand(p1, coast).isSuccess shouldBe true
+        driver.state.getEntity(coast)?.has<TappedComponent>() shouldBe false
+
+        val blue = driver.putPermanentOnBattlefield(p1, "Stormcarved Coast")
+        driver.submit(ActivateAbility(p1, blue, StormcarvedCoast.activatedAbilities[0].id)).isSuccess shouldBe true
+        driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.blue shouldBe 1
+
+        val red = driver.putPermanentOnBattlefield(p1, "Stormcarved Coast")
+        driver.submit(ActivateAbility(p1, red, StormcarvedCoast.activatedAbilities[1].id)).isSuccess shouldBe true
+        driver.state.getEntity(p1)?.get<ManaPoolComponent>()?.red shouldBe 1
+    }
+
+    test("Stormcarved Coast enters tapped with only one other land") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Island" to 40))
+        val p1 = driver.activePlayer!!
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        driver.putLandOnBattlefield(p1, "Island")
+        val coast = driver.putCardInHand(p1, "Stormcarved Coast")
+        driver.playLand(p1, coast).isSuccess shouldBe true
+
+        driver.state.getEntity(coast)?.has<TappedComponent>() shouldBe true
     }
 })

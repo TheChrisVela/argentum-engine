@@ -3357,6 +3357,7 @@ private fun EmitCtx.activatedAbilityStmts(
     val stmts = mutableListOf<Stmt>(Assign("cost", Lit(cost)))
     if (hasWaterbend) stmts.add(Assign("hasWaterbend", Lit("true")))
     activationRestrictionLines(rule)?.let { lines -> lines.forEach { stmts.add(RawLine(it)) } } ?: return null
+    activationCostReductionLines(rule)?.let { lines -> lines.forEach { stmts.add(RawLine(it)) } } ?: return null
     if (tvar != null) stmts.add(targetLocal(tnode!!))
     stmts.add(Assign("effect", edsl))
     // "Activate only as a sorcery." (Silver Deputy) -> sorcery-speed timing. The modifier is filtered out
@@ -3552,6 +3553,10 @@ private fun EmitCtx.activationRestrictionLines(rule: JsonObject): List<String>? 
     // still flows through the matchers below.
     val nonTimingModifiers = activatedModifiers(rule)
         .filter { it.strField("_ActivateModifier") != "ActivateOnlyAsASorcery" }
+        // ReduceCostForEach is a generic-cost reduction, emitted as `genericCostReduction = …`
+        // (see [activationCostReductionLines]), not an ActivationRestriction. Drop it here so an
+        // ability whose only non-timing modifier is a cost reduction needs no `restrictions =` line.
+        .filter { it.strField("_ActivateModifier") != "ReduceCostForEach" }
     if (nonTimingModifiers.isEmpty()) return emptyList()
     val blob = compact(rule)
     if ("ActivateOnlyIf" in blob && "IsTheirTurn" in blob && "IsBeforeAttackersDeclared" in blob) {
@@ -3619,6 +3624,54 @@ private fun EmitCtx.activationRestrictionLines(rule: JsonObject): List<String>? 
     reasons.add("activated-modifiers")
     return null
 }
+
+/**
+ * The `genericCostReduction = …` line for an `ActivatedWithModifiers` rule carrying a `ReduceCostForEach`
+ * modifier — "This ability costs {1} less to activate for each <counter> counter on this artifact" (Diary
+ * of Dreams). Returns an empty list when no such modifier is present, the assignment line when the exact
+ * shape renders, or null (-> SCAFFOLD) when a `ReduceCostForEach` exists in an unrenderable shape.
+ *
+ * The only shape rendered is the per-counter self-reduction: a single `CostReduceGeneric 1` reduction
+ * scaled by `NumCountersOfTypeOnPermanent(<named passive counter>, ThisPermanent)`, which maps to
+ * `genericCostReduction = DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(Counters.X))`. Any other
+ * reduction symbol, amount, game-number source, or subject declines rather than guess.
+ */
+private fun EmitCtx.activationCostReductionLines(rule: JsonObject): List<String>? {
+    if (rule.strField("_Rule") != "ActivatedWithModifiers") return emptyList()
+    val reductions = activatedModifiers(rule).filter { it.strField("_ActivateModifier") == "ReduceCostForEach" }
+    if (reductions.isEmpty()) return emptyList()
+    val reduction = reductions.singleOrNull() ?: run { reasons.add("activated-modifiers"); return null }
+    val rArgs = reduction["args"].asArr ?: run { reasons.add("activated-modifiers"); return null }
+    // First arg: a list with exactly one CostReduceGeneric of amount 1 (each counter shaves {1}).
+    val symbols = (rArgs.getOrNull(0) as? JsonArray)?.filterIsInstance<JsonObject>()
+        ?: run { reasons.add("activated-modifiers"); return null }
+    val genericSymbol = symbols.singleOrNull()?.takeIf { it.strField("_CostReductionSymbol") == "CostReduceGeneric" }
+        ?: run { reasons.add("activated-modifiers"); return null }
+    // The symbol's args is a bare integer (the {N} shaved per counter); only the {1}-per-counter
+    // shape ("costs {1} less … for each counter") renders.
+    if (genericSymbol.field("args").asInt() != 1) { reasons.add("activated-modifiers"); return null }
+    // Second arg: NumCountersOfTypeOnPermanent(<counter>, ThisPermanent).
+    val gameNumber = rArgs.getOrNull(1) as? JsonObject ?: run { reasons.add("activated-modifiers"); return null }
+    if (gameNumber.strField("_GameNumber") != "NumCountersOfTypeOnPermanent") { reasons.add("activated-modifiers"); return null }
+    val gnArgs = gameNumber["args"].asArr ?: run { reasons.add("activated-modifiers"); return null }
+    val constant = passiveCounterConstant(gnArgs.getOrNull(0)) ?: run { reasons.add("activated-modifiers"); return null }
+    if (!jsonContains(gnArgs.getOrNull(1), "_Permanent", "ThisPermanent")) { reasons.add("activated-modifiers"); return null }
+    return listOf(
+        "        genericCostReduction = DynamicAmounts.countersOnSelf(CounterTypeFilter.Named($constant))",
+    )
+}
+
+/** A mtgish `_CounterType` node for a passive storage counter -> the `Counters.*` string constant the
+ *  count-reading sites (`DynamicAmounts.countersOnSelf(CounterTypeFilter.Named(...))`) take, or null for a
+ *  counter kind we don't name. Mirrors the passive-counter rows in [counterTypeDsl]. */
+private fun passiveCounterConstant(counterNode: JsonElement?): String? =
+    when ((counterNode as? JsonObject)?.strField("_CounterType")) {
+        "LootCounter" -> "Counters.LOOT"
+        "GrowthCounter" -> "Counters.GROWTH"
+        "NestCounter" -> "Counters.NEST"
+        "PageCounter" -> "Counters.PAGE"
+        else -> null
+    }
 
 /** True when the rule's only `_ActivateModifier` is an `ActivateOnlyIf` gating on "you have exactly 0
  *  cards in hand" — and nothing else. Guards the EmptyHand restriction so a different count (e.g. "no

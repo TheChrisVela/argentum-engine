@@ -141,6 +141,20 @@ internal val zoneHandlers: Map<String, ActionHandler> = actionHandlers {
         ))
     }
 
+    // "Mill a card." (the first half of the mill-then-play idiom — Tablet of Discovery). Unlike
+    // `MillNumberCards`, this variant pairs with a `CreatePlayerEffectUntil{MayPlayCardsMilledThisWay}`
+    // action, so the milled card is captured under the shared "milledThisWay" key that the paired grant
+    // reads to let the controller play it from the graveyard (see TapLayerStateHandlers'
+    // CreatePlayerEffectUntil branch). Rendered as the gather + move-to-graveyard atomic pair; the
+    // may-play permission honours a card sitting in the graveyard (the cast-from-zone enumerator scans
+    // graveyards too), so no exile detour is needed.
+    on("MillACard") { _, _, _ ->
+        Composite(listOf(
+            Lit("GatherCardsEffect(CardSource.TopOfLibrary(DynamicAmount.Fixed(1)), storeAs = \"milledThisWay\")"),
+            Lit("MoveCollectionEffect(from = \"milledThisWay\", destination = CardDestination.ToZone(Zone.GRAVEYARD))"),
+        ))
+    }
+
     // "Return the exiled card to the battlefield under its owner's control" (the second half of the
     // exile-then-return idiom — Conciliator's Duelist, Parting Gust). `TheCardExiledThisWay` refers to
     // the same bound target that was exiled earlier in the ability, so it resolves to the ability's
