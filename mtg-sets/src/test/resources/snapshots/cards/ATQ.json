@@ -1770,6 +1770,70 @@
     ]
 }
 
+// Goblin Artisans
+{
+    "name": "Goblin Artisans",
+    "manaCost": "{R}",
+    "typeLine": "Creature — Goblin Artificer",
+    "oracleText": "{T}: Flip a coin. If you win the flip, draw a card. If you lose the flip, counter target artifact spell you control that isn't the target of an ability from another creature named Goblin Artisans.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "FlipCoin",
+                    "wonEffect": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        },
+                        "target": {
+                            "type": "PlayerRef",
+                            "player": "You"
+                        }
+                    },
+                    "lostEffect": "Counter"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    "IsArtifact"
+                                ],
+                                "statePredicates": [
+                                    "NotTargetedByAbilityFromSameNamedSource"
+                                ],
+                                "controllerPredicate": "ControlledByYou"
+                            },
+                            "zone": "Stack"
+                        },
+                        "id": "target artifact spell you control"
+                    }
+                ],
+                "descriptionOverride": "{T}: Flip a coin. If you win the flip, draw a card. If you lose the flip, counter target artifact spell you control that isn't the target of an ability from another creature named Goblin Artisans."
+            }
+        ]
+    },
+    "setCode": "ATQ",
+    "metadata": {
+        "collectorNumber": "26",
+        "rarity": "UNCOMMON",
+        "artist": "Julie Baroh",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/6669d96e-9a7b-4427-a477-f4e76831f593.jpg?1562916423"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Golgothian Sylex
 {
     "name": "Golgothian Sylex",
