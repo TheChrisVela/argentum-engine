@@ -25,7 +25,11 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *
  * Mode 1 uses [Effects.BecomeCreature] to set the target's base power/toughness to
  * 0/1 (Layer 7b SET_VALUES), its creature type to Rabbit (Layer 4), and its color
- * to white (Layer 5), all until end of turn.
+ * to white (Layer 5), all until end of turn. It also overrides the rendered card art
+ * (display-only `imageUri`) with the OTJ Rabbit token so the animated creature reads as a
+ * Rabbit; the override reverts at end of turn with the rest of the animate. The token art
+ * isn't on Scryfall (Metamorphic Blast animates rather than creating a token), so it's served
+ * locally from the client's `public/images/tokens/` like the Invasion Saproling/Reflection art.
  */
 val MetamorphicBlast = card("Metamorphic Blast") {
     manaCost = "{U}"
@@ -45,6 +49,7 @@ val MetamorphicBlast = card("Metamorphic Blast") {
                         toughness = 1,
                         creatureTypes = setOf("Rabbit"),
                         colors = setOf(Color.WHITE.name),
+                        imageUri = "/images/tokens/otj-rabbit.jpeg",
                         duration = Duration.EndOfTurn
                     ),
                     targetRequirements = listOf(Targets.Creature),

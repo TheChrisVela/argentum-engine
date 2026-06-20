@@ -12182,7 +12182,8 @@
                         ],
                         "colors": [
                             "WHITE"
-                        ]
+                        ],
+                        "imageUri": "/images/tokens/otj-rabbit.jpeg"
                     },
                     "targetRequirements": [
                         {

@@ -107,6 +107,19 @@ class BecomeCreatureExecutor : EffectExecutor<BecomeCreatureEffect> {
             context = context
         )
 
+        // Display-only: override the rendered card image for the duration of the animate (e.g. a
+        // token's art for "becomes a Fractal"). Maps to NoOp in projection; read directly by the
+        // client DTO transformer and expires with the rest of the animate at cleanup.
+        if (effect.imageUri != null) {
+            newState = newState.addFloatingEffect(
+                layer = Layer.ABILITY,
+                modification = SerializableModification.OverrideImage(effect.imageUri!!),
+                affectedEntities = affectedEntities,
+                duration = effect.duration,
+                context = context
+            )
+        }
+
         return EffectResult.success(newState)
     }
 }

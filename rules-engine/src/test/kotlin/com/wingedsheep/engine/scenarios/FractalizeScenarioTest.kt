@@ -1,8 +1,10 @@
 package com.wingedsheep.engine.scenarios
 
 import com.wingedsheep.engine.mechanics.layers.StateProjector
+import com.wingedsheep.engine.mechanics.layers.imageOverrideFor
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
+import com.wingedsheep.engine.view.ClientStateTransformer
 import com.wingedsheep.mtg.sets.definitions.sos.cards.Fractalize
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Step
@@ -10,6 +12,7 @@ import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 
 /**
  * Fractalize ({X}{U} instant):
@@ -81,5 +84,35 @@ class FractalizeScenarioTest : FunSpec({
         projector.getProjectedPower(driver.state, courser) shouldBe 1
         projector.getProjectedToughness(driver.state, courser) shouldBe 1
         driver.state.projectedState.hasSubtype(courser, "Fractal") shouldBe true
+    }
+
+    test("animated creature renders the Fractal token art, reverting at end of turn") {
+        val driver = createDriver()
+        val p = startTurn(driver)
+        val courser = driver.putCreatureOnBattlefield(p, "Centaur Courser")
+
+        val spell = driver.putCardInHand(p, "Fractalize")
+        driver.giveMana(p, Color.BLUE, 1)
+        driver.giveColorlessMana(p, 2)
+        driver.castXSpell(p, spell, xValue = 2, targets = listOf(courser)).isSuccess shouldBe true
+        driver.bothPass()
+
+        val fractalArt = "https://cards.scryfall.io/normal/front/8/b/8b5f1fdb-04df-4224-acb4-7819c37565f5.jpg?1775828306"
+
+        // Engine source of truth: the display-only image override is in force while animated.
+        driver.state.imageOverrideFor(courser) shouldBe fractalArt
+
+        // It surfaces on the client DTO as the rendered image (overriding the creature's own art).
+        val transformer = ClientStateTransformer(cardRegistry = driver.cardRegistry)
+        transformer.transform(driver.state, viewingPlayerId = p).cards[courser]?.imageUri shouldBe fractalArt
+
+        // Advancing into the next turn runs this turn's cleanup, which removes the EndOfTurn
+        // override along with the rest of the animate — the creature reverts to its own art.
+        driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
+        driver.state.imageOverrideFor(courser) shouldBe fractalArt   // still same turn
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)                // next turn, past cleanup
+        driver.state.imageOverrideFor(courser) shouldBe null
+        // DTO no longer carries the Fractal art — it falls back to the creature's own image.
+        transformer.transform(driver.state, viewingPlayerId = p).cards[courser]?.imageUri shouldNotBe fractalArt
     }
 })

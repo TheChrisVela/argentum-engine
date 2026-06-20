@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.mechanics.layers
 
+import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.Duration
@@ -490,7 +491,32 @@ sealed interface SerializableModification {
      */
     @Serializable
     data class AmplifyNoncombatDamage(val bonus: Int) : SerializableModification
+
+    /**
+     * Display-only card-image override: while this floating effect is active, the affected
+     * permanent is rendered with [imageUri] instead of its own art. Purely cosmetic — it maps to
+     * [Modification.NoOp] and so changes no projected characteristic; it is read directly by
+     * `ClientStateTransformer` (via `GameState.imageOverrideFor`) when building the client DTO.
+     * Installed with a [Duration] (e.g. by `BecomeCreatureEffect.imageUri`) so it reverts together
+     * with the animate that created it. Used by Fractalize to show the Fractal token's art on the
+     * creature it animates.
+     */
+    @Serializable
+    data class OverrideImage(val imageUri: String) : SerializableModification
 }
+
+/**
+ * The displayed-image override currently in force for [entityId], or `null` if none. Scans the
+ * active floating effects for [SerializableModification.OverrideImage] modifications affecting the
+ * entity and returns the most recent one (highest timestamp wins, mirroring layer-effect ordering).
+ * Because overrides live as floating effects, they expire automatically with their [Duration]
+ * during cleanup — there is no separate revert path. Read by `ClientStateTransformer`.
+ */
+fun GameState.imageOverrideFor(entityId: EntityId): String? =
+    floatingEffects
+        .filter { entityId in it.effect.affectedEntities && it.effect.modification is SerializableModification.OverrideImage }
+        .maxByOrNull { it.timestamp }
+        ?.let { (it.effect.modification as SerializableModification.OverrideImage).imageUri }
 
 /**
  * Convert SerializableModification to Modification for the projector.
@@ -574,5 +600,7 @@ fun SerializableModification.toModification(): Modification = when (this) {
     is SerializableModification.PreventAllDamageFromSource -> Modification.NoOp
     // AmplifyNoncombatDamage doesn't map to a layer modification - it's read during damage resolution directly
     is SerializableModification.AmplifyNoncombatDamage -> Modification.NoOp
+    // OverrideImage is display-only - it changes no characteristic, read directly by ClientStateTransformer
+    is SerializableModification.OverrideImage -> Modification.NoOp
     is SerializableModification.RemoveAllAbilities -> Modification.RemoveAllAbilities
 }

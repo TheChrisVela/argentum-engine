@@ -22,6 +22,9 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *  - **creature types** set to exactly `{Fractal}` (Layer 4 set effect → loses all other creature
  *    types).
  *  - **colors** set to exactly green + blue (Layer 5 set effect → loses all other colors).
+ *  - **image** overridden (display-only) with the Fractal token's art for the duration, so the
+ *    animated creature visibly reads as a Fractal; reverts at end of turn with the rest of the
+ *    animate. The card's own `metadata.imageUri` still points at the real Fractalize printing.
  * No keywords are granted. Cast with X = 0 it becomes a 1/1 Fractal.
  */
 val Fractalize = card("Fractalize") {
@@ -39,6 +42,7 @@ val Fractalize = card("Fractalize") {
             toughness = DynamicAmount.Add(DynamicAmount.XValue, DynamicAmount.Fixed(1)),
             creatureTypes = setOf("Fractal"),
             colors = setOf(Color.GREEN.name, Color.BLUE.name),
+            imageUri = "https://cards.scryfall.io/normal/front/8/b/8b5f1fdb-04df-4224-acb4-7819c37565f5.jpg?1775828306",
             duration = Duration.EndOfTurn,
         )
     }

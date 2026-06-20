@@ -34,6 +34,7 @@ import com.wingedsheep.sdk.scripting.effects.GatedEffect
 import com.wingedsheep.sdk.scripting.effects.ModalEffect
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
+import com.wingedsheep.engine.mechanics.layers.imageOverrideFor
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.scripting.LookAtFaceDownCreatures
@@ -1136,7 +1137,7 @@ class ClientStateTransformer(
             isWarped = isWarped,
             morphCost = if (isFaceDown && morphData != null) morphData.morphCost.description else null,
             targets = targets,
-            imageUri = cardComponent.imageUri ?: cardDef?.metadata?.imageUri,
+            imageUri = state.imageOverrideFor(entityId) ?: cardComponent.imageUri ?: cardDef?.metadata?.imageUri,
             activeEffects = activeEffects,
             rulings = cardDef?.metadata?.rulings?.map {
                 ClientRuling(date = it.date, text = it.text)

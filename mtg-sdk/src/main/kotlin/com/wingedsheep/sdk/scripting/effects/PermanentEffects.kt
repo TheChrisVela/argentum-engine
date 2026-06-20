@@ -69,6 +69,11 @@ data class AnimateLandEffect(
  * @property removeTypes Types to remove (e.g., "PLANESWALKER")
  * @property colors Colors to set, replacing all existing colors (null = keep existing). An explicit
  *   set loses all other colors (e.g. green+blue for a Fractal).
+ * @property imageUri Optional *display-only* card-image override shown for the animated permanent
+ *   while the effect lasts (e.g. a token's art for a creature that becomes that token type —
+ *   Fractalize's Fractal). Purely cosmetic: it changes no characteristic, only what the client
+ *   renders, and reverts together with the rest of the animate when [duration] expires. `null`
+ *   keeps the permanent's own art.
  * @property duration How long the effect lasts
  */
 @SerialName("BecomeCreature")
@@ -81,6 +86,7 @@ data class BecomeCreatureEffect(
     val creatureTypes: Set<String> = emptySet(),
     val removeTypes: Set<String> = emptySet(),
     val colors: Set<String>? = null,
+    val imageUri: String? = null,
     val duration: Duration = Duration.EndOfTurn
 ) : Effect {
     override val description: String = buildString {
