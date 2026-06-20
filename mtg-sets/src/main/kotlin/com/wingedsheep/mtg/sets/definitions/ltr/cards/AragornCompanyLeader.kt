@@ -27,7 +27,7 @@ import com.wingedsheep.sdk.scripting.targets.TargetOther
  * `Conditions.YouChoseOtherCreatureAsRingBearer`); "put your choice of a counter from among …" is a
  * resolution-time `Effects.ChooseAction` over the four keyword-counter kinds, each branch adding one
  * counter of that kind to Aragorn (`EffectTarget.Self`). The four counters are keyword counters
- * (CR 122.1d): a first strike / vigilance / deathtouch / lifelink counter grants the matching
+ * (CR 122.1b): a first strike / vigilance / deathtouch / lifelink counter grants the matching
  * keyword via the state projection's keyword-counter map.
  *
  * The second ability fires on `Triggers.CountersPlacedOnThis` (SELF-bound `CountersPlacedEvent`, any
