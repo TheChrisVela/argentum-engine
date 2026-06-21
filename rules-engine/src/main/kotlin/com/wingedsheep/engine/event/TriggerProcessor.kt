@@ -528,7 +528,15 @@ class TriggerProcessor(
                 requirement = req,
                 controllerId = trigger.controllerId,
                 sourceId = trigger.sourceId,
-                triggeringEntityId = trigger.triggerContext.triggeringEntityId
+                triggeringEntityId = trigger.triggerContext.triggeringEntityId,
+                // Carry the triggering player so "target … that player controls" filters
+                // (ControllerPredicate.ControlledByReferencedPlayer over Player.TriggeringPlayer)
+                // resolve at legality time — Fear of Burning Alive's delirium payoff.
+                pipelineContext = com.wingedsheep.engine.handlers.PredicateContext(
+                    controllerId = trigger.controllerId,
+                    triggeringEntityId = trigger.triggerContext.triggeringEntityId,
+                    triggeringPlayerId = trigger.triggerContext.triggeringPlayerId,
+                ),
             )
             allLegalTargets[index] = legalTargets
         }

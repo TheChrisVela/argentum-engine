@@ -176,8 +176,12 @@ to a **player** that have no home yet.
   (Chainsaw's "rev" counter is cosmetic — reuse an existing counter type feeding `ModifyStats`.)
 - **Manifest dread directed at another player's library** — "its controller manifests dread" must
   target a *non-controller* player's library, with the face-down creature controlled by that player.
-  Buildable iff the manifest composition is already player-parameterized (verify).
-  → **Fear of Impostors**, **Unwanted Remake**.
+  RESOLVED: wrap the shared `Patterns.Library.manifestDread()` steps in
+  `Effects.ForEachPlayer(Player.ControllerOf("target spell"), …)` — the per-player iteration rebinds
+  the body's controller (and the manifested creature's control) to that player. Needed a fix so
+  `ForEachExecutor.resolvePlayers` resolves single-player refs like `ControllerOf` instead of
+  falling back to all active players.
+  → **Fear of Impostors** (DONE), **Unwanted Remake** (same shape).
 - **The Mindskinner / Valgavoth, Terror Eater / Marina Vendrell's Grimoire** — deep but pure
   compositions (prevent-damage→mill, Ward—Sacrifice + opponents'-cards-to-exile + pay-life-to-cast,
   no-max-hand + gain/lose-life draw/discard engine).

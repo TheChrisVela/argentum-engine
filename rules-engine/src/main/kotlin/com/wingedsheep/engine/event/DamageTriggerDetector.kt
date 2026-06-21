@@ -246,9 +246,14 @@ class DamageTriggerDetector(
                             // The triggering entity is the damage SOURCE (e.g. "a source you
                             // control deals damage… exile it"). Still carry the recipient creature's
                             // toughness so "equal to that creature's toughness" payoffs (Taii Wakeen)
-                            // can read it via ContextPropertyKey.TRIGGER_RECIPIENT_TOUGHNESS.
+                            // can read it via ContextPropertyKey.TRIGGER_RECIPIENT_TOUGHNESS. When the
+                            // recipient is a player, also carry it as the triggering player so
+                            // "…to a player, [that player] …" payoffs (Fear of Burning Alive's
+                            // "target creature that player controls") resolve Player.TriggeringPlayer
+                            // to the damaged player rather than the source.
                             TriggerContext(
                                 triggeringEntityId = event.sourceId,
+                                triggeringPlayerId = event.targetId.takeIf { it in state.turnOrder },
                                 damageAmount = event.amount,
                                 recipientToughnessAtDamage = event.targetToughnessAtDamage
                             )

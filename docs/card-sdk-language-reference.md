@@ -1364,7 +1364,12 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
   mills four cards", "that player sacrifices a creature").
 - `Player.TriggeringPlayer` — the player bound by the trigger (the caster for `SpellCastEvent`,
   the active player for per-player step triggers — "at the beginning of each opponent's upkeep,
-  *that player* …").
+  *that player* …", **and the player dealt the damage** for a `DealsDamageEvent` trigger whose
+  recipient is a player). It resolves inside a target's controller filter, so "deals noncombat
+  damage to an opponent, … to target creature **that player** controls" is
+  `TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.targetPlayerControls(EffectTarget.PlayerRef(Player.TriggeringPlayer))))`
+  on the damage trigger — the legality check and resolution both bind it to the damaged player
+  (Fear of Burning Alive).
 - `Player.AnOpponent` — a genuinely non-targeted "an opponent" (a chooser: "an opponent chooses a
   creature type"). Currently resolves to the first opponent in turn order; the proper multiplayer
   choice flow is tracked in `backlog/multiplayer.md`. Do **not** use it where the text means

@@ -210,7 +210,13 @@ class ForEachExecutor(
             Player.TargetOpponent, Player.TargetPlayer -> listOfNotNull(
                 TargetResolutionUtils.resolvePlayerRef(player, context, state)
             )
-            else -> state.activePlayers
+            // Single-player references (e.g. ControllerOf a targeted spell — Fear of Impostors'
+            // "its controller manifests dread") resolve to exactly that player. Fall back to all
+            // active players only when the reference yields nothing (a truly multi-player or
+            // unresolved ref).
+            else -> TargetResolutionUtils.resolvePlayerRef(player, context, state)
+                ?.let { listOf(it) }
+                ?: state.activePlayers
         }
     }
 

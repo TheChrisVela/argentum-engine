@@ -39,6 +39,7 @@ import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.predicates.StatePredicate
+import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.values.EntityReference
@@ -1166,6 +1167,13 @@ data class PredicateContext(
     /** The entity that caused the trigger to fire (for SharesCreatureTypeWithTriggeringEntity) */
     val triggeringEntityId: EntityId? = null,
     /**
+     * The player associated with the trigger (the damaged player for damage triggers, the player
+     * whose event fired otherwise). Lets a target filter resolve
+     * [EffectTarget.PlayerRef] of [Player.TriggeringPlayer] — e.g. "target creature **that player**
+     * controls" on Fear of Burning Alive's "deals noncombat damage to an opponent" trigger.
+     */
+    val triggeringPlayerId: EntityId? = null,
+    /**
      * The entity a continuous effect is being applied to during projection (e.g. the creature an
      * Aura is enchanting). Lets filters resolve [EntityReference.AffectedEntity] — needed by
      * `AggregateBattlefield(filter = ...sharingCreatureTypeWith(AffectedEntity))` for Alpha Status.
@@ -1227,6 +1235,12 @@ data class PredicateContext(
             is EffectTarget.BoundVariable -> namedTargets[target.name]
             is EffectTarget.ContextTarget -> targets.getOrNull(target.index)
             EffectTarget.Controller -> return controllerId
+            is EffectTarget.PlayerRef -> return when (target.player) {
+                Player.You -> controllerId
+                Player.TriggeringPlayer -> triggeringPlayerId
+                Player.TargetPlayer, Player.TargetOpponent -> targetPlayerId
+                else -> null
+            }
             else -> null
         }
         return (chosen as? ChosenTarget.Player)?.playerId
@@ -1248,6 +1262,7 @@ data class PredicateContext(
                 targetPlayerId = chosenPlayerTarget,
                 sourceId = context.sourceId,
                 triggeringEntityId = context.triggeringEntityId,
+                triggeringPlayerId = context.triggeringPlayerId,
                 affectedEntityId = context.affectedEntityId,
                 chosenValues = context.pipeline.chosenValues,
                 storedStringLists = context.pipeline.storedStringLists,

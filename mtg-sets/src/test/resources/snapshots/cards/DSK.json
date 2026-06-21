@@ -1871,6 +1871,105 @@
     ]
 }
 
+// Fear of Burning Alive
+{
+    "name": "Fear of Burning Alive",
+    "manaCost": "{4}{R}{R}",
+    "typeLine": "Enchantment Creature — Nightmare",
+    "oracleText": "When this creature enters, it deals 4 damage to each opponent.\nDelirium — Whenever a source you control deals noncombat damage to an opponent, if there are four or more card types among cards in your graveyard, this creature deals that amount of damage to target creature that player controls.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 4
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "EachOpponent"
+                    }
+                },
+                "descriptionOverride": "When this creature enters, it deals 4 damage to each opponent."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageNonCombat",
+                    "recipient": "RecipientOpponent",
+                    "sourceFilter": "ctrl:you"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    },
+                    "damageSource": "Self"
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "controllerPredicate": {
+                                "type": "ControlledByReferencedPlayer",
+                                "target": {
+                                    "type": "PlayerRef",
+                                    "player": "TriggeringPlayer"
+                                }
+                            }
+                        }
+                    },
+                    "id": "target"
+                },
+                "triggerCondition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateZone",
+                        "player": "You",
+                        "zone": "Graveyard",
+                        "aggregation": "DISTINCT_TYPES"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                },
+                "descriptionOverride": "Delirium — Whenever a source you control deals noncombat damage to an opponent, if there are four or more card types among cards in your graveyard, this creature deals that amount of damage to target creature that player controls."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "135",
+        "rarity": "UNCOMMON",
+        "artist": "J.P. Targete",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/2/b282f8e3-8b79-47e9-8c18-62284211442b.jpg?1726286352"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Fear of Exposure
 {
     "name": "Fear of Exposure",
@@ -2016,6 +2115,261 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Fear of Immobility
+{
+    "name": "Fear of Immobility",
+    "manaCost": "{4}{W}",
+    "typeLine": "Enchantment Creature — Nightmare",
+    "oracleText": "When this creature enters, tap up to one target creature. If an opponent controls that creature, put a stun counter on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "TapUntap",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "EntityMatches",
+                                    "entity": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    },
+                                    "filter": "creature ctrl:opponent"
+                                }
+                            },
+                            "then": {
+                                "type": "AddCounters",
+                                "counterType": "stun",
+                                "count": 1,
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target"
+                },
+                "descriptionOverride": "When this creature enters, tap up to one target creature. If an opponent controls that creature, put a stun counter on it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "10",
+        "artist": "Martin de Diego Sádaba",
+        "flavorText": "As it slunk toward her, Nina told her legs to run, but they stayed rooted and rigid. She screamed—but no sound left her lips.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/2/9220c8fa-6ef7-4bc1-acb9-fc54cc43e498.jpg?1726285895"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Fear of Impostors
+{
+    "name": "Fear of Impostors",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Enchantment Creature — Nightmare",
+    "oracleText": "Flash\nWhen this creature enters, counter target spell. Its controller manifests dread. (That player looks at the top two cards of their library, then puts one onto the battlefield face down as a 2/2 creature and the other into their graveyard. If it's a creature card, it can be turned face up any time for its mana cost.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        "Counter",
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Players",
+                                "players": {
+                                    "type": "ControllerOf",
+                                    "targetDescription": "target spell"
+                                }
+                            },
+                            "body": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "TopOfLibrary",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 2
+                                            }
+                                        },
+                                        "storeAs": "manifestDreadLooked"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "manifestDreadLooked",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "manifestDreadManifested",
+                                        "storeRemainder": "manifestDreadGraveyard",
+                                        "selectedLabel": "Manifest (put onto the battlefield face down)",
+                                        "remainderLabel": "Put into your graveyard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "manifestDreadManifested",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Battlefield"
+                                        },
+                                        "faceDown": "MANIFEST"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "manifestDreadGraveyard",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {},
+                        "zone": "Stack"
+                    },
+                    "id": "target spell"
+                },
+                "descriptionOverride": "When this creature enters, counter target spell. Its controller manifests dread."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "57",
+        "rarity": "UNCOMMON",
+        "artist": "David Szabo",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/d/bdee441e-14ab-42d1-b447-5a6488fd713a.jpg?1726286066"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Fear of Infinity
+{
+    "name": "Fear of Infinity",
+    "manaCost": "{1}{U}{B}",
+    "typeLine": "Enchantment Creature — Nightmare",
+    "oracleText": "Flying, lifelink\nThis creature can't block.\nEerie — Whenever an enchantment you control enters and whenever you fully unlock a Room, you may return this card from your graveyard to your hand.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "FLYING",
+        "LIFELINK",
+        "EERIE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "enchantment ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": "Self",
+                        "destination": "Hand"
+                    }
+                },
+                "activeZone": "Graveyard",
+                "descriptionOverride": "Eerie — Whenever an enchantment you control enters, you may return this card from your graveyard to your hand."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "RoomFullyUnlockedEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "MoveToZone",
+                        "target": "Self",
+                        "destination": "Hand"
+                    }
+                },
+                "activeZone": "Graveyard",
+                "descriptionOverride": "Eerie — Whenever you fully unlock a Room, you may return this card from your graveyard to your hand."
+            }
+        ],
+        "staticAbilities": [
+            "CantBlock"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "214",
+        "rarity": "UNCOMMON",
+        "artist": "Fernando Falcone",
+        "flavorText": "There are some nightmares so terrible, you're never truly rid of them.",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/1/81756844-c642-406f-842d-35c1e404fec0.jpg?1726286668"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "BLACK"
     ]
 }
 

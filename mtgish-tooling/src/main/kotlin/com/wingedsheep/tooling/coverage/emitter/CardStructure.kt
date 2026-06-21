@@ -1903,6 +1903,17 @@ internal fun EmitCtx.triggerBlock(
     // (which would double-wrap vs the golden — Elvish Pioneer).
     val selfOptional = mayInner?.strField("_Action") in SELF_OPTIONAL_ACTIONS
 
+    // A triggered ability that returns its own source from the graveyard (Eerie recursion — Fear of
+    // Infinity's "Whenever an enchantment you control enters …, you may return this card from your
+    // graveyard to your hand") must function from the graveyard: the hand-authored idiom is
+    // `triggerZone = Zone.GRAVEYARD` plus a resolution-time `MayEffect`. This envelope emits neither
+    // (it would wrongly render a battlefield-zone `optional = true` trigger), so decline to SCAFFOLD
+    // rather than emit a trigger that never fires from the graveyard.
+    if (effectActions.any { jsonContains(it, "_GraveyardCard", "ThisGraveyardCard") }) {
+        reasons.add("graveyard-active-trigger")
+        return null
+    }
+
     // An intervening-if written in the trigger's effect — "Whenever ~ attacks, create a token IF you
     // control a creature with power 4 or greater" (Scalestorm Summoner) — is modeled in mtgish as a lone
     // `If{cond}[then]` action, not a TriggerI. Per CR 603.4 this IS an intervening-if ability: the

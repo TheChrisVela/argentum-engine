@@ -1914,7 +1914,9 @@ class StackResolver(
                 abilityComponent.controllerId, targetsComponent.targetRequirements,
                 sourceId = abilityComponent.sourceId,
                 targetingSourceType = TargetingSourceType.ABILITY,
-                xValue = abilityComponent.xValue
+                xValue = abilityComponent.xValue,
+                triggeringEntityId = abilityComponent.triggeringEntityId,
+                triggeringPlayerId = abilityComponent.triggeringPlayerId,
             )
             if (validTargets.isEmpty()) {
                 // Fizzle - remove ability entity
@@ -2460,11 +2462,19 @@ class StackResolver(
         targetRequirements: List<TargetRequirement> = emptyList(),
         sourceId: EntityId? = null,
         targetingSourceType: TargetingSourceType = TargetingSourceType.ANY,
-        xValue: Int? = null
+        xValue: Int? = null,
+        triggeringEntityId: EntityId? = null,
+        triggeringPlayerId: EntityId? = null
     ): List<ChosenTarget> {
         // Always project state for shroud/hexproof checks (Rule 702.18, 702.11)
         val projected = state.projectedState
-        val predicateContext = PredicateContext(controllerId = controllerId, sourceId = sourceId, xValue = xValue)
+        val predicateContext = PredicateContext(
+            controllerId = controllerId,
+            sourceId = sourceId,
+            xValue = xValue,
+            triggeringEntityId = triggeringEntityId,
+            triggeringPlayerId = triggeringPlayerId,
+        )
 
         return targets.filterIndexed { index, target ->
             when (target) {
