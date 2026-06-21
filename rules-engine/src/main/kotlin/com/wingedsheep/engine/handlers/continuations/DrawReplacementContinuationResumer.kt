@@ -8,7 +8,6 @@ import com.wingedsheep.engine.handlers.effects.drawing.DrawCardsExecutor
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.sdk.model.EntityId
@@ -115,10 +114,9 @@ class DrawReplacementContinuationResumer(
                             events.add(PermanentsSacrificedEvent(sourceController, listOf(sourceId)))
                             events.addAll(transition.events)
                         } else {
-                            newState = newState.updateEntity(sourceId) { c ->
-                                c.with(TappedComponent)
-                            }
-                            events.add(TappedEvent(sourceId, sourceName))
+                            val (tappedState, tapEvent) = tap(newState, sourceId)
+                            newState = tappedState
+                            tapEvent?.let(events::add)
                         }
 
                         // Add mana from the tapped/sacrificed source

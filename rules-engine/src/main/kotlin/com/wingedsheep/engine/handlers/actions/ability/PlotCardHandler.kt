@@ -6,7 +6,7 @@ import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSpentEvent
 import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.core.PlotCard
-import com.wingedsheep.engine.core.TappedEvent
+import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.event.TriggerDetector
@@ -187,10 +187,9 @@ class PlotCardHandler(
         if (!remainingCost.isEmpty()) {
             if (action.paymentStrategy is PaymentStrategy.Explicit) {
                 for (sourceId in action.paymentStrategy.manaAbilitiesToActivate) {
-                    val sourceName = currentState.getEntity(sourceId)
-                        ?.get<CardComponent>()?.name ?: "Unknown"
-                    currentState = currentState.updateEntity(sourceId) { c -> c.with(TappedComponent) }
-                    events.add(TappedEvent(sourceId, sourceName))
+                    val (tappedState, tapEvent) = tap(currentState, sourceId)
+                    currentState = tappedState
+                    tapEvent?.let(events::add)
                 }
             } else {
                 val solution = manaSolver.solve(currentState, action.playerId, remainingCost, 0)

@@ -7,7 +7,7 @@ import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.LoyaltyChangedEvent
 import com.wingedsheep.engine.core.ManaAddedEvent
 import com.wingedsheep.engine.core.PaymentStrategy
-import com.wingedsheep.engine.core.TappedEvent
+import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.core.TurnManager
 import com.wingedsheep.engine.event.TriggerDetector
 import com.wingedsheep.engine.event.TriggerProcessor
@@ -770,12 +770,9 @@ class ActivateAbilityHandler(
                         currentState, action.playerId, manaCost, manaXValue, excludeSources = excluded, xManaRestriction = ability.xManaRestriction
                     ) ?: return ExecutionResult.error(state, "Selected mana sources cannot pay this ability's cost")
                     for (source in solution.sources) {
-                        val sourceName = currentState.getEntity(source.entityId)
-                            ?.get<CardComponent>()?.name ?: source.name
-                        currentState = currentState.updateEntity(source.entityId) { c ->
-                            c.with(TappedComponent)
-                        }
-                        events.add(TappedEvent(source.entityId, sourceName))
+                        val (tappedState, tapEvent) = tap(currentState, source.entityId)
+                        currentState = tappedState
+                        tapEvent?.let(events::add)
                     }
                 }
                 else -> {
@@ -931,38 +928,12 @@ class ActivateAbilityHandler(
             ))
         }
 
-        // Emit events for cost types
+        // Emit events for cost types. Tap/TapAttachedCreature/TapXPermanents taps are emitted by
+        // the tap atom inside costHandler.payAbilityCost (folded in via costResult.events above), so
+        // only the loyalty change — which payAbilityCost mutates without an event — is emitted here.
         val abilityCost = ability.cost
-        when (abilityCost) {
-            is AbilityCost.Tap -> {
-                events.add(TappedEvent(action.sourceId, cardComponent.name))
-            }
-            is AbilityCost.TapAttachedCreature -> {
-                val attachedId = container.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()?.targetId
-                if (attachedId != null) {
-                    val attachedName = currentState.getEntity(attachedId)?.get<CardComponent>()?.name ?: "Unknown"
-                    events.add(TappedEvent(attachedId, attachedName))
-                }
-            }
-            is AbilityCost.Composite -> {
-                for (subCost in abilityCost.costs) {
-                    when (subCost) {
-                        is AbilityCost.Tap -> events.add(TappedEvent(action.sourceId, cardComponent.name))
-                        is AbilityCost.TapAttachedCreature -> {
-                            val attachedId = container.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()?.targetId
-                            if (attachedId != null) {
-                                val attachedName = currentState.getEntity(attachedId)?.get<CardComponent>()?.name ?: "Unknown"
-                                events.add(TappedEvent(attachedId, attachedName))
-                            }
-                        }
-                        else -> {}
-                    }
-                }
-            }
-            is AbilityCost.Loyalty -> {
-                events.add(LoyaltyChangedEvent(action.sourceId, cardComponent.name, abilityCost.change))
-            }
-            else -> {}
+        if (abilityCost is AbilityCost.Loyalty) {
+            events.add(LoyaltyChangedEvent(action.sourceId, cardComponent.name, abilityCost.change))
         }
 
         // Track per-turn activation if the ability has an OncePerTurn or MaxPerTurn restriction
@@ -1673,10 +1644,9 @@ class ActivateAbilityHandler(
         val events = mutableListOf<GameEvent>()
 
         for (source in solution.sources) {
-            currentState = currentState.updateEntity(source.entityId) { c ->
-                c.with(com.wingedsheep.engine.state.components.battlefield.TappedComponent)
-            }
-            events.add(TappedEvent(source.entityId, source.name))
+            val (tappedState, tapEvent) = tap(currentState, source.entityId)
+            currentState = tappedState
+            tapEvent?.let(events::add)
         }
 
         // Add produced mana to floating pool so costHandler.payAbilityCost can consume it.

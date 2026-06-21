@@ -8,6 +8,8 @@ import com.wingedsheep.engine.core.LifeChangeReason
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.TappedEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
+import com.wingedsheep.engine.core.tap
+import com.wingedsheep.engine.core.untapOrConsumeStun
 import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
@@ -231,12 +233,17 @@ class CostHandler(
             }
             is AbilityCost.Atom -> payAtom(state, cost.atom, sourceId, controllerId, manaPool, choices, abilityContext)
             is AbilityCost.Tap -> {
-                val newState = state.updateEntity(sourceId) { it.with(TappedComponent) }
-                CostPaymentResult.success(newState, manaPool)
+                // Route through the tap atom so the "{T}:" cost emits its TappedEvent — every
+                // payAbilityCost caller gets the event for free (ActivateAbilityHandler used to
+                // re-derive it by hand, silently dropping it on any other payment path).
+                val (newState, event) = tap(state, sourceId)
+                CostPaymentResult.success(newState, manaPool, listOfNotNull(event))
             }
             is AbilityCost.Untap -> {
-                val newState = state.updateEntity(sourceId) { it.without<TappedComponent>() }
-                CostPaymentResult.success(newState, manaPool)
+                // Route through the untap atom so a "{Q}:" cost emits UntappedEvent and a stun
+                // counter correctly replaces the untap (CR 122.1d) instead of being ignored.
+                val (newState, events) = untapOrConsumeStun(state, sourceId)
+                CostPaymentResult.success(newState, manaPool, events)
             }
             is AbilityCost.PayXLife -> {
                 val amount = choices.xValue
@@ -363,8 +370,8 @@ class CostHandler(
             is AbilityCost.TapAttachedCreature -> {
                 val attachedId = state.getEntity(sourceId)?.get<AttachedToComponent>()?.targetId
                     ?: return CostPaymentResult.failure("Source is not attached to a creature")
-                val newState = state.updateEntity(attachedId) { it.with(TappedComponent) }
-                CostPaymentResult.success(newState, manaPool)
+                val (newState, event) = tap(state, attachedId)
+                CostPaymentResult.success(newState, manaPool, listOfNotNull(event))
             }
             is AbilityCost.TapXPermanents -> {
                 val xCount = choices.xValue
@@ -377,11 +384,14 @@ class CostHandler(
                     }
 
                     var newState = state
+                    val events = mutableListOf<GameEvent>()
                     for (permanentId in toTap.take(xCount)) {
-                        newState = newState.updateEntity(permanentId) { it.with(TappedComponent) }
+                        val (tappedState, event) = tap(newState, permanentId)
+                        newState = tappedState
+                        event?.let(events::add)
                     }
 
-                    CostPaymentResult.success(newState, manaPool)
+                    CostPaymentResult.success(newState, manaPool, events)
                 }
             }
             is AbilityCost.RemoveXPlusOnePlusOneCounters -> {
@@ -783,13 +793,13 @@ class CostHandler(
         var newState = state
         val events = mutableListOf<GameEvent>()
         for (permanentId in toTap) {
-            newState = newState.updateEntity(permanentId) { it.with(TappedComponent) }
-            // Emit TappedEvent so "whenever this becomes tapped" triggers fire when a creature
-            // is tapped to pay a cost (Station, Cryptic Gateway). Without this, paying the cost
-            // adds TappedComponent silently and the trigger never sees the tap (cf. the analogous
-            // declare-attackers fix in AttackPhaseManager.commitAttackDeclaration).
-            val name = state.getEntity(permanentId)?.get<CardComponent>()?.name ?: "Permanent"
-            events.add(TappedEvent(permanentId, name))
+            // The tap atom emits the TappedEvent so "whenever this becomes tapped" triggers fire
+            // when a creature is tapped to pay a cost (Station, Cryptic Gateway). Open-coding the
+            // mutation here used to drop the event (cf. the declare-attackers fix in
+            // AttackPhaseManager.commitAttackDeclaration).
+            val (tappedState, event) = tap(newState, permanentId)
+            newState = tappedState
+            event?.let(events::add)
         }
         return CostPaymentResult.success(newState, manaPool, events)
     }

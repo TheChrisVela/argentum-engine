@@ -2,12 +2,11 @@ package com.wingedsheep.engine.handlers.effects.composite
 
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.GameEvent
-import com.wingedsheep.engine.core.TappedEvent
+import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.EntityId
@@ -53,10 +52,9 @@ fun payManaCostFromPool(
             ?: return EffectResult.error(state, "Cannot pay mana cost")
 
         for (source in solution.sources) {
-            currentState = currentState.updateEntity(source.entityId) { c ->
-                c.with(TappedComponent)
-            }
-            events.add(TappedEvent(source.entityId, source.name))
+            val (tappedState, tapEvent) = tap(currentState, source.entityId)
+            currentState = tappedState
+            tapEvent?.let(events::add)
         }
 
         for ((_, production) in solution.manaProduced) {

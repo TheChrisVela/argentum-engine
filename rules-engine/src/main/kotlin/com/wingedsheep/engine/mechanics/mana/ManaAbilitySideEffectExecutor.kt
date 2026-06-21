@@ -3,10 +3,10 @@ package com.wingedsheep.engine.mechanics.mana
 import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.TappedEvent
+import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.model.EntityId
@@ -63,10 +63,9 @@ class ManaAbilitySideEffectExecutor(
         var currentState = state
         val events = mutableListOf<GameEvent>()
         for (source in solution.sources) {
-            currentState = currentState.updateEntity(source.entityId) { c ->
-                c.with(TappedComponent)
-            }
-            events.add(TappedEvent(source.entityId, source.name))
+            val (tappedState, event) = tap(currentState, source.entityId)
+            currentState = tappedState
+            event?.let(events::add)
 
             val production = solution.manaProduced[source.entityId]
             val (after, sideEvents) = runSideEffects(

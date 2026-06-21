@@ -10,6 +10,46 @@ import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.model.EntityId
 
 /**
+ * Tap a single permanent on the battlefield, emitting the [TappedEvent] that
+ * "whenever this becomes tapped" triggers (Station, Cryptic Gateway, …) and the
+ * client tap animation react to.
+ *
+ * This is the canonical *tap atom* — the analogue of [untapOrConsumeStun] for the
+ * untap direction and of `DamageUtils.gainLife` for life. Route every place a
+ * permanent *becomes tapped while on the battlefield* through here so the mutation
+ * and its event can never drift apart. Past bugs (station creatures, declare-attackers)
+ * came from open-coding `with(TappedComponent)` and forgetting the paired event;
+ * `TapEventEnforcementTest` now bans that pattern outside the legitimate
+ * enters-tapped/cleanup sites.
+ *
+ * Tapping is a transition (CR 603.2f): a permanent that is *already* tapped does not
+ * become tapped again, so this is a no-op that emits no event. The same is true for an
+ * entity that no longer exists. In both cases the original [state] is returned paired
+ * with `null`, so callers can fold the event in without a special case:
+ *
+ * ```
+ * val (next, event) = tap(state, id)
+ * return EffectResult.success(next, listOfNotNull(event))
+ * ```
+ *
+ * **Not for permanents entering tapped.** A permanent that *enters the battlefield
+ * tapped* (taplands, tokens created tapped, phased-in-tapped, sneak/regeneration) is
+ * not transitioning from untapped to tapped, so those sites set [TappedComponent]
+ * directly and emit no event — they are the allowlist in `TapEventEnforcementTest`.
+ *
+ * @return the updated state paired with the emitted [TappedEvent], or `state to null`
+ *   when the permanent was already tapped or doesn't exist (no mutation performed).
+ */
+fun tap(state: GameState, entityId: EntityId): Pair<GameState, TappedEvent?> {
+    val container = state.getEntity(entityId) ?: return state to null
+    // CR 603.2f: tapping an already-tapped permanent is not a transition — no event.
+    if (container.has<TappedComponent>()) return state to null
+    val cardName = container.get<CardComponent>()?.name ?: "Permanent"
+    val newState = state.updateEntity(entityId) { it.with(TappedComponent) }
+    return newState to TappedEvent(entityId, cardName)
+}
+
+/**
  * Apply the untap-step untap replacements to a single permanent that *would*
  * become untapped:
  *

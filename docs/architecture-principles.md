@@ -603,6 +603,39 @@ class TriggerDetector {
 - **Game log.** The event stream is a complete, structured game log that can be replayed, analyzed,
   or displayed to spectators.
 
+**Co-locate the mutation and its event in a single "atom."** The weakness of "every mutation emits
+an event" is that *emitting* is a separate statement from *mutating*, so it's easy to forget — and
+a forgotten event is a silent bug: the state is right but no trigger or animation ever fires. The
+engine has lost tap events exactly this way more than once (station creatures and the
+declare-attackers loop both shipped a `with(TappedComponent)` whose paired `TappedEvent` was missing,
+so "whenever this becomes tapped" triggers never saw the tap). The fix is structural, not vigilance:
+for any state change that is observable — gaining life, tapping, untapping, putting on counters —
+funnel **every** call site through one small helper that performs the mutation *and* returns the
+event, so the two cannot drift apart:
+
+```kotlin
+// The "tap atom": the only place a battlefield permanent becomes tapped. Returns the event so the
+// caller folds it into its result; returns `null` for a non-transition (already tapped — CR 603.2f).
+fun tap(state: GameState, entityId: EntityId): Pair<GameState, TappedEvent?>
+
+// Its untap mirror, which also applies the stun-counter replacement (CR 122.1d).
+fun untapOrConsumeStun(state: GameState, entityId: EntityId, projected: ProjectedState? = null)
+    : Pair<GameState, List<GameEvent>>
+
+// Life changes go through DamageUtils.gainLife / loseLife the same way.
+fun gainLife(state: GameState, playerId: EntityId, amount: Int, ...): Pair<GameState, LifeChangedEvent?>
+```
+
+Two properties make these *atoms* rather than mere helpers: they own the **transition guard** (a
+no-op emits no event, so triggers never fire on a non-transition — CR 603.2f) and they own any
+**replacement** that reshapes the change (a stun counter replacing an untap). Both are rules that
+every call site would otherwise have to remember independently. When you add a new observable
+mutation, build the atom first and route all sites through it; where the corpus must not bypass it,
+back it with a source-scanning hygiene test (e.g. `TapEventEnforcementTest` bans raw
+`with(TappedComponent)` / `without<TappedComponent>()` outside a small allowlist of legitimate
+enters-tapped / cleanup sites, the same way `FacadeBoundaryTest` bans raw effect construction in
+cards). The atom makes the event impossible to forget; the test makes the bypass impossible to add.
+
 ### 2.6 Strategy-Based Registries
 
 **Principle:** Action handling and effect execution are fully decoupled from the core engine loop.

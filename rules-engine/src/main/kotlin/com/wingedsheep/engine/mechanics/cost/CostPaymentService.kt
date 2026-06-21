@@ -13,8 +13,8 @@ import com.wingedsheep.engine.core.LifeChangeReason
 import com.wingedsheep.engine.core.LifeChangedEvent
 import com.wingedsheep.engine.core.ManaSpentEvent
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
-import com.wingedsheep.engine.core.TappedEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
+import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
@@ -26,7 +26,6 @@ import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
-import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
@@ -418,11 +417,9 @@ class CostPaymentService(private val services: EngineServices) {
         var newState = state
         val events = mutableListOf<GameEvent>()
         for (permanentId in selected) {
-            val entity = newState.getEntity(permanentId) ?: continue
-            if (entity.has<TappedComponent>()) continue
-            val name = entity.get<CardComponent>()?.name ?: "Unknown"
-            newState = newState.updateEntity(permanentId) { it.with(TappedComponent) }
-            events.add(TappedEvent(permanentId, name))
+            val (tappedState, tapEvent) = tap(newState, permanentId)
+            newState = tappedState
+            tapEvent?.let(events::add)
         }
         return CostPaymentExecution(newState, events, success = true)
     }

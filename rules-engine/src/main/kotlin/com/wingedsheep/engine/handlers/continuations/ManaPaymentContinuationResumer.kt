@@ -444,10 +444,9 @@ class ManaPaymentContinuationResumer(
                     ?: return ExecutionResult.error(state, "Cannot pay mana cost with auto-pay")
 
                 for (source in solution.sources) {
-                    currentState = currentState.updateEntity(source.entityId) { c ->
-                        c.with(TappedComponent)
-                    }
-                    events.add(TappedEvent(source.entityId, source.name))
+                    val (tappedState, tapEvent) = tap(currentState, source.entityId)
+                    currentState = tappedState
+                    tapEvent?.let(events::add)
                 }
                 for ((_, production) in solution.manaProduced) {
                     currentPool = if (production.color != null) {
@@ -831,10 +830,9 @@ class ManaPaymentContinuationResumer(
                     ?: return ExecutionResult.error(state, "Cannot pay mana cost with auto-pay")
 
                 for (source in solution.sources) {
-                    currentState = currentState.updateEntity(source.entityId) { c ->
-                        c.with(TappedComponent)
-                    }
-                    events.add(TappedEvent(source.entityId, source.name))
+                    val (tappedState, tapEvent) = tap(currentState, source.entityId)
+                    currentState = tappedState
+                    tapEvent?.let(events::add)
                 }
                 for ((_, production) in solution.manaProduced) {
                     currentPool = if (production.color != null) {
@@ -1017,10 +1015,9 @@ class ManaPaymentContinuationResumer(
                 ?: return ExecutionResult.error(state, "Cannot pay mana cost")
 
             for (source in solution.sources) {
-                currentState = currentState.updateEntity(source.entityId) { c ->
-                    c.with(TappedComponent)
-                }
-                events.add(TappedEvent(source.entityId, source.name))
+                val (tappedState, tapEvent) = tap(currentState, source.entityId)
+                currentState = tappedState
+                tapEvent?.let(events::add)
             }
 
             for ((_, production) in solution.manaProduced) {
@@ -1110,10 +1107,9 @@ class ManaPaymentContinuationResumer(
                     ?: return ExecutionResult.error(state, "Cannot pay mana cost with auto-pay")
 
                 for (source in solution.sources) {
-                    currentState = currentState.updateEntity(source.entityId) { c ->
-                        c.with(TappedComponent)
-                    }
-                    events.add(TappedEvent(source.entityId, source.name))
+                    val (tappedState, tapEvent) = tap(currentState, source.entityId)
+                    currentState = tappedState
+                    tapEvent?.let(events::add)
                 }
 
                 for ((_, production) in solution.manaProduced) {
@@ -1235,8 +1231,9 @@ class ManaPaymentContinuationResumer(
                 events.add(PermanentsSacrificedEvent(sourceController, listOf(sourceId)))
                 events.addAll(transition.events)
             } else {
-                currentState = currentState.updateEntity(sourceId) { c -> c.with(TappedComponent) }
-                events.add(TappedEvent(sourceId, source.name))
+                val (tappedState, tapEvent) = tap(currentState, sourceId)
+                currentState = tappedState
+                tapEvent?.let(events::add)
             }
 
             if (source.producesColors.isNotEmpty()) {
@@ -1406,14 +1403,13 @@ class ManaPaymentContinuationResumer(
         // Tap the source and each chosen permanent, then credit the source's mana to the pool.
         var currentState = state
         val events = mutableListOf<GameEvent>()
-        currentState = currentState.updateEntity(headSourceId) { c -> c.with(TappedComponent) }
-        events.add(TappedEvent(headSourceId, sourceOption.name))
+        val (headTappedState, headTapEvent) = tap(currentState, headSourceId)
+        currentState = headTappedState
+        headTapEvent?.let(events::add)
         for (chosen in response.selectedCards) {
-            val chosenName = currentState.getEntity(chosen)
-                ?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()?.name
-                ?: "Permanent"
-            currentState = currentState.updateEntity(chosen) { c -> c.with(TappedComponent) }
-            events.add(TappedEvent(chosen, chosenName))
+            val (tappedState, tapEvent) = tap(currentState, chosen)
+            currentState = tappedState
+            tapEvent?.let(events::add)
         }
 
         // Read current pool, add the source's mana, persist.

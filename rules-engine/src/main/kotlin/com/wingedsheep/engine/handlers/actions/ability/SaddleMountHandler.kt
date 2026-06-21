@@ -4,7 +4,7 @@ import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.SaddleMount
-import com.wingedsheep.engine.core.TappedEvent
+import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.event.TriggerDetector
 import com.wingedsheep.engine.event.TriggerProcessor
 import com.wingedsheep.engine.handlers.actions.ActionHandler
@@ -126,12 +126,9 @@ class SaddleMountHandler(
 
         // Pay the cost: tap each saddling creature (CR 702.171c — these creatures "saddle" it).
         for (creatureId in action.saddleCreatures) {
-            val creatureName = currentState.getEntity(creatureId)
-                ?.get<CardComponent>()?.name ?: "Unknown"
-            currentState = currentState.updateEntity(creatureId) { c ->
-                c.with(TappedComponent)
-            }
-            events.add(TappedEvent(creatureId, creatureName))
+            val (tappedState, tapEvent) = tap(currentState, creatureId)
+            currentState = tappedState
+            tapEvent?.let(events::add)
         }
 
         // Record the saddlers so Mount payoffs can read "creatures that saddled it this turn".

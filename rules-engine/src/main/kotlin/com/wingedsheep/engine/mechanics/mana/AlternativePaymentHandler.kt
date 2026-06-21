@@ -1,7 +1,7 @@
 package com.wingedsheep.engine.mechanics.mana
 
 import com.wingedsheep.engine.core.GameEvent
-import com.wingedsheep.engine.core.TappedEvent
+import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.mechanics.HarmonizeGrants
 import com.wingedsheep.engine.state.GameState
@@ -192,11 +192,9 @@ class AlternativePaymentHandler(
             }
 
             // Tap the creature
-            currentState = currentState.updateEntity(creatureId) { c ->
-                c.with(TappedComponent)
-            }
-
-            events.add(TappedEvent(creatureId, cardComponent.name))
+            val (tappedState, tapEvent) = tap(currentState, creatureId)
+            currentState = tappedState
+            tapEvent?.let(events::add)
 
             // Apply the payment
             val paymentColor = payment.color
@@ -242,8 +240,8 @@ class AlternativePaymentHandler(
         // Use projected power so continuous effects / +1/+1 counters are honored. A
         // negative power reduces the cost by nothing (you can't add to it).
         val power = (projected.getPower(creatureId) ?: 0).coerceAtLeast(0)
-        val newState = state.updateEntity(creatureId) { c -> c.with(TappedComponent) }
-        val events = listOf<GameEvent>(TappedEvent(creatureId, cardComponent.name))
+        val (newState, tapEvent) = tap(state, creatureId)
+        val events = listOfNotNull<GameEvent>(tapEvent)
         val reducedCost = if (power > 0) reduceGenericCost(cost, power) else cost
         return AlternativePaymentResult(reducedCost, newState, events)
     }
@@ -474,8 +472,9 @@ class AlternativePaymentHandler(
             if (container.has<TappedComponent>()) continue
             if (projected.getController(permanentId) != playerId) continue
 
-            currentState = currentState.updateEntity(permanentId) { c -> c.with(TappedComponent) }
-            events.add(TappedEvent(permanentId, cardComponent.name))
+            val (tappedState, tapEvent) = tap(currentState, permanentId)
+            currentState = tappedState
+            tapEvent?.let(events::add)
             reducedCost = reduceGenericCost(reducedCost, 1)
         }
 

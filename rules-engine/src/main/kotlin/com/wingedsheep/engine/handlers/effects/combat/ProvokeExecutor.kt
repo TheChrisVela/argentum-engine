@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.handlers.effects.combat
 
 import com.wingedsheep.engine.core.EffectResult
+import com.wingedsheep.engine.core.untapOrConsumeStun
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.layers.Layer
@@ -9,7 +10,6 @@ import com.wingedsheep.engine.mechanics.layers.addFloatingEffect
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.effects.ProvokeEffect
 import kotlin.reflect.KClass
@@ -53,9 +53,8 @@ class ProvokeExecutor : EffectExecutor<ProvokeEffect> {
         }
 
         // Step 1: Untap the target creature
-        var newState = state.updateEntity(targetId) { container ->
-            container.without<TappedComponent>()
-        }
+        val (untappedState, untapEvents) = untapOrConsumeStun(state, targetId)
+        var newState = untappedState
 
         // Step 2: Create a floating effect forcing the target to block the source
         newState = newState.addFloatingEffect(
@@ -66,6 +65,6 @@ class ProvokeExecutor : EffectExecutor<ProvokeEffect> {
             context = context
         )
 
-        return EffectResult.success(newState)
+        return EffectResult.success(newState, untapEvents)
     }
 }

@@ -369,12 +369,9 @@ class SacrificeAndPayContinuationResumer(
         val events = mutableListOf<GameEvent>()
 
         for (permanentId in selectedPermanents) {
-            val entity = newState.getEntity(permanentId) ?: continue
-            // Skip already-tapped permanents (defensive — selection UI should already exclude them).
-            if (entity.has<TappedComponent>()) continue
-            val permanentName = entity.get<CardComponent>()?.name ?: "Unknown"
-            newState = newState.updateEntity(permanentId) { it.with(TappedComponent) }
-            events.add(TappedEvent(permanentId, permanentName))
+            val (tappedState, tapEvent) = tap(newState, permanentId)
+            newState = tappedState
+            tapEvent?.let(events::add)
         }
 
         return checkForMore(newState, events)

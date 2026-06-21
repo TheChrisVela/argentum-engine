@@ -7,11 +7,10 @@ import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSourceOption
 import com.wingedsheep.engine.core.ManaSourcesSelectedResponse
-import com.wingedsheep.engine.core.TappedEvent
+import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.EntityId
@@ -123,8 +122,9 @@ class CombatTaxContinuationResumer(
                 val solver = ManaSolver(services.cardRegistry)
                 val solution = solver.solve(currentState, playerId, remainingCost) ?: return null
                 for (source in solution.sources) {
-                    currentState = currentState.updateEntity(source.entityId) { it.with(TappedComponent) }
-                    events.add(TappedEvent(source.entityId, source.name))
+                    val (tappedState, tapEvent) = tap(currentState, source.entityId)
+                    currentState = tappedState
+                    tapEvent?.let(events::add)
                 }
                 for ((_, production) in solution.manaProduced) {
                     pool = if (production.color != null) {
@@ -142,8 +142,9 @@ class CombatTaxContinuationResumer(
                         // to returning null so the caller errors with a clear message.
                         return null
                     }
-                    currentState = currentState.updateEntity(sourceId) { it.with(TappedComponent) }
-                    events.add(TappedEvent(sourceId, source.name))
+                    val (tappedState, tapEvent) = tap(currentState, sourceId)
+                    currentState = tappedState
+                    tapEvent?.let(events::add)
                     pool = when {
                         source.producesColors.isNotEmpty() -> pool.add(source.producesColors.first())
                         source.producesColorless -> pool.addColorless(1)

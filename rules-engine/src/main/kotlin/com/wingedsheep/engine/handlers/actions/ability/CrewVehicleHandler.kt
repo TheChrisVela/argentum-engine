@@ -3,7 +3,7 @@ package com.wingedsheep.engine.handlers.actions.ability
 import com.wingedsheep.engine.core.CrewVehicle
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEvent
-import com.wingedsheep.engine.core.TappedEvent
+import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.event.TriggerDetector
 import com.wingedsheep.engine.event.TriggerProcessor
 import com.wingedsheep.engine.core.EngineServices
@@ -140,12 +140,9 @@ class CrewVehicleHandler(
 
         // Pay the cost: tap each crew creature
         for (creatureId in action.crewCreatures) {
-            val creatureName = currentState.getEntity(creatureId)
-                ?.get<CardComponent>()?.name ?: "Unknown"
-            currentState = currentState.updateEntity(creatureId) { c ->
-                c.with(TappedComponent)
-            }
-            events.add(TappedEvent(creatureId, creatureName))
+            val (tappedState, tapEvent) = tap(currentState, creatureId)
+            currentState = tappedState
+            tapEvent?.let(events::add)
         }
 
         // Record the crew so Vehicle payoffs can read "creatures that crewed it this turn"

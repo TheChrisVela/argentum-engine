@@ -28,7 +28,7 @@ import com.wingedsheep.engine.mechanics.MiracleGrants
 import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
-import com.wingedsheep.engine.core.TappedEvent
+import com.wingedsheep.engine.core.tap
 import com.wingedsheep.engine.core.TurnManager
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.event.PendingTrigger
@@ -1924,14 +1924,9 @@ class CastSpellHandler(
                             // Tap permanents as additional cost (e.g., Zahid's tap an artifact)
                             val tappedPerms = action.additionalCostPayment.tappedPermanents
                             for (permId in tappedPerms) {
-                                val permContainer = currentState.getEntity(permId) ?: continue
-                                if (!permContainer.has<TappedComponent>()) {
-                                    currentState = currentState.updateEntity(permId) { c ->
-                                        c.with(TappedComponent)
-                                    }
-                                    val permCard = permContainer.get<CardComponent>()
-                                    events.add(TappedEvent(permId, permCard?.name ?: "Permanent"))
-                                }
+                                val (tappedState, tapEvent) = tap(currentState, permId)
+                                currentState = tappedState
+                                tapEvent?.let(events::add)
                             }
                         }
                         is CostAtom.ReturnToHand -> {
@@ -2231,14 +2226,9 @@ class CastSpellHandler(
         // tapped" self-triggers fire (mirrors the attack-declare TappedEvent fix).
         if (action.conspiredCreatures.isNotEmpty()) {
             for (creatureId in action.conspiredCreatures) {
-                val creatureContainer = currentState.getEntity(creatureId) ?: continue
-                if (!creatureContainer.has<TappedComponent>()) {
-                    currentState = currentState.updateEntity(creatureId) { c ->
-                        c.with(TappedComponent)
-                    }
-                    val creatureName = creatureContainer.get<CardComponent>()?.name ?: "Creature"
-                    events.add(TappedEvent(creatureId, creatureName))
-                }
+                val (tappedState, tapEvent) = tap(currentState, creatureId)
+                currentState = tappedState
+                tapEvent?.let(events::add)
             }
         }
 
