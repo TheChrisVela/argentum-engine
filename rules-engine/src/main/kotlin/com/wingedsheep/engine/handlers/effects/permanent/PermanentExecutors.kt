@@ -55,6 +55,7 @@ import com.wingedsheep.engine.handlers.effects.permanent.phasing.PhaseInLinkedTo
 import com.wingedsheep.engine.handlers.effects.permanent.tapping.TapUntapCollectionExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.tapping.TapUntapExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.types.AddCardTypeExecutor
+import com.wingedsheep.engine.handlers.effects.permanent.types.AddColorExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.types.AddCreatureTypeExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.types.AddSubtypeExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.types.AnimateLandExecutor
@@ -129,6 +130,7 @@ class PermanentExecutors(
         GiveControlToTargetPlayerExecutor(),
         // types
         AddCardTypeExecutor(),
+        AddColorExecutor(),
         AddCreatureTypeExecutor(),
         AddSubtypeExecutor(),
         SetLandTypeExecutor(),

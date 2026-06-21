@@ -16,6 +16,7 @@ import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.mechanics.mana.ManaAbilitySideEffectExecutor
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
+import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.mechanics.mana.UnlockCostReducer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
@@ -51,6 +52,10 @@ class UnlockRoomDoorHandler(
     // Inquisitive-Glimmer-style "Unlock costs you pay cost {N} less" reductions. The enumerator
     // applies the same reducer so affordability and payment agree (CR 709.5e).
     private val unlockCostReducer = UnlockCostReducer(cardRegistry)
+
+    // Lets restricted mana tagged "spend only to ... unlock a door" (Creeping Peeper) be
+    // recognized when paying an unlock cost.
+    private val unlockContext = SpellPaymentContext(isUnlockDoorAction = true)
 
     override fun validate(state: GameState, action: UnlockRoomDoor): String? {
         if (state.priorityPlayerId != action.playerId) {
@@ -91,7 +96,7 @@ class UnlockRoomDoorHandler(
         val cost = unlockCostReducer.effectiveUnlockCost(state, action.playerId, face.manaCost)
         when (action.paymentStrategy) {
             is PaymentStrategy.AutoPay -> {
-                if (!manaSolver.canPay(state, action.playerId, cost, 0)) {
+                if (!manaSolver.canPay(state, action.playerId, cost, 0, spellContext = unlockContext)) {
                     return "Not enough mana to unlock ${face.name}"
                 }
             }
@@ -104,9 +109,10 @@ class UnlockRoomDoorHandler(
                     black = poolComponent.black,
                     red = poolComponent.red,
                     green = poolComponent.green,
-                    colorless = poolComponent.colorless
+                    colorless = poolComponent.colorless,
+                    restrictedMana = poolComponent.restrictedMana
                 )
-                if (!costHandler.canPayManaCost(pool, cost)) {
+                if (!costHandler.canPayManaCost(pool, cost, unlockContext)) {
                     return "Insufficient mana in pool to unlock ${face.name}"
                 }
             }
@@ -123,7 +129,7 @@ class UnlockRoomDoorHandler(
                     .map { it.entityId }
                     .filter { it !in chosen }
                     .toSet()
-                if (manaSolver.solve(state, action.playerId, cost, 0, excludeSources = excluded) == null) {
+                if (manaSolver.solve(state, action.playerId, cost, 0, excludeSources = excluded, spellContext = unlockContext) == null) {
                     return "Selected mana sources cannot pay the unlock cost"
                 }
             }
@@ -156,9 +162,10 @@ class UnlockRoomDoorHandler(
                     black = poolComponent.black,
                     red = poolComponent.red,
                     green = poolComponent.green,
-                    colorless = poolComponent.colorless
+                    colorless = poolComponent.colorless,
+                    restrictedMana = poolComponent.restrictedMana
                 )
-                val newPool = costHandler.payManaCost(pool, cost)
+                val newPool = costHandler.payManaCost(pool, cost, unlockContext)
                     ?: return ExecutionResult.error(currentState, "Insufficient mana in pool")
                 currentState = currentState.updateEntity(action.playerId) { c ->
                     c.with(
@@ -168,7 +175,8 @@ class UnlockRoomDoorHandler(
                             black = newPool.black,
                             red = newPool.red,
                             green = newPool.green,
-                            colorless = newPool.colorless
+                            colorless = newPool.colorless,
+                            restrictedMana = newPool.restrictedMana
                         )
                     )
                 }
@@ -194,9 +202,10 @@ class UnlockRoomDoorHandler(
                     black = poolComponent.black,
                     red = poolComponent.red,
                     green = poolComponent.green,
-                    colorless = poolComponent.colorless
+                    colorless = poolComponent.colorless,
+                    restrictedMana = poolComponent.restrictedMana
                 )
-                val partialResult = pool.payPartial(cost)
+                val partialResult = pool.payPartial(cost, unlockContext)
                 val poolAfterPayment = partialResult.newPool
                 val remainingCost = partialResult.remainingCost
                 val manaSpentFromPool = partialResult.manaSpent
@@ -216,13 +225,14 @@ class UnlockRoomDoorHandler(
                             black = poolAfterPayment.black,
                             red = poolAfterPayment.red,
                             green = poolAfterPayment.green,
-                            colorless = poolAfterPayment.colorless
+                            colorless = poolAfterPayment.colorless,
+                            restrictedMana = poolAfterPayment.restrictedMana
                         )
                     )
                 }
 
                 if (!remainingCost.isEmpty()) {
-                    val solution = manaSolver.solve(currentState, action.playerId, remainingCost, 0)
+                    val solution = manaSolver.solve(currentState, action.playerId, remainingCost, 0, spellContext = unlockContext)
                         ?: return ExecutionResult.error(currentState, "Not enough mana to unlock ${face.name}")
 
                     val (stateAfterTaps, tapEvents) = manaAbilitySideEffectExecutor

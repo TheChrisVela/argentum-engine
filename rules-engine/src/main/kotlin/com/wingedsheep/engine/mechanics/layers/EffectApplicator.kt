@@ -233,6 +233,9 @@ internal class EffectApplicator(
                 is Modification.SetCantBlock -> {
                     values.cantBlock = true
                 }
+                is Modification.SetCantBeTurnedFaceUp -> {
+                    values.cantBeTurnedFaceUp = true
+                }
                 is Modification.SetMustAttack -> {
                     values.mustAttack = true
                 }

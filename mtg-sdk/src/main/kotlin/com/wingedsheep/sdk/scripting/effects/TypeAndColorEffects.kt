@@ -293,6 +293,36 @@ data class ChangeColorEffect(
 }
 
 /**
+ * Add one or more colors to a single target, in addition to its existing colors.
+ * "It becomes a black Demon in addition to its other colors and types." (Possessed Goat)
+ *
+ * Creates a Layer-5 (COLOR) floating effect with an additive `AddColor` modification — unlike
+ * [ChangeColorEffect], the target keeps its other colors. The one-shot, ability-applied
+ * counterpart to the [com.wingedsheep.sdk.scripting.GrantColor] static ability (used by auras
+ * like Deep Freeze). Pair with [AddCreatureTypeEffect] / [AddCardTypeEffect] to model
+ * "becomes a [color] [type] in addition to its other colors and types".
+ *
+ * @property target Which entity to add colors to
+ * @property colors The colors to add (use [com.wingedsheep.sdk.core.Color] entries' `.name`)
+ * @property duration How long the color addition lasts (default: Permanent)
+ */
+@SerialName("AddColor")
+@Serializable
+data class AddColorEffect(
+    val colors: Set<String>,
+    val target: EffectTarget = EffectTarget.Self,
+    val duration: Duration = Duration.Permanent
+) : Effect {
+    override val description: String = buildString {
+        append(target.description)
+        append(" becomes ")
+        append(colors.joinToString(", ") { it.lowercase() })
+        append(" in addition to its other colors")
+        if (duration.description.isNotEmpty()) append(" ${duration.description}")
+    }
+}
+
+/**
  * Choose a color and store that choice on a target permanent.
  *
  * Used by permanents that make a color choice during resolution, rather than as

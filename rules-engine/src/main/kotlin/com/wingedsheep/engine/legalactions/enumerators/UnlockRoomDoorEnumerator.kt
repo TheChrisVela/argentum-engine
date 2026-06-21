@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.UnlockRoomDoor
 import com.wingedsheep.engine.legalactions.ActionEnumerator
 import com.wingedsheep.engine.legalactions.EnumerationContext
 import com.wingedsheep.engine.legalactions.LegalAction
+import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.state.components.identity.RoomComponent
 
 /**
@@ -13,6 +14,10 @@ import com.wingedsheep.engine.state.components.identity.RoomComponent
  * Timing: sorcery speed — controller's main phase, stack empty.
  */
 class UnlockRoomDoorEnumerator : ActionEnumerator {
+
+    // Lets restricted mana tagged "spend only to ... unlock a door" count toward affordability
+    // of the unlock special action (Creeping Peeper).
+    private val unlockContext = SpellPaymentContext(isUnlockDoorAction = true)
 
     override fun enumerate(context: EnumerationContext): List<LegalAction> {
         if (!context.canPlaySorcerySpeed) return emptyList()
@@ -27,11 +32,11 @@ class UnlockRoomDoorEnumerator : ActionEnumerator {
 
             for (face in room.lockedFaces) {
                 val cost = context.unlockCostReducer.effectiveUnlockCost(state, playerId, face.manaCost)
-                if (!context.manaSolver.canPay(state, playerId, cost, precomputedSources = context.availableManaSources)) {
+                if (!context.manaSolver.canPay(state, playerId, cost, spellContext = unlockContext, precomputedSources = context.availableManaSources)) {
                     continue
                 }
                 val autoTapPreview = if (context.skipAutoTapPreview) null else {
-                    context.manaSolver.solve(state, playerId, cost, precomputedSources = context.availableManaSources)
+                    context.manaSolver.solve(state, playerId, cost, spellContext = unlockContext, precomputedSources = context.availableManaSources)
                         ?.sources?.map { it.entityId }
                 }
                 result.add(

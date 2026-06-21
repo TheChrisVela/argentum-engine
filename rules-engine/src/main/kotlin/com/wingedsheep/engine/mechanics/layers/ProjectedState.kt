@@ -20,6 +20,7 @@ data class ProjectedValues(
     val isSuspected: Boolean = false,
     val cantAttack: Boolean = false,
     val cantBlock: Boolean = false,
+    val cantBeTurnedFaceUp: Boolean = false,
     val mustAttack: Boolean = false,
     val mustBlock: Boolean = false,
     val cantBeBlockedExceptByFilters: List<com.wingedsheep.sdk.scripting.GameObjectFilter> = emptyList(),
@@ -98,6 +99,9 @@ class ProjectedState(
 
     fun cantBlock(entityId: EntityId): Boolean = projectedValues[entityId]?.cantBlock == true
 
+    fun cantBeTurnedFaceUp(entityId: EntityId): Boolean =
+        projectedValues[entityId]?.cantBeTurnedFaceUp == true
+
     fun mustAttack(entityId: EntityId): Boolean = projectedValues[entityId]?.mustAttack == true
 
     fun mustBlock(entityId: EntityId): Boolean = projectedValues[entityId]?.mustBlock == true
@@ -149,6 +153,7 @@ internal fun buildIntermediateProjectedState(
             isSuspected = v.isSuspected,
             cantAttack = v.cantAttack,
             cantBlock = v.cantBlock,
+            cantBeTurnedFaceUp = v.cantBeTurnedFaceUp,
             mustAttack = v.mustAttack,
             mustBlock = v.mustBlock,
             cantBeBlockedExceptByFilters = v.cantBeBlockedExceptByFilters.toList(),

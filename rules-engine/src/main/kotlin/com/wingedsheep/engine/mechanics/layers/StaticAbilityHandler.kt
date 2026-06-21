@@ -53,6 +53,7 @@ import com.wingedsheep.sdk.scripting.AnimateLandGroup
 import com.wingedsheep.sdk.scripting.GrantAdditionalTypesToGroup
 import com.wingedsheep.sdk.scripting.GrantColor
 import com.wingedsheep.sdk.scripting.GrantChosenColor
+import com.wingedsheep.sdk.scripting.CantBeTurnedFaceUp
 import com.wingedsheep.sdk.scripting.LoseAllAbilities
 import com.wingedsheep.sdk.scripting.TransformPermanent
 import com.wingedsheep.sdk.scripting.SetBasePowerToughnessDynamicStatic
@@ -651,6 +652,12 @@ class StaticAbilityHandler(
             is LoseAllAbilities -> {
                 ContinuousEffectData(
                     modification = Modification.RemoveAllAbilities,
+                    affectsFilter = convertGroupFilter(ability.filter)
+                )
+            }
+            is CantBeTurnedFaceUp -> {
+                ContinuousEffectData(
+                    modification = Modification.SetCantBeTurnedFaceUp,
                     affectsFilter = convertGroupFilter(ability.filter)
                 )
             }

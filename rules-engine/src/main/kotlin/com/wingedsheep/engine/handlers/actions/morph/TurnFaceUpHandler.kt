@@ -19,6 +19,7 @@ import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
+import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
@@ -58,6 +59,10 @@ class TurnFaceUpHandler(
 ) : ActionHandler<TurnFaceUp> {
     override val actionType: KClass<TurnFaceUp> = TurnFaceUp::class
 
+    // Lets restricted mana tagged "spend only to turn permanents face up" (Overgrown Zealot,
+    // Creeping Peeper) be recognized when paying a turn-face-up cost from the pool.
+    private val faceUpContext = SpellPaymentContext(isTurnFaceUpAction = true)
+
     override fun validate(state: GameState, action: TurnFaceUp): String? {
         if (state.priorityPlayerId != action.playerId) {
             return "You don't have priority"
@@ -79,6 +84,11 @@ class TurnFaceUpHandler(
             return "This creature is not face-down"
         }
 
+        // "It can't be turned face up" (e.g. Unable to Scream enchanting a face-down creature).
+        if (state.projectedState.cantBeTurnedFaceUp(action.sourceId)) {
+            return "This creature can't be turned face up"
+        }
+
         val morphData = container.get<MorphDataComponent>()
             ?: return "This creature cannot be turned face up (no morph cost)"
 
@@ -96,7 +106,7 @@ class TurnFaceUpHandler(
                 val xValue = action.xValue ?: 0
                 when (action.paymentStrategy) {
                     is PaymentStrategy.AutoPay -> {
-                        if (!manaSolver.canPay(state, action.playerId, manaCost, xValue)) {
+                        if (!manaSolver.canPay(state, action.playerId, manaCost, xValue, spellContext = faceUpContext)) {
                             return "Not enough mana to turn this creature face up"
                         }
                     }
@@ -109,9 +119,10 @@ class TurnFaceUpHandler(
                             black = poolComponent.black,
                             red = poolComponent.red,
                             green = poolComponent.green,
-                            colorless = poolComponent.colorless
+                            colorless = poolComponent.colorless,
+                            restrictedMana = poolComponent.restrictedMana
                         )
-                        if (!costHandler.canPayManaCost(pool, manaCost)) {
+                        if (!costHandler.canPayManaCost(pool, manaCost, faceUpContext)) {
                             return "Insufficient mana in pool to turn this creature face up"
                         }
                     }
@@ -131,7 +142,7 @@ class TurnFaceUpHandler(
                             .map { it.entityId }
                             .filter { it !in chosen }
                             .toSet()
-                        if (manaSolver.solve(state, action.playerId, manaCost, xValue, excludeSources = excluded) == null) {
+                        if (manaSolver.solve(state, action.playerId, manaCost, xValue, excludeSources = excluded, spellContext = faceUpContext) == null) {
                             return "Selected mana sources cannot pay the morph cost"
                         }
                     }
@@ -183,10 +194,11 @@ class TurnFaceUpHandler(
                             black = poolComponent.black,
                             red = poolComponent.red,
                             green = poolComponent.green,
-                            colorless = poolComponent.colorless
+                            colorless = poolComponent.colorless,
+                            restrictedMana = poolComponent.restrictedMana
                         )
 
-                        val newPool = costHandler.payManaCost(pool, manaCost)
+                        val newPool = costHandler.payManaCost(pool, manaCost, faceUpContext)
                             ?: return ExecutionResult.error(currentState, "Insufficient mana in pool")
 
                         currentState = currentState.updateEntity(action.playerId) { c ->
@@ -197,7 +209,8 @@ class TurnFaceUpHandler(
                                     black = newPool.black,
                                     red = newPool.red,
                                     green = newPool.green,
-                                    colorless = newPool.colorless
+                                    colorless = newPool.colorless,
+                                    restrictedMana = newPool.restrictedMana
                                 )
                             )
                         }
@@ -226,10 +239,11 @@ class TurnFaceUpHandler(
                             black = poolComponent.black,
                             red = poolComponent.red,
                             green = poolComponent.green,
-                            colorless = poolComponent.colorless
+                            colorless = poolComponent.colorless,
+                            restrictedMana = poolComponent.restrictedMana
                         )
 
-                        val partialResult = pool.payPartial(manaCost)
+                        val partialResult = pool.payPartial(manaCost, faceUpContext)
                         var poolAfterPayment = partialResult.newPool
                         val remainingCost = partialResult.remainingCost
                         val manaSpentFromPool = partialResult.manaSpent
@@ -278,14 +292,15 @@ class TurnFaceUpHandler(
                                     black = poolAfterPayment.black,
                                     red = poolAfterPayment.red,
                                     green = poolAfterPayment.green,
-                                    colorless = poolAfterPayment.colorless
+                                    colorless = poolAfterPayment.colorless,
+                                    restrictedMana = poolAfterPayment.restrictedMana
                                 )
                             )
                         }
 
                         // Tap lands for remaining cost (using xRemainingToPay instead of full xValue)
                         if (!remainingCost.isEmpty() || xRemainingToPay > 0) {
-                            val solution = manaSolver.solve(currentState, action.playerId, remainingCost, xRemainingToPay)
+                            val solution = manaSolver.solve(currentState, action.playerId, remainingCost, xRemainingToPay, spellContext = faceUpContext)
                                 ?: return ExecutionResult.error(currentState, "Not enough mana to turn face up")
 
                             val (stateAfterTaps, tapEvents) = manaAbilitySideEffectExecutor
