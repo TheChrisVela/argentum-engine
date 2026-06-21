@@ -8695,6 +8695,116 @@
     ]
 }
 
+// Turn Inside Out
+{
+    "name": "Turn Inside Out",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +3/+0 until end of turn. When it dies this turn, manifest dread. (Look at the top two cards of your library. Put one onto the battlefield face down as a 2/2 creature and the other into your graveyard. Turn it face up any time for its mana cost if it's a creature card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                {
+                    "type": "CreateDelayedTrigger",
+                    "effect": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 2
+                                    }
+                                },
+                                "storeAs": "manifestDreadLooked"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "manifestDreadLooked",
+                                "selection": {
+                                    "type": "ChooseExactly",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "manifestDreadManifested",
+                                "storeRemainder": "manifestDreadGraveyard",
+                                "selectedLabel": "Manifest (put onto the battlefield face down)",
+                                "remainderLabel": "Put into your graveyard"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "manifestDreadManifested",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Battlefield"
+                                },
+                                "faceDown": "MANIFEST"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "manifestDreadGraveyard",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                }
+                            }
+                        ]
+                    },
+                    "trigger": {
+                        "event": {
+                            "type": "ZoneChangeEvent",
+                            "from": "Battlefield",
+                            "to": "Graveyard"
+                        }
+                    },
+                    "watchedTarget": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "160",
+        "artist": "Loïc Canavaggia",
+        "flavorText": "\"Scared, are you? Need a hug?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/7/57e2a92c-06d3-4cb5-883d-cba428a7e98e.jpg?1726286448"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Twist Reality
 {
     "name": "Twist Reality",
@@ -9179,6 +9289,96 @@
                 ]
             }
         }
+    ]
+}
+
+// Unnerving Grasp
+{
+    "name": "Unnerving Grasp",
+    "manaCost": "{2}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "Return up to one target nonland permanent to its owner's hand. Manifest dread. (Look at the top two cards of your library. Put one onto the battlefield face down as a 2/2 creature and the other into your graveyard. Turn it face up any time for its mana cost if it's a creature card.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "up to one target nonland permanent"
+                    },
+                    "destination": "Hand"
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeAs": "manifestDreadLooked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "manifestDreadLooked",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "manifestDreadManifested",
+                            "storeRemainder": "manifestDreadGraveyard",
+                            "selectedLabel": "Manifest (put onto the battlefield face down)",
+                            "remainderLabel": "Put into your graveyard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "manifestDreadManifested",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "faceDown": "MANIFEST"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "manifestDreadGraveyard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "nonland permanent"
+                },
+                "id": "up to one target nonland permanent"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "80",
+        "rarity": "UNCOMMON",
+        "artist": "Jeremy Wilson",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/6/5602756d-76d2-4502-965f-36fc44596123.jpg?1726286150"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

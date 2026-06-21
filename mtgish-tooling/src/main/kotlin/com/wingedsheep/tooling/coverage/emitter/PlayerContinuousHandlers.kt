@@ -100,14 +100,64 @@ internal val playerContinuousHandlers: Map<String, ActionHandler> = actionHandle
             else -> null
         }
     }
-    on("CreateTriggerUntil") { node, _, _ ->
+    on("CreateTriggerUntil") { node, _, tvar ->
         // Harsh Justice: reflect attackers' combat damage back to their controller.
         val blob = compact(node)
         if ("WhenACreatureDealsCombatDamageToAPlayer" in blob && "ControllerOfPermanent" in blob && "Trigger_ThatMuch" in blob) {
-            call("ReflectCombatDamageEffect")
-        } else null
+            return@on call("ReflectCombatDamageEffect")
+        }
+        // "When it dies this turn, <actions>." — a self-scoped delayed dies trigger watching the
+        // spell's bound target until end of turn (Turn Inside Out: +3/+0 then manifest dread on death;
+        // the Desperate Measures `CreateDelayedTriggerEffect(trigger = Triggers.Dies, watchedTarget =
+        // t)` shape). Renders only when the trigger is `WhenACreatureOrPlaneswalkerDies` scoped to the
+        // bound `Ref_TargetPermanent`, the expiry is UntilEndOfTurn, and the body renders whole.
+        whenThatPermanentDiesDelayedTrigger(node, tvar)
     }
     on("CreateEachPermanentRuleEffectUntil") { node, _, tvar -> renderGrantToGroup(node, tvar) }
+}
+
+/**
+ * `CreateTriggerUntil(WhenACreatureOrPlaneswalkerDies(SinglePermanent(Ref_TargetPermanent)),
+ * [actions], UntilEndOfTurn)` → a watched-entity delayed dies trigger on the spell's bound target:
+ * `CreateDelayedTriggerEffect(effect = <body>, trigger = Triggers.Dies, watchedTarget = <tvar>,
+ * expiry = DelayedTriggerExpiry.EndOfTurn)`.
+ *
+ * This is the "Target creature gets +X/+Y until end of turn. When it dies this turn, <do something>"
+ * shape (Turn Inside Out, Desperate Measures). Only renders when:
+ *  - the trigger is `WhenACreatureOrPlaneswalkerDies` scoped to `SinglePermanent(Ref_TargetPermanent)`
+ *    (i.e. "when *that* creature dies", the spell's bound target — not some other group),
+ *  - the expiry is `UntilEndOfTurn`,
+ *  - the body action list renders whole (sharing the ability's bound `tvar`).
+ * Any other trigger, subject, expiry, or an unrenderable body declines → SCAFFOLD.
+ */
+internal fun EmitCtx.whenThatPermanentDiesDelayedTrigger(node: JsonObject, tvar: String?): Dsl? {
+    if (tvar == null) return null
+    val args = node["args"].asArr ?: return null
+    val trigger = args.getOrNull(0) as? JsonObject ?: return null
+    val actionList = args.getOrNull(1) as? JsonObject ?: return null
+    val expiration = args.getOrNull(2) as? JsonObject ?: return null
+
+    if (trigger.strField("_Trigger") != "WhenACreatureOrPlaneswalkerDies") return null
+    if (expiration.strField("_Expiration") != "UntilEndOfTurn") return null
+
+    // The trigger must watch the bound target specifically: SinglePermanent(Ref_TargetPermanent).
+    val perms = trigger["args"] as? JsonObject ?: return null
+    if (perms.strField("_Permanents") != "SinglePermanent") return null
+    val single = perms["args"] as? JsonObject ?: return null
+    if (single.strField("_Permanent") != "Ref_TargetPermanent") return null
+
+    if (actionList.strField("_Actions") != "ActionList") return null
+    val inner = actionList["args"].asArr?.filterIsInstance<JsonObject>() ?: return null
+    if (inner.isEmpty()) return null
+    val body = renderEffectList(inner, tvar) ?: return null
+
+    return call(
+        "CreateDelayedTriggerEffect",
+        arg("effect", body),
+        arg("trigger", "Triggers.Dies"),
+        arg("watchedTarget", Lit(tvar)),
+        arg("expiry", "DelayedTriggerExpiry.EndOfTurn"),
+    )
 }
 
 /** A spell that grants a combat rule to a group / target (Alluring Scent, Taunt, Dread Charge). */
