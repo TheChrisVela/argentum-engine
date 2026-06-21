@@ -2031,6 +2031,98 @@
     ]
 }
 
+// Cynical Loner
+{
+    "name": "Cynical Loner",
+    "manaCost": "{1}{B}",
+    "typeLine": "Creature — Human Survivor",
+    "oracleText": "This creature can't be blocked by Glimmers.\nSurvival — At the beginning of your second main phase, if this creature is tapped, you may search your library for a card, put it into your graveyard, then shuffle.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "POSTCOMBAT_MAIN"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "FromZone",
+                                    "zone": "Library"
+                                },
+                                "storeAs": "searchable"
+                            },
+                            {
+                                "type": "SelectFromCollection",
+                                "from": "searchable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "found"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "found",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Graveyard"
+                                }
+                            },
+                            "ShuffleLibrary"
+                        ]
+                    }
+                },
+                "triggerCondition": {
+                    "type": "EntityMatches",
+                    "entity": "Self",
+                    "filter": "tapped"
+                },
+                "descriptionOverride": "Survival — At the beginning of your second main phase, if this creature is tapped, you may search your library for a card, put it into your graveyard, then shuffle."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "CantBeBlockedBy",
+                "blockerFilter": {
+                    "cardPredicates": [
+                        "IsCreature",
+                        {
+                            "type": "HasSubtype",
+                            "subtype": "Glimmer"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "rarity": "UNCOMMON",
+        "artist": "Miranda Meeks",
+        "flavorText": "\"Thanks, but no thanks. I'm done with hope.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/c/cc93bcb8-778d-491e-877b-e6ad432764cb.jpg?1726286181"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Daggermaw Megalodon
 {
     "name": "Daggermaw Megalodon",
@@ -3176,6 +3268,133 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Fanatic of the Harrowing
+{
+    "name": "Fanatic of the Harrowing",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Human Cleric",
+    "oracleText": "When this creature enters, each player discards a card. If you discarded a card this way, draw a card.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Players",
+                                "players": "EachOpponent"
+                            },
+                            "body": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.DoAction",
+                                "action": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": {
+                                                "type": "FromZone",
+                                                "zone": "Hand"
+                                            },
+                                            "storeAs": "hand"
+                                        },
+                                        {
+                                            "type": "SelectFromCollection",
+                                            "from": "hand",
+                                            "selection": {
+                                                "type": "ChooseExactly",
+                                                "count": {
+                                                    "type": "Fixed",
+                                                    "amount": 1
+                                                }
+                                            },
+                                            "storeSelected": "discarded",
+                                            "prompt": "Choose 1 card to discard"
+                                        },
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "discarded",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Graveyard"
+                                            },
+                                            "moveType": "Discard"
+                                        }
+                                    ]
+                                }
+                            },
+                            "then": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "When this creature enters, each player discards a card. If you discarded a card this way, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "96",
+        "artist": "Fajareka Setiawan",
+        "flavorText": "\"Valgavoth wants our pain, our terror! We cannot join him unless we suffer!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/2/a/2a0acb05-91e0-4f7c-b48b-99e1068fad16.jpg?1726286207"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 
@@ -7478,6 +7697,108 @@
     ]
 }
 
+// Popular Egotist
+{
+    "name": "Popular Egotist",
+    "manaCost": "{2}{B}",
+    "typeLine": "Creature — Human Rogue",
+    "oracleText": "{1}{B}, Sacrifice another creature or enchantment: This creature gains indestructible until end of turn. Tap it.\nWhenever you sacrifice a permanent, target opponent loses 1 life and you gain 1 life.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "PermanentsSacrificedEvent",
+                    "filter": "permanent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "LoseLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target opponent"
+                            }
+                        },
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetOpponent",
+                    "id": "target opponent"
+                },
+                "descriptionOverride": "Whenever you sacrifice a permanent, target opponent loses 1 life and you gain 1 life."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{B}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomSacrifice",
+                                "filter": "creature|enchantment",
+                                "excludeSelf": true
+                            }
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "INDESTRUCTIBLE",
+                            "target": "Self"
+                        },
+                        {
+                            "type": "TapUntap",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "descriptionOverride": "This creature gains indestructible until end of turn. Tap it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "114",
+        "rarity": "UNCOMMON",
+        "artist": "Julia Metzger",
+        "flavorText": "\"I know you'd want me to live, bestie!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/35e64605-8edb-4def-9522-765e90d1f0f3.jpg?1726286273"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Possessed Goat
 {
     "name": "Possessed Goat",
@@ -8662,6 +8983,84 @@
     "colorIdentityOverride": [
         "WHITE",
         "GREEN"
+    ]
+}
+
+// Silent Hallcreeper
+{
+    "name": "Silent Hallcreeper",
+    "manaCost": "{1}{U}",
+    "typeLine": "Enchantment Creature — Horror",
+    "oracleText": "This creature can't be blocked.\nWhenever this creature deals combat damage to a player, choose one that hasn't been chosen —\n• Put two +1/+1 counters on this creature.\n• Draw a card.\n• This creature becomes a copy of another target creature you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "AddCounters",
+                                "counterType": "+1/+1",
+                                "count": 2,
+                                "target": "Self"
+                            },
+                            "description": "Put two +1/+1 counters on this creature"
+                        },
+                        {
+                            "effect": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            }
+                        },
+                        {
+                            "effect": {
+                                "type": "EachPermanentBecomesCopyOfTarget",
+                                "affected": "Self"
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "creature ctrl:you",
+                                        "excludeSelf": true
+                                    }
+                                }
+                            ],
+                            "description": "This creature becomes a copy of another target creature you control"
+                        }
+                    ],
+                    "excludePreviouslyChosenModes": true,
+                    "countsAsModalSpell": false
+                },
+                "descriptionOverride": "Whenever this creature deals combat damage to a player, choose one that hasn't been chosen — Put two +1/+1 counters on this creature; or draw a card; or this creature becomes a copy of another target creature you control."
+            }
+        ],
+        "staticAbilities": [
+            "CantBeBlocked"
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "72",
+        "rarity": "RARE",
+        "artist": "Joshua Raphael",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/a/aac4f0cc-63be-4f08-956e-39839c9735ba.jpg?1726286122"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 

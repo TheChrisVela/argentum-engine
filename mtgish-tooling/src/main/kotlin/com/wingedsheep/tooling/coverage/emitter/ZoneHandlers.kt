@@ -739,6 +739,11 @@ internal fun EmitCtx.renderSearch(args: JsonElement?): Dsl? {
         searchSubtype != null -> "GameObjectFilter.Any.withSubtype(\"$searchSubtype\")"  // "an Elf card"
         enchSubtype != null -> "GameObjectFilter.Enchantment.withSubtype(\"$enchSubtype\")"  // "an Aura card"
         unionTypes != null -> cardTypeUnionFilter(unionTypes) ?: return null
+        // "search your library for a card" (Cynical Loner) — `FindAGenericCard` is the IR marker for an
+        // unrestricted search with NO type/subtype filter. Render `GameObjectFilter.Any` directly rather
+        // than falling through to `landSearchFilterDsl`, whose oracle-substring heuristics ("creature"
+        // appears in this card's unrelated "this creature" wording) would wrongly narrow the search.
+        "FindAGenericCard" in blob -> "GameObjectFilter.Any"
         else -> landSearchFilterDsl(args)
     }
     // "a legendary creature card" (Time of Need): a positive supertype the type search filter drops.
