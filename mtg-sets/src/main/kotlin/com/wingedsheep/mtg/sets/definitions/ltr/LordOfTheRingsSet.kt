@@ -21,7 +21,6 @@ object LordOfTheRingsSet : MtgSet {
     override val code = "LTR"
     override val displayName = "The Lord of the Rings: Tales of Middle-earth"
     override val releaseDate = "2023-06-23"
-    override val incomplete = true
     override val sealedSupported = true
 
     override val cards: List<CardDefinition> by lazy {
