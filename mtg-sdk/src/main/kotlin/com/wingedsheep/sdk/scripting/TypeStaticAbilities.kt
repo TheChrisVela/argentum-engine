@@ -205,6 +205,25 @@ data class LoseAllAbilities(
 }
 
 /**
+ * The affected permanent can't be turned face up.
+ * Used for Unable to Scream: "As long as enchanted creature is face down, it can't be turned
+ * face up." Only meaningful while the affected permanent is face down (a face-up permanent
+ * can't be "turned face up" anyway), so the static is applied unconditionally to the attached
+ * creature — the turn-face-up special action reads the projected flag and is rejected.
+ *
+ * This is a Layer 6 (ABILITY) continuous effect.
+ *
+ * @property filter What this ability applies to (typically AttachedCreature for auras)
+ */
+@SerialName("CantBeTurnedFaceUp")
+@Serializable
+data class CantBeTurnedFaceUp(
+    val filter: GroupFilter = GroupFilter.attachedCreature()
+) : StaticAbility {
+    override val description: String = "can't be turned face up"
+}
+
+/**
  * Enchanted land becomes a specific basic land type.
  * Used for auras like Sea's Claim: "Enchanted land is an Island."
  * This replaces all existing land subtypes with the specified type (Rule 305.7).

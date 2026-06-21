@@ -122,6 +122,52 @@ sealed interface ManaRestriction {
     }
 
     /**
+     * "Spend this mana only to turn permanents face up."
+     *
+     * Satisfied by the turn-face-up special action (disguise/morph face-up, CR 707.9 / 702.37e),
+     * not by spell casts or ability activations. Used by Overgrown Zealot and Creeping Peeper.
+     */
+    @SerialName("TurnPermanentsFaceUpOnly")
+    @Serializable
+    data object TurnPermanentsFaceUpOnly : ManaRestriction {
+        override val description: String = "Spend this mana only to turn permanents face up"
+    }
+
+    /**
+     * "Spend this mana only to unlock a door."
+     *
+     * Satisfied by the unlock-a-door special action (CR 709.5e), not by spell casts or ability
+     * activations. Used inside [AnyOf] by Creeping Peeper.
+     */
+    @SerialName("UnlockDoorOnly")
+    @Serializable
+    data object UnlockDoorOnly : ManaRestriction {
+        override val description: String = "Spend this mana only to unlock a door"
+    }
+
+    /**
+     * "Spend this mana only to [A], [B], or [C]." Disjunction of restrictions — the mana is
+     * spendable in any context that satisfies *any* of the [restrictions]. Used by Creeping
+     * Peeper ("cast an enchantment spell, unlock a door, or turn a permanent face up"). Composing
+     * atomic restrictions this way keeps each spend-context check in one place and lets new
+     * multi-option mana reuse the existing atoms.
+     */
+    @SerialName("AnyOf")
+    @Serializable
+    data class AnyOf(
+        val restrictions: List<ManaRestriction>
+    ) : ManaRestriction {
+        init {
+            require(restrictions.isNotEmpty()) { "AnyOf must have at least one restriction" }
+        }
+
+        override val description: String = "Spend this mana only to " +
+            restrictions.joinToString(", or ") {
+                it.description.removePrefix("Spend this mana only to ")
+            }
+    }
+
+    /**
      * "Spend this mana only to cast a spell from anywhere other than your hand."
      *
      * Used by Mm'menon, the Right Hand's granted artifact ability. Generalizes

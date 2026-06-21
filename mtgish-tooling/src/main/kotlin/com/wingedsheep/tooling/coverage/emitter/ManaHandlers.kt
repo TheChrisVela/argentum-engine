@@ -80,13 +80,51 @@ internal fun manaProduceDsl(node: JsonElement?): Dsl? =
  */
 private fun manaUseModifierRestriction(modifiers: List<JsonElement>): String? {
     val modifier = modifiers.singleOrNull() as? JsonObject ?: return null
-    if (modifier.strField("_ManaUseModifier") != "CanOnlySpendOnSpells") return null
-    val spells = modifier["args"] as? JsonObject ?: return null
+    return singleManaUseModifierRestriction(modifier)
+}
 
-    // "Spend this mana only to cast a Mount spell" (Bucolic Ranch): a BARE single subtype check, not
-    // wrapped in an Or. Map the one subtype straight to SubtypeSpellsOnly(setOf("Mount")).
+/**
+ * Recover a single `_ManaUseModifier` node into a `ManaRestriction.*` token, or null to scaffold.
+ * Handles the spell-spend shapes ([spellSpendRestriction]), the two DSK special-action spend
+ * modifiers (turn a permanent face up / unlock a door), and an `Or` of any of these as
+ * [ManaRestriction.AnyOf] — so multi-option mana like Creeping Peeper's "cast an enchantment spell,
+ * unlock a door, or turn a permanent face up" renders faithfully. Declines (null) the moment any
+ * branch is unrenderable, so a restriction is never silently dropped.
+ */
+private fun singleManaUseModifierRestriction(modifier: JsonObject): String? =
+    when (modifier.strField("_ManaUseModifier")) {
+        // "Spend this mana only to turn a permanent face up." (Overgrown Zealot / Creeping Peeper)
+        "CanOnlySpendToTurnAPermanentFaceUp" -> "ManaRestriction.TurnPermanentsFaceUpOnly"
+        // "Spend this mana only to unlock a door." (Creeping Peeper)
+        "CanOnlySpendToUnlockDoors" -> "ManaRestriction.UnlockDoorOnly"
+        "CanOnlySpendOnSpells" -> (modifier["args"] as? JsonObject)?.let { spellSpendRestriction(it) }
+        // A disjunction of modifiers -> ManaRestriction.AnyOf. Every branch must itself render.
+        "Or" -> {
+            val branches = modifier["args"] as? JsonArray ?: return null
+            val tokens = branches.map { b ->
+                val obj = b as? JsonObject ?: return null
+                singleManaUseModifierRestriction(obj) ?: return null
+            }
+            if (tokens.isEmpty()) null
+            else "ManaRestriction.AnyOf(listOf(${tokens.joinToString(", ")}))"
+        }
+        else -> null
+    }
+
+/**
+ * Recover the `_Spells` predicate of a `CanOnlySpendOnSpells` modifier into a `ManaRestriction.*`
+ * token. Covers a bare subtype check (`SubtypeSpellsOnly`), a bare card-type check
+ * (`CardTypeSpellsOrAbilitiesOnly`, e.g. "cast an enchantment spell"), and an `Or` of those
+ * (`InstantOrSorceryOnly` for {Instant, Sorcery}, otherwise `SubtypeSpellsOnly`). Null to scaffold.
+ */
+private fun spellSpendRestriction(spells: JsonObject): String? {
+    // "Spend this mana only to cast a Mount spell" (Bucolic Ranch): a BARE single subtype check.
     subtypeOfSpellsCheck(spells)?.let { subtype ->
         return "ManaRestriction.SubtypeSpellsOnly(setOf(\"$subtype\"))"
+    }
+    // "Spend this mana only to cast an enchantment spell" (Creeping Peeper): a BARE card-type check.
+    cardtypeOfSpellsCheck(spells)?.let { cardType ->
+        return "ManaRestriction.CardTypeSpellsOrAbilitiesOnly(CardType.$cardType, allowSpells = true, allowAbilities = false)"
     }
 
     if (spells.strField("_Spells") != "Or") return null
@@ -105,6 +143,21 @@ private fun manaUseModifierRestriction(modifiers: List<JsonElement>): String? {
     }
     if (subtypes.isEmpty()) return null
     return "ManaRestriction.SubtypeSpellsOnly(setOf(${subtypes.joinToString(", ") { "\"$it\"" }}))"
+}
+
+/**
+ * A single `IsCardtype` spells check carrying a bare string card type -> that type's `CardType.*`
+ * enum name (uppercased), for the card types the engine's `CardTypeSpellsOrAbilitiesOnly` accepts;
+ * else null. Only enchantment is wired here so far (Creeping Peeper); other card types decline
+ * rather than render an unsupported restriction.
+ */
+private fun cardtypeOfSpellsCheck(node: JsonObject): String? {
+    if (node.strField("_Spells") != "IsCardtype") return null
+    val type = (node["args"] as? kotlinx.serialization.json.JsonPrimitive)?.content ?: return null
+    return when (type) {
+        "Enchantment" -> "ENCHANTMENT"
+        else -> null
+    }
 }
 
 /**

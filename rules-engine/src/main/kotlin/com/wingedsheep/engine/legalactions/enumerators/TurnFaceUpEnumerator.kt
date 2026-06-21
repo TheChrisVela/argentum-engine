@@ -5,6 +5,7 @@ import com.wingedsheep.engine.legalactions.ActionEnumerator
 import com.wingedsheep.engine.legalactions.EnumerationContext
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.mechanics.cost.CostPaymentService
+import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
@@ -24,6 +25,10 @@ import com.wingedsheep.sdk.scripting.costs.PayCost
  */
 class TurnFaceUpEnumerator : ActionEnumerator {
 
+    // Lets restricted mana tagged "spend only to turn permanents face up" count toward
+    // affordability of the turn-face-up special action (Overgrown Zealot, Creeping Peeper).
+    private val faceUpContext = SpellPaymentContext(isTurnFaceUpAction = true)
+
     override fun enumerate(context: EnumerationContext): List<LegalAction> {
         val result = mutableListOf<LegalAction>()
         val state = context.state
@@ -34,6 +39,9 @@ class TurnFaceUpEnumerator : ActionEnumerator {
 
             // Must be face-down
             if (!container.has<FaceDownComponent>()) continue
+
+            // "It can't be turned face up" (Unable to Scream) suppresses the special action.
+            if (state.projectedState.cantBeTurnedFaceUp(entityId)) continue
 
             // Must have morph data (to get the morph cost)
             val morphData = container.get<MorphDataComponent>() ?: continue
@@ -62,9 +70,9 @@ class TurnFaceUpEnumerator : ActionEnumerator {
                                 maxAffordableX = maxX
                             )
                         )
-                    } else if (context.manaSolver.canPay(state, playerId, effectiveCost, precomputedSources = context.availableManaSources)) {
+                    } else if (context.manaSolver.canPay(state, playerId, effectiveCost, spellContext = faceUpContext, precomputedSources = context.availableManaSources)) {
                         val autoTapPreview = if (context.skipAutoTapPreview) null else {
-                            context.manaSolver.solve(state, playerId, effectiveCost, precomputedSources = context.availableManaSources)
+                            context.manaSolver.solve(state, playerId, effectiveCost, spellContext = faceUpContext, precomputedSources = context.availableManaSources)
                                 ?.sources?.map { it.entityId }
                         }
                         result.add(

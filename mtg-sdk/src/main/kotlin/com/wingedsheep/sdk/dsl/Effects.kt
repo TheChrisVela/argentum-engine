@@ -131,6 +131,7 @@ import com.wingedsheep.sdk.scripting.effects.NoteCreatureTypeEffect
 import com.wingedsheep.sdk.scripting.effects.ChangeColorToChosenEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseColorForTargetEffect
 import com.wingedsheep.sdk.scripting.effects.BecomeChosenManaColorEffect
+import com.wingedsheep.sdk.scripting.effects.AddColorEffect
 import com.wingedsheep.sdk.scripting.effects.ChangeColorEffect
 import com.wingedsheep.sdk.scripting.effects.ChangeWordInTextEffect
 import com.wingedsheep.sdk.scripting.effects.OptionType
@@ -1290,6 +1291,25 @@ object Effects {
         colors: Set<Color>,
         duration: Duration = Duration.EndOfTurn
     ): Effect = ChangeColorEffect(target, colors.map { it.name }.toSet(), duration)
+
+    /**
+     * Add [colors] to a single target in addition to its existing colors (default duration:
+     * Permanent). Unlike [ChangeColor], the target keeps its other colors. Pair with
+     * [AddCreatureType] / [AddCardType] for "becomes a [color] [type] in addition to its other
+     * colors and types" (Possessed Goat).
+     */
+    fun AddColor(
+        colors: Set<Color>,
+        target: EffectTarget = EffectTarget.Self,
+        duration: Duration = Duration.Permanent
+    ): Effect = AddColorEffect(colors.map { it.name }.toSet(), target, duration)
+
+    /** Convenience overload adding a single color. */
+    fun AddColor(
+        color: Color,
+        target: EffectTarget = EffectTarget.Self,
+        duration: Duration = Duration.Permanent
+    ): Effect = AddColorEffect(setOf(color.name), target, duration)
 
     /**
      * Make a single target become all five colors until [duration] expires.

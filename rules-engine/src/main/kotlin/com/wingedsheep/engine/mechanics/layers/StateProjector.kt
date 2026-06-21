@@ -306,6 +306,7 @@ class StateProjector(
                 isSuspected = v.isSuspected,
                 cantAttack = v.cantAttack,
                 cantBlock = v.cantBlock,
+                cantBeTurnedFaceUp = v.cantBeTurnedFaceUp,
                 mustAttack = v.mustAttack,
                 mustBlock = v.mustBlock,
                 cantBeBlockedExceptByFilters = v.cantBeBlockedExceptByFilters.toList(),

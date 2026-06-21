@@ -328,6 +328,13 @@ sealed interface SerializableModification {
     data object SetCantBlock : SerializableModification
 
     /**
+     * "It can't be turned face up." Used by Unable to Scream while it enchants a face-down
+     * creature. Projected onto the affected permanent; [TurnFaceUpHandler] reads it.
+     */
+    @Serializable
+    data object SetCantBeTurnedFaceUp : SerializableModification
+
+    /**
      * Suspect status: marks a permanent as suspected.
      * Applied atomically with GrantKeyword(MENACE) and SetCantBlock by SuspectEffectHandler.
      * Stored as a distinct modification so future cards can query the status independently.
@@ -572,6 +579,7 @@ fun SerializableModification.toModification(): Modification = when (this) {
     is SerializableModification.AddAllCreatureTypes -> Modification.AddAllCreatureTypes
     // SetCantAttack maps to the layer modification for "can't attack" projection
     is SerializableModification.SetCantAttack -> Modification.SetCantAttack
+    is SerializableModification.SetCantBeTurnedFaceUp -> Modification.SetCantBeTurnedFaceUp
     // SetCantBlock maps to the layer modification for "can't block" projection
     is SerializableModification.SetCantBlock -> Modification.SetCantBlock
     // SetSuspected maps to the layer modification for the "suspected" status projection

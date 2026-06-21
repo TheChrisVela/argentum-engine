@@ -47,6 +47,18 @@ data class SpellPaymentContext(
      * also requires `!isAbilityActivation`.
      */
     val isFromHand: Boolean = true,
+    /**
+     * True when the payment is for the turn-face-up special action (CR 707.9 / disguise's
+     * turn-up). Lets restrictions like [ManaRestriction.TurnPermanentsFaceUpOnly] recognize
+     * "spend this mana only to turn permanents face up" (Overgrown Zealot, Creeping Peeper).
+     */
+    val isTurnFaceUpAction: Boolean = false,
+    /**
+     * True when the payment is for the unlock-a-door special action (CR 709.5e). Lets
+     * [ManaRestriction.UnlockDoorOnly] recognize "spend this mana only to ... unlock a door"
+     * (Creeping Peeper).
+     */
+    val isUnlockDoorAction: Boolean = false,
 )
 
 /**
@@ -66,6 +78,9 @@ fun ManaRestriction.isSatisfiedBy(context: SpellPaymentContext): Boolean = when 
             context.subtypes.any { it.equals(subtype, ignoreCase = true) }
     is ManaRestriction.CastFromExileOnly -> !context.isAbilityActivation && context.isFromExile
     is ManaRestriction.CastFromNonHandOnly -> !context.isAbilityActivation && !context.isFromHand
+    is ManaRestriction.TurnPermanentsFaceUpOnly -> context.isTurnFaceUpAction
+    is ManaRestriction.UnlockDoorOnly -> context.isUnlockDoorAction
+    is ManaRestriction.AnyOf -> restrictions.any { it.isSatisfiedBy(context) }
     is ManaRestriction.SubtypeSpellsOnly ->
         !context.isAbilityActivation &&
             subtypes.any { sub -> context.subtypes.any { it.equals(sub, ignoreCase = true) } }

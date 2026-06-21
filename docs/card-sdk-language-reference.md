@@ -503,6 +503,10 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `LoseAllCreatureTypes(target, duration)` — remove all creature subtypes.
 - `SetCreatureSubtypes(subtypes, target, duration)` — replace subtypes outright.
 - `AddCreatureType(subtype, target, duration)` — additive subtype.
+- `AddColor(color | colors, target, duration?)` — add color(s) in addition to existing ones
+  (Layer 5; default duration Permanent). Ability-applied counterpart of the `GrantColor` static.
+  Pair with `AddCreatureType`/`AddCardType` for "becomes a [color] [type] in addition to its other
+  colors and types" (Possessed Goat).
 - `GrantHexproof(target, duration)` — temporary hexproof.
 - `GrantExileOnLeave(target)` — "if it would leave, exile instead".
 - `GrantKeywordToAttackersBlockedBy(keyword, target)` — grant keyword to creatures this blocks.
@@ -2621,6 +2625,11 @@ staticAbility {
   remove a card type (e.g. `"CREATURE"`). `RemoveCardType` backs Impending's "isn't a creature while it has a time
   counter" (wrapped in a `ConditionalStaticAbility`); reuse it for any "it's no longer a [type]" effect.
 - `ConditionalStaticAbility` — static gated by a runtime `Condition`.
+- `CantBeTurnedFaceUp(filter)` — matching permanents can't be turned face up (Layer 6; projects a
+  `cantBeTurnedFaceUp` flag read by the turn-face-up handler/enumerator). Only meaningful while the
+  permanent is face down (a face-up permanent can't be "turned face up"), so it's applied
+  unconditionally. Unable to Scream: "As long as enchanted creature is face down, it can't be turned
+  face up."
 - `CantReceiveCounters(filter)` — matching permanents can't have counters put on them (projects the
   `AbilityFlag.CANT_RECEIVE_COUNTERS` flag).
 - `CantBeSacrificed(filter)` — matching permanents can't be sacrificed (projects the
@@ -4302,7 +4311,19 @@ restriction matches the spell context.
   granted artifact mana ability. Generalizes `CastFromExileOnly` by allowing all non-hand
   origins instead of exile alone; rejects ability activations.
 - `ManaRestriction.CardTypeSpellsOrAbilitiesOnly(cardType, allowSpells?, allowAbilities?)` —
-  Steelswarm Operator shape.
+  Steelswarm Operator shape. Use `cardType = CardType.ENCHANTMENT, allowSpells = true` for
+  "spend only to cast an enchantment spell."
+- `ManaRestriction.TurnPermanentsFaceUpOnly` — only the turn-face-up special action (disguise/
+  morph face-up). Satisfied by `SpellPaymentContext.isTurnFaceUpAction`; the turn-face-up handler/
+  enumerator pass that context so restricted mana in the pool is consumed. Overgrown Zealot,
+  Creeping Peeper.
+- `ManaRestriction.UnlockDoorOnly` — only the unlock-a-door special action (CR 709.5e).
+  Satisfied by `SpellPaymentContext.isUnlockDoorAction`; the unlock-room handler/enumerator pass
+  that context. Creeping Peeper (inside `AnyOf`).
+- `ManaRestriction.AnyOf(restrictions)` — disjunction; the mana is spendable in any context that
+  satisfies *any* listed restriction. Compose atomic restrictions for multi-option mana — e.g.
+  Creeping Peeper's "cast an enchantment spell, unlock a door, or turn a permanent face up" is
+  `AnyOf(CardTypeSpellsOrAbilitiesOnly(ENCHANTMENT), UnlockDoorOnly, TurnPermanentsFaceUpOnly)`.
 
 ### `ManaSpellRider`
 

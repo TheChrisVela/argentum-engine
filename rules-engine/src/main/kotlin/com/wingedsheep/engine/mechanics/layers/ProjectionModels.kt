@@ -461,6 +461,17 @@ sealed interface Modification {
         override val layer get() = Layer.ABILITY
     }
 
+    /**
+     * Prevents the affected permanent from being turned face up (CR-style "it can't be turned
+     * face up"). Used by Unable to Scream: "As long as enchanted creature is face down, it can't
+     * be turned face up." Only meaningful while the permanent is face down; [TurnFaceUpHandler]
+     * rejects the special action when this flag is projected onto the source.
+     */
+    @Serializable
+    data object SetCantBeTurnedFaceUp : Modification {
+        override val layer get() = Layer.ABILITY
+    }
+
     @Serializable
     data object SetMustAttack : Modification {
         override val layer get() = Layer.ABILITY
@@ -578,6 +589,7 @@ internal data class MutableProjectedValues(
     var isSuspected: Boolean = false,
     var cantAttack: Boolean = false,
     var cantBlock: Boolean = false,
+    var cantBeTurnedFaceUp: Boolean = false,
     var mustAttack: Boolean = false,
     var mustBlock: Boolean = false,
     val cantBeBlockedExceptByFilters: MutableList<GameObjectFilter> = mutableListOf(),
