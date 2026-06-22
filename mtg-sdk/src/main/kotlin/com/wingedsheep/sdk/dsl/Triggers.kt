@@ -1020,6 +1020,15 @@ object Triggers {
      * [sourceFilter] = null matches any permanent's non-{T} ability; pass
      * [GameObjectFilter.Artifact] (Haunting Wind), `Artifact.opponentControls()` (Powerleech),
      * or null with [TriggerBinding.ATTACHED] (Artifact Possession — enchanted artifact only).
+     *
+     * For "that artifact's controller" in the payoff: the [TriggerBinding.ATTACHED] form exposes
+     * the activated ability's source permanent as the triggering entity, so use
+     * `EffectTarget.ControllerOfTriggeringEntity` (resolves to that permanent's controller). The
+     * global ([TriggerBinding.ANY]) form has only the *ability* as the triggering entity — and that
+     * entity is absent for mana abilities — so use `EffectTarget.PlayerRef(Player.TriggeringPlayer)`,
+     * i.e. the activating player. These coincide for every normal activation (you may only activate
+     * abilities of permanents you control); they would diverge only if a player somehow activated an
+     * artifact ability they don't control, which none of these cards permit.
      */
     fun activatesAbilityWithoutTap(
         player: Player = Player.Each,

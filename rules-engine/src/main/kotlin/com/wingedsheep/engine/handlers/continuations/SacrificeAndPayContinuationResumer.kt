@@ -783,13 +783,18 @@ class SacrificeAndPayContinuationResumer(
 
         // Enforce any untap-count caps (Damping Field). The decision's minSelections already forces
         // the player to keep enough tapped when the matching pool is homogeneous; this is defence in
-        // depth against a selection that satisfies the count but leaves a filter over its cap.
+        // depth against a selection that satisfies the count but leaves a filter over its cap (which
+        // can happen when the keep-tapped pool also holds optional MAY_NOT_UNTAP permanents outside
+        // the filter). The decision stays pending, so the rejection re-prompts; spell out the exact
+        // shortfall so the player can correct it rather than guess.
         for (limit in continuation.untapLimits) {
             val untappingMatching = limit.matchingPermanents.count { it in toUntap }
             if (untappingMatching > limit.max) {
+                val mustKeepMore = untappingMatching - limit.max
                 return ExecutionResult.error(
                     state,
-                    "Can't untap more than ${limit.max} of the restricted permanents"
+                    "At most ${limit.max} of the restricted permanents may untap; " +
+                        "keep $mustKeepMore more of them tapped"
                 )
             }
         }
