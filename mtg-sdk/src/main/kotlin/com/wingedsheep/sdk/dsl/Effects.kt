@@ -627,6 +627,25 @@ object Effects {
         ExileUntilLeavesEffect(target)
 
     /**
+     * Exile target creature and all Auras attached to it (linked to the source), noting the
+     * number and kind of counters that were on the creature. The exile half of a state-preserving
+     * blink — pair with [ReturnNotedExileTappedWithAuras] on the source's leaves-the-battlefield
+     * and becomes-untapped triggers (Tawnos's Coffin).
+     */
+    fun ExileWithAurasNotingCounters(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
+        com.wingedsheep.sdk.scripting.effects.ExileWithAurasNotingCountersEffect(target)
+
+    /**
+     * Return the noted exiled creature to the battlefield tapped under its owner's control with the
+     * noted counters restored, then return its exiled Auras attached to it (Auras that can't
+     * legally re-attach go to their owners' graveyards). The return half of
+     * [ExileWithAurasNotingCounters]; a no-op when nothing is noted, so it is safe to fire from
+     * both the untap and the leaves-the-battlefield trigger.
+     */
+    fun ReturnNotedExileTappedWithAuras(): Effect =
+        com.wingedsheep.sdk.scripting.effects.ReturnNotedExileTappedWithAurasEffect
+
+    /**
      * Exile a target permanently and link it to the source permanent via
      * `LinkedExileComponent` (the source's linked-exile pile). Unlike [ExileUntilLeaves]
      * there is no automatic return — the link only records which card the source exiled, so
@@ -3192,6 +3211,25 @@ object Effects {
         toughness: Int = 1,
         duration: Duration = Duration.EndOfTurn
     ): Effect = AnimateLandEffect(target, power, toughness, duration)
+
+    /**
+     * One-shot: animate every permanent matching [filter] into a creature for [duration], setting
+     * each one's base power and toughness to [power]/[toughness] (each a [DynamicAmount] evaluated
+     * per affected permanent — e.g. `DynamicAmounts.manaValueOf(self)` for "P/T equal to its mana
+     * value") and (by default) stripping all of its abilities. The affected set is captured once at
+     * resolution (CR 611.2c). Companion to expressing the same effect continuously via group statics
+     * — use this for the "this effect continues until end of turn" linger (Titania's Song) when the
+     * source permanent leaves.
+     */
+    fun MassAnimate(
+        filter: com.wingedsheep.sdk.scripting.GameObjectFilter,
+        power: com.wingedsheep.sdk.scripting.values.DynamicAmount,
+        toughness: com.wingedsheep.sdk.scripting.values.DynamicAmount,
+        loseAllAbilities: Boolean = true,
+        duration: Duration = Duration.EndOfTurn
+    ): Effect = com.wingedsheep.sdk.scripting.effects.MassAnimateEffect(
+        filter, power, toughness, loseAllAbilities, duration
+    )
 
     /**
      * Earthbend N (TLA keyword action) — target land becomes a 0/0 creature-land

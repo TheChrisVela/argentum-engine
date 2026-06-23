@@ -233,6 +233,48 @@ data class ExileUntilLeavesEffect(
 }
 
 /**
+ * Exile [target] creature and all Auras attached to it, linking every exiled card to the source
+ * permanent ([com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent]) and
+ * noting the number and kind of counters that were on the creature
+ * ([com.wingedsheep.engine.state.components.battlefield.NotedExileComponent]).
+ *
+ * The state-preserving half of a blink that remembers counters and Auras (Tawnos's Coffin:
+ * "Exile target creature and all Auras attached to it. Note the number and kind of counters that
+ * were on that creature."). Pair with [ReturnNotedExileTappedWithAurasEffect] on the source's
+ * leaves-the-battlefield and becomes-untapped triggers. No-op if the source has already left the
+ * battlefield, or the target is gone, when this resolves.
+ */
+@SerialName("ExileWithAurasNotingCounters")
+@Serializable
+data class ExileWithAurasNotingCountersEffect(
+    val target: EffectTarget = EffectTarget.ContextTarget(0)
+) : Effect {
+    override val description: String =
+        "Exile ${target.description} and all Auras attached to it, noting its counters"
+}
+
+/**
+ * Return the noted exiled creature (the principal of the source's
+ * [com.wingedsheep.engine.state.components.battlefield.NotedExileComponent]) to the battlefield
+ * **tapped under its owner's control** with its noted number and kind of counters restored, then
+ * return the source's other linked-exiled cards (the creature's Auras) attached to that permanent.
+ * Auras that can't legally re-attach are put into their owners' graveyards by the unattached-Aura
+ * state-based action (CR 704.5m).
+ *
+ * The return half of [ExileWithAurasNotingCountersEffect] — Tawnos's Coffin's "When this artifact
+ * leaves the battlefield or becomes untapped, return that exiled card …". A no-op when nothing is
+ * noted / the principal is no longer in exile (so firing it from both an untap trigger and a leave
+ * trigger is safe — whichever fires first returns the cards, the other finds nothing).
+ */
+@SerialName("ReturnNotedExileTappedWithAuras")
+@Serializable
+data object ReturnNotedExileTappedWithAurasEffect : Effect {
+    override val description: String =
+        "Return the exiled card to the battlefield tapped with the noted counters on it, then " +
+            "return the exiled Aura cards attached to it"
+}
+
+/**
  * Destroy all permanents matching a filter.
  *
  * Optionally excludes permanents that have any subtype matching a stored list of strings

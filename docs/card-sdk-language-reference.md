@@ -425,6 +425,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `ExileAndGrantOwnerPlayPermission(target, until?)` — exile + owner may play it (Garth-style).
 - `ExileOpponentsGraveyards()` — exile every card in each opponent's graveyard.
 - `ExileUntilLeaves(target)` — linked exile; returns when source leaves the battlefield.
+- `ExileWithAurasNotingCounters(target = ContextTarget(0))` / `ReturnNotedExileTappedWithAuras()` — the state-preserving "blink that remembers counters and Auras" pair (Tawnos's Coffin). The exile half exiles the target creature **and all Auras attached to it** (all linked to the source via `LinkedExileComponent`) and records the creature's identity + its `kind→count` counter snapshot on the source via `NotedExileComponent` (captures the Auras *before* exiling the creature, so the unattached-Aura SBA can't pre-empt them). The return half (a no-op when nothing is noted, so it's safe to fire from **both** a `LeavesBattlefield` and a `BecomesUntapped` trigger — whichever fires first returns the cards) returns the noted creature **tapped under its owner's control** with the noted counters restored, then returns the linked Auras attached to it; Auras that can't legally re-attach go to their owners' graveyards via the CR 704.5m unattached-Aura SBA (the "If you don't …" fallback). `NotedExileComponent` is preserved across the source's own zone change (like `LinkedExileComponent`) so the leaves-the-battlefield return still reads it, and stripped on battlefield re-entry (Rule 400.7).
 - `ExileLinkedToSource(target)` — exile a target **permanently** and record it in the source's linked-exile pile (`LinkedExileComponent`). Unlike `ExileUntilLeaves` there's no automatic return — the link just lets later abilities reference the exiled card (Territory Forge's "this permanent has all activated abilities of the exiled card").
 - `ExileGroupAndLink(filter, storeAs?)` — exile all matching permanents into source's linked exile pile.
 - `ExileFromTopRepeating(count, repeatCondition)` — keep exiling top cards while a condition holds.
@@ -946,6 +947,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `EachPermanentBecomesCopyOfTargetEffect(target, filter, duration, excludeTarget, affected)` — mass copy (Mirrorform, Naga Fleshcrafter renew). Facade `Effects.EachPermanentBecomesCopyOfTarget(...)`. Copies copiable values only (Rule 707) — counters, tapped state, attached auras/equipment and non-copy modifiers stay put. `duration = Duration.Permanent` (default) bakes the copy into base state for good; `Duration.EndOfTurn` makes a temporary copy reverted by the end-of-turn cleanup (each affected permanent restores its pre-copy `CardComponent` from its `CopyOfComponent` snapshot). `excludeTarget = true` keeps the copy **source** out of the affected set, for "each **other** … becomes a copy of that …" wordings where the target keeps its own identity (and any counter just placed on it). `affected` (an `EffectTarget`, e.g. a second `ContextTarget`) switches to the single-permanent "target permanent A becomes a copy of target permanent B" shape (Fleeting Reflection: "target creature you control … becomes a copy of up to one **other** target creature") — only that one resolved permanent becomes a copy of `target`, and `filter`/`excludeTarget` are ignored; if `affected` resolves to nothing (optional target omitted) the effect is a no-op.
 - `BecomeCopyOfLinkedExileEffect(affected = AttachedToTriggeringPermanent)` — facade `Effects.BecomeCopyOfLinkedExile(affected)`. The `affected` permanent becomes a copy of the first creature card in the effect's **source's linked exile** (`LinkedExileComponent` — the card the source banished via `Effects.ExileUntilLeaves`), copiable values only (Rule 707.2). Baked into the affected permanent's `CardComponent` like Clone, but tagged with a `CopyWhileAttachedComponent(sourceId)`; the `AttachedCopyExpiryCheck` state-based action reverts the copy (restoring the pre-copy snapshot) the moment the source stops being attached to it — detach, re-attach elsewhere, or source leaving (CR 611.2b, one-way). No-op when the source's linked exile holds no creature card. Used by Assimilation Aegis ("for as long as this Equipment remains attached to it, that creature becomes a copy of a creature card exiled with this Equipment").
 - `AnimateLandEffect(target, subtypes, keywords, duration)` — land becomes a creature.
+- `MassAnimateEffect(filter, power, toughness, loseAllAbilities = true, duration = EndOfTurn)` — facade `Effects.MassAnimate(filter, power, toughness, loseAllAbilities, duration)`. One-shot: animate **every** permanent matching `filter` into a creature for `duration`, setting each one's base power and toughness to the `power`/`toughness` **`DynamicAmount`s** — resolved per affected permanent (Layer 7b `SetPowerToughnessDynamic`), so `EntityProperty(AffectedEntity, ManaValue)` gives "each equal to its own mana value" — and, when `loseAllAbilities`, stripping all of its abilities (Layer 6 `RemoveAllAbilities`); Layer 4 `AddType("CREATURE")` makes them creatures. The affected set is captured **once** at resolution against the current battlefield (CR 611.2c) and locked in for the duration. This is the fixed-set, one-shot companion to expressing the same effect *continuously* via the `GrantCardType` + `LoseAllAbilities` + `SetBasePowerToughnessDynamicStatic` group statics on a permanent (which take the same `DynamicAmount` P/T) — use the statics for the while-on-battlefield behavior and this effect for the "this effect continues until end of turn" linger when the generating permanent leaves. Used by **Titania's Song** ("Each noncreature artifact loses all abilities and becomes an artifact creature with power and toughness each equal to its mana value. If this enchantment leaves the battlefield, this effect continues until end of turn.") — a `LeavesBattlefield(SELF)` trigger replays the static set as until-EOT floating effects with `power = toughness = EntityProperty(AffectedEntity, ManaValue)`. The dynamic-P/T floating effect resolves its controller from the effect's captured controller (`ContinuousEffect.controllerId`) when the source has already left the battlefield.
 - `ExploreEffect(target)` — Explore mechanic (reveal top; land → battlefield, else hand + counter).
 - `MakePreparedEffect(target = Self)` — facade `Effects.MakePrepared(target)`. The target permanent **becomes prepared** (Prepare — Secrets of Strixhaven): gains the prepared status and gets a castable copy of its card's prepare spell (`cardFaces[0]`) in its controller's exile (same machinery as entering prepared, shared via `PreparedService.makePrepared`). No-op if already prepared, or the card has no prepare face. Use for cards that *become* prepared mid-game (e.g. Joined Researchers' end-step trigger); cards that "enter prepared" use `Keyword.PREPARED` on a `PREPARE`-layout card instead.
 - `AttachEquipmentEffect(equip, target)` — attach an Equipment.
@@ -2023,10 +2025,16 @@ for any other (filter, binding, to/excludeTo) combination.
   widen any controller-scoped filter the same way.
 - `PutIntoGraveyardFromBattlefield` — SELF, same event shape as `Dies`; rename
   clarifies non-creature intent (artifact / enchantment going to yard).
-- `leavesBattlefield(filter, to?, excludeTo?, binding)` — factory. `to = GRAVEYARD`
-  gives a "dies" variant scoped beyond the named constants (other tribal deaths,
+- `leavesBattlefield(filter, to?, excludeTo?, binding, excludeSacrifice = false)` — factory.
+  `to = GRAVEYARD` gives a "dies" variant scoped beyond the named constants (other tribal deaths,
   any-controller deaths); `excludeTo = GRAVEYARD` gives "leaves without dying"
   (Three Tree Scribe shape); leaving both null gives "leaves to any zone."
+  `excludeSacrifice = true` adds the intervening-if "if it wasn't sacrificed" (Urza's Miter,
+  CR 701.21): the trigger fires for any battlefield exit **except** a sacrifice. The matcher reads
+  the triggering `ZoneChangeEvent.wasSacrificed` flag, which the central sacrifice hook
+  (`ZoneTransitionService.trackPermanentSacrifice` → `pendingSacrificeIds`) stamps on every
+  sacrifice — cost payment and the sacrifice effect executors alike — so ordinary destruction /
+  lethal-damage / SBA deaths leave it `false`.
 
 **Token creation**
 
@@ -2147,6 +2155,12 @@ for anything else (the ATTACHED-binding aura shapes, custom step/player combinat
 - `YourDrawStep` — start of your draw step.
 - `EachUpkeep` — every upkeep.
 - `EachOpponentUpkeep` — at each opponent's upkeep.
+- `ChosenOpponentUpkeep` — at the upkeep of the opponent chosen as the source entered (The Rack).
+  Pairs with `replacementEffect(EntersWithChoice(ChoiceType.OPPONENT))`; the step trigger
+  (`StepEvent(UPKEEP, Player.ChosenOpponent)`) fires only on that stored player's upkeep — the
+  matcher resolves `Player.ChosenOpponent` against the source's `ChoiceSlot.OPPONENT` and doesn't
+  fire until a choice is recorded. Effects/dynamic amounts in the ability can reference
+  `Player.ChosenOpponent` / `EffectTarget.PlayerRef(Player.ChosenOpponent)` for "that player".
 - `YourEndStep` — beginning of your end step.
 - `EachEndStep` — beginning of each end step.
 - `BeginCombat` — start of combat on your turn.

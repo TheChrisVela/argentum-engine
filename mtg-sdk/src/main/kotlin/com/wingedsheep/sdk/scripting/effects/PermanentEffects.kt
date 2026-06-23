@@ -161,6 +161,55 @@ data class BecomeArtifactEffect(
 }
 
 /**
+ * One-shot: animate every permanent matching [filter] into a creature for [duration], setting its
+ * base power and toughness to [power]/[toughness] (each a [DynamicAmount] evaluated per affected
+ * permanent — e.g. `EntityProperty(AffectedEntity, ManaValue)` for "P/T equal to its mana value")
+ * and (optionally) stripping all of its abilities. Implemented as floating continuous effects keyed
+ * to the matched set, captured once at resolution time (CR 611.2c — the set of affected permanents
+ * is locked in):
+ * - Layer 4 (TYPE): AddType("CREATURE")
+ * - Layer 6 (ABILITY): RemoveAllAbilities, when [loseAllAbilities]
+ * - Layer 7b (POWER_TOUGHNESS, SET_VALUES): base P/T = [power]/[toughness]
+ *
+ * This is the one-shot, fixed-set companion to expressing the same effect *continuously* through
+ * [com.wingedsheep.sdk.scripting.GrantCardType] + [com.wingedsheep.sdk.scripting.LoseAllAbilities] +
+ * [com.wingedsheep.sdk.scripting.SetBasePowerToughnessDynamicStatic] group statics on a permanent
+ * (which take the same [DynamicAmount] P/T). Use the statics for the while-on-battlefield behavior;
+ * use this effect for the "this effect continues until end of turn" linger when the permanent that
+ * generated those statics leaves — Titania's Song: "Each noncreature artifact ... becomes an
+ * artifact creature with power and toughness each equal to its mana value. If this enchantment
+ * leaves the battlefield, this effect continues until end of turn." Reusable for any "all X become
+ * creatures with P/T [formula] (and lose their abilities) until end of turn" effect — name the
+ * mechanic, not the card.
+ *
+ * @property filter Which permanents to animate (evaluated against the battlefield at resolution)
+ * @property power Base power each animated permanent is set to (per-entity dynamic value)
+ * @property toughness Base toughness each animated permanent is set to (per-entity dynamic value)
+ * @property loseAllAbilities Whether the animated permanents also lose all abilities
+ * @property duration How long the animation lasts (defaults to end of turn)
+ */
+@SerialName("MassAnimate")
+@Serializable
+data class MassAnimateEffect(
+    val filter: GameObjectFilter,
+    val power: DynamicAmount,
+    val toughness: DynamicAmount,
+    val loseAllAbilities: Boolean = true,
+    val duration: Duration = Duration.EndOfTurn
+) : Effect {
+    override val description: String = buildString {
+        append("Each ${filter.description}")
+        if (loseAllAbilities) append(" loses all abilities and")
+        append(" becomes a creature with power and toughness set to ${power.description}/${toughness.description}")
+        if (duration.description.isNotEmpty()) append(" ${duration.description}")
+    }
+    override fun applyTextReplacement(replacer: TextReplacer): Effect {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
+    }
+}
+
+/**
  * Target permanent becomes saddled until end of turn (CR 702.171b). This is the resolving
  * effect of a Saddle ability: it stamps a transient "saddled" marker on the permanent (the
  * engine's `SaddledComponent`), which Mount payoffs read via `Conditions.SourceIsSaddled` /

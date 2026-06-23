@@ -440,7 +440,7 @@ class TriggerDetector(
         for (entry in index.getEntitiesForCategory(TriggerCategory.STEP)) {
             for (ability in entry.abilities) {
                 if (ability.activeZone != Zone.BATTLEFIELD) continue
-                if (matcher.matchesStepTrigger(ability.trigger, step, entry.controllerId, state)) {
+                if (matcher.matchesStepTrigger(ability.trigger, step, entry.controllerId, state, entry.entityId)) {
                     triggers.add(
                         PendingTrigger(
                             ability = ability,
@@ -493,7 +493,7 @@ class TriggerDetector(
                     val ownerId = cardComponent.ownerId
                         ?: container.get<OwnerComponent>()?.playerId
                         ?: continue
-                    if (matcher.matchesStepTrigger(ability.trigger, step, ownerId, state)) {
+                    if (matcher.matchesStepTrigger(ability.trigger, step, ownerId, state, entityId)) {
                         triggers.add(
                             PendingTrigger(
                                 ability = ability,
@@ -521,7 +521,7 @@ class TriggerDetector(
                     val ownerId = cardComponent.ownerId
                         ?: container.get<OwnerComponent>()?.playerId
                         ?: continue
-                    if (matcher.matchesStepTrigger(ability.trigger, step, ownerId, state)) {
+                    if (matcher.matchesStepTrigger(ability.trigger, step, ownerId, state, entityId)) {
                         triggers.add(
                             PendingTrigger(
                                 ability = ability,
@@ -540,7 +540,7 @@ class TriggerDetector(
         // (e.g., Dimensional Breach creates a permanent global upkeep trigger)
         for (global in state.globalGrantedTriggeredAbilities) {
             val ability = global.ability
-            if (matcher.matchesStepTrigger(ability.trigger, step, global.controllerId, state)) {
+            if (matcher.matchesStepTrigger(ability.trigger, step, global.controllerId, state, global.sourceId)) {
                 triggers.add(
                     PendingTrigger(
                         ability = ability,

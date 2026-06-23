@@ -11,8 +11,10 @@ import com.wingedsheep.engine.handlers.effects.ExecutorModule
 class LinkedExileExecutors : ExecutorModule {
     override fun executors(): List<EffectExecutor<*>> = listOf(
         ExileUntilLeavesExecutor(),
+        ExileWithAurasNotingCountersExecutor(),
         MarkExileOnDeathExecutor(),
         MarkExileControllerGraveyardOnDeathExecutor(),
-        ReturnOneFromLinkedExileExecutor()
+        ReturnOneFromLinkedExileExecutor(),
+        ReturnNotedExileTappedWithAurasExecutor()
     )
 }

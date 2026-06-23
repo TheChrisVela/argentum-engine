@@ -345,6 +345,7 @@ object ZoneMovementUtils {
             // Rule 400.7: zone changes create a new object with no memory of prior existence.
             // Strip linked exile tracking so the new instance starts with no exiled cards.
             .without<LinkedExileComponent>()
+            .without<com.wingedsheep.engine.state.components.battlefield.NotedExileComponent>()
             .without<MayCastFromLinkedExileUsedThisTurnComponent>()
             // Craft materials linked to the prior battlefield existence (CR 702.167c) — the
             // re-entering object is a new object, so it has no recorded materials. The

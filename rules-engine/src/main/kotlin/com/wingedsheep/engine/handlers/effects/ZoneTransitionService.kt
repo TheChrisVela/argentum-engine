@@ -303,6 +303,11 @@ object ZoneTransitionService {
             // until then, graveyard/exile instances need the component for last-known-info triggers.
             val preStripLinkedExile = newState.getEntity(entityId)
                 ?.get<com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent>()
+            // Same last-known-info preservation for the noted-exile snapshot (Tawnos's Coffin):
+            // its "return the exiled card with the noted counters" LTB trigger reads it after the
+            // source has left.
+            val preStripNotedExile = newState.getEntity(entityId)
+                ?.get<com.wingedsheep.engine.state.components.battlefield.NotedExileComponent>()
 
             // Revert permanent-level copy effects (Clone / Mockingbird / "becomes a copy of").
             // Per CR 400.7, a card that changes zones becomes a new object — its copy effect
@@ -325,6 +330,11 @@ object ZoneTransitionService {
             if (preStripLinkedExile != null && actualDestZone != Zone.BATTLEFIELD) {
                 newState = newState.updateEntity(entityId) { c ->
                     c.with(preStripLinkedExile)
+                }
+            }
+            if (preStripNotedExile != null && actualDestZone != Zone.BATTLEFIELD) {
+                newState = newState.updateEntity(entityId) { c ->
+                    c.with(preStripNotedExile)
                 }
             }
         }
@@ -409,7 +419,14 @@ object ZoneTransitionService {
             }
         }
 
-        // 8. Emit ZoneChangeEvent
+        // 8. Emit ZoneChangeEvent. A battlefield exit is a sacrifice (CR 701.21) when the central
+        // sacrifice hook (trackPermanentSacrifice) pre-marked this entity in pendingSacrificeIds —
+        // every sacrifice site routes through that hook, so the dozen call sites stay flag-free.
+        // Consume the marker so a later non-sacrifice move of the same id isn't mis-tagged.
+        val wasSacrificed = leavingBattlefield && entityId in newState.pendingSacrificeIds
+        if (entityId in newState.pendingSacrificeIds) {
+            newState = newState.copy(pendingSacrificeIds = newState.pendingSacrificeIds - entityId)
+        }
         events.add(
             ZoneChangeEvent(
                 entityId = entityId,
@@ -433,7 +450,8 @@ object ZoneTransitionService {
                 lastKnownCardDefinitionId = if (leavingBattlefield) cardComponent.cardDefinitionId else null,
                 lastKnownDamageDealtByPlayers = lastKnownDamageDealtByPlayers,
                 lastKnownDamageSources = lastKnownDamageSources,
-                xValue = lastKnownCastX
+                xValue = lastKnownCastX,
+                wasSacrificed = wasSacrificed
             )
         )
 
@@ -675,6 +693,9 @@ object ZoneTransitionService {
         if (permanentIds.isEmpty()) return state
         var newState = state.copy(
             permanentsSacrificedThisTurn = state.permanentsSacrificedThisTurn + permanentIds.size,
+            // Mark these as being sacrificed so the imminent moveToZone stamps wasSacrificed
+            // on each ZoneChangeEvent (CR 701.21 — read by Urza's Miter et al.).
+            pendingSacrificeIds = state.pendingSacrificeIds + permanentIds,
         )
         newState = newState.updateEntity(controllerId) { container ->
             val prior = container.get<PermanentsSacrificedThisTurnComponent>()?.count ?: 0
@@ -713,6 +734,7 @@ object ZoneTransitionService {
             // a permanent that re-enters the battlefield is a new object with no memory of
             // its previous existence, so it should not retain links to previously exiled cards)
             updated = updated.without<LinkedExileComponent>()
+            updated = updated.without<com.wingedsheep.engine.state.components.battlefield.NotedExileComponent>()
 
             // Same for CraftedFromExiledComponent (CR 702.167c materials link): the
             // re-entering object is a new object, so it has no recorded materials. The

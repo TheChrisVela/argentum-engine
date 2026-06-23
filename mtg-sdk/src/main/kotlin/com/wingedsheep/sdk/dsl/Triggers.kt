@@ -207,12 +207,14 @@ object Triggers {
         to: Zone? = null,
         excludeTo: Zone? = null,
         binding: TriggerBinding = TriggerBinding.SELF,
+        excludeSacrifice: Boolean = false,
     ): TriggerSpec = TriggerSpec(
         event = ZoneChangeEvent(
             filter = filter,
             from = Zone.BATTLEFIELD,
             to = to,
             excludeTo = excludeTo,
+            excludeSacrifice = excludeSacrifice,
         ),
         binding = binding,
     )
@@ -499,6 +501,16 @@ object Triggers {
      */
     val EachOpponentUpkeep: TriggerSpec = TriggerSpec(
         event = StepEvent(Step.UPKEEP, Player.EachOpponent),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
+     * At the beginning of the chosen opponent's upkeep (The Rack). Pairs with an
+     * `EntersWithChoice(ChoiceType.OPPONENT)` replacement that records the chosen player on the
+     * source under `ChoiceSlot.OPPONENT`; the trigger fires only on that player's upkeep.
+     */
+    val ChosenOpponentUpkeep: TriggerSpec = TriggerSpec(
+        event = StepEvent(Step.UPKEEP, Player.ChosenOpponent),
         binding = TriggerBinding.ANY
     )
 

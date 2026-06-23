@@ -2,7 +2,7 @@
 
 **Set Size:** 85 cards
 **Release Date:** March 4, 1994
-**Implemented:** 61 / 85
+**Implemented:** 63 / 85
 | Color       | Count |
 |-------------|-------|
 | White       | 7     |
@@ -63,7 +63,7 @@
 - [x] Crumble
 - [x] Gaea's Avenger
 - [x] Powerleech
-- [ ] Titania's Song
+- [x] Titania's Song
 
 ### Artifacts
 - [x] Amulet of Kroog
@@ -98,7 +98,7 @@
 - [x] Staff of Zegon
 - [x] Su-Chi
 - [x] Tablet of Epityr
-- [ ] Tawnos's Coffin
+- [x] Tawnos's Coffin
 - [x] Tawnos's Wand
 - [ ] Tawnos's Weaponry
 - [x] Tetravus

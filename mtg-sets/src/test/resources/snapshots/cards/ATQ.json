@@ -3023,6 +3023,77 @@
     "colorIdentityOverride": []
 }
 
+// Tawnos's Coffin
+{
+    "name": "Tawnos's Coffin",
+    "manaCost": "{4}",
+    "typeLine": "Artifact",
+    "oracleText": "You may choose not to untap this artifact during your untap step.\n{3}, {T}: Exile target creature and all Auras attached to it. Note the number and kind of counters that were on that creature. When this artifact leaves the battlefield or becomes untapped, return that exiled card to the battlefield under its owner's control tapped with the noted number and kind of counters on it. If you do, return the other exiled cards to the battlefield under their owner's control attached to that permanent.",
+    "flags": [
+        "MAY_NOT_UNTAP"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": "ReturnNotedExileTappedWithAuras"
+            },
+            {
+                "id": "ability_2",
+                "trigger": "UntapEvent",
+                "effect": "ReturnNotedExileTappedWithAuras"
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "ExileWithAurasNotingCounters",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature"
+                    }
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "target creature"
+                    }
+                ],
+                "descriptionOverride": "{3}, {T}: Exile target creature and all Auras attached to it, noting its counters."
+            }
+        ]
+    },
+    "setCode": "ATQ",
+    "metadata": {
+        "collectorNumber": "68",
+        "rarity": "RARE",
+        "artist": "Christopher Rush",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c27bc1de-8246-4dc8-af51-ec21def9e226.jpg?1562936148"
+    },
+    "colorIdentityOverride": []
+}
+
 // Tawnos's Wand
 {
     "name": "Tawnos's Wand",
@@ -3264,6 +3335,168 @@
         "imageUri": "https://cards.scryfall.io/normal/front/2/3/23eb19f9-2e8f-4bf0-9bf8-868e6da70e2d.jpg?1562902619"
     },
     "colorIdentityOverride": []
+}
+
+// The Rack
+{
+    "name": "The Rack",
+    "manaCost": "{1}",
+    "typeLine": "Artifact",
+    "oracleText": "As this artifact enters, choose an opponent.\nAt the beginning of the chosen player's upkeep, this artifact deals X damage to that player, where X is 3 minus the number of cards in their hand.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP",
+                    "player": "ChosenOpponent"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DealDamage",
+                    "amount": {
+                        "type": "Subtract",
+                        "left": {
+                            "type": "Fixed",
+                            "amount": 3
+                        },
+                        "right": {
+                            "type": "AggregateZone",
+                            "player": "ChosenOpponent",
+                            "zone": "Hand"
+                        }
+                    },
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "ChosenOpponent"
+                    }
+                },
+                "descriptionOverride": "At the beginning of the chosen player's upkeep, The Rack deals damage to that player equal to 3 minus the number of cards in their hand."
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithChoice",
+                "choiceType": "OPPONENT"
+            }
+        ]
+    },
+    "setCode": "ATQ",
+    "metadata": {
+        "collectorNumber": "72",
+        "rarity": "UNCOMMON",
+        "artist": "Richard Thomas",
+        "flavorText": "Invented in Mishra's earlier days, the Rack was once his most feared creation.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/ec0686ba-1277-4412-a397-7a6227808311.jpg?1562944784"
+    },
+    "colorIdentityOverride": []
+}
+
+// Titania's Song
+{
+    "name": "Titania's Song",
+    "manaCost": "{3}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "Each noncreature artifact loses all abilities and becomes an artifact creature with power and toughness each equal to its mana value. If this enchantment leaves the battlefield, this effect continues until end of turn.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "MassAnimate",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsArtifact",
+                            {
+                                "type": "Not",
+                                "predicate": "IsCreature"
+                            }
+                        ]
+                    },
+                    "power": {
+                        "type": "EntityProperty",
+                        "entity": "AffectedEntity",
+                        "numericProperty": "ManaValue"
+                    },
+                    "toughness": {
+                        "type": "EntityProperty",
+                        "entity": "AffectedEntity",
+                        "numericProperty": "ManaValue"
+                    }
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "GrantCardType",
+                "cardType": "CREATURE",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsArtifact",
+                            {
+                                "type": "Not",
+                                "predicate": "IsCreature"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "type": "LoseAllAbilities",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsArtifact",
+                            {
+                                "type": "Not",
+                                "predicate": "IsCreature"
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "type": "SetBasePowerToughnessDynamicStatic",
+                "power": {
+                    "type": "EntityProperty",
+                    "entity": "AffectedEntity",
+                    "numericProperty": "ManaValue"
+                },
+                "toughness": {
+                    "type": "EntityProperty",
+                    "entity": "AffectedEntity",
+                    "numericProperty": "ManaValue"
+                },
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            "IsArtifact",
+                            {
+                                "type": "Not",
+                                "predicate": "IsCreature"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "setCode": "ATQ",
+    "metadata": {
+        "collectorNumber": "35",
+        "rarity": "UNCOMMON",
+        "artist": "Kerstin Kaman",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/8/583a53af-2e2a-4f3f-8eab-bd874c6ed80a.jpg?1562913410"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
 }
 
 // Transmute Artifact
@@ -3725,6 +3958,54 @@
         "artist": "Anson Maddocks",
         "flavorText": "Mines became common as cities during the days of the artificers.",
         "imageUri": "https://cards.scryfall.io/normal/front/d/a/da68a5c0-84fe-4a8f-93b2-790eca3cc95c.jpg?1562941120"
+    },
+    "colorIdentityOverride": []
+}
+
+// Urza's Miter
+{
+    "name": "Urza's Miter",
+    "manaCost": "{3}",
+    "typeLine": "Artifact",
+    "oracleText": "Whenever an artifact you control is put into a graveyard from the battlefield, if it wasn't sacrificed, you may pay {3}. If you do, draw a card.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard",
+                    "excludeSacrifice": true
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{3}"
+                        }
+                    },
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "setCode": "ATQ",
+    "metadata": {
+        "collectorNumber": "76",
+        "rarity": "RARE",
+        "artist": "Randy Asplund-Faith",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/3/438f0c61-a61d-4a9e-b21f-4e86420c7913.jpg?1562908986"
     },
     "colorIdentityOverride": []
 }

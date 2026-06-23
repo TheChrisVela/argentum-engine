@@ -746,6 +746,25 @@ data class LinkedExileComponent(
 ) : Component
 
 /**
+ * State-preserving exile bookkeeping for "exile a creature, note its counters, re-attach its
+ * Auras on return" effects (Tawnos's Coffin). Stored on the *source* permanent alongside its
+ * [LinkedExileComponent] (which holds the principal + Aura entity ids).
+ *
+ * - [principalId] is the exiled creature card — the permanent the noted counters are restored to
+ *   and that the exiled Auras re-attach to on return.
+ * - [notedCounters] is the kind→count snapshot of the counters that were on that creature at exile
+ *   time (CR: "Note the number and kind of counters that were on that creature").
+ *
+ * Persists across the source's own zone change (like [LinkedExileComponent]) so the return can
+ * fire from a leaves-the-battlefield trigger as well as an untap trigger.
+ */
+@Serializable
+data class NotedExileComponent(
+    val principalId: EntityId,
+    val notedCounters: Map<CounterType, Int> = emptyMap()
+) : Component
+
+/**
  * Cards exiled to pay the Craft activation cost that put this permanent onto the battlefield
  * (CR 702.167c). Attached fresh by
  * [com.wingedsheep.engine.handlers.effects.permanent.types.ReturnSelfFromExileTransformedExecutor]
