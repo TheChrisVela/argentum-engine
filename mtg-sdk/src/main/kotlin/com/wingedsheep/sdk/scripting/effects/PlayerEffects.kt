@@ -672,9 +672,16 @@ data class ChooseNumberThenEffect(
  * context as the X value and runs an inner effect once), this records the number on the
  * permanent so a continuous characteristic-defining ability can read it for the rest of the
  * permanent's life via [com.wingedsheep.sdk.scripting.values.DynamicAmount.CastChoice]. The
- * choice can be re-made any number of times — at entry (wrap it in an
- * [com.wingedsheep.sdk.scripting.OnEnterRunEffect]) and/or from a triggered ability — and the
  * **last** chosen value is what the CDA reads, matching "the last chosen number" wording.
+ *
+ * This is the *on-resolution* form, run from a triggered/activated ability (e.g. an upkeep
+ * re-choice). For the *as-enters* "As ~ enters, choose a number" choice, prefer the replacement
+ * effect [com.wingedsheep.sdk.scripting.EntersWithChoice]`(ChoiceType.NUMBER, minValue, maxValue)`
+ * — it writes the same [com.wingedsheep.sdk.scripting.ChoiceSlot.CHOSEN_NUMBER] slot *before* the
+ * permanent is on the battlefield (CR 614.1c), so the CDA never reads a default while the permanent
+ * briefly sits at its printed P/T. Wrapping this effect in an
+ * [com.wingedsheep.sdk.scripting.OnEnterRunEffect] also works but runs *after* placement, so avoid
+ * it when the entry choice feeds a P/T-defining CDA.
  *
  * Shapeshifter: "As this enters and at the beginning of your upkeep, choose a number between 0
  * and 7. Its power is the last chosen number and its toughness is 7 minus that number." The P/T

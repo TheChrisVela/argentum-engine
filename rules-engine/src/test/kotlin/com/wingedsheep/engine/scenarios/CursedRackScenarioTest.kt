@@ -48,8 +48,8 @@ class CursedRackScenarioTest : FunSpec({
             )))
         })
 
-        // Active player starts with 7 cards; trim/build to exactly 6 to force a 2-card discard.
-        // (Starting hand 7 → add nothing; expected discard = 7 - 4 = 3.)
+        // Active player starts with 7 cards and max hand size is now 4, so cleanup forces a
+        // 7 - 4 = 3 card discard.
         driver.getHandSize(active) shouldBe 7
 
         driver.passPriorityUntil(Step.END)

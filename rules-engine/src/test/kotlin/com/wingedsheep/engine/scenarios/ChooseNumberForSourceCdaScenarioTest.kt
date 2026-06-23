@@ -16,10 +16,14 @@ import io.kotest.matchers.shouldBe
 
 /**
  * Feature test for the "choose a number, store it durably on the source, derive P/T from it as a
- * characteristic-defining ability" mechanism (powers Shapeshifter). Uses an inline test card with
- * the exact shape: an `OnEnterRunEffect(ChooseNumberForSource(0..7))` at entry, an optional upkeep
- * trigger that re-chooses, and a `SetBasePowerToughnessDynamicStatic` CDA reading the stored
- * number (power = n, toughness = 7 - n).
+ * characteristic-defining ability" mechanism (powers Shapeshifter). Uses an inline test card that
+ * runs `ChooseNumberForSource(0..7)` from an `EntersBattlefield` trigger and from an optional
+ * upkeep trigger that re-chooses, with a `SetBasePowerToughnessDynamicStatic` CDA reading the
+ * stored number (power = n, toughness = 7 - n).
+ *
+ * (The real Shapeshifter uses the `EntersWithChoice(ChoiceType.NUMBER)` as-enters replacement for
+ * the entry choice — see `ShapeshifterScenarioTest`; here an ETB trigger drives the same effect to
+ * keep the inline card minimal.)
  */
 class ChooseNumberForSourceCdaScenarioTest : ScenarioTestBase() {
 
