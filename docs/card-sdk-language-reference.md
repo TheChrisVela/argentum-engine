@@ -541,7 +541,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `AddCounters(type, count, target)` — add N counters of `type`.
 - `AddDynamicCounters(type, amount, target)` — count is computed at resolution.
 - **Stat counters and the layer system.** Counters whose `type` is a P/T stat counter modify power/toughness in
-  layer 7d via `EffectApplicator.applyCounters`. The symmetric pair is `Counters.PLUS_ONE_PLUS_ONE` /
+  layer 7c (CR 613.4c) via `EffectApplicator.applyCounters`. The symmetric pair is `Counters.PLUS_ONE_PLUS_ONE` /
   `Counters.MINUS_ONE_MINUS_ONE`; the asymmetric counters `Counters.PLUS_ONE_PLUS_ZERO` (`+1/+0`),
   `Counters.PLUS_ZERO_PLUS_ONE` (`+0/+1`), `Counters.MINUS_ONE_MINUS_ZERO` (`-1/-0`) and
   `Counters.MINUS_ZERO_MINUS_ONE` (`-0/-1`) modify only the indicated stat (Clockwork Avian's four `+1/+0`
@@ -3324,12 +3324,6 @@ activatedAbility {
 - `OnlyIfCondition(c)` — condition gate.
 - `OnlyDuringYourTurn` / `DuringPhase(p)` / `DuringStep(s)` / `BeforeStep(s)` — timing gates (compose
   via `All(...)`, e.g. `All(DuringStep(UPKEEP), OnlyDuringYourTurn)` for "only during your upkeep").
-- `ControlledSinceYourMostRecentTurn` — "activate only if you've controlled this permanent
-  continuously since the beginning of your most recent turn" — the summoning-sickness condition
-  (CR 302.6) generalized to any permanent. Reuses the engine's `SummoningSicknessComponent`
-  tracking (re-stamped on entry and on every control change, cleared at the controller's untap), so a
-  control change since their last turn re-imposes it — unlike `Conditions.SourceEnteredThisTurn`,
-  which ignores control changes. Rocket Launcher.
 
 **Loyalty abilities**
 

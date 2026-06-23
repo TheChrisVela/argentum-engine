@@ -1,9 +1,14 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
+import com.wingedsheep.engine.mechanics.layers.FloatingEffectData
+import com.wingedsheep.engine.mechanics.layers.Layer
+import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.support.ScenarioTestBase
 import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.scripting.Duration
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 
@@ -75,6 +80,49 @@ class MishrasWarMachineScenarioTest : ScenarioTestBase() {
                 }
                 withClue("The card was discarded from hand") {
                     game.isInHand(1, "Mountain") shouldBe false
+                }
+            }
+
+            test("does not tap when the 3 damage to you is fully prevented") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(1, "Mishra's War Machine")
+                    .withLifeTotal(1, 20)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.BEGINNING, Step.UNTAP)
+                    .build()
+
+                // Shield the active player against all damage this turn. There is no card to discard,
+                // so the upkeep trigger reaches the "deal 3 damage to you" branch — but the shield
+                // reduces it to 0, so no DamageDealtEvent is emitted. This is the corner that makes
+                // SuccessCriterion.DamageDealt different from a plain "the suffer branch ran" gate:
+                // damage that was prevented must NOT count as "it dealt damage to you this way".
+                val player1 = game.state.activePlayerId!!
+                val (shieldId, withShield) = game.state.newEntity()
+                game.state = withShield.copy(
+                    floatingEffects = withShield.floatingEffects + ActiveFloatingEffect(
+                        id = shieldId,
+                        effect = FloatingEffectData(
+                            layer = Layer.ABILITY,
+                            modification = SerializableModification.PreventAllDamageTo,
+                            affectedEntities = setOf(player1),
+                        ),
+                        duration = Duration.EndOfTurn,
+                        sourceId = null,
+                        controllerId = player1,
+                        timestamp = game.state.timestamp,
+                    )
+                )
+
+                game.passUntilPhase(Phase.BEGINNING, Step.UPKEEP)
+                game.resolveStack()
+
+                val machine = game.findPermanent("Mishra's War Machine")!!
+                withClue("Damage prevented → life unchanged") {
+                    game.getLifeTotal(1) shouldBe 20
+                }
+                withClue("No damage actually dealt to you (prevented) → it is NOT tapped") {
+                    isTapped(game, machine) shouldBe false
                 }
             }
         }

@@ -28,7 +28,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *   of +1/+0 counters on this creature to be greater than four. Activate only during your upkeep.
  *
  * Modeling notes:
- * - The +1/+0 counters are real stat counters (engine layer 7d) — base 0/4 with four +1/+0 counters
+ * - The +1/+0 counters are real stat counters (CR 613.4c, layer 7c) — base 0/4 with four +1/+0 counters
  *   makes it a 4/4. They are shed one per combat it fought (the "attacked or blocked this combat"
  *   end-of-combat trigger), and refilled during your upkeep.
  * - "Put up to X, but never above four total" is modeled as putting
