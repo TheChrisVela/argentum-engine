@@ -36,9 +36,10 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *  - Counters → tokens: [ConvertCountersToTokensEffect] prompts for the number to remove, removes
  *    them, and mints that many Tetravite tokens (flying + can't-be-enchanted), each `stampCreator`-
  *    stamped so they're recognizable as "created with this creature".
- *  - Tokens → counters: composed from atoms — gather the Tetravite tokens you control that this
- *    creature created ([CardSource.BattlefieldMatching] with `.createdBySource()`), let the player
- *    choose any number, exile them, and put that many +1/+1 counters back on Tetravus.
+ *  - Tokens → counters: composed from atoms — gather the Tetravite tokens this creature created,
+ *    on any player's battlefield ([CardSource.BattlefieldMatching] with `.createdBySource()` as the
+ *    sole filter — the oracle has no "you control" clause), let the player choose any number, exile
+ *    them, and put that many +1/+1 counters back on Tetravus.
  * Both upkeep abilities are "you may" (optional triggers).
  */
 val Tetravus = card("Tetravus") {
@@ -94,15 +95,15 @@ val Tetravus = card("Tetravus") {
         effect = Effects.Pipeline {
             val mine = gather(
                 CardSource.BattlefieldMatching(
-                    filter = GameObjectFilter.Any.youControl().createdBySource(),
-                    player = Player.You
+                    filter = GameObjectFilter.Any.createdBySource(),
+                    player = Player.Each
                 ),
                 name = "tetraviteTokens"
             )
             val chosen = chooseAnyNumber(
                 from = mine,
                 name = "exiledTokens",
-                prompt = "Exile any number of Tetravite tokens you control created with this creature"
+                prompt = "Exile any number of Tetravite tokens created with this creature"
             )
             exile(chosen)
             run(

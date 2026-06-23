@@ -2828,10 +2828,8 @@
                                 "filter": {
                                     "statePredicates": [
                                         "CreatedBySource"
-                                    ],
-                                    "controllerPredicate": "ControlledByYou"
-                                },
-                                "player": "You"
+                                    ]
+                                }
                             },
                             "storeAs": "tetraviteTokens"
                         },
@@ -2840,7 +2838,7 @@
                             "from": "tetraviteTokens",
                             "selection": "ChooseAnyNumber",
                             "storeSelected": "exiledTokens",
-                            "prompt": "Exile any number of Tetravite tokens you control created with this creature"
+                            "prompt": "Exile any number of Tetravite tokens created with this creature"
                         },
                         {
                             "type": "MoveCollection",
