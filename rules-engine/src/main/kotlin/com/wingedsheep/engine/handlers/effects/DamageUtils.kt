@@ -388,13 +388,17 @@ object DamageUtils {
      */
     fun trackDamageReceivedByPlayer(state: GameState, playerId: EntityId, amount: Int, sourceId: EntityId? = null): GameState {
         if (amount <= 0) return state
-        // Is the source an artifact at the moment it dealt the damage? Read the source's projected
-        // types (battlefield permanents) and fall back to base card types for sources that have
-        // left/aren't projected. Powers the artifact-source damage accumulator (Reverse Polarity).
+        // Is the source an artifact at the moment it dealt the damage? For a source still on the
+        // battlefield, its projected types are authoritative (a continuous effect may have added or
+        // stripped artifact-ness). Only for a source that has already left do we fall back to its
+        // base card types as last-known information. Powers the artifact-source damage accumulator
+        // (Reverse Polarity).
         val sourceIsArtifact = sourceId?.let { sid ->
-            state.projectedState.hasType(sid, "ARTIFACT") ||
-                state.getEntity(sid)?.get<CardComponent>()?.typeLine?.cardTypes
-                    ?.any { it.name == "ARTIFACT" } == true
+            if (sid in state.getBattlefield()) {
+                state.projectedState.hasType(sid, "ARTIFACT")
+            } else {
+                state.getEntity(sid)?.get<CardComponent>()?.typeLine?.isArtifact == true
+            }
         } ?: false
         return state.updateEntity(playerId) { container ->
             val existing = container.get<com.wingedsheep.engine.state.components.player.DamageReceivedThisTurnComponent>()
