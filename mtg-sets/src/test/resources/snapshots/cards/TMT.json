@@ -2008,6 +2008,50 @@
     ]
 }
 
+// Genghis Frog
+{
+    "name": "Genghis Frog",
+    "manaCost": "{G}{U}",
+    "typeLine": "Legendary Creature — Frog Mutant Rogue",
+    "oracleText": "Trample\nWhenever Genghis Frog or another Mutant you control enters, create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "TRAMPLE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature Mutant ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Mutagen"
+                },
+                "descriptionOverride": "Whenever Genghis Frog or another Mutant you control enters, create a Mutagen token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "148",
+        "rarity": "UNCOMMON",
+        "artist": "Zoltan Boros",
+        "flavorText": "\"Free our brothers! The human reign of terror around here ends tonight!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/d/7df26085-eedb-4bdd-a60a-aabfbe9c3157.jpg?1771342425"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
+}
+
 // Guac & Marshmallow Pizza
 {
     "name": "Guac & Marshmallow Pizza",
@@ -4589,6 +4633,45 @@
     }
 }
 
+// Ooze Spill
+{
+    "name": "Ooze Spill",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Instant",
+    "oracleText": "Counter target spell. Create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                "Counter",
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Mutagen"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "48",
+        "rarity": "UNCOMMON",
+        "artist": "Svetlin Velinov",
+        "flavorText": "Lab safety is everyone's business.",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/e/beef76b7-856e-48ab-bc73-e4f456c3a100.jpg?1771586813"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Oroku Saki, Shredder Rising
 {
     "name": "Oroku Saki, Shredder Rising",
@@ -6288,6 +6371,44 @@
     ]
 }
 
+// Slithering Cryptid
+{
+    "name": "Slithering Cryptid",
+    "manaCost": "{2}{G/U}",
+    "typeLine": "Creature — Fish Mutant",
+    "oracleText": "When this creature enters, create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Mutagen"
+                },
+                "descriptionOverride": "When this creature enters, create a Mutagen token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "168",
+        "artist": "Nicholas Gregory",
+        "flavorText": "\"The Slithery! He's snatches little kids an' keeps 'em in cages! He don't got no legs and just slithers.\"\n—Lita",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/d/6d35cb39-8832-4cf1-be73-8de49fbea529.jpg?1771502794"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
+    ]
+}
+
 // South Wind Avatar
 {
     "name": "South Wind Avatar",
@@ -7844,5 +7965,42 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Zoo Escapees
+{
+    "name": "Zoo Escapees",
+    "manaCost": "{1}{G}",
+    "typeLine": "Creature — Boar Rhino",
+    "oracleText": "When this creature leaves the battlefield, create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Mutagen"
+                },
+                "descriptionOverride": "When this creature leaves the battlefield, create a Mutagen token."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "138",
+        "artist": "Mirko Failoni",
+        "flavorText": "They imagine that out beyond the zoo, beyond the pen, there exists another world, and it encroaches with rapid certainty upon their own . . .",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/5/f57ba8ff-2f8c-4ca1-9b13-42a7cc213e99.jpg?1771502750"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }

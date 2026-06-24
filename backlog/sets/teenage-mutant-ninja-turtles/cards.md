@@ -2,7 +2,7 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 120 / 190
+**Implemented:** 124 / 190
 ---
 
 - [x] Action News Crew
@@ -52,7 +52,7 @@
 - [x] Frog Butler
 - [ ] Fugitive Droid
 - [ ] General Traag, Heart of Stone
-- [ ] Genghis Frog
+- [x] Genghis Frog
 - [ ] Go Ninja Go
 - [ ] Groundchuck & Dirtbag
 - [ ] Grounded for Life
@@ -118,7 +118,7 @@
 - [x] Null Group Biological Assets
 - [x] Old Hob, Alleycat Blues
 - [x] Omni-Cheese Pizza
-- [ ] Ooze Spill
+- [x] Ooze Spill
 - [x] Oroku Saki, Shredder Rising
 - [x] Pain 101
 - [ ] Paramecia Coloniex
@@ -157,7 +157,7 @@
 - [x] Shredder, Unrelenting
 - [x] Skateboard
 - [x] Slash, Reptile Rampager
-- [ ] Slithering Cryptid
+- [x] Slithering Cryptid
 - [x] South Wind Avatar
 - [x] Spicy Oatmeal Pizza
 - [x] Splinter's Technique
@@ -194,4 +194,4 @@
 - [ ] West Wind Avatar
 - [x] Wingnut, Bat on the Belfry
 - [x] Zog, Triceraton Castaway
-- [ ] Zoo Escapees
+- [x] Zoo Escapees
