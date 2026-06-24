@@ -8,6 +8,8 @@ import com.wingedsheep.engine.core.PreventDamageFromChosenSourceContinuation
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.handlers.PredicateContext
+import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
@@ -49,7 +51,7 @@ class PreventDamageExecutor(
         // colored sources (Protective Sphere).
         if (effect.sourceFilter is PreventionSourceFilter.ChosenSource ||
             effect.sourceFilter is PreventionSourceFilter.ChosenColoredSource ||
-            effect.sourceFilter is PreventionSourceFilter.ChosenArtifactSource
+            effect.sourceFilter is PreventionSourceFilter.ChosenSourceMatching
         ) {
             return handleChosenSource(state, effect, context)
         }
@@ -72,20 +74,28 @@ class PreventDamageExecutor(
         // "a source of your choice that shares a color with the mana spent" — only colored
         // sources qualify (Protective Sphere). A colorless source shares a color with no mana.
         val coloredOnly = effect.sourceFilter is PreventionSourceFilter.ChosenColoredSource
-        val artifactOnly = effect.sourceFilter is PreventionSourceFilter.ChosenArtifactSource
+        // "a [quality] source of your choice" (Circle of Protection family) — only sources matching
+        // the eligibility filter are offered, evaluated against projected battlefield state and
+        // (via base-state fallback) stack spells.
+        val matchFilter = (effect.sourceFilter as? PreventionSourceFilter.ChosenSourceMatching)?.filter
+        val predicateEvaluator = if (matchFilter != null) PredicateEvaluator() else null
+        val predicateContext = PredicateContext(controllerId = controllerId)
+        fun matchesEligibility(entityId: EntityId): Boolean =
+            matchFilter == null ||
+                predicateEvaluator!!.matches(state, state.projectedState, entityId, matchFilter, predicateContext)
 
         // Gather all possible damage sources: permanents + spells on stack
         val sourceIds = mutableListOf<EntityId>()
         for (entityId in state.getBattlefield()) {
             if (state.getEntity(entityId)?.get<CardComponent>() == null) continue
             if (coloredOnly && state.projectedState.getColors(entityId).isEmpty()) continue
-            if (artifactOnly && !state.projectedState.isArtifact(entityId)) continue
+            if (!matchesEligibility(entityId)) continue
             sourceIds.add(entityId)
         }
         for (entityId in state.stack) {
             val cardComponent = state.getEntity(entityId)?.get<CardComponent>() ?: continue
             if (coloredOnly && cardComponent.colors.isEmpty()) continue
-            if (artifactOnly && !cardComponent.typeLine.isArtifact) continue
+            if (!matchesEligibility(entityId)) continue
             sourceIds.add(entityId)
         }
 
@@ -136,7 +146,7 @@ class PreventDamageExecutor(
                 gainLifeFromColors = effect.gainLifeFromColors.map { it.name }.toSet(),
                 sourceId = context.sourceId,
                 sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name },
-                nextInstanceOnly = effect.sourceFilter is PreventionSourceFilter.ChosenArtifactSource
+                nextInstanceOnly = effect.nextInstanceOnly
             )
             val newState = state.withPendingDecision(decision).pushContinuation(continuation)
             return EffectResult.paused(newState, decision)

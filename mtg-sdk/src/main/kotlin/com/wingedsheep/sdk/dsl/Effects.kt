@@ -3102,7 +3102,10 @@ object Effects {
      * The next time an artifact source of your choice would deal damage to [target] this turn,
      * prevent that damage (Circle of Protection: Artifacts). Single-instance shield: only artifact
      * sources are eligible for the choice, and the whole next instance from the chosen source is
-     * prevented, then the shield is consumed.
+     * prevented, then the shield is consumed. Built from the generic `ChosenSourceMatching`
+     * eligibility filter (`GameObjectFilter.Artifact`) plus `nextInstanceOnly = true`; a future
+     * "an enchantment/red/… source of your choice" Circle of Protection reuses the same shape with
+     * a different filter.
      */
     fun PreventNextDamageFromChosenArtifactSource(
         target: EffectTarget = EffectTarget.Controller
@@ -3110,7 +3113,8 @@ object Effects {
         PreventDamageEffect(
             target = target,
             amount = null,
-            sourceFilter = PreventionSourceFilter.ChosenArtifactSource
+            sourceFilter = PreventionSourceFilter.ChosenSourceMatching(GameObjectFilter.Artifact),
+            nextInstanceOnly = true
         )
 
     /**

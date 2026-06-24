@@ -90,7 +90,7 @@ sealed interface ActivationRestriction {
     /**
      * Restrict activation to when the source has been under the activating player's control
      * continuously since the beginning of their most recent turn — i.e. the "summoning sickness"
-     * condition (CR 302.6 / 605.3a) applied to a noncreature permanent. Reuses the engine's
+     * condition (CR 302.6) applied to a noncreature permanent. Reuses the engine's
      * summoning-sickness tracking (set on entry and on any control change, cleared at the
      * controller's untap), so a control change since their last turn re-imposes it — unlike
      * `SourceEnteredThisTurn`, which ignores control changes.

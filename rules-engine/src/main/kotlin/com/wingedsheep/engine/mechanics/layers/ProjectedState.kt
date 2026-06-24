@@ -75,8 +75,6 @@ class ProjectedState(
 
     fun isCreature(entityId: EntityId): Boolean = hasType(entityId, "CREATURE")
 
-    fun isArtifact(entityId: EntityId): Boolean = hasType(entityId, "ARTIFACT")
-
     fun isPlaneswalker(entityId: EntityId): Boolean = hasType(entityId, "PLANESWALKER")
 
     fun isLegendary(entityId: EntityId): Boolean = hasType(entityId, "LEGENDARY")

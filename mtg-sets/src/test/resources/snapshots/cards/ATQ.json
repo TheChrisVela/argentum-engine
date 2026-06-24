@@ -838,7 +838,11 @@
                 },
                 "effect": {
                     "type": "PreventDamageShield",
-                    "sourceFilter": "ChosenArtifactSource"
+                    "sourceFilter": {
+                        "type": "ChosenSourceMatching",
+                        "filter": "artifact"
+                    },
+                    "nextInstanceOnly": true
                 },
                 "descriptionOverride": "{2}: The next time an artifact source of your choice would deal damage to you this turn, prevent that damage."
             }
