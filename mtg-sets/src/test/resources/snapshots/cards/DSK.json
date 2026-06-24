@@ -10413,6 +10413,75 @@
     ]
 }
 
+// Sporogenic Infection
+{
+    "name": "Sporogenic Infection",
+    "manaCost": "{1}{B}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Enchant creature\nWhen this Aura enters, target player sacrifices a creature of their choice other than enchanted creature.\nWhen enchanted creature is dealt damage, destroy it.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForceSacrifice",
+                    "filter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            {
+                                "type": "StateNot",
+                                "predicate": "IsAttachedToBySource"
+                            }
+                        ]
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target player"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetPlayer",
+                    "id": "target player"
+                },
+                "descriptionOverride": "Target player sacrifices a creature of their choice other than enchanted creature."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "DamageReceivedEvent",
+                "binding": "ATTACHED",
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": "EnchantedCreature",
+                    "destination": "Graveyard",
+                    "byDestruction": true
+                },
+                "descriptionOverride": "Destroy enchanted creature."
+            }
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "117",
+        "rarity": "UNCOMMON",
+        "artist": "Warren Mahy",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/a/eaae086e-0781-4f4d-bc9c-a98228bc380c.jpg?1726286285"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Stalked Researcher
 {
     "name": "Stalked Researcher",
@@ -10638,6 +10707,208 @@
     "colorIdentityOverride": [
         "RED",
         "GREEN"
+    ]
+}
+
+// Threats Around Every Corner
+{
+    "name": "Threats Around Every Corner",
+    "manaCost": "{3}{G}",
+    "typeLine": "Enchantment",
+    "oracleText": "When this enchantment enters, manifest dread. (Look at the top two cards of your library. Put one onto the battlefield face down as a 2/2 creature and the other into your graveyard.)\nWhenever a face-down permanent you control enters, search your library for a basic land card, put it onto the battlefield tapped, then shuffle.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                }
+                            },
+                            "storeAs": "manifestDreadLooked"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "manifestDreadLooked",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "manifestDreadManifested",
+                            "storeRemainder": "manifestDreadGraveyard",
+                            "selectedLabel": "Manifest (put onto the battlefield face down)",
+                            "remainderLabel": "Put into your graveyard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "manifestDreadManifested",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "faceDown": "MANIFEST"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "manifestDreadGraveyard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "facedown ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "basicland"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            }
+                        },
+                        "ShuffleLibrary"
+                    ]
+                },
+                "descriptionOverride": "Search your library for a basic land card, put it onto the battlefield tapped, then shuffle."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "200",
+        "rarity": "UNCOMMON",
+        "artist": "Andrea Piparo",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/2/7201ee12-9104-48d8-aeec-08a318c8ee10.jpg?1726286614"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
+// Trapped in the Screen
+{
+    "name": "Trapped in the Screen",
+    "manaCost": "{2}{W}",
+    "typeLine": "Enchantment",
+    "oracleText": "Ward {2} (Whenever this enchantment becomes the target of a spell or ability an opponent controls, counter it unless that player pays {2}.)\nWhen this enchantment enters, exile target artifact, creature, or enchantment an opponent controls until this enchantment leaves the battlefield.",
+    "keywords": [
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.Mana",
+                "manaCost": "{2}"
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ExileUntilLeaves",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "artifact, creature, or enchantment an opponent controls"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "artifact|creature|enchantment ctrl:opponent"
+                    },
+                    "id": "artifact, creature, or enchantment an opponent controls"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            },
+                            "underOwnersControl": true
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "36",
+        "artist": "Michael Phillippi",
+        "flavorText": "Maggie had always wanted to be on television.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/f/1fe95bfb-8ca7-434f-a2e7-a6b2e699584e.jpg?1726285993"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 

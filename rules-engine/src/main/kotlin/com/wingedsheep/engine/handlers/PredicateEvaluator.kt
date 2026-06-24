@@ -1015,6 +1015,17 @@ class PredicateEvaluator {
                 state.projectedState.hasType(attached.targetId, predicate.cardType.name)
             }
 
+            // Source-relative — the candidate is the permanent the effect's source is attached
+            // to (its enchanted/equipped creature). Read the source's AttachedToComponent and
+            // compare its targetId to the candidate. False with no source or an unattached source.
+            // Negated via StatePredicate.Not for "other than enchanted creature" edicts
+            // (Sporogenic Infection).
+            StatePredicate.IsAttachedToBySource -> {
+                val sourceId = context?.sourceId ?: return false
+                val attachedTo = state.getEntity(sourceId)?.get<AttachedToComponent>()?.targetId
+                attachedTo == entityId
+            }
+
             // Saddled marker — set by BecomeSaddledExecutor when a Saddle ability resolves
             // (CR 702.171b). Cleared at end-of-turn cleanup or when the permanent leaves play.
             StatePredicate.IsSaddled -> container.has<SaddledComponent>()

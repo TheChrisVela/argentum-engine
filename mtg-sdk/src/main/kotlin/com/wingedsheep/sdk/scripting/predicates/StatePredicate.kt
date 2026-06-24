@@ -453,6 +453,23 @@ sealed interface StatePredicate {
         override val description: String = "cast for its warp cost"
     }
 
+    /**
+     * The candidate permanent is the permanent the effect's source is attached to — i.e. the
+     * creature/permanent enchanted or equipped by the source (read from the source's
+     * `AttachedToComponent`). Source-relative: resolves against the source supplied in the
+     * evaluation context, and is false if the source isn't attached to anything or there is no
+     * source context.
+     *
+     * Negate with [Not] for "other than enchanted/equipped creature" exclusions in edict-style
+     * filters (Sporogenic Infection: "target player sacrifices a creature of their choice other
+     * than enchanted creature").
+     */
+    @SerialName("IsAttachedToBySource")
+    @Serializable
+    data object IsAttachedToBySource : Entity {
+        override val description: String = "that the source is attached to"
+    }
+
     // =============================================================================
     // Composite / Logical Combinators
     // =============================================================================

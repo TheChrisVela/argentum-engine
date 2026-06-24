@@ -1624,6 +1624,7 @@ class TriggerMatcher(
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.CrewedOrSaddledSourceThisTurn,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsWarpExiled,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.NotTargetedByAbilityFromSameNamedSource,
+        com.wingedsheep.sdk.scripting.predicates.StatePredicate.IsAttachedToBySource,
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.WasCastForWarp,
         is com.wingedsheep.sdk.scripting.predicates.StatePredicate.AttachedToCardType -> true
         // Counter predicates require last-known-info to evaluate a creature that has already left

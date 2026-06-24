@@ -1682,6 +1682,13 @@ This is the player-arm prerequisite for the planned composable mixed `TargetUnio
   `Noncreature` / `Nonenchantment` / `Nonartifact` wrap each. `IsNonartifact` is the "nonartifact
   creature" leg of the Terror template ("destroy target nonartifact, nonblack creature") — pair with
   `IsCreature` + `.notColor(...)`. FQL keys: `nonland` / `noncreature` / `nonartifact`.
+- **Combined-type filters** — `GameObjectFilter.InstantOrSorcery` / `CreatureOrPlaneswalker` /
+  `CreatureOrEnchantment` / `ArtifactOrEnchantment` / `CreatureOrArtifact` / `ArtifactOrLand` /
+  `ArtifactCreatureOrEnchantment` each wrap a `CardPredicate.Or` of the named top-level types.
+  `ArtifactCreatureOrEnchantment` (the three-type O-Ring restriction) has matching target constants
+  `TargetFilter.ArtifactCreatureOrEnchantment` and
+  `TargetFilter.ArtifactCreatureOrEnchantmentOpponentControls` — the latter for "exile target
+  artifact, creature, or enchantment an opponent controls" (Trapped in the Screen).
 
 **Chained predicates**
 
@@ -1938,6 +1945,14 @@ work for abilities-on-stack (which carry no `CardComponent`).
   payoffs that target/choose/sacrifice/return "a creature that crewed/saddled it this turn" (Giant
   Beaver, Rambling Possum, The Gitrog, Calamity). For the *count* of those creatures use
   `DynamicAmount.CreaturesThatCrewedOrSaddledThisTurn` instead.
+- `IsAttachedToBySource` (filter builder `notAttachedToBySource()`, which wraps it in a negation) —
+  source-relative: matches the permanent the effect's source is attached to, read from the source's
+  `AttachedToComponent.targetId`. Used negated for "other than enchanted/equipped creature"
+  exclusions on Aura/Equipment edicts — Sporogenic Infection: "target player sacrifices a creature of
+  their choice other than enchanted creature" via
+  `Effects.Sacrifice(GameObjectFilter.Creature.notAttachedToBySource(), 1, targetPlayer)`. Resolves
+  against `PredicateContext.sourceId`; inert with no source / unattached source, and never matches in
+  group-static projection or trigger-gating contexts (no source there).
 - `HasGreatestPower` (filter builder `hasGreatestPower()`) / `HasLeastPower` (filter builder
   `hasLeastPower()`) — has the greatest / least projected power among creatures *its controller*
   controls (ties all qualify). Used for "creature with the greatest/least power" target and edict

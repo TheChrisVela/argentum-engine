@@ -394,6 +394,10 @@ internal class AffectsFilterResolver {
         // source permanent, absent in group-static projection. Only meaningful in target/count
         // contexts via PredicateEvaluator / DynamicAmountEvaluator. Never match here.
         StatePredicate.CrewedOrSaddledSourceThisTurn -> false
+        // Source-relative: "the permanent the source is attached to" needs the ability's source
+        // permanent, absent in group-static projection. Only meaningful in target/gather-filter
+        // contexts via PredicateEvaluator. Never match here.
+        StatePredicate.IsAttachedToBySource -> false
         StatePredicate.EnteredThisTurn -> container.has<EnteredThisTurnComponent>()
         StatePredicate.WasDealtDamageThisTurn -> container.has<WasDealtDamageThisTurnComponent>()
         StatePredicate.HasDealtDamage -> container.has<HasDealtDamageComponent>()

@@ -154,6 +154,17 @@ data class GameObjectFilter(
         val ArtifactCreature = GameObjectFilter(
             cardPredicates = listOf(CardPredicate.IsArtifact, CardPredicate.IsCreature)
         )
+        val ArtifactCreatureOrEnchantment = GameObjectFilter(
+            cardPredicates = listOf(
+                CardPredicate.Or(
+                    listOf(
+                        CardPredicate.IsArtifact,
+                        CardPredicate.IsCreature,
+                        CardPredicate.IsEnchantment
+                    )
+                )
+            )
+        )
         val NoncreaturePermanent = GameObjectFilter(
             cardPredicates = listOf(CardPredicate.IsNoncreature, CardPredicate.IsPermanent)
         )
@@ -614,6 +625,15 @@ data class GameObjectFilter(
      */
     fun notTargetedByAbilityFromSameNamedSource() = copy(
         statePredicates = statePredicates + StatePredicate.NotTargetedByAbilityFromSameNamedSource
+    )
+
+    /**
+     * Must NOT be the permanent the effect's source is attached to (its enchanted/equipped
+     * creature). "Other than enchanted creature" exclusions on Aura/Equipment edicts — e.g.
+     * Sporogenic Infection's "sacrifices a creature of their choice other than enchanted creature".
+     */
+    fun notAttachedToBySource() = copy(
+        statePredicates = statePredicates + StatePredicate.Not(StatePredicate.IsAttachedToBySource)
     )
 
     /** Must be attacking or blocking */
