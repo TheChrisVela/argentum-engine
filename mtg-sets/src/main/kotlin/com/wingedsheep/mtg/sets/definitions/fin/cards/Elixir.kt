@@ -40,7 +40,7 @@ val Elixir = card("Elixir") {
 
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{5}"), Costs.Tap, Costs.ExileSelf)
-        effect = CompositeEffect(
+        effect = Effects.Composite(
             listOf(
                 GatherCardsEffect(
                     source = CardSource.FromZone(Zone.GRAVEYARD, Player.You, GameObjectFilter.Nonland),
