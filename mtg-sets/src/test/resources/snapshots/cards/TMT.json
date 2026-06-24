@@ -1001,6 +1001,71 @@
     ]
 }
 
+// Chrome Dome
+{
+    "name": "Chrome Dome",
+    "manaCost": "{2}",
+    "typeLine": "Artifact Creature — Robot Ninja",
+    "oracleText": "Other artifact creatures you control get +1/+0.\n{5}: Create a token that's a copy of another target artifact you control. That token gains haste. Sacrifice it at the beginning of the next end step.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}"
+                    }
+                },
+                "effect": {
+                    "type": "CreateTokenCopyOfTarget",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "another target artifact you control"
+                    },
+                    "addedKeywords": [
+                        "HASTE"
+                    ],
+                    "sacrificeAtStep": "END"
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact ctrl:you",
+                            "excludeSelf": true
+                        },
+                        "id": "another target artifact you control"
+                    }
+                ]
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifyStats",
+                "powerBonus": 1,
+                "toughnessBonus": 0,
+                "filter": {
+                    "baseFilter": "creature artifact ctrl:you",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "172",
+        "rarity": "RARE",
+        "artist": "Mathias Kollros",
+        "flavorText": "\"Broadcast: Seized. Initiate seek-and-destroy protocols.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/9/994a01eb-2689-49e7-be23-0713da9da9a8.jpg?1769006406"
+    }
+}
+
 // Cool but Rude
 {
     "name": "Cool but Rude",
