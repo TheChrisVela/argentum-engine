@@ -90,6 +90,7 @@ import com.wingedsheep.sdk.scripting.CantBeBlockedIfCastSpellType
 import com.wingedsheep.sdk.scripting.CantBeBlockedUnlessDefenderSharesCreatureType
 import com.wingedsheep.sdk.scripting.CantBlockCreaturesWithGreaterPower
 import com.wingedsheep.sdk.scripting.CantBlockUnless
+import com.wingedsheep.sdk.scripting.CantBlockUnlessCoBlocker
 import com.wingedsheep.sdk.scripting.CantCastSpellsSharingColorWithLastCast
 import com.wingedsheep.sdk.scripting.CastSpellTypesFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.DampLandManaProduction
@@ -725,6 +726,7 @@ class StaticAbilityHandler(
             is CantBeBlockedUnlessDefenderSharesCreatureType,
             is CantBlockCreaturesWithGreaterPower,
             is CantBlockUnless,
+            is CantBlockUnlessCoBlocker,
 
             // Combat: damage assignment (CombatDamageManager / CombatDamageUtils / DamageUtils):
             is AssignCombatDamageAsUnblocked,

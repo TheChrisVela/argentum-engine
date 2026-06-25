@@ -28,6 +28,7 @@ import com.wingedsheep.sdk.model.CreatureStats
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.event.GrantedActivatedAbility
+import com.wingedsheep.engine.event.GrantedStaticAbility
 import com.wingedsheep.engine.event.GrantedTriggeredAbility
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
@@ -314,6 +315,28 @@ class CreateTokenExecutor(
                     )
                     newState = newState.copy(
                         grantedActivatedAbilities = newState.grantedActivatedAbilities + grant
+                    )
+                }
+            }
+        }
+
+        // Static abilities also live on the token entity for the layer system
+        // (ContinuousEffectSourceComponent, attached above). But combat-restriction statics like
+        // CantAttackUnlessCoAttacker / CantBlockUnlessCoBlocker are read directly by the combat
+        // legality managers from the card definition or grantedStaticAbilities — never projected —
+        // and a token has no CardDefinition. So grant them per-token here, mirroring the triggered/
+        // activated-ability paths above, so those managers can find a token's "can't attack/block
+        // alone"-style restrictions (Toby's Beast token).
+        if (effect.staticAbilities.isNotEmpty()) {
+            for (tokenId in createdTokens) {
+                for (ability in effect.staticAbilities) {
+                    val grant = GrantedStaticAbility(
+                        entityId = tokenId,
+                        ability = ability,
+                        duration = Duration.Permanent
+                    )
+                    newState = newState.copy(
+                        grantedStaticAbilities = newState.grantedStaticAbilities + grant
                     )
                 }
             }

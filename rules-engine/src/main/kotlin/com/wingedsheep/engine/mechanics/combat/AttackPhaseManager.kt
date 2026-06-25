@@ -362,8 +362,15 @@ internal class AttackPhaseManager(
     ): String? {
         for (attackerId in attackerIds) {
             val cardComponent = state.getEntity(attackerId)?.get<CardComponent>() ?: continue
-            val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
-            val restrictions = cardDef.staticAbilities
+            // Tokens have no CardDefinition, so their restrictions arrive via grantedStaticAbilities
+            // (CreateTokenExecutor). Union both sources so the "can't attack alone" half of Toby's
+            // Beast token is enforced alongside printed restrictions (Scarred Puma).
+            val printed = cardRegistry.getCard(cardComponent.cardDefinitionId)
+                ?.staticAbilities.orEmpty()
+            val granted = state.grantedStaticAbilities
+                .filter { it.entityId == attackerId }
+                .map { it.ability }
+            val restrictions = (printed + granted)
                 .filterIsInstance<CantAttackUnlessCoAttacker>()
                 .filter { it.filter.scope is Scope.Self }
             for (restriction in restrictions) {

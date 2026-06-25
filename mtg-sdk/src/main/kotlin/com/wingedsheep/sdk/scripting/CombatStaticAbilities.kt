@@ -252,6 +252,34 @@ data class CantBlockUnless(
 }
 
 /**
+ * This creature can't block unless another creature being declared as a blocker in the same
+ * declaration matches [coBlockerFilter]. The blocking sibling of [CantAttackUnlessCoAttacker];
+ * together they model "can't attack or block alone" (Toby's Beast token — pass
+ * [com.wingedsheep.sdk.scripting.GameObjectFilter.Creature] for the bare "alone" form, where any
+ * other declared blocker satisfies it).
+ *
+ * Like [CantAttackUnlessCoAttacker], this restriction depends on the set of co-blockers rather
+ * than on the attacking player, so it is checked against the full proposed blocker group at
+ * declaration time (CR 509.1b). The co-blocker need not block the same attacker — it only has to
+ * be declared as a blocker this combat. The creature itself is never counted as its own co-blocker.
+ *
+ * @property coBlockerFilter The filter a *different* blocking creature must match.
+ * @property filter What this ability applies to.
+ */
+@SerialName("CantBlockUnlessCoBlocker")
+@Serializable
+data class CantBlockUnlessCoBlocker(
+    val coBlockerFilter: com.wingedsheep.sdk.scripting.GameObjectFilter,
+    val filter: GroupFilter = GroupFilter.source()
+) : StaticAbility {
+    override val description: String = "can't block unless ${coBlockerFilter.description} also blocks"
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
+    }
+}
+
+/**
  * Creatures can't attack you unless their controller pays generic mana for each
  * attacking creature. Used for Ghostly Prison, Propaganda, Windborn Muse, and
  * Domain-scaled variants like Collective Restraint.

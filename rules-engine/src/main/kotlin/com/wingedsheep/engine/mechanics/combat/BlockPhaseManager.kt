@@ -25,6 +25,8 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.handlers.PredicateContext
+import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.sdk.scripting.BlockTax
 import com.wingedsheep.sdk.scripting.BlockerCountLimit
 import com.wingedsheep.sdk.scripting.CanBlockAnyNumber
@@ -33,6 +35,8 @@ import com.wingedsheep.sdk.scripting.MustBeBlocked
 import com.wingedsheep.sdk.scripting.CantBeBlockedByMoreThan
 import com.wingedsheep.sdk.scripting.CantBlock
 import com.wingedsheep.sdk.scripting.CantBlockUnless
+import com.wingedsheep.sdk.scripting.CantBlockUnlessCoBlocker
+import com.wingedsheep.sdk.scripting.filters.unified.Scope
 import java.util.UUID
 
 /**
@@ -55,6 +59,7 @@ internal class BlockPhaseManager(
 ) {
     private val conditionEvaluator = ConditionEvaluator()
     private val dynamicAmountEvaluator = DynamicAmountEvaluator()
+    private val predicateEvaluator = PredicateEvaluator()
 
     /**
      * Validate and declare blockers.
@@ -97,6 +102,14 @@ internal class BlockPhaseManager(
         val blockerCountValidation = validateGlobalBlockerCount(state, blockers.keys)
         if (blockerCountValidation != null) {
             return ExecutionResult.error(state, blockerCountValidation)
+        }
+
+        // Check co-blocker requirements (CR 509.1b — "can't block alone" / "can't block unless an
+        // X also blocks"). Depends on the whole proposed blocker group, not the attacker, so it's
+        // validated here rather than per-blocker. Mirrors the co-attacker check in declare-attackers.
+        val coBlockerValidation = validateCoBlockerRequirements(state, state.projectedState, blockers.keys)
+        if (coBlockerValidation != null) {
+            return ExecutionResult.error(state, coBlockerValidation)
         }
 
         // Check "must be blocked" requirements (Alluring Scent, etc.)
@@ -625,6 +638,50 @@ internal class BlockPhaseManager(
         }
         if (cap != null && blockerIds.size > cap) {
             return capDescription
+        }
+        return null
+    }
+
+    /**
+     * Validate "can't block unless [X] also blocks" restrictions ([CantBlockUnlessCoBlocker], CR
+     * 509.1b). The blocking sibling of [com.wingedsheep.engine.mechanics.combat.AttackPhaseManager]'s
+     * co-attacker check.
+     *
+     * For each proposed blocker carrying the restriction, at least one *other* blocker in the same
+     * declaration must match the restriction's filter (evaluated with projected state so
+     * color/type-changing effects are honored). The co-blocker need not block the same attacker —
+     * it just has to be declared as a blocker this combat. Self never counts as its own co-blocker.
+     *
+     * Restrictions are read from both the card definition (printed) and grantedStaticAbilities, so
+     * the form arrives on a token without a CardDefinition (Toby's Beast token — "This token can't
+     * attack or block alone").
+     */
+    private fun validateCoBlockerRequirements(
+        state: GameState,
+        projected: ProjectedState,
+        blockerIds: Set<EntityId>
+    ): String? {
+        for (blockerId in blockerIds) {
+            val cardComponent = state.getEntity(blockerId)?.get<CardComponent>() ?: continue
+            if (state.getEntity(blockerId)?.has<FaceDownComponent>() == true) continue
+            val printed = cardRegistry.getCard(cardComponent.cardDefinitionId)
+                ?.staticAbilities.orEmpty()
+            val granted = state.grantedStaticAbilities
+                .filter { it.entityId == blockerId }
+                .map { it.ability }
+            val restrictions = (printed + granted)
+                .filterIsInstance<CantBlockUnlessCoBlocker>()
+                .filter { it.filter.scope is Scope.Self }
+            for (restriction in restrictions) {
+                val context = PredicateContext(controllerId = projected.getController(blockerId) ?: blockerId)
+                val satisfied = blockerIds.any { otherId ->
+                    otherId != blockerId &&
+                        predicateEvaluator.matches(state, projected, otherId, restriction.coBlockerFilter, context)
+                }
+                if (!satisfied) {
+                    return "${cardComponent.name} ${restriction.description}"
+                }
+            }
         }
         return null
     }

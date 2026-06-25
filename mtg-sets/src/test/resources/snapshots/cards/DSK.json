@@ -11322,6 +11322,94 @@
     ]
 }
 
+// Toby, Beastie Befriender
+{
+    "name": "Toby, Beastie Befriender",
+    "manaCost": "{2}{W}",
+    "typeLine": "Legendary Creature — Human Wizard",
+    "oracleText": "When Toby enters, create a 4/4 white Beast creature token with \"This token can't attack or block alone.\"\nAs long as you control four or more creature tokens, creature tokens you control have flying.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 4,
+                    "toughness": 4,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Beast"
+                    ],
+                    "name": "Beast",
+                    "imageUri": "https://cards.scryfall.io/normal/front/f/4/f43e18d8-529d-4d63-b627-b9d9fa4f3f38.jpg?1726236338",
+                    "staticAbilities": [
+                        {
+                            "type": "CantAttackUnlessCoAttacker",
+                            "coAttackerFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ]
+                            }
+                        },
+                        {
+                            "type": "CantBlockUnlessCoBlocker",
+                            "coBlockerFilter": {
+                                "cardPredicates": [
+                                    "IsCreature"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "FLYING",
+                    "filter": {
+                        "baseFilter": "creature token ctrl:you"
+                    }
+                },
+                "condition": {
+                    "type": "Compare",
+                    "left": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "creature token ctrl:you"
+                    },
+                    "operator": "GTE",
+                    "right": {
+                        "type": "Fixed",
+                        "amount": 4
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "35",
+        "rarity": "RARE",
+        "artist": "Jehan Choo",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/3/f33d3948-fe7b-4c3b-ab67-1022623fbb2b.jpg?1726285986"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Trapped in the Screen
 {
     "name": "Trapped in the Screen",

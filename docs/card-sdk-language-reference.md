@@ -2983,8 +2983,17 @@ staticAbility {
 - `CantAttackUnlessCoAttacker(coAttackerFilter, filter = source)` — "This creature can't attack
   unless [a creature matching coAttackerFilter] also attacks" (Scarred Puma). Unlike
   `CantAttackUnless` (which is defender-relative), this depends on the whole proposed attacker
-  group, so it's validated against the other declared attackers at declaration time (projected
-  state; self never counts as its own co-attacker).
+  group, so it's validated against the other declared attackers at declaration time (CR 508.1c,
+  projected state; self never counts as its own co-attacker).
+- `CantBlockUnlessCoBlocker(coBlockerFilter, filter = source)` — the blocking sibling: "This
+  creature can't block unless [a creature matching coBlockerFilter] also blocks." Validated against
+  the whole proposed blocker group at declaration time (CR 509.1b, `BlockPhaseManager`); the
+  co-blocker need not block the same attacker, and self never counts as its own co-blocker. Pass
+  `GameObjectFilter.Creature` for the bare "can't block alone" form. Combined with
+  `CantAttackUnlessCoAttacker` it models "can't attack or block alone" (Toby, Beastie Befriender's
+  Beast token). Both restriction families are read from the card definition *and* from
+  `grantedStaticAbilities`, so they work on tokens (which have no `CardDefinition`) —
+  `CreateTokenEffect.staticAbilities` are granted per-token for exactly this reason.
 - `AttackerCountLimit(maxAttackers)` / `BlockerCountLimit(maxBlockers)` — global combat caps
   (Dueling Grounds — "No more than one creature can attack/block each combat"). Constrain the
   *total* declared attacker/blocker set across all players, not a single creature, so they are
