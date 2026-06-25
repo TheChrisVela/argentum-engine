@@ -25,7 +25,7 @@ val BespokeBo = card("Bespoke Bō") {
     manaCost = "{2}{U}"
     colorIdentity = "U"
     typeLine = "Artifact — Equipment"
-    oracleText = "When this Equipment enters, return up to one other target nonland permanent to its owner's hand.\nEquipped creature gets +2/+1 and has vigilance.\nEquip {3}"
+    oracleText = "When this Equipment enters, return up to one other target nonland permanent to its owner's hand.\nEquipped creature gets +2/+1 and has vigilance.\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)"
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
@@ -49,7 +49,7 @@ val BespokeBo = card("Bespoke Bō") {
     metadata {
         rarity = Rarity.UNCOMMON
         collectorNumber = "31"
-        artist = "Andrea Radeck"
+        artist = "Nathaniel Himawan"
         imageUri = "https://cards.scryfall.io/normal/front/6/c/6c517308-831b-4e41-a82c-02ddf6383a0c.jpg?1771586788"
     }
 }

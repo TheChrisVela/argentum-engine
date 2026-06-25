@@ -37,7 +37,7 @@ val AprilReporterOfTheWeird = card("April, Reporter of the Weird") {
     metadata {
         rarity = Rarity.UNCOMMON
         collectorNumber = "30"
-        artist = "Eelis Kyttanen"
+        artist = "Pauline Voss"
         flavorText = "\"Freelance reporting pays even worse than tutoring, but the satisfaction of uncovering the truth makes it all worth it! Also the free ringside tickets to cover intergalactic wrestling don't suck.\""
         imageUri = "https://cards.scryfall.io/normal/front/3/1/31aa943f-c9db-43dc-8a72-7ef56f9f5c8b.jpg?1771502549"
     }

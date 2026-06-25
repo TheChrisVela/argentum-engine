@@ -39,7 +39,7 @@ val ArmaggonFutureShark = card("Armaggon, Future Shark") {
     metadata {
         rarity = Rarity.RARE
         collectorNumber = "58"
-        artist = "Kekai Kotaki"
+        artist = "Mathias Kollros"
         flavorText = "\"I am ancient efficiency. I am evolution's future. I am mutation come full, vicious circle!\""
         imageUri = "https://cards.scryfall.io/normal/front/5/9/5989378b-0eac-43cf-bc83-8f7765536789.jpg?1769005763"
     }

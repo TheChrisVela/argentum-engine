@@ -11,7 +11,7 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 /**
  * Bebop, Warthog Warrior
  * {4}{B}
- * Creature — Boar Mutant Warrior
+ * Legendary Creature — Boar Mutant Warrior
  * 5/4
  *
  * Menace
@@ -21,7 +21,7 @@ import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 val BebopWarthogWarrior = card("Bebop, Warthog Warrior") {
     manaCost = "{4}{B}"
     colorIdentity = "B"
-    typeLine = "Creature — Boar Mutant Warrior"
+    typeLine = "Legendary Creature — Boar Mutant Warrior"
     oracleText = "Menace (This creature can't be blocked except by two or more creatures.)\nRhinos you control have menace.\nSwampcycling {2} ({2}, Discard this card: Search your library for a Swamp card, reveal it, put it into your hand, then shuffle.)"
     power = 5
     toughness = 4

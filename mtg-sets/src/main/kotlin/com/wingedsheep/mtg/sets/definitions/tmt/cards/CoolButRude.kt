@@ -30,8 +30,8 @@ val CoolButRude = card("Cool but Rude") {
     typeLine = "Enchantment — Class"
     oracleText = "(Gain the next level as a sorcery to add its ability.)\n" +
         "Whenever you attack, you may discard a card. If you do, draw a card.\n" +
-        "{1}{R}: Level 2 — Whenever you discard a card, this Class deals 2 damage to each opponent.\n" +
-        "{1}{R}: Level 3 — When this Class becomes level 3, search your library for a card, put it into your hand, shuffle, then discard a card at random."
+        "{1}{R}: Level 2\nWhenever you discard a card, this Class deals 2 damage to each opponent.\n" +
+        "{1}{R}: Level 3\nWhen this Class becomes level 3, search your library for a card, put it into your hand, shuffle, then discard a card at random."
 
     // Level 1: Whenever you attack, you may discard a card. If you do, draw a card.
     triggeredAbility {

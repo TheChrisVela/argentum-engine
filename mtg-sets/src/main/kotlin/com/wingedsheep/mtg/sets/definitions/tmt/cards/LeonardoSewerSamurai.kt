@@ -28,7 +28,7 @@ val LeonardoSewerSamurai = card("Leonardo, Sewer Samurai") {
     manaCost = "{3}{W}"
     colorIdentity = "W"
     typeLine = "Legendary Creature — Mutant Ninja Turtle Samurai"
-    oracleText = "Sneak {2}{W}{W} (You may cast this spell for {2}{W}{W} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nDouble strike\nDuring your turn, you may cast creature spells with power or toughness 1 or less from your graveyard. If you cast a spell this way, that creature enters with a finality counter on it. (If a creature with a finality counter on it would die, exile it instead.)"
+    oracleText = "Sneak {2}{W}{W}\nDouble strike\nDuring your turn, you may cast creature spells with power or toughness 1 or less from your graveyard. If you cast a spell this way, that creature enters with a finality counter on it. (If a creature with a finality counter on it would die, exile it instead.)"
     power = 3
     toughness = 3
 

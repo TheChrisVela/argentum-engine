@@ -36,8 +36,8 @@ val DoesMachines = card("Does Machines") {
     typeLine = "Enchantment — Class"
     oracleText = "(Gain the next level as a sorcery to add its ability.)\n" +
         "When this Class enters, mill two cards, draw two cards, then discard two cards.\n" +
-        "{1}{U}: Level 2 — When this Class becomes level 2, return up to two target artifact cards from your graveyard to your hand.\n" +
-        "{4}{U}: Level 3 — At the beginning of combat on your turn, put three +1/+1 counters on target artifact you control. If it isn't a creature, it becomes a 0/0 Robot creature in addition to its other types."
+        "{1}{U}: Level 2\nWhen this Class becomes level 2, return up to two target artifact cards from your graveyard to your hand.\n" +
+        "{4}{U}: Level 3\nAt the beginning of combat on your turn, put three +1/+1 counters on target artifact you control. If it isn't a creature, it becomes a 0/0 Robot creature in addition to its other types."
 
     // Level 1: ETB mill 2, draw 2, then discard 2.
     triggeredAbility {

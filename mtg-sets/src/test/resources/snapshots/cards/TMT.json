@@ -360,7 +360,7 @@
     "metadata": {
         "collectorNumber": "30",
         "rarity": "UNCOMMON",
-        "artist": "Eelis Kyttanen",
+        "artist": "Pauline Voss",
         "flavorText": "\"Freelance reporting pays even worse than tutoring, but the satisfaction of uncovering the truth makes it all worth it! Also the free ringside tickets to cover intergalactic wrestling don't suck.\"",
         "imageUri": "https://cards.scryfall.io/normal/front/3/1/31aa943f-c9db-43dc-8a72-7ef56f9f5c8b.jpg?1771502549"
     },
@@ -418,7 +418,7 @@
     "metadata": {
         "collectorNumber": "58",
         "rarity": "RARE",
-        "artist": "Kekai Kotaki",
+        "artist": "Mathias Kollros",
         "flavorText": "\"I am ancient efficiency. I am evolution's future. I am mutation come full, vicious circle!\"",
         "imageUri": "https://cards.scryfall.io/normal/front/5/9/5989378b-0eac-43cf-bc83-8f7765536789.jpg?1769005763"
     },
@@ -586,7 +586,7 @@
 {
     "name": "Bebop, Warthog Warrior",
     "manaCost": "{4}{B}",
-    "typeLine": "Creature — Boar Mutant Warrior",
+    "typeLine": "Legendary Creature — Boar Mutant Warrior",
     "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)\nRhinos you control have menace.\nSwampcycling {2} ({2}, Discard this card: Search your library for a Swamp card, reveal it, put it into your hand, then shuffle.)",
     "creatureStats": {
         "power": 5,
@@ -636,7 +636,7 @@
     "name": "Bespoke Bō",
     "manaCost": "{2}{U}",
     "typeLine": "Artifact — Equipment",
-    "oracleText": "When this Equipment enters, return up to one other target nonland permanent to its owner's hand.\nEquipped creature gets +2/+1 and has vigilance.\nEquip {3}",
+    "oracleText": "When this Equipment enters, return up to one other target nonland permanent to its owner's hand.\nEquipped creature gets +2/+1 and has vigilance.\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)",
     "script": {
         "triggeredAbilities": [
             {
@@ -710,7 +710,7 @@
     "metadata": {
         "collectorNumber": "31",
         "rarity": "UNCOMMON",
-        "artist": "Andrea Radeck",
+        "artist": "Nathaniel Himawan",
         "imageUri": "https://cards.scryfall.io/normal/front/6/c/6c517308-831b-4e41-a82c-02ddf6383a0c.jpg?1771586788"
     },
     "colorIdentityOverride": [
@@ -1239,7 +1239,7 @@
     "name": "Cool but Rude",
     "manaCost": "{1}{R}",
     "typeLine": "Enchantment — Class",
-    "oracleText": "(Gain the next level as a sorcery to add its ability.)\nWhenever you attack, you may discard a card. If you do, draw a card.\n{1}{R}: Level 2 — Whenever you discard a card, this Class deals 2 damage to each opponent.\n{1}{R}: Level 3 — When this Class becomes level 3, search your library for a card, put it into your hand, shuffle, then discard a card at random.",
+    "oracleText": "(Gain the next level as a sorcery to add its ability.)\nWhenever you attack, you may discard a card. If you do, draw a card.\n{1}{R}: Level 2\nWhenever you discard a card, this Class deals 2 damage to each opponent.\n{1}{R}: Level 3\nWhen this Class becomes level 3, search your library for a card, put it into your hand, shuffle, then discard a card at random.",
     "script": {
         "triggeredAbilities": [
             {
@@ -1904,7 +1904,7 @@
     "name": "Does Machines",
     "manaCost": "{1}{U}",
     "typeLine": "Enchantment — Class",
-    "oracleText": "(Gain the next level as a sorcery to add its ability.)\nWhen this Class enters, mill two cards, draw two cards, then discard two cards.\n{1}{U}: Level 2 — When this Class becomes level 2, return up to two target artifact cards from your graveyard to your hand.\n{4}{U}: Level 3 — At the beginning of combat on your turn, put three +1/+1 counters on target artifact you control. If it isn't a creature, it becomes a 0/0 Robot creature in addition to its other types.",
+    "oracleText": "(Gain the next level as a sorcery to add its ability.)\nWhen this Class enters, mill two cards, draw two cards, then discard two cards.\n{1}{U}: Level 2\nWhen this Class becomes level 2, return up to two target artifact cards from your graveyard to your hand.\n{4}{U}: Level 3\nAt the beginning of combat on your turn, put three +1/+1 counters on target artifact you control. If it isn't a creature, it becomes a 0/0 Robot creature in addition to its other types.",
     "script": {
         "triggeredAbilities": [
             {
@@ -2220,6 +2220,7 @@
         "collectorNumber": "144",
         "rarity": "RARE",
         "artist": "Anthony Devine",
+        "flavorText": "\"Rest your brains, Donnie, I got my own idea.\"",
         "imageUri": "https://cards.scryfall.io/normal/front/4/f/4f38126c-26a9-4447-801f-4f19e84c4aa5.jpg?1769006276"
     },
     "colorIdentityOverride": [
@@ -2530,7 +2531,7 @@
     "name": "Dream Beavers",
     "manaCost": "{B}",
     "typeLine": "Creature — Beaver Nightmare",
-    "oracleText": "Flying\nWhen this creature enters, each opponent loses 1 life and you gain 1 life. Scry 1.",
+    "oracleText": "Flying\nWhen this creature enters, each opponent loses 1 life and you gain 1 life. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
     "creatureStats": {
         "power": 1,
         "toughness": 1
@@ -3256,7 +3257,7 @@
         "collectorNumber": "40",
         "rarity": "UNCOMMON",
         "artist": "Narendra Bintara Adi",
-        "flavorText": "\"A freak accident transferred Professor Honeycutt's mind into his robot assistant. Blamed for his own death, he fled . . . as the FUGITOID!\"",
+        "flavorText": "A freak accident transferred Professor Honeycutt's mind into his robot assistant. Blamed for his own death, he fled . . . as the FUGITOID!",
         "imageUri": "https://cards.scryfall.io/normal/front/5/0/50c4e65f-00dc-4fc5-bd5c-8482c2848f4c.jpg?1771586801"
     },
     "colorIdentityOverride": [
@@ -3701,7 +3702,7 @@
     "name": "Hard-Won Jitte",
     "manaCost": "{1}{R}",
     "typeLine": "Artifact — Equipment",
-    "oracleText": "Equipped creature has double strike.\nEquip {2}",
+    "oracleText": "Equipped creature has double strike.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
     "script": {
         "activatedAbilities": [
             {
@@ -5009,7 +5010,7 @@
     "name": "Leader's Talent",
     "manaCost": "{1}{W}",
     "typeLine": "Enchantment — Class",
-    "oracleText": "(Gain the next level as a sorcery to add its ability.)\nWhenever you attack, put a +1/+1 counter on target attacking creature.\n{2}{W}: Level 2 — Whenever a creature you control leaves the battlefield, if it had a counter on it, you gain 2 life.\n{3}{W}: Level 3 — Whenever you cast a spell, put a +1/+1 counter on each creature you control.",
+    "oracleText": "(Gain the next level as a sorcery to add its ability.)\nWhenever you attack, put a +1/+1 counter on target attacking creature.\n{2}{W}: Level 2\nWhenever a creature you control leaves the battlefield, if it had a counter on it, you gain 2 life.\n{3}{W}: Level 3\nWhenever you cast a spell, put a +1/+1 counter on each creature you control.",
     "script": {
         "triggeredAbilities": [
             {
@@ -5406,7 +5407,7 @@
     "name": "Leonardo, Sewer Samurai",
     "manaCost": "{3}{W}",
     "typeLine": "Legendary Creature — Mutant Ninja Turtle Samurai",
-    "oracleText": "Sneak {2}{W}{W} (You may cast this spell for {2}{W}{W} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nDouble strike\nDuring your turn, you may cast creature spells with power or toughness 1 or less from your graveyard. If you cast a spell this way, that creature enters with a finality counter on it. (If a creature with a finality counter on it would die, exile it instead.)",
+    "oracleText": "Sneak {2}{W}{W}\nDouble strike\nDuring your turn, you may cast creature spells with power or toughness 1 or less from your graveyard. If you cast a spell this way, that creature enters with a finality counter on it. (If a creature with a finality counter on it would die, exile it instead.)",
     "creatureStats": {
         "power": 3,
         "toughness": 3
@@ -6585,6 +6586,7 @@
     "metadata": {
         "collectorNumber": "45",
         "artist": "Chris Seaman",
+        "flavorText": "\"You will experience some discomfort. Then, for better or worse, the concepts of comfort and discomfort will become quite alien.\"\n—Fugitoid",
         "imageUri": "https://cards.scryfall.io/normal/front/2/d/2ddfcc4d-dd5f-42f1-8f33-a8e8b5354534.jpg?1771502582"
     },
     "colorIdentityOverride": [
@@ -7493,7 +7495,7 @@
     "name": "Novel Nunchaku",
     "manaCost": "{2}{G}",
     "typeLine": "Artifact — Equipment",
-    "oracleText": "When this Equipment enters, attach it to target creature you control. When you do, equipped creature fights up to one target creature an opponent controls. (Each deals damage equal to its power to the other.)\nEquipped creature gets +1/+1 and has trample.\nEquip {3}",
+    "oracleText": "When this Equipment enters, attach it to target creature you control. When you do, equipped creature fights up to one target creature an opponent controls. (Each deals damage equal to its power to the other.)\nEquipped creature gets +1/+1 and has trample.\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)",
     "script": {
         "triggeredAbilities": [
             {
@@ -8600,7 +8602,7 @@
     "name": "Quintessential Katana",
     "manaCost": "{W}",
     "typeLine": "Artifact — Equipment",
-    "oracleText": "Equipped creature gets +1/+1 and has \"Whenever this creature deals combat damage, untap it and you gain 2 life.\"\nWhenever a Ninja you control enters, you may attach this Equipment to it.\nEquip {2}",
+    "oracleText": "Equipped creature gets +1/+1 and has \"Whenever this creature deals combat damage, untap it and you gain 2 life.\"\nWhenever a Ninja you control enters, you may attach this Equipment to it.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
     "script": {
         "triggeredAbilities": [
             {
@@ -8963,7 +8965,7 @@
     "name": "Raphael, Most Attitude",
     "manaCost": "{3}{R}",
     "typeLine": "Legendary Creature — Mutant Ninja Turtle",
-    "oracleText": "Menace\nAlliance — Whenever another creature you control enters, you may exile the top card of your library.\nWhenever Raphael attacks, until end of turn, you may play a card exiled with Raphael.",
+    "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)\nAlliance — Whenever another creature you control enters, you may exile the top card of your library.\nWhenever Raphael attacks, until end of turn, you may play a card exiled with Raphael.",
     "creatureStats": {
         "power": 4,
         "toughness": 3
@@ -9078,6 +9080,7 @@
         "collectorNumber": "102",
         "rarity": "MYTHIC",
         "artist": "Fajareka Setiawan",
+        "flavorText": "\"You guys must be studying the abridged book of ninja fighting.\"",
         "imageUri": "https://cards.scryfall.io/normal/front/e/e/eeffadda-cb71-4434-89bf-36db1a36da0b.jpg?1769006156"
     },
     "colorIdentityOverride": [
@@ -10472,7 +10475,7 @@
     "name": "Skateboard",
     "manaCost": "{1}",
     "typeLine": "Artifact — Equipment",
-    "oracleText": "When this Equipment enters, tap target permanent.\nEquipped creature gets +1/+0 and has haste.\nEquip {1}",
+    "oracleText": "When this Equipment enters, tap target permanent.\nEquipped creature gets +1/+0 and has haste.\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)",
     "script": {
         "triggeredAbilities": [
             {
@@ -12041,6 +12044,7 @@
         "collectorNumber": "171",
         "rarity": "RARE",
         "artist": "Yuhong Ding",
+        "flavorText": "\"Master say have fun . . .\"",
         "imageUri": "https://cards.scryfall.io/normal/front/2/8/284f9012-a58d-41da-be7c-962dca052711.jpg?1769006390"
     },
     "colorIdentityOverride": [
@@ -12453,6 +12457,7 @@
         "collectorNumber": "190",
         "rarity": "UNCOMMON",
         "artist": "Marina Ortega Lorente",
+        "flavorText": "Home is where your pizza delivers.",
         "imageUri": "https://cards.scryfall.io/normal/front/c/5/c50c4580-979b-4863-86b9-16e258198972.jpg?1771424738"
     }
 }
@@ -12893,7 +12898,8 @@
         "imageUri": "https://cards.scryfall.io/normal/front/f/c/fcb59b16-3d76-478e-9306-969dd2cb1b5a.jpg?1771586980"
     },
     "colorIdentityOverride": [
-        "GREEN"
+        "GREEN",
+        "BLUE"
     ]
 }
 

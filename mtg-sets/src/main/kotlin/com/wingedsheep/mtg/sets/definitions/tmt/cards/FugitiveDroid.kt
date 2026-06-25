@@ -65,7 +65,7 @@ val FugitiveDroid = card("Fugitive Droid") {
         rarity = Rarity.UNCOMMON
         collectorNumber = "40"
         artist = "Narendra Bintara Adi"
-        flavorText = "\"A freak accident transferred Professor Honeycutt's mind into his robot assistant. Blamed for his own death, he fled . . . as the FUGITOID!\""
+        flavorText = "A freak accident transferred Professor Honeycutt's mind into his robot assistant. Blamed for his own death, he fled . . . as the FUGITOID!"
         imageUri = "https://cards.scryfall.io/normal/front/5/0/50c4e65f-00dc-4fc5-bd5c-8482c2848f4c.jpg?1771586801"
     }
 }

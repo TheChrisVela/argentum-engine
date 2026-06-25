@@ -18,7 +18,7 @@ val HardWonJitte = card("Hard-Won Jitte") {
     manaCost = "{1}{R}"
     colorIdentity = "R"
     typeLine = "Artifact — Equipment"
-    oracleText = "Equipped creature has double strike.\nEquip {2}"
+    oracleText = "Equipped creature has double strike.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)"
 
     staticAbility {
         ability = GrantKeyword(Keyword.DOUBLE_STRIKE, Filters.EquippedCreature)

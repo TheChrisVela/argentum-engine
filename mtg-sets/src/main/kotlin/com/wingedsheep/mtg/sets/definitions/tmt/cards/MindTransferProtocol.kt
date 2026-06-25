@@ -42,6 +42,7 @@ val MindTransferProtocol = card("Mind Transfer Protocol") {
         rarity = Rarity.COMMON
         collectorNumber = "45"
         artist = "Chris Seaman"
+        flavorText = "\"You will experience some discomfort. Then, for better or worse, the concepts of comfort and discomfort will become quite alien.\"\n—Fugitoid"
         imageUri = "https://cards.scryfall.io/normal/front/2/d/2ddfcc4d-dd5f-42f1-8f33-a8e8b5354534.jpg?1771502582"
     }
 }

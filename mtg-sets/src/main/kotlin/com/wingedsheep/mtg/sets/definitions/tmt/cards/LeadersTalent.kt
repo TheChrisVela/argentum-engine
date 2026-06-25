@@ -30,8 +30,8 @@ val LeadersTalent = card("Leader's Talent") {
     typeLine = "Enchantment — Class"
     oracleText = "(Gain the next level as a sorcery to add its ability.)\n" +
         "Whenever you attack, put a +1/+1 counter on target attacking creature.\n" +
-        "{2}{W}: Level 2 — Whenever a creature you control leaves the battlefield, if it had a counter on it, you gain 2 life.\n" +
-        "{3}{W}: Level 3 — Whenever you cast a spell, put a +1/+1 counter on each creature you control."
+        "{2}{W}: Level 2\nWhenever a creature you control leaves the battlefield, if it had a counter on it, you gain 2 life.\n" +
+        "{3}{W}: Level 3\nWhenever you cast a spell, put a +1/+1 counter on each creature you control."
 
     // Level 1: Whenever you attack, put a +1/+1 counter on target attacking creature.
     triggeredAbility {

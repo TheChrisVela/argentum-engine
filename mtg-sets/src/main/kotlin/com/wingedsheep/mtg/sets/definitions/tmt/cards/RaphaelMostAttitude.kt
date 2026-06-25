@@ -31,7 +31,7 @@ val RaphaelMostAttitude = card("Raphael, Most Attitude") {
     manaCost = "{3}{R}"
     colorIdentity = "R"
     typeLine = "Legendary Creature — Mutant Ninja Turtle"
-    oracleText = "Menace\nAlliance — Whenever another creature you control enters, you may exile the top card of your library.\nWhenever Raphael attacks, until end of turn, you may play a card exiled with Raphael."
+    oracleText = "Menace (This creature can't be blocked except by two or more creatures.)\nAlliance — Whenever another creature you control enters, you may exile the top card of your library.\nWhenever Raphael attacks, until end of turn, you may play a card exiled with Raphael."
     power = 4
     toughness = 3
 

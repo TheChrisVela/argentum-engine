@@ -38,6 +38,7 @@ val DonAndRaphHardScience = card("Don & Raph, Hard Science") {
         rarity = Rarity.RARE
         collectorNumber = "144"
         artist = "Anthony Devine"
+        flavorText = "\"Rest your brains, Donnie, I got my own idea.\""
         imageUri = "https://cards.scryfall.io/normal/front/4/f/4f38126c-26a9-4447-801f-4f19e84c4aa5.jpg?1769006276"
     }
 }

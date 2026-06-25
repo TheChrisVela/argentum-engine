@@ -28,7 +28,7 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  */
 val VenusTornBetweenWorlds = card("Venus, Torn Between Worlds") {
     manaCost = "{4}{G}"
-    colorIdentity = "G"
+    colorIdentity = "GU"
     typeLine = "Legendary Creature — Mutant Frog Turtle"
     oracleText = "Whenever Venus is dealt damage, put that many +1/+1 counters on her. (She must survive the damage to get the counters.)\nWhenever a creature you control with a counter on it deals combat damage to a player, you may pay {U}. If you do, draw a card."
     power = 5

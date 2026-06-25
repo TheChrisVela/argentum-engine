@@ -23,7 +23,7 @@ val DreamBeavers = card("Dream Beavers") {
     manaCost = "{B}"
     colorIdentity = "B"
     typeLine = "Creature — Beaver Nightmare"
-    oracleText = "Flying\nWhen this creature enters, each opponent loses 1 life and you gain 1 life. Scry 1."
+    oracleText = "Flying\nWhen this creature enters, each opponent loses 1 life and you gain 1 life. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
     power = 1
     toughness = 1
 

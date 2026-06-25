@@ -25,7 +25,7 @@ val NovelNunchaku = card("Novel Nunchaku") {
     manaCost = "{2}{G}"
     colorIdentity = "G"
     typeLine = "Artifact — Equipment"
-    oracleText = "When this Equipment enters, attach it to target creature you control. When you do, equipped creature fights up to one target creature an opponent controls. (Each deals damage equal to its power to the other.)\nEquipped creature gets +1/+1 and has trample.\nEquip {3}"
+    oracleText = "When this Equipment enters, attach it to target creature you control. When you do, equipped creature fights up to one target creature an opponent controls. (Each deals damage equal to its power to the other.)\nEquipped creature gets +1/+1 and has trample.\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)"
 
     // ETB: attach to a creature you control, then that (now equipped) creature fights
     // up to one opponent creature — the Chelonian Tackle "X then fights up to one" shape.

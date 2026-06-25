@@ -48,6 +48,7 @@ val RaphaelNinjaDestroyer = card("Raphael, Ninja Destroyer") {
         rarity = Rarity.MYTHIC
         collectorNumber = "102"
         artist = "Fajareka Setiawan"
+        flavorText = "\"You guys must be studying the abridged book of ninja fighting.\""
         imageUri = "https://cards.scryfall.io/normal/front/e/e/eeffadda-cb71-4434-89bf-36db1a36da0b.jpg?1769006156"
     }
 }

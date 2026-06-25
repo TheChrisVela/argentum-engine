@@ -55,6 +55,7 @@ val TurtleLair = card("Turtle Lair") {
         rarity = Rarity.UNCOMMON
         collectorNumber = "190"
         artist = "Marina Ortega Lorente"
+        flavorText = "Home is where your pizza delivers."
         imageUri = "https://cards.scryfall.io/normal/front/c/5/c50c4580-979b-4863-86b9-16e258198972.jpg?1771424738"
     }
 }

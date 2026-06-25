@@ -52,6 +52,7 @@ val TokkaAndRahzarTerribleTwos = card("Tokka & Rahzar, Terrible Twos") {
         rarity = Rarity.RARE
         collectorNumber = "171"
         artist = "Yuhong Ding"
+        flavorText = "\"Master say have fun . . .\""
         imageUri = "https://cards.scryfall.io/normal/front/2/8/284f9012-a58d-41da-be7c-962dca052711.jpg?1769006390"
     }
 }
