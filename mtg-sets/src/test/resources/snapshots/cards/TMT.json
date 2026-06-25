@@ -6348,6 +6348,88 @@
     ]
 }
 
+// Mondo Gecko
+{
+    "name": "Mondo Gecko",
+    "manaCost": "{1}{U}{U}",
+    "typeLine": "Legendary Creature — Lizard Mutant",
+    "oracleText": "{1}, Discard a card: Until end of turn, Mondo Gecko becomes the color of your choice and gains hexproof from that color.\nWhenever Mondo Gecko deals combat damage to a player, draw a card for each color among permanents you control.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "permanent",
+                        "aggregation": "DISTINCT_COLORS"
+                    }
+                },
+                "descriptionOverride": "Whenever Mondo Gecko deals combat damage to a player, draw a card for each color among permanents you control."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": "AtomDiscard"
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "ChooseColorThen",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "ChangeColorToChosen",
+                                "target": "Self"
+                            },
+                            {
+                                "type": "GrantHexproofFromChosenColor",
+                                "target": "Self"
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "{1}, Discard a card: Until end of turn, Mondo Gecko becomes the color of your choice and gains hexproof from that color."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "46",
+        "rarity": "MYTHIC",
+        "artist": "Maël Ollivier-Henry",
+        "flavorText": "\"Stealth-o-rama, huh? Righteous.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/6/665e44f9-bc0d-40aa-83a4-f7fe64f2506d.jpg?1769005708"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Mouser Attack!
 {
     "name": "Mouser Attack!",
