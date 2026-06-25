@@ -29,14 +29,20 @@ commits all carry `flavorText` in metadata.
 >   reflexive "when you do" (HEXPROOF counter + entersWith already exist).
 > - **Purple Dragon Punks** — *any*-ability mana ("artifact spell or activate an ability";
 >   `CardTypeSpellsOrAbilitiesOnly` ties abilities to the card type, too narrow).
-> - **The Last Ronin** — chapters I (`DestroyAll`) and II (`mill` + `ReflexiveTrigger` return)
->   compose cleanly; chapter III installs a turn-scoped delayed `attacks(filter=youControl,
->   requires=Alone, binding=ANY)` trigger via `CreateDelayedTriggerEffect` (Rediscover the Way's
->   tested chapter-III idiom + Beastmaster Ascension's filtered-attack spec). Built it, but a
->   combat scenario test left the lone attacker with 0 counters — the delayed attacks-alone
->   trigger didn't fire/apply. Reverted pending a correct chapter-III combat verification (likely
->   a test-flow or binding nuance, not a missing capability — attack delayed triggers are
->   supported per TriggerDetector.detectEventBasedDelayedTriggers).
+> - **The Last Ronin** — needs a small **engine fix** (add-feature), root-caused: chapters I
+>   (`DestroyAll`) and II (`mill` + `ReflexiveTrigger` return) compose cleanly, and chapter III's
+>   spec is correct (`CreateDelayedTriggerEffect(trigger = attacks(filter=youControl,
+>   requires=Alone, binding=ANY), …)` + `EffectTarget.TriggeringEntity` — the proven Thoughtweft
+>   Imbuer / Doran "a creature you control attacks → do X to it" shape). But a combat scenario
+>   test left the lone attacker with 0 counters because **`TriggerContext.fromEvent` maps
+>   `AttackersDeclaredEvent -> TriggerContext()` (empty)** and `TriggerDetector.detectEventBasedDelayedTriggers`
+>   doesn't iterate the declared attackers — so a *delayed* attack trigger never binds the
+>   attacking creature to `TriggeringEntity` (regular attack triggers bind it per-attacker in the
+>   non-delayed path). Fix: in `detectEventBasedDelayedTriggers`, when the event is
+>   `AttackersDeclaredEvent`, fan out one PendingTrigger per attacker matching the spec's filter,
+>   each with `triggeringEntityId = that attacker`. Reusable for any "this turn, whenever a
+>   creature attacks, do X to it" delayed trigger. The card .kt and a combat scenario test are
+>   ready to restore once the engine binds the attacker.
 > - **Tokka & Rahzar** — "mana spent to cast it was less than its mana value" trigger condition.
 > - **Lita, Little Orphan Amphibian** — modal where each mode is once-per-turn ("hasn't been chosen this turn").
 > - **Mondo Gecko** — become-chosen-color + "draw a card for each color among permanents you control" dynamic.
