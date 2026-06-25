@@ -29,8 +29,14 @@ commits all carry `flavorText` in metadata.
 >   reflexive "when you do" (HEXPROOF counter + entersWith already exist).
 > - **Purple Dragon Punks** — *any*-ability mana ("artifact spell or activate an ability";
 >   `CardTypeSpellsOrAbilitiesOnly` ties abilities to the card type, too narrow).
-> - **The Last Ronin** — a Saga chapter that installs a *this-turn* triggered ability
->   ("whenever a creature attacks alone this turn …"; the attacks-alone trigger exists).
+> - **The Last Ronin** — chapters I (`DestroyAll`) and II (`mill` + `ReflexiveTrigger` return)
+>   compose cleanly; chapter III installs a turn-scoped delayed `attacks(filter=youControl,
+>   requires=Alone, binding=ANY)` trigger via `CreateDelayedTriggerEffect` (Rediscover the Way's
+>   tested chapter-III idiom + Beastmaster Ascension's filtered-attack spec). Built it, but a
+>   combat scenario test left the lone attacker with 0 counters — the delayed attacks-alone
+>   trigger didn't fire/apply. Reverted pending a correct chapter-III combat verification (likely
+>   a test-flow or binding nuance, not a missing capability — attack delayed triggers are
+>   supported per TriggerDetector.detectEventBasedDelayedTriggers).
 > - **Tokka & Rahzar** — "mana spent to cast it was less than its mana value" trigger condition.
 > - **Lita, Little Orphan Amphibian** — modal where each mode is once-per-turn ("hasn't been chosen this turn").
 > - **Mondo Gecko** — become-chosen-color + "draw a card for each color among permanents you control" dynamic.
