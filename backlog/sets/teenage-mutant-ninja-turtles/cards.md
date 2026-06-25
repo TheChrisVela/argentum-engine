@@ -2,7 +2,7 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 168 / 190
+**Implemented:** 169 / 190
 ---
 
 - [x] Action News Crew
@@ -113,7 +113,7 @@
 - [ ] Ninja Teen
 - [x] Nobody
 - [ ] North Wind Avatar
-- [ ] Northampton Farm
+- [x] Northampton Farm
 - [x] Novel Nunchaku
 - [x] Null Group Biological Assets
 - [x] Old Hob, Alleycat Blues
