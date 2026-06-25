@@ -4423,6 +4423,11 @@ Numbers computed at resolution time.
     `Add(Fixed(2), SpellsCastThisTurn(Player.You, excludeSelf = true))`.
   - Magebane Lizard ("the number of noncreature spells they've cast this turn"):
     `SpellsCastThisTurn(Player.TriggeringPlayer, GameObjectFilter.Noncreature)`.
+  - `countDistinctCardTypes` (default `false`) switches the aggregation from *count of spells* to
+    *count of distinct card types among them* — April O'Neil, Hacktivist ("draw a card for each card
+    type among spells you've cast this turn"): `SpellsCastThisTurn(Player.You, countDistinctCardTypes
+    = true)`. An artifact creature spell contributes both Artifact and Creature; types are unioned
+    across the matching records (and across every player the ref resolves to).
   - Pairs with the `YouCastSpellsThisTurn` **condition** (§ conditions) — that gates a yes/no
     threshold, this yields the count.
 - `CraftedMaterialsTotalPower` — total printed power of the cards exiled to craft the source
