@@ -86,7 +86,17 @@ data class PayOrSufferContinuation(
      * and the effect silently fizzles.
      */
     val triggeringEntityId: EntityId? = null,
-    val triggeringPlayerId: EntityId? = null
+    val triggeringPlayerId: EntityId? = null,
+    /**
+     * The triggered/activated ability's controller — distinct from [playerId], which is the player
+     * who must *pay* the cost (the two diverge when the cost is routed to a non-controller via
+     * `PayOrSufferEffect.player`, e.g. Meathook Massacre II's "a creature an opponent controls dies,
+     * they may pay 3 life"). The suffer effect is part of that ability, so it resolves under the
+     * ability's controller: `EffectTarget.Controller` inside the consequence means the ability's
+     * controller (you steal the card), not the player who declined to pay. Falls back to [playerId]
+     * for the common case where the payer *is* the controller.
+     */
+    val abilityControllerId: EntityId? = null
 ) : ContinuationFrame
 
 /**
@@ -125,7 +135,9 @@ data class PayOrSufferChoiceContinuation(
     /** Mirror of [PayOrSufferContinuation.triggeringEntityId] for the multi-option path. */
     val triggeringEntityId: EntityId? = null,
     /** Mirror of [PayOrSufferContinuation.triggeringPlayerId] for the multi-option path. */
-    val triggeringPlayerId: EntityId? = null
+    val triggeringPlayerId: EntityId? = null,
+    /** Mirror of [PayOrSufferContinuation.abilityControllerId] for the multi-option path. */
+    val abilityControllerId: EntityId? = null
 ) : ContinuationFrame
 
 /**

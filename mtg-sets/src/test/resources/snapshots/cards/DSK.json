@@ -9408,6 +9408,142 @@
     }
 }
 
+// Meathook Massacre II
+{
+    "name": "Meathook Massacre II",
+    "manaCost": "{X}{X}{B}{B}{B}{B}",
+    "typeLine": "Legendary Enchantment",
+    "oracleText": "When Meathook Massacre II enters, each player sacrifices X creatures of their choice.\nWhenever a creature you control dies, you may pay 3 life. If you do, return that card under your control with a finality counter on it.\nWhenever a creature an opponent controls dies, they may pay 3 life. If they don't, return that card under your control with a finality counter on it.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForceSacrifice",
+                    "filter": "creature",
+                    "target": {
+                        "type": "PlayerRef",
+                        "player": "Each"
+                    },
+                    "dynamicCount": "CastX"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayLife",
+                            "amount": 3
+                        }
+                    },
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": "TriggeringEntity",
+                                "destination": "Battlefield",
+                                "controllerOverride": "Controller",
+                                "fromZone": "Graveyard"
+                            },
+                            {
+                                "type": "AddCounters",
+                                "counterType": "finality",
+                                "count": 1,
+                                "target": "TriggeringEntity"
+                            }
+                        ]
+                    },
+                    "descriptionOverride": "You may pay 3 life. If you do, return that card under your control with a finality counter on it."
+                }
+            },
+            {
+                "id": "ability_3",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:opponent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "PayOrSuffer",
+                    "cost": {
+                        "type": "PayAtom",
+                        "atom": {
+                            "type": "AtomPayLife",
+                            "amount": 3
+                        }
+                    },
+                    "suffer": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "MoveToZone",
+                                "target": "TriggeringEntity",
+                                "destination": "Battlefield",
+                                "controllerOverride": "Controller",
+                                "fromZone": "Graveyard"
+                            },
+                            {
+                                "type": "AddCounters",
+                                "counterType": "finality",
+                                "count": 1,
+                                "target": "TriggeringEntity"
+                            }
+                        ]
+                    },
+                    "player": {
+                        "type": "PlayerRef",
+                        "player": "TriggeringPlayer"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "108",
+        "rarity": "MYTHIC",
+        "artist": "Tiffany Turrill",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/d/3db59d06-a226-42b2-8f01-6b63a6eea83f.jpg?1726286251",
+        "rulings": [
+            {
+                "date": "2024-09-20",
+                "text": "If a creature that dies leaves the graveyard before Meathook Massacre II's second or third ability (as appropriate) resolves, that creature won't return to the battlefield regardless of whether or not life was paid."
+            },
+            {
+                "date": "2024-09-20",
+                "text": "When a token creature dies, Meathook Massacre II's second or third ability (as appropriate) will trigger. The appropriate player has the option to pay 3 life, but regardless of their choice, the token won't return to the battlefield."
+            },
+            {
+                "date": "2024-09-20",
+                "text": "Finality counters work on any permanent, not only creatures. If a permanent with a finality counter on it would be put into a graveyard from the battlefield, exile it instead."
+            },
+            {
+                "date": "2024-09-20",
+                "text": "Multiple finality counters on a single permanent are redundant."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Miasma Demon
 {
     "name": "Miasma Demon",

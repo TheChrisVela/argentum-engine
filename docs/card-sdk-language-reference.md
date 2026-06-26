@@ -282,6 +282,15 @@ unless you Y") and by `morphCost` (non-mana face-up cost). Distinct from `Abilit
 which model an ability's activation cost; `PayCost` models a single cost the engine prompts the
 player to pay against an alternative consequence.
 
+`PayOrSufferEffect(cost, suffer, player = EffectTarget.Controller)` defaults to charging the ability's
+controller, but **`player` may route the decision *and* the payment to any other player** — most
+usefully `EffectTarget.PlayerRef(Player.TriggeringPlayer)` on a death trigger, which resolves to the
+dying permanent's last-known controller. The `suffer` consequence still resolves under the **ability's
+controller** (not the payer), so `EffectTarget.Controller` inside it means *you*: Meathook Massacre II's
+"whenever a creature an opponent controls dies, *they* may pay 3 life. If they don't, return that card
+under *your* control" is `PayOrSufferEffect(player = PlayerRef(TriggeringPlayer), cost = Costs.pay.PayLife(3),
+suffer = Composite(Move(TriggeringEntity → battlefield, controllerOverride = Controller), AddCounters(finality)))`.
+
 Non-mana `morphCost` payment is routed through the shared engine `CostPaymentService`, so **every
 `Costs.pay` variant below works as a morph cost** (including `Tap` / `Choice` / `OwnManaCost`): turning
 the creature face up pauses for the cost-specific decision and only flips once the cost is paid.
@@ -1606,8 +1615,12 @@ can't statically prevent (cross-trigger flows, `Self`-vs-`ContextTarget` inside 
   mills four cards", "that player sacrifices a creature").
 - `Player.TriggeringPlayer` — the player bound by the trigger (the caster for `SpellCastEvent`,
   the active player for per-player step triggers — "at the beginning of each opponent's upkeep,
-  *that player* …", **and the player dealt the damage** for a `DealsDamageEvent` trigger whose
-  recipient is a player). It resolves inside a target's controller filter, so "deals noncombat
+  *that player* …", **the player dealt the damage** for a `DealsDamageEvent` trigger whose
+  recipient is a player, **and the dying/leaving permanent's last-known controller** for a
+  death / leaves-the-battlefield trigger — so "whenever a creature an opponent controls dies,
+  *they* may pay 3 life" binds *that creature's controller*, the opponent, not the ability's
+  controller (Meathook Massacre II). This is populated from `ZoneChangeEvent.lastKnownController`
+  (CR 603.10/608.2h last-known information), falling back to the owner). It resolves inside a target's controller filter, so "deals noncombat
   damage to an opponent, … to target creature **that player** controls" is
   `TargetCreature(filter = TargetFilter(GameObjectFilter.Creature.targetPlayerControls(EffectTarget.PlayerRef(Player.TriggeringPlayer))))`
   on the damage trigger — the legality check and resolution both bind it to the damaged player

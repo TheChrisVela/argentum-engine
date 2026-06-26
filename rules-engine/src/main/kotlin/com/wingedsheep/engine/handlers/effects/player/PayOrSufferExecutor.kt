@@ -140,7 +140,8 @@ class PayOrSufferExecutor(
             targets = context.targets,
             namedTargets = context.pipeline.namedTargets,
             triggeringEntityId = context.triggeringEntityId,
-            triggeringPlayerId = context.triggeringPlayerId
+            triggeringPlayerId = context.triggeringPlayerId,
+            abilityControllerId = context.controllerId
         )
 
         val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
@@ -202,7 +203,8 @@ class PayOrSufferExecutor(
             targets = context.targets,
             namedTargets = context.pipeline.namedTargets,
             triggeringEntityId = context.triggeringEntityId,
-            triggeringPlayerId = context.triggeringPlayerId
+            triggeringPlayerId = context.triggeringPlayerId,
+            abilityControllerId = context.controllerId
         )
 
         val stateWithDecision = state.withPendingDecision(decision)
@@ -273,7 +275,8 @@ class PayOrSufferExecutor(
             targets = context.targets,
             namedTargets = context.pipeline.namedTargets,
             triggeringEntityId = context.triggeringEntityId,
-            triggeringPlayerId = context.triggeringPlayerId
+            triggeringPlayerId = context.triggeringPlayerId,
+            abilityControllerId = context.controllerId
         )
 
         val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
@@ -341,7 +344,8 @@ class PayOrSufferExecutor(
             targets = context.targets,
             namedTargets = context.pipeline.namedTargets,
             triggeringEntityId = context.triggeringEntityId,
-            triggeringPlayerId = context.triggeringPlayerId
+            triggeringPlayerId = context.triggeringPlayerId,
+            abilityControllerId = context.controllerId
         )
 
         val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
@@ -404,7 +408,8 @@ class PayOrSufferExecutor(
             targets = context.targets,
             namedTargets = context.pipeline.namedTargets,
             triggeringEntityId = context.triggeringEntityId,
-            triggeringPlayerId = context.triggeringPlayerId
+            triggeringPlayerId = context.triggeringPlayerId,
+            abilityControllerId = context.controllerId
         )
 
         val stateWithDecision = state.withPendingDecision(decision)
@@ -471,6 +476,7 @@ class PayOrSufferExecutor(
             namedTargets = context.pipeline.namedTargets,
             triggeringEntityId = context.triggeringEntityId,
             triggeringPlayerId = context.triggeringPlayerId,
+            abilityControllerId = context.controllerId,
             zone = cost.zone
         )
 
@@ -533,6 +539,7 @@ class PayOrSufferExecutor(
             namedTargets = context.pipeline.namedTargets,
             triggeringEntityId = context.triggeringEntityId,
             triggeringPlayerId = context.triggeringPlayerId,
+            abilityControllerId = context.controllerId,
             manaCost = cost.cost
         )
 
@@ -608,7 +615,8 @@ class PayOrSufferExecutor(
             targets = context.targets,
             namedTargets = context.pipeline.namedTargets,
             triggeringEntityId = context.triggeringEntityId,
-            triggeringPlayerId = context.triggeringPlayerId
+            triggeringPlayerId = context.triggeringPlayerId,
+            abilityControllerId = context.controllerId
         )
 
         val stateWithDecision = state.withPendingDecision(decision)

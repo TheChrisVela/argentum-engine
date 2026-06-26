@@ -152,6 +152,14 @@ data class TriggerContext(
             return when (event) {
                 is ZoneChangeEvent -> TriggerContext(
                     triggeringEntityId = event.entityId,
+                    // The player associated with a zone change is the object's controller as it
+                    // changed zones — its last-known controller when leaving the battlefield (CR
+                    // 603.10/608.2h last-known information; differs from the owner for stolen
+                    // permanents), falling back to the owner for non-battlefield origins. This is
+                    // what "that creature's controller" / "they" mean in a dies/leaves trigger, so
+                    // Player.TriggeringPlayer resolves to the dying creature's controller rather than
+                    // (previously) falling through to the dead creature's entity id.
+                    triggeringPlayerId = event.lastKnownController ?: event.ownerId,
                     counterCount = if (event.lastKnownCounterCount > 0) event.lastKnownCounterCount else null,
                     totalCounterCount = if (event.lastKnownTotalCounterCount > 0) event.lastKnownTotalCounterCount else null,
                     minusOneMinusOneCounterCount = if (event.lastKnownMinusOneMinusOneCounterCount > 0)

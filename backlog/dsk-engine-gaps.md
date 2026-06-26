@@ -216,15 +216,21 @@ to a **player** that have no home yet.
       with a `Ninjas get +1/+1` static, `Surveil 2`, draw-per-`TurnTracker.OPPONENTS_WHO_LOST_LIFE`,
       tap + two `STUN` counters).
 
-16. **Opponent-decides-or-you-steal death trigger.** `PayOrSuffer` routes its decision to the
-    *source's* controller; here the decision belongs to the **dying creature's controller** and the
-    consequence is *you* reanimating their card under your control with a finality counter. Needs the
-    pay/suffer decision routed to a non-source player with a theft (controller-override return)
-    consequence. (The `you`-side half — "your creature dies, you may pay 3 life, return it under your
-    control with a finality counter" — composes from `TriggeringEntity` + `MoveToZoneEffect(controllerOverride)`
-    + entering finality counter, but is untested end-to-end and should get a scenario test. `{X}{X}`
-    → X-driven `each player sacrifices X`, and `CounterType.FINALITY`, all exist.)
-    → **Meathook Massacre II**.
+16. **Opponent-decides-or-you-steal death trigger.** ✅ DONE (`add-feature`). Two root-cause engine
+    fixes, no new SDK type — the card composes existing primitives:
+    - `TriggerContext.fromEvent(ZoneChangeEvent)` now populates `triggeringPlayerId` from
+      `lastKnownController ?: ownerId`, so `Player.TriggeringPlayer` resolves to the **dying
+      permanent's last-known controller** on any death / leaves trigger (it previously fell through to
+      the dead creature's entity id). This is what lets `PayOrSufferEffect(player = TriggeringPlayer)`
+      route the pay/suffer decision *and* the life payment to the opponent.
+    - The `PayOrSuffer` continuation now runs the `suffer` consequence under the **ability's
+      controller** (carried as `abilityControllerId`), not the payer — so "return that card under
+      *your* control" (`controllerOverride = Controller`) is the theft, matching the already-correct
+      auto-suffer path.
+    The `you`-side half is the opt-in `OptionalCostEffect(PayLife(3), reanimate)`; `{X}{X}` →
+    `Effects.Sacrifice(Creature, CastX, Player.Each)`; finality = `Move + AddCounters`. All three
+    abilities have paired scenario tests (`MeathookMassacreIIScenarioTest`).
+    → **Meathook Massacre II** (implemented).
 
 17. **Linked exile populated by a *replacement* effect.** `RedirectZoneChange` can send "a card you
     didn't control that would hit an opponent's graveyard" to exile (Anafenza precedent with an

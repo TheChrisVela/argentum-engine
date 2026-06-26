@@ -194,10 +194,11 @@ class SacrificeAndPayContinuationResumer(
 
         // Last option is always the suffer effect
         if (chosenIndex >= continuation.options.size) {
-            // Player chose the suffer option
+            // Player chose the suffer option — runs under the ability's controller (see
+            // executePayOrSufferConsequence), not the player who declined the costs.
             val context = EffectContext(
                 sourceId = continuation.sourceId,
-                controllerId = continuation.playerId,
+                controllerId = continuation.abilityControllerId ?: continuation.playerId,
                 targets = continuation.targets,
                 pipeline = PipelineState(namedTargets = continuation.namedTargets),
                 triggeringEntityId = continuation.triggeringEntityId,
@@ -551,15 +552,23 @@ class SacrificeAndPayContinuationResumer(
         checkForMore: CheckForMore
     ): ExecutionResult {
         val sourceId = continuation.sourceId
-        val playerId = continuation.playerId
         val sufferEffect = continuation.sufferEffect
 
         // Create context for executing the suffer effect, preserving targets AND the original
         // trigger context. Without the latter, effects like LoseLifeEffect(1, PlayerRef(TriggeringPlayer))
         // (Nafs Asp's bite when the damaged player declines to pay {1}) silently fizzle.
+        //
+        // The suffer effect belongs to the triggered ability, so it resolves under the ability's
+        // controller — not [playerId], which is the player who declined to pay. The two diverge
+        // only when the cost was routed to a non-controller (Meathook Massacre II: an opponent
+        // declines to pay 3 life, and *you* — the ability's controller — return the dead creature
+        // under your control). `EffectTarget.Controller` in the consequence must mean the ability's
+        // controller for that theft to work. The auto-suffer path already runs under the original
+        // (ability-controller) context, so this keeps both paths consistent. Falls back to the payer
+        // for the common case where the payer is the controller.
         val context = EffectContext(
             sourceId = sourceId,
-            controllerId = playerId,
+            controllerId = continuation.abilityControllerId ?: continuation.playerId,
             targets = continuation.targets,
             pipeline = PipelineState(namedTargets = continuation.namedTargets),
             triggeringEntityId = continuation.triggeringEntityId,
