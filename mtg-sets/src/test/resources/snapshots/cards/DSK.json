@@ -1,3 +1,54 @@
+// Abandoned Campground
+{
+    "name": "Abandoned Campground",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped unless a player has 13 or less life.\n{T}: Add {W} or {U}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "WHITE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLUE"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "unlessCondition": {
+                    "type": "APlayerLifeAtMost",
+                    "threshold": 13
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "255",
+        "artist": "Cristi Balanescu",
+        "flavorText": "They say every inhabitant vanished in a single night, leaving their belongings untouched but curiously covered in moths.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/e/ee0565f5-ebdb-43f9-bbb4-0485b1968937.jpg?1726286826"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ]
+}
+
 // Acrobatic Cheerleader
 {
     "name": "Acrobatic Cheerleader",
@@ -1001,6 +1052,82 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Bottomless Pool // Locker Room
+{
+    "name": "Bottomless Pool // Locker Room",
+    "manaCost": "",
+    "typeLine": "Enchantment — Room",
+    "oracleText": "When you unlock this door, return up to one target creature to its owner's hand.\n//\nWhenever one or more creatures you control deal combat damage to a player, draw a card.",
+    "metadata": {
+        "collectorNumber": "43",
+        "rarity": "UNCOMMON",
+        "artist": "Diana Franco",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/0/606fe87c-d17b-4fa7-8e82-e7002d8229ef.jpg?1726780385"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ],
+    "layout": "SPLIT",
+    "cardFaces": [
+        {
+            "name": "Bottomless Pool",
+            "manaCost": "{U}",
+            "typeLine": "Enchantment — Room",
+            "oracleText": "When you unlock this door, return up to one target creature to its owner's hand.",
+            "script": {
+                "triggeredAbilities": [
+                    {
+                        "id": "ability_1",
+                        "trigger": "DoorUnlockedEvent",
+                        "effect": {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature"
+                            },
+                            "destination": "Hand"
+                        },
+                        "targetRequirement": {
+                            "type": "TargetObject",
+                            "optional": true,
+                            "filter": {
+                                "baseFilter": "creature"
+                            },
+                            "id": "up to one target creature"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Locker Room",
+            "manaCost": "{4}{U}",
+            "typeLine": "Enchantment — Room",
+            "oracleText": "Whenever one or more creatures you control deal combat damage to a player, draw a card.",
+            "script": {
+                "triggeredAbilities": [
+                    {
+                        "id": "ability_2",
+                        "trigger": {
+                            "type": "OneOrMoreDealCombatDamageToPlayerEvent",
+                            "sourceFilter": "creature ctrl:you"
+                        },
+                        "binding": "ANY",
+                        "effect": {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            }
+                        },
+                        "descriptionOverride": "Whenever one or more creatures you control deal combat damage to a player, draw a card."
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -11704,6 +11831,57 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Strangled Cemetery
+{
+    "name": "Strangled Cemetery",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "This land enters tapped unless a player has 13 or less life.\n{T}: Add {B} or {G}.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "BLACK"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "GREEN"
+                },
+                "timing": "ManaAbility",
+                "isManaAbility": true
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersTapped",
+                "unlessCondition": {
+                    "type": "APlayerLifeAtMost",
+                    "threshold": 13
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "268",
+        "artist": "Marco Gorlei",
+        "flavorText": "They say that with each new moon, the buried dead rise and dance from dusk to dawn, and witnesses to the revelry must join them for eternity.",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/1/c1ce9250-bdbe-4c77-9243-6db9ffffe69b.jpg?1726286874"
+    },
+    "colorIdentityOverride": [
+        "BLACK",
+        "GREEN"
     ]
 }
 
