@@ -3165,6 +3165,48 @@
     ]
 }
 
+// Fight On!
+{
+    "name": "Fight On!",
+    "manaCost": "{2}{B}",
+    "typeLine": "Instant",
+    "oracleText": "Return up to two target creature cards from your graveyard to your hand.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": "IterationSpace.Targets",
+            "body": {
+                "type": "MoveToZone",
+                "target": {
+                    "type": "ContextTarget",
+                    "index": 0
+                },
+                "destination": "Hand"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 2,
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature own:you",
+                    "zone": "Graveyard"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "100",
+        "artist": "Hokuyuu",
+        "flavorText": "\"Just hang in there! Someday we'll look back at these hard times and laugh.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/1/e1b0739a-dcc4-4034-96d7-69e551b2f36b.jpg?1748706137"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Fire Magic
 {
     "name": "Fire Magic",
@@ -5528,6 +5570,56 @@
     ]
 }
 
+// Minwu, White Mage
+{
+    "name": "Minwu, White Mage",
+    "manaCost": "{3}{W}{W}",
+    "typeLine": "Legendary Creature — Human Cleric",
+    "oracleText": "Vigilance, lifelink\nWhenever you gain life, put a +1/+1 counter on each Cleric you control.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "VIGILANCE",
+        "LIFELINK"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "LifeGainEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Group",
+                        "filter": {
+                            "baseFilter": "creature Cleric ctrl:you"
+                        }
+                    },
+                    "body": {
+                        "type": "AddCounters",
+                        "counterType": "+1/+1",
+                        "count": 1,
+                        "target": "Self"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "26",
+        "rarity": "RARE",
+        "artist": "Josu Hernaiz",
+        "flavorText": "\"I shall remain here and devote myself to the care of the wounded.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/8/6822144f-f0eb-4e10-a217-52cad36d2973.jpg?1748705852"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Monk's Fist
 {
     "name": "Monk's Fist",
@@ -6356,6 +6448,94 @@
         "imageUri": "https://cards.scryfall.io/normal/front/7/5/75761f1e-9449-4c58-8265-8abac71dafc1.jpg"
     },
     "colorIdentityOverride": []
+}
+
+// Rook Turret
+{
+    "name": "Rook Turret",
+    "manaCost": "{3}{U}",
+    "typeLine": "Artifact Creature — Construct",
+    "oracleText": "Flying\nWhenever another artifact you control enters, you may draw a card. If you do, discard a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "69",
+        "artist": "Thanh Tuấn",
+        "flavorText": "\"'Tis unfortunate that many Ishgardians cannot appreciate the practicality of my work.\"\n—Stephanivien de Haillenarte",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/5/4572884d-0c0e-41e7-b219-f76b95fdbd01.jpg?1748706014"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
 }
 
 // Rosa, Resolute White Mage
