@@ -306,6 +306,17 @@ abstract class ScenarioTestBase : FunSpec() {
         }
 
         /**
+         * Add a card to a player's sideboard ("outside the game", CR 100.4 / 400.11a). Used to
+         * set up "wish" effects (Burning Wish, …) that fetch from the sideboard.
+         */
+        fun withCardInSideboard(playerNumber: Int, cardName: String): ScenarioBuilder {
+            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
+            val cardId = createCard(cardName, playerId)
+            state = state.addToZone(ZoneKey(playerId, Zone.SIDEBOARD), cardId)
+            return this
+        }
+
+        /**
          * Add a card to a player's command zone (e.g. a commander or a Momir Basic Vanguard
          * avatar). The card gets a [VanguardAvatarComponent] when its type line is Vanguard so
          * the command-zone activated-ability path treats it as an avatar.
@@ -900,6 +911,32 @@ abstract class ScenarioTestBase : FunSpec() {
          */
         fun isOnBattlefield(cardName: String): Boolean {
             return findPermanent(cardName) != null
+        }
+
+        /**
+         * Check if a card with the given name is in a player's sideboard ("outside the game").
+         */
+        fun isInSideboard(playerNumber: Int, cardName: String): Boolean {
+            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
+            return state.getZone(playerId, Zone.SIDEBOARD).any { entityId ->
+                state.getEntity(entityId)?.get<CardComponent>()?.name == cardName
+            }
+        }
+
+        /** Number of cards in a player's sideboard. */
+        fun sideboardSize(playerNumber: Int): Int {
+            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
+            return state.getZone(playerId, Zone.SIDEBOARD).size
+        }
+
+        /**
+         * Check if a card with the given name is in a player's exile zone.
+         */
+        fun isInExile(playerNumber: Int, cardName: String): Boolean {
+            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
+            return state.getExile(playerId).any { entityId ->
+                state.getEntity(entityId)?.get<CardComponent>()?.name == cardName
+            }
         }
 
         /**

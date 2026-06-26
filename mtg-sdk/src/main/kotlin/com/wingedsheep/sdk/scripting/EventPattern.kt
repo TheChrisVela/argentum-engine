@@ -128,6 +128,9 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
                     Zone.LIBRARY -> append("be put into a library")
                     Zone.STACK -> append("be put on the stack")
                     Zone.COMMAND -> append("be put into the command zone")
+                    // No card is ever moved *to* the sideboard mid-game (it is "outside the game",
+                    // CR 400.11); this branch only exists for `when` exhaustiveness.
+                    Zone.SIDEBOARD -> append("be put into a sideboard")
                 }
                 if (from != null && to != Zone.GRAVEYARD) {
                     append(" from ${from.displayName}")

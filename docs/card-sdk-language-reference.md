@@ -1261,7 +1261,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ---
 
-## 5. Effect patterns (`Patterns.Library.*` / `Patterns.Hand.*` / `Patterns.Group.*` / `Patterns.Exile.*` / `Patterns.CreatureType.*` / `Patterns.Mechanic.*`)
+## 5. Effect patterns (`Patterns.Library.*` / `Patterns.Hand.*` / `Patterns.Group.*` / `Patterns.Exile.*` / `Patterns.Sideboard.*` / `Patterns.CreatureType.*` / `Patterns.Mechanic.*`)
 
 Composed pipelines (`GatherCards → SelectFromCollection → MoveCollection` shapes and similar).
 Named entries here are for named MTG mechanics and shapes with a demonstrated second user — a
@@ -1271,6 +1271,28 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
 
 - `searchLibrary(filter, destination?, tapped?, shuffle?)` — search library, pick matching, move, shuffle.
 - `searchMultipleZones(filters, ...)` — search multiple zones in one effect.
+
+**Sideboard / wish (`Patterns.Sideboard.*`)**
+
+- `wish(filter = Any, count = 1, destination = HAND)` — the **wish** mechanic (Burning Wish,
+  Living Wish, Cunning Wish, Death Wish, Glittering Wish, Wish, …): "you may [reveal] a [type] card
+  you own from outside the game and put it into your hand." A player's sideboard is modelled as the
+  private per-player `Zone.SIDEBOARD` ("outside the game", CR 100.4 / 400.11a; strictly not a zone
+  per CR 400.11, but a pseudo-zone lets the wish reuse the ordinary pipeline). The recipe composes
+  `GatherCards(FromZone(SIDEBOARD, You, filter)) → SelectFromCollection(ChooseUpTo(count)) →
+  MoveCollection(→ destination, revealed = true)` — **no shuffle** (the sideboard is unordered) and
+  reveal always on. The "may" and "a card" are both the `ChooseUpTo(count)`: declining or having no
+  legal choice simply moves nothing. The varying axis across the cycle is `filter`
+  (`Filters.Sorcery` for Burning Wish, `Filters.Instant` for Cunning Wish, creature-or-land for
+  Living Wish, `Any` for Death Wish/Wish); `destination` is `HAND` for every printed wish but is
+  parameterized for the rare future "from outside the game onto the battlefield"/Karn-style case.
+  Pair with `spell { selfExile() }` for the cards (Burning/Cunning/Living Wish) that exile
+  themselves on resolution instead of going to the graveyard (CR 608.2g). The sideboard is private
+  to its owner — masked from opponents and spectators by `ClientStateTransformer` (like the library
+  and hand) — and, consistent with CR 400.11c, no effect other than a wish should ever gather from
+  it. Sideboards are populated at deck-build: an explicit ≤15-card list in constructed (CR 100.4a),
+  `pool − maindeck` in Limited (CR 100.4b). Example — **Burning Wish**:
+  `spell { selfExile(); effect = Patterns.Sideboard.wish(Filters.Sorcery) }`.
 
 **Top-deck manipulation**
 

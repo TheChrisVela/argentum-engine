@@ -23,6 +23,9 @@ object Patterns {
     /** Exile mechanics: exile-and-return, linked exile, exile-and-replace-with-token, … */
     val Exile = ExilePatterns
 
+    /** Sideboard / "outside the game": the wish mechanic (Burning/Living/Cunning/Death Wish, …). */
+    val Sideboard = SideboardPatterns
+
     /** "Choose a creature type, then …" recipes. */
     val CreatureType = CreatureTypePatterns
 
