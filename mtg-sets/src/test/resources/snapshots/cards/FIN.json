@@ -273,6 +273,74 @@
     ]
 }
 
+// Airship Crash
+{
+    "name": "Airship Crash",
+    "manaCost": "{2}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Destroy target artifact, enchantment, or creature with flying.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {
+                        "cardPredicates": [
+                            {
+                                "type": "Or",
+                                "predicates": [
+                                    {
+                                        "type": "Or",
+                                        "predicates": [
+                                            "IsArtifact",
+                                            "IsEnchantment"
+                                        ]
+                                    },
+                                    {
+                                        "type": "And",
+                                        "predicates": [
+                                            "IsCreature",
+                                            {
+                                                "type": "HasKeyword",
+                                                "keyword": "FLYING"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "171",
+        "artist": "Enora Mercier",
+        "flavorText": "\"Just our luck to crash in this forest... it's gonna get interesting...\"\n—Baku, Tantalus leader",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/c/ec91c4e4-711f-464d-bc83-e6813f4fdcdb.jpg?1750188044"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Al Bhed Salvagers
 {
     "name": "Al Bhed Salvagers",
@@ -3798,6 +3866,94 @@
     ]
 }
 
+// Haste Magic
+{
+    "name": "Haste Magic",
+    "manaCost": "{1}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +3/+1 and gains haste until end of turn. Exile the top card of your library. You may play it until your next end step.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "impulseExiled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "impulseExiled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "impulseExiled",
+                            "expiry": {
+                                "type": "UntilControllerStep",
+                                "step": "END"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "140",
+        "artist": "David Astruga",
+        "flavorText": "\"Double time.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/a/3af9d100-70ee-4c6c-a762-11a0c4f3ef6f.jpg?1748706286"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Hecteyes
 {
     "name": "Hecteyes",
@@ -5909,6 +6065,93 @@
     ]
 }
 
+// Phoenix Down
+{
+    "name": "Phoenix Down",
+    "manaCost": "{W}",
+    "typeLine": "Artifact",
+    "oracleText": "{1}{W}, {T}, Exile this artifact: Choose one —\n• Return target creature card with mana value 4 or less from your graveyard to the battlefield tapped.\n• Exile target Skeleton, Spirit, or Zombie.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}{W}"
+                            }
+                        },
+                        "CostTap",
+                        "CostExileSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Modal",
+                    "modes": [
+                        {
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "destination": "Battlefield",
+                                "placement": "Tapped",
+                                "fromZone": "Graveyard"
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "creature mv<=4 own:you",
+                                        "zone": "Graveyard"
+                                    }
+                                }
+                            ],
+                            "description": "Return target creature card with mana value 4 or less from your graveyard to the battlefield tapped"
+                        },
+                        {
+                            "effect": {
+                                "type": "MoveToZone",
+                                "target": {
+                                    "type": "ContextTarget",
+                                    "index": 0
+                                },
+                                "destination": "Exile"
+                            },
+                            "targetRequirements": [
+                                {
+                                    "type": "TargetObject",
+                                    "filter": {
+                                        "baseFilter": "creature Skeleton|Spirit|Zombie"
+                                    }
+                                }
+                            ],
+                            "description": "Exile target Skeleton, Spirit, or Zombie"
+                        }
+                    ],
+                    "countsAsModalSpell": false
+                },
+                "descriptionOverride": "{1}{W}, {T}, Exile this artifact: Choose one — Return target creature card with mana value 4 or less from your graveyard to the battlefield tapped; or Exile target Skeleton, Spirit, or Zombie."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "29",
+        "rarity": "UNCOMMON",
+        "artist": "John Severin Brassell",
+        "flavorText": "A feather with the power to revive those who have exhausted their strength.",
+        "imageUri": "https://cards.scryfall.io/normal/front/6/2/62e299b0-9ef6-49d3-aa79-384325fed89e.jpg?1748705861"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Qiqirn Merchant
 {
     "name": "Qiqirn Merchant",
@@ -7294,6 +7537,56 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Slash of Light
+{
+    "name": "Slash of Light",
+    "manaCost": "{1}{W}",
+    "typeLine": "Instant",
+    "oracleText": "Slash of Light deals damage equal to the number of creatures you control plus the number of Equipment you control to target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "DealDamage",
+            "amount": {
+                "type": "Add",
+                "left": {
+                    "type": "Count",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "creature"
+                },
+                "right": {
+                    "type": "Count",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "artifact Equipment"
+                }
+            },
+            "target": {
+                "type": "BoundVariable",
+                "name": "target"
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "32",
+        "artist": "Nathaniel Himawan",
+        "flavorText": "The endless struggle that raged over two thousand years had ended, and peace prevailed once more.",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/a/da6d9529-3cb0-4adc-8209-b9b02db3bf54.jpg?1748705874"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
