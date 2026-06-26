@@ -491,7 +491,8 @@ sealed interface EventPattern : TextReplaceable<EventPattern> {
          * matcher branch, not a new field here.
          *
          * Current cases: [AttackPredicate.Alone],
-         * [AttackPredicate.AttackerCountAtLeast].
+         * [AttackPredicate.AttackerCountAtLeast],
+         * [AttackPredicate.FirstTimeEachTurn].
          */
         val requires: Set<AttackPredicate> = emptySet(),
     ) : EventPattern {

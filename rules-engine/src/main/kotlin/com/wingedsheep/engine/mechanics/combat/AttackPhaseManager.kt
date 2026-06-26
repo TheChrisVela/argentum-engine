@@ -210,6 +210,14 @@ internal class AttackPhaseManager(
             }
         }.toSet()
 
+        // Attackers seen earlier this turn (across prior combat phases) — read before the per-turn
+        // set is unioned below so we can flag which of these attackers are attacking for the *first
+        // time this turn*. Backs AttackPredicate.FirstTimeEachTurn; this fact can't be derived after
+        // the union (the just-declared attacker would already be a member).
+        val previousAttackersThisTurn = state.getEntity(attackingPlayer)
+            ?.get<PlayerAttackersThisTurnComponent>()?.attackerIds ?: emptySet()
+        val firstTimeAttackers = attackers.keys - previousAttackersThisTurn
+
         newState = newState.updateEntity(attackingPlayer) { container ->
             var updated = container.with(AttackersDeclaredThisCombatComponent)
             if (attackers.isNotEmpty()) {
@@ -233,7 +241,14 @@ internal class AttackPhaseManager(
         val attackerNames = attackers.keys.map { state.getEntity(it)?.get<CardComponent>()?.name ?: "Creature" }
         return ExecutionResult.success(
             newState,
-            taxEvents + tapEvents + listOf(AttackersDeclaredEvent(attackers.keys.toList(), attackerNames, attackingPlayer))
+            taxEvents + tapEvents + listOf(
+                AttackersDeclaredEvent(
+                    attackers.keys.toList(),
+                    attackerNames,
+                    attackingPlayer,
+                    firstTimeAttackers = firstTimeAttackers
+                )
+            )
         )
     }
 

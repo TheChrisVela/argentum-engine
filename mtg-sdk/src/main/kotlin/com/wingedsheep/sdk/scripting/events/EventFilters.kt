@@ -516,6 +516,24 @@ sealed interface AttackPredicate {
     data class AttackerCountAtLeast(val n: Int) : AttackPredicate {
         override val description = "with $n or more attackers"
     }
+
+    /**
+     * The attacker is attacking *for the first time this turn* — it had not been
+     * declared as an attacker in any earlier combat phase this turn. The matcher
+     * consults the per-turn attacker set (the same union that backs raid / "you
+     * attacked with N creatures this turn"), so a creature that attacks again in a
+     * second combat phase (extra-combat effects like Fear of Missing Out) does not
+     * re-fire. The window resets at the start of each turn.
+     *
+     * Per-attacker by design: it gates against the trigger's own source, so use it
+     * with a `SELF` binding — "Whenever this creature attacks for the first time
+     * each turn, …".
+     */
+    @SerialName("AttacksFirstTimeEachTurn")
+    @Serializable
+    data object FirstTimeEachTurn : AttackPredicate {
+        override val description = "for the first time each turn"
+    }
 }
 
 // =============================================================================

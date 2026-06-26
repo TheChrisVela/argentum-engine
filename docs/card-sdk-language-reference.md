@@ -2217,9 +2217,12 @@ sealed set for attack-time facts beyond the basics.
 **Attacks (per-attacker `AttackEvent`)**
 
 - `Attacks` — SELF, no filter. ("When this creature attacks.")
+- `AttacksFirstTimeEachTurn` — SELF sugar for
+  `attacks(requires = setOf(AttackPredicate.FirstTimeEachTurn))`. ("Whenever this
+  creature attacks for the first time each turn.")
 - `attacks(filter?, requires?, binding?)` — factory. Covers ANY-binding scopes,
   type-filtered scopes (creature-you-control, nontoken-creature-you-control),
-  and attack-time predicates (alone, future Battalion-style count gates).
+  and attack-time predicates (alone, Battalion-style count gates, first-attack-each-turn).
 
 **Attacks (player-level)**
 
@@ -2261,12 +2264,24 @@ Adding a new attack-time mechanic is one new sealed-case + one matcher branch
 - `AttackPredicate.AttackerCountAtLeast(n)` — at least N creatures total were
   declared as attackers (counting the trigger's attacker). Battalion shape:
   `attacks(requires = setOf(AttackerCountAtLeast(3)))` on a `SELF` binding.
+- `AttackPredicate.FirstTimeEachTurn` — the trigger's own attacker is attacking for
+  the **first time this turn** (it had not been declared as an attacker in an earlier
+  combat phase this turn). Per-attacker, so use it on a `SELF` binding. Fires once on
+  the first attack and not again if the creature attacks in a later combat phase the
+  same turn (extra-combat effects like Fear of Missing Out); the window resets each
+  turn. The "first time" fact is captured on `AttackersDeclaredEvent.firstTimeAttackers`
+  at declaration — post-declaration state can't tell, since the per-turn attacker set
+  already includes the just-declared attacker. Prefer the `AttacksFirstTimeEachTurn`
+  sugar.
 
 Examples:
 
 ```kotlin
 // "Whenever this creature attacks alone"
 Triggers.attacks(requires = setOf(AttackPredicate.Alone))
+
+// "Whenever this creature attacks for the first time each turn" (prefer the sugar)
+Triggers.AttacksFirstTimeEachTurn
 
 // "Whenever a nontoken creature you control attacks"
 Triggers.attacks(

@@ -645,13 +645,22 @@ data class TargetsChosenEvent(
 
 /**
  * Attackers were declared.
+ *
+ * [firstTimeAttackers] is the subset of [attackers] that were declared as an attacker
+ * *for the first time this turn* — i.e. they had not attacked in an earlier combat phase
+ * this turn. It backs `AttackPredicate.FirstTimeEachTurn` ("attacks for the first time
+ * each turn"): the matcher cannot derive this from post-declaration state because the
+ * per-turn attacker set already includes the just-declared attacker by detection time, so
+ * the "first time" fact is captured on the event at declaration (mirroring
+ * `LifeChangeEvent.firstThisTurn` / `BecomesTargetEvent.firstTimeByThisController`).
  */
 @Serializable
 @SerialName("AttackersDeclaredEvent")
 data class AttackersDeclaredEvent(
     val attackers: List<EntityId>,
     val attackerNames: List<String> = emptyList(),
-    val attackingPlayerId: EntityId? = null
+    val attackingPlayerId: EntityId? = null,
+    val firstTimeAttackers: Set<EntityId> = emptySet()
 ) : GameEvent
 
 /**

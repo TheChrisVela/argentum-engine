@@ -17,6 +17,10 @@ internal fun BridgeBuilder.triggersCostsAndContinuous() {
     // declines -> SCAFFOLD.
     supported("WhenAnyNumberOfCountersOfTypeArePutOnAPermanent", "trigger: one or more counters of a type put on this permanent (CountersPlacedEvent, SELF)")
     supported("WhenACreatureAttacks", "trigger: attacks")
+    // "Whenever this creature attacks for the first time each turn, …" — SELF attack trigger gated on
+    // the per-turn attacker set (AttackPredicate.FirstTimeEachTurn / Triggers.AttacksFirstTimeEachTurn,
+    // Fear of Missing Out). Fires once on the first attack and not on a later combat phase the same turn.
+    supported("WhenACreatureAttacksForTheFirstTimeEachTurn", "trigger: this creature attacks for the first time each turn (Triggers.AttacksFirstTimeEachTurn)")
     // "Whenever you attack with one or more creatures [matching a filter]" — the batched declare-attackers
     // trigger that fires once per combat when at least one attacker matches (Triggers.YouAttackWithFilter,
     // Jolene Plundering Pugilist's "with power 4 or greater"). You scope only; the emitter recovers the

@@ -121,7 +121,7 @@ class TriggerMatcher(
             is EventPattern.AttackEvent -> {
                 event is AttackersDeclaredEvent &&
                     checkBinding(binding, sourceId, event.attackers) &&
-                    trigger.requires.all { matchesAttackPredicate(it, event) }
+                    trigger.requires.all { matchesAttackPredicate(it, event, sourceId) }
             }
             is EventPattern.YouAttackEvent -> {
                 if (event !is AttackersDeclaredEvent) return false
@@ -1380,10 +1380,15 @@ class TriggerMatcher(
      */
     internal fun matchesAttackPredicate(
         predicate: AttackPredicate,
-        event: AttackersDeclaredEvent
+        event: AttackersDeclaredEvent,
+        boundEntityId: EntityId
     ): Boolean = when (predicate) {
         AttackPredicate.Alone -> event.attackers.size == 1
         is AttackPredicate.AttackerCountAtLeast -> event.attackers.size >= predicate.n
+        // Per-attacker: the trigger's own source (SELF / the attached creature) is among the
+        // creatures attacking for the first time this turn. Stamped on the event at declaration
+        // (post-declaration state can't tell, since the per-turn attacker set already includes it).
+        AttackPredicate.FirstTimeEachTurn -> boundEntityId in event.firstTimeAttackers
     }
 
     private fun matchesSpellCastPredicate(

@@ -240,6 +240,19 @@ object Triggers {
     )
 
     /**
+     * When this creature attacks for the first time each turn. (SELF.)
+     *
+     * Fires the first time the source is declared as an attacker in a turn and not
+     * again if it attacks in a later combat phase that turn (extra-combat effects
+     * like Fear of Missing Out). The window resets each turn. Sugar for
+     * `attacks(requires = setOf(AttackPredicate.FirstTimeEachTurn))`.
+     */
+    val AttacksFirstTimeEachTurn: TriggerSpec = TriggerSpec(
+        event = AttackEvent(requires = setOf(AttackPredicate.FirstTimeEachTurn)),
+        binding = TriggerBinding.SELF
+    )
+
+    /**
      * Generic "attacks" trigger factory. Use [Attacks] for the SELF-only
      * unfiltered case; reach for this factory for any other combination.
      *
@@ -261,6 +274,9 @@ object Triggers {
      *            binding = TriggerBinding.ANY)`
      * - "Battalion — whenever ~ and at least two other creatures attack":
      *   `attacks(requires = setOf(AttackPredicate.AttackerCountAtLeast(3)))`
+     * - "Whenever this creature attacks for the first time each turn"
+     *   (prefer the [AttacksFirstTimeEachTurn] sugar):
+     *   `attacks(requires = setOf(AttackPredicate.FirstTimeEachTurn))`
      */
     fun attacks(
         filter: GameObjectFilter? = null,
