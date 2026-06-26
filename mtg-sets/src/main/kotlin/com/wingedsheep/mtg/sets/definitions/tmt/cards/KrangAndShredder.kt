@@ -12,11 +12,14 @@ import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.GatherUntilMatchEffect
-import com.wingedsheep.sdk.scripting.effects.GrantMayPlayFromExileEffect
-import com.wingedsheep.sdk.scripting.effects.GrantPlayWithoutPayingCostEffect
+import com.wingedsheep.sdk.scripting.effects.GrantFreeCastTargetFromExileEffect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
+import com.wingedsheep.sdk.scripting.effects.SelectFromCollectionEffect
+import com.wingedsheep.sdk.scripting.effects.SelectionMode
 import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 // Each opponent exiles from the top of their library until a nonland card, all linked to Krang &
 // Shredder so the Disappear ability can cast them. Shared by the enter and attack triggers.
@@ -69,7 +72,9 @@ val KrangAndShredder = card("Krang & Shredder") {
         description = "Whenever Krang & Shredder enter or attack, each opponent exiles cards from the top of their library until they exile a nonland card."
     }
 
-    // Disappear: cast one of the linked-exiled cards for free at your end step.
+    // Disappear: cast ONE of the linked-exiled cards for free at your end step. Gather the whole
+    // linked-exile pile, let the player pick a single card, then grant the free cast on just that
+    // one — "you may cast a card" (singular), not the entire pile.
     triggeredAbility {
         trigger = Triggers.YourEndStep
         triggerCondition = Conditions.YouHadPermanentLeaveBattlefieldThisTurn
@@ -77,8 +82,13 @@ val KrangAndShredder = card("Krang & Shredder") {
             Effects.Composite(
                 listOf(
                     GatherCardsEffect(source = CardSource.FromLinkedExile(), storeAs = "krangCastable"),
-                    GrantMayPlayFromExileEffect("krangCastable"),
-                    GrantPlayWithoutPayingCostEffect("krangCastable")
+                    SelectFromCollectionEffect(
+                        from = "krangCastable",
+                        selection = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(1)),
+                        storeSelected = "krangChosen",
+                        prompt = "Choose a card exiled with Krang & Shredder to cast without paying its mana cost"
+                    ),
+                    GrantFreeCastTargetFromExileEffect(target = EffectTarget.PipelineTarget("krangChosen", 0))
                 )
             )
         )

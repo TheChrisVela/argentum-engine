@@ -4786,12 +4786,24 @@
                                 "storeAs": "krangCastable"
                             },
                             {
-                                "type": "GrantMayPlayFromExile",
-                                "from": "krangCastable"
+                                "type": "SelectFromCollection",
+                                "from": "krangCastable",
+                                "selection": {
+                                    "type": "ChooseUpTo",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeSelected": "krangChosen",
+                                "prompt": "Choose a card exiled with Krang & Shredder to cast without paying its mana cost"
                             },
                             {
-                                "type": "GrantPlayWithoutPayingCost",
-                                "from": "krangCastable"
+                                "type": "GrantFreeCastTargetFromExile",
+                                "target": {
+                                    "type": "PipelineTarget",
+                                    "collectionName": "krangChosen"
+                                }
                             }
                         ]
                     }
