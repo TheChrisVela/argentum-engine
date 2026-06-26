@@ -56,16 +56,28 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
   const phases: PipelinePhase[] = []
 
   // 0. Choose-N modal (Spree / "choose one or more"): the player picks the mode subset in a
-  //    single panel. This is the ONLY client phase — the additional cost depends on which
-  //    modes are chosen, and per-mode targeting happens on the battlefield afterward, so the
-  //    server drives targeting and mana payment once `chosenModes` is submitted. Return early
-  //    so no manaSource/targeting phase runs against the (incomplete) base cost.
+  //    single panel. Usually this is the ONLY client phase — the additional cost depends on
+  //    which modes are chosen, and per-mode targeting happens on the battlefield afterward, so
+  //    the server drives targeting and mana payment once `chosenModes` is submitted. Return
+  //    early so no manaSource/targeting phase runs against the (incomplete) base cost.
+  //
+  //    Exception: a "choose both if you blight" modal (Pyrrhic Strike) surfaces its blight path
+  //    as a distinct cast variant whose `modalEnumeration` forces every mode. The engine only
+  //    unlocks those extra modes once the submitted action carries `blightTargets` (and it reads
+  //    the same field to apply the −1/−1 counters) — so we must collect the blight target via a
+  //    `costPayment` phase here rather than dropping it. Without this, the action submits with
+  //    no blight and the engine rejects it ("Too many modes chosen"). Per-mode targeting + mana
+  //    still run server-side after submit.
   if (
     actionInfo.action.type === 'CastSpell' &&
     actionInfo.modalEnumeration &&
     actionInfo.modalEnumeration.chooseCount > 1
   ) {
-    return [{ type: 'modalModes' }]
+    const modalPhases: PipelinePhase[] = [{ type: 'modalModes' }]
+    if (actionInfo.additionalCostInfo?.costType === 'Blight') {
+      modalPhases.push({ type: 'costPayment' })
+    }
+    return modalPhases
   }
 
   // 1. Counter distribution
