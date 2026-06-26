@@ -395,6 +395,14 @@ class ClientStateTransformer(
                 (!isSpectator && state.teammatesOf(viewingPlayerId).contains(zoneKey.ownerId)) ||
                 (!isSpectator && zoneKey.ownerId != viewingPlayerId &&
                     revealsOpponentHandsTo(state, viewingPlayerId))
+            // The sideboard is private "outside the game" knowledge (CR 100.4 / 400.11a): only its
+            // owner ever sees it, never opponents or spectators. (The wish *choice* itself is driven
+            // by the SelectFromCollection decision, which sends the deciding player the gathered
+            // cards directly — it doesn't depend on this passive zone visibility.) The actorFor
+            // clause keeps a Mindslaver-style controller able to see the sideboard of the player
+            // whose turn they're piloting.
+            Zone.SIDEBOARD -> debugMode || zoneKey.ownerId == viewingPlayerId ||
+                (!isSpectator && state.actorFor(zoneKey.ownerId) == viewingPlayerId)
             Zone.BATTLEFIELD,
             Zone.GRAVEYARD,
             Zone.STACK,

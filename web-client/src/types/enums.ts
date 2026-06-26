@@ -309,6 +309,9 @@ export enum ZoneType {
   STACK = 'Stack',
   EXILE = 'Exile',
   COMMAND = 'Command',
+  // Cards owned "outside the game" (CR 100.4 / 400.11a) — a player's sideboard, reachable in-game
+  // only by wish effects. Private to its owner; opponents never see it.
+  SIDEBOARD = 'Sideboard',
 }
 
 export function isPublicZone(zoneType: ZoneType): boolean {
@@ -316,7 +319,7 @@ export function isPublicZone(zoneType: ZoneType): boolean {
 }
 
 export function isHiddenZone(zoneType: ZoneType): boolean {
-  return [ZoneType.LIBRARY, ZoneType.HAND].includes(zoneType)
+  return [ZoneType.LIBRARY, ZoneType.HAND, ZoneType.SIDEBOARD].includes(zoneType)
 }
 
 export function isSharedZone(zoneType: ZoneType): boolean {

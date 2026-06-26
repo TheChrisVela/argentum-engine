@@ -342,6 +342,19 @@ class GameInitializer(
                 state = state.addToZone(ZoneKey(playerId, Zone.LIBRARY), cardId)
             }
 
+            // Sideboard: the cards this player owns *outside the game* (CR 100.4). They begin in
+            // the private [Zone.SIDEBOARD] and are reachable only by "wish" effects. They are not
+            // shuffled (the sideboard is unordered) and never drawn into the opening hand. Empty
+            // for almost every deck.
+            for (entry in playerConfig.deck.sideboard) {
+                val cardDef = cardRegistry.requireCard(entry.name)
+                val (cardId, stateWithId) = state.newEntity()
+                state = stateWithId
+                val cardContainer = createCardEntity(cardDef, playerId, entry.printing)
+                state = state.withEntity(cardId, cardContainer)
+                state = state.addToZone(ZoneKey(playerId, Zone.SIDEBOARD), cardId)
+            }
+
             if (commanderEntityIds.isNotEmpty()) {
                 state = state.updateEntity(playerId) { c ->
                     c.with(

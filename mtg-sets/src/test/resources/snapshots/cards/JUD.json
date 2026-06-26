@@ -116,6 +116,62 @@
     ]
 }
 
+// Burning Wish
+{
+    "name": "Burning Wish",
+    "manaCost": "{1}{R}",
+    "typeLine": "Sorcery",
+    "oracleText": "You may reveal a sorcery card you own from outside the game and put it into your hand. Exile Burning Wish.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Sideboard",
+                        "filter": "sorcery"
+                    },
+                    "storeAs": "wishable"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "wishable",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "storeSelected": "wishableFound"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "wishableFound",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    },
+                    "revealed": true
+                }
+            ]
+        },
+        "selfExileOnResolve": true
+    },
+    "metadata": {
+        "collectorNumber": "83",
+        "rarity": "RARE",
+        "artist": "Scott M. Fischer",
+        "flavorText": "She wished for a weapon, but not for the skill to wield it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/c/1c9b692a-e832-4612-a6ec-93b52f6a0410.jpg?1562628871"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Cabal Trainee
 {
     "name": "Cabal Trainee",

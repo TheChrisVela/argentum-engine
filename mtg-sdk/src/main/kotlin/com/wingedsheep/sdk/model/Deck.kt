@@ -65,9 +65,22 @@ data class Deck(
      * Optional commander printing reference. Honoured only when [commander] is non-null.
      */
     val commanderPrinting: PrintingRef? = null,
+    /**
+     * The player's sideboard — cards they own *outside the game* (CR 100.4). These begin the
+     * game in [com.wingedsheep.sdk.core.Zone.SIDEBOARD] and are reachable only by "wish" effects
+     * (Burning Wish, Living Wish, …). Empty for the vast majority of decks, so it does not count
+     * toward [size] or [isEmpty] (those describe the in-game deck).
+     *
+     * Populated differently per format, but the engine consumes the same flat list either way:
+     * constructed decks carry an explicit, player-curated sideboard (≤15, CR 100.4a); Limited
+     * decks derive it as `pool − maindeck` at deck submission (CR 100.4b) — there is no separate
+     * Limited sideboard editor, every opened/drafted card not in the deck is automatically here.
+     */
+    val sideboard: List<CardEntry> = emptyList(),
 ) {
     /**
-     * Total number of cards in the deck (library + command zone).
+     * Total number of cards in the deck (library + command zone). Excludes the sideboard, which
+     * is outside the game.
      */
     val size: Int get() = cards.size + (if (commander != null) 1 else 0)
 
@@ -129,11 +142,13 @@ data class Deck(
             entries: List<CardEntry>,
             commander: String? = null,
             commanderPrinting: PrintingRef? = null,
+            sideboard: List<CardEntry> = emptyList(),
         ): Deck = Deck(
             cards = entries.map { it.name },
             commander = commander,
             cardEntries = entries,
             commanderPrinting = commanderPrinting,
+            sideboard = sideboard,
         )
 
         /**
