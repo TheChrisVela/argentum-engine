@@ -75,6 +75,7 @@ class KeysToTheHouseScenarioTest : FunSpec({
         d.submitSuccess(
             ActivateAbility(playerId = p, sourceId = keys, abilityId = KeysToTheHouse.activatedAbilities[0].id)
         )
+        d.bothPass() // resolve the ability off the stack
 
         // The mandatory search surfaces a card selection over the basic lands in the library.
         val search = d.pendingDecision as SelectCardsDecision
