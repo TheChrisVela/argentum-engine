@@ -104,6 +104,21 @@ data object TriggeringSpellCastWithoutPayingMana : Condition {
 }
 
 /**
+ * Condition: "if at least [amount] mana was spent to cast it" — about the TRIGGERING spell.
+ * Reads the total mana paid recorded on the triggering spell's `SpellOnStackComponent`
+ * (the same source [TriggeringSpellCastWithoutPayingMana] reads) and is true when that total
+ * is `>= amount`. The threshold counterpart of [TriggeringSpellCastWithoutPayingMana]; the
+ * intervening-"if" clause for cast-payoffs like Sahagin ("Whenever you cast a noncreature
+ * spell, if at least four mana was spent to cast it, …"). False when the triggering entity
+ * isn't a spell on the stack.
+ */
+@SerialName("TriggeringSpellManaSpentAtLeast")
+@Serializable
+data class TriggeringSpellManaSpentAtLeast(val amount: Int) : Condition {
+    override val description: String = "if at least $amount mana was spent to cast it"
+}
+
+/**
  * Condition: "if it entered or was cast from a graveyard".
  * True when the triggering entity has either EnteredFromGraveyardComponent (reanimated
  * directly from graveyard → battlefield) or CastFromGraveyardComponent (spell was cast

@@ -5868,6 +5868,131 @@
     ]
 }
 
+// Malboro
+{
+    "name": "Malboro",
+    "manaCost": "{4}{B}{B}",
+    "typeLine": "Creature — Plant Horror",
+    "oracleText": "Bad Breath — When this creature enters, each opponent discards a card, loses 2 life, and exiles the top three cards of their library.\nSwampcycling {2} ({2}, Discard this card: Search your library for a Swamp card, reveal it, put it into your hand, then shuffle.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywordAbilities": [
+        {
+            "type": "Cycling",
+            "cost": "{2}",
+            "searchFilter": {
+                "cardPredicates": [
+                    {
+                        "type": "HasSubtype",
+                        "subtype": "Swamp"
+                    }
+                ]
+            },
+            "displayPrefix": "Swampcycling"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Players",
+                        "players": "EachOpponent"
+                    },
+                    "body": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "LoseLife",
+                                "amount": {
+                                    "type": "Fixed",
+                                    "amount": 2
+                                },
+                                "target": "Controller"
+                            },
+                            {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "TopOfLibrary",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 3
+                                            }
+                                        },
+                                        "storeAs": "exiled_top"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "exiled_top",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Exile"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "106",
+        "artist": "Dan Watson",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e46d8048-03ce-4e07-ba24-f41ba6140a4e.jpg?1748706158"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Midgar, City of Mako
 {
     "name": "Midgar, City of Mako",
@@ -7203,6 +7328,63 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Sahagin
+{
+    "name": "Sahagin",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Merfolk Warrior",
+    "oracleText": "Whenever you cast a noncreature spell, if at least four mana was spent to cast it, put a +1/+1 counter on this creature and it can't be blocked this turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": "Self"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "CANT_BE_BLOCKED",
+                            "target": "Self"
+                        }
+                    ]
+                },
+                "triggerCondition": {
+                    "type": "TriggeringSpellManaSpentAtLeast",
+                    "amount": 4
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "71",
+        "artist": "Nino Is",
+        "flavorText": "\"Pshhh... Shhhilence, shhhorewalker! Try to eshhhcape, and I'll shhhlice gills into your neck!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/1/516940c7-c271-4f64-af75-c7ba98548382.jpg?1748706022"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -9505,6 +9687,68 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Tonberry
+{
+    "name": "Tonberry",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Salamander Horror",
+    "oracleText": "This creature enters tapped with a stun counter on it. (If it would become untapped, remove a stun counter from it instead.)\nChef's Knife — During your turn, this creature has first strike and deathtouch.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "FIRST_STRIKE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "IsYourTurn"
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "DEATHTOUCH",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "IsYourTurn"
+            }
+        ],
+        "replacementEffects": [
+            "EntersTapped",
+            {
+                "type": "EntersWithCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "stun"
+                },
+                "count": 1,
+                "selfOnly": true
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "122",
+        "rarity": "UNCOMMON",
+        "artist": "Leonardo Santanna",
+        "flavorText": "Fearful monsters that creep ever forward, knives poised with deadly intent.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/a/1a9b8723-4383-4c14-b24d-52863af8703d.jpg?1748706219"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
     ]
 }
 

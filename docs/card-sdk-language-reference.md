@@ -1323,6 +1323,10 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
     pipeline internals change. Any effect-tree walker that needs the inner nodes expands through the
     single `LibraryPatterns.expandMacro(effect)` helper.
 - `mill(count)` — top N cards into graveyard.
+- `exileTop(count, target = Controller)` — top N cards of a player's library into exile (Malboro's
+  "exiles the top three cards of their library"). Same Gather → Move pipeline as `mill`, destination
+  exile. `count` is an `Int` or `DynamicAmount`. Pass a `target` (e.g. a `Player.You` rebind under
+  `Effects.ForEachPlayer(Player.EachOpponent, …)`) to exile another player's library top.
 - `lookAtTopAndKeep(count, keepCount)` — Ancestral Memories — keep exactly K to hand.
 - `lookAtTopRevealMatchingToHand(count, filter, prompt, restDestination?, restOrder?)` — Radagast the
   Brown / Star Charter shape: look at top `count`, **optionally** reveal one card matching `filter` to
@@ -4100,6 +4104,11 @@ answer it and would silently return `false`.
   mana was spent to cast it" about the *triggering* spell (reads its `CastRecordComponent`). Used as a
   triggered-ability intervening-if (Boromir, Warden of the Tower: "Whenever an opponent casts a spell,
   if no mana was spent to cast it, counter that spell" → pair with `Effects.CounterTriggeringSpell()`).
+- `TriggeringSpellManaSpentAtLeast(amount)` — threshold counterpart of
+  `TriggeringSpellCastWithoutPayingMana`: "if at least `amount` mana was spent to cast it" about the
+  *triggering* spell (sums the mana paid recorded on its `SpellOnStackComponent`). Triggered-ability
+  intervening-if (Sahagin: "Whenever you cast a noncreature spell, if at least four mana was spent to
+  cast it, …"). Counts actual mana paid, so an {X} spell that paid four or more qualifies.
 - `BlightWasPaid(amount)` — the Blight X additional cost was paid.
 
 ### Source state

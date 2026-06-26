@@ -595,6 +595,38 @@ object LibraryPatterns {
         )
     }
 
+    /**
+     * Exile the top [count] cards of a player's library — "exiles the top N cards of their
+     * library" (Malboro). Same Gather → Move pipeline as [mill], but the destination is exile
+     * rather than the graveyard. Defaults to the controller; pass a [target] (e.g. a
+     * `Player.You` rebind under `Effects.ForEachPlayer(Player.EachOpponent, …)`) to exile another
+     * player's library top.
+     */
+    fun exileTop(count: Int, target: EffectTarget = EffectTarget.Controller): CompositeEffect =
+        exileTop(DynamicAmount.Fixed(count), target)
+
+    fun exileTop(count: DynamicAmount, target: EffectTarget = EffectTarget.Controller): CompositeEffect {
+        val player = when (target) {
+            EffectTarget.Controller -> Player.You
+            is EffectTarget.ContextTarget -> Player.ContextPlayer(target.index)
+            is EffectTarget.BoundVariable -> Player.ContextPlayer(0)
+            is EffectTarget.PlayerRef -> target.player
+            else -> Player.You
+        }
+        return CompositeEffect(
+            listOf(
+                GatherCardsEffect(
+                    source = CardSource.TopOfLibrary(count, player),
+                    storeAs = "exiled_top"
+                ),
+                MoveCollectionEffect(
+                    from = "exiled_top",
+                    destination = CardDestination.ToZone(Zone.EXILE, player)
+                )
+            )
+        )
+    }
+
     fun shuffleGraveyardIntoLibrary(target: EffectTarget = EffectTarget.ContextTarget(0)): CompositeEffect {
         val player = effectTargetToPlayer(target)
         return CompositeEffect(

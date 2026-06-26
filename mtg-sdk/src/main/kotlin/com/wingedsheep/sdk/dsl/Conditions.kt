@@ -1337,6 +1337,13 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.TriggeringSpellCastWithoutPayingMana
 
     /**
+     * Intervening-if: "if at least [amount] mana was spent to cast it" about the triggering spell
+     * (Sahagin). Threshold counterpart of [TriggeringSpellCastWithoutPayingMana].
+     */
+    fun TriggeringSpellManaSpentAtLeast(amount: Int): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.TriggeringSpellManaSpentAtLeast(amount)
+
+    /**
      * If the triggering entity entered or was cast from a graveyard.
      * Used by Twilight Diviner: "if they entered or were cast from a graveyard".
      */

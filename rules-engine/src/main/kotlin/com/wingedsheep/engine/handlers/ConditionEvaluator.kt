@@ -430,6 +430,8 @@ class ConditionEvaluator(
             is TriggeringEntityWasCast -> ifResolution { evaluateTriggeringEntityWasCast(state, it) }
             is com.wingedsheep.sdk.scripting.conditions.TriggeringSpellCastWithoutPayingMana ->
                 ifResolution { evaluateTriggeringSpellCastWithoutPayingMana(state, it) }
+            is com.wingedsheep.sdk.scripting.conditions.TriggeringSpellManaSpentAtLeast ->
+                ifResolution { evaluateTriggeringSpellManaSpentAtLeast(state, condition.amount, it) }
             is TriggeringEntityEnteredOrWasCastFromGraveyard ->
                 ifResolution { evaluateTriggeringEntityEnteredOrWasCastFromGraveyard(state, it) }
             is TriggeringEntityHadMinusOneMinusOneCounter ->
@@ -986,6 +988,25 @@ class ConditionEvaluator(
             ?.get<com.wingedsheep.engine.state.components.stack.SpellOnStackComponent>() ?: return false
         return spell.manaSpentWhite + spell.manaSpentBlue + spell.manaSpentBlack +
             spell.manaSpentRed + spell.manaSpentGreen + spell.manaSpentColorless == 0
+    }
+
+    /**
+     * Threshold counterpart of [evaluateTriggeringSpellCastWithoutPayingMana]: true when the
+     * total mana spent on the triggering spell (summed across colors + colorless on the
+     * [SpellOnStackComponent]) is at least [amount]. False when the triggering entity isn't a
+     * spell on the stack.
+     */
+    private fun evaluateTriggeringSpellManaSpentAtLeast(
+        state: GameState,
+        amount: Int,
+        context: EffectContext
+    ): Boolean {
+        val entityId = context.triggeringEntityId ?: return false
+        val spell = state.getEntity(entityId)
+            ?.get<com.wingedsheep.engine.state.components.stack.SpellOnStackComponent>() ?: return false
+        val total = spell.manaSpentWhite + spell.manaSpentBlue + spell.manaSpentBlack +
+            spell.manaSpentRed + spell.manaSpentGreen + spell.manaSpentColorless
+        return total >= amount
     }
 
     private fun evaluateWasKicked(state: GameState, context: EffectContext): Boolean {
