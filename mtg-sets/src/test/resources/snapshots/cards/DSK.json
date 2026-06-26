@@ -3824,6 +3824,100 @@
     ]
 }
 
+// Fear of Abduction
+{
+    "name": "Fear of Abduction",
+    "manaCost": "{4}{W}{W}",
+    "typeLine": "Enchantment Creature — Nightmare",
+    "oracleText": "As an additional cost to cast this spell, exile a creature you control.\nFlying\nWhen this creature enters, exile target creature an opponent controls.\nWhen this creature leaves the battlefield, put each card exiled with it into its owner's hand.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "ExileUntilLeaves",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "creature an opponent controls"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:opponent"
+                    },
+                    "id": "creature an opponent controls"
+                }
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "linked_return_hand"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "linked_return_hand",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                }
+            }
+        ],
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": {
+                    "type": "AtomExileFrom",
+                    "zone": "Battlefield",
+                    "filter": "creature ctrl:you"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "9",
+        "rarity": "UNCOMMON",
+        "artist": "Fernando Falcone",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/c/fc9374be-5e4b-4c23-8b6e-94c03d4f5ef1.jpg?1726285889",
+        "rulings": [
+            {
+                "date": "2024-09-20",
+                "text": "If Fear of Abduction leaves the battlefield before its third ability resolves, the ability still exiles the target creature."
+            },
+            {
+                "date": "2024-09-20",
+                "text": "If there are no exiled cards when Fear of Abduction's last ability resolves (most likely because its third ability hasn't resolved yet), the ability won't do anything."
+            }
+        ]
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Fear of Being Hunted
 {
     "name": "Fear of Being Hunted",
@@ -14130,6 +14224,91 @@
         "artist": "Johann Bodin",
         "flavorText": "\"Surprise! Aaahahahahah! You should see the look on your face. Here, let's peel it off so you can!\"",
         "imageUri": "https://cards.scryfall.io/normal/front/1/2/12649f73-9d29-4eed-bc89-cc0d1a8969e3.jpg"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Violent Urge
+{
+    "name": "Violent Urge",
+    "manaCost": "{R}",
+    "typeLine": "Instant",
+    "oracleText": "Target creature gets +1/+0 and gains first strike until end of turn.\nDelirium — If there are four or more card types among cards in your graveyard, that creature gains double strike until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ModifyStats",
+                    "powerModifier": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "toughnessModifier": {
+                        "type": "Fixed",
+                        "amount": 0
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "FIRST_STRIKE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target"
+                    }
+                },
+                {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.WhenCondition",
+                        "condition": {
+                            "type": "Compare",
+                            "left": {
+                                "type": "AggregateZone",
+                                "player": "You",
+                                "zone": "Graveyard",
+                                "aggregation": "DISTINCT_TYPES"
+                            },
+                            "operator": "GTE",
+                            "right": {
+                                "type": "Fixed",
+                                "amount": 4
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "GrantKeyword",
+                        "keyword": "DOUBLE_STRIKE",
+                        "target": {
+                            "type": "BoundVariable",
+                            "name": "target"
+                        }
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "rarity": "UNCOMMON",
+        "artist": "Mirko Failoni",
+        "flavorText": "Rage can be a potent antidote to fear.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/4/a47c968b-1edd-45ac-a67c-311647e7e2fc.jpg?1726286465"
     },
     "colorIdentityOverride": [
         "RED"
