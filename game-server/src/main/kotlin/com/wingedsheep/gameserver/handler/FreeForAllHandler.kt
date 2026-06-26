@@ -121,7 +121,10 @@ class FreeForAllHandler(
             val deck = if (commander != null) stripCommanderFromCards(deckWithEgg, commander) else deckWithEgg
 
             val playerSession = identity.toPlayerSession()
-            gameSession.addPlayer(playerSession, deck, commanderCardName = commander)
+            gameSession.addPlayer(
+                playerSession, deck, commanderCardName = commander,
+                sideboard = lobby.getSubmittedSideboard(identity.playerId),
+            )
             gameSession.setPlayerPersistenceInfo(
                 playerSession.playerId, playerSession.playerName, identity.token,
                 isAi = identity.isAi, aiModelOverride = identity.aiModelOverride

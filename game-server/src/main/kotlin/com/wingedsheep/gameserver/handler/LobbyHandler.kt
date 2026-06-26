@@ -512,7 +512,7 @@ class LobbyHandler(
                 ?: throw IllegalStateException("Player $playerId has no submitted deck")
             val deckWithVariants = BoosterGenerator.distributeBasicLandVariants(baseDeck, sealedSession.allBasicLandVariants)
             val deck = EasterEggDeckInjector.maybeInjectEasterEggs(playerState.session.playerName, deckWithVariants)
-            gameSession.addPlayer(playerState.session, deck)
+            gameSession.addPlayer(playerState.session, deck, sideboard = playerState.submittedSideboard)
 
             // Store player info for persistence
             val token = sessionRegistry.getTokenByWsId(playerState.session.webSocketSession.id)

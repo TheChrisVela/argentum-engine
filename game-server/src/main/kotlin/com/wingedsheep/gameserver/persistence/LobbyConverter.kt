@@ -49,7 +49,8 @@ fun TournamentLobby.toPersistent(): PersistentTournamentLobby {
                 submittedDeck = playerState.submittedDeck,
                 currentSpectatingGameId = playerState.identity.currentSpectatingGameId,
                 isAi = playerState.identity.isAi,
-                aiModelOverride = playerState.identity.aiModelOverride
+                aiModelOverride = playerState.identity.aiModelOverride,
+                submittedSideboard = playerState.submittedSideboard
             )
         },
         currentPackNumber = currentPackNumber,
@@ -152,7 +153,8 @@ fun restoreTournamentLobby(
             cardPool = cardPool,
             currentPack = currentPack,
             packQueue = packQueue,
-            submittedDeck = persistentPlayer.submittedDeck
+            submittedDeck = persistentPlayer.submittedDeck,
+            submittedSideboard = persistentPlayer.submittedSideboard
         )
         lobby.players[playerId] = playerState
     }
@@ -210,7 +212,8 @@ fun SealedSession.toPersistent(): PersistentSealedSession {
                 playerId = playerState.session.playerId.value,
                 playerName = playerState.session.playerName,
                 cardPoolNames = playerState.cardPool.map { it.name },
-                submittedDeck = playerState.submittedDeck
+                submittedDeck = playerState.submittedDeck,
+                submittedSideboard = playerState.submittedSideboard
             )
         }
     )

@@ -26,6 +26,7 @@ import com.wingedsheep.engine.state.components.player.MulliganStateComponent
 import com.wingedsheep.engine.state.components.player.PlayerLostComponent
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.CardEntry
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
 import org.slf4j.LoggerFactory
@@ -120,6 +121,12 @@ class GameSession(
 
     private val players = mutableMapOf<EntityId, PlayerSession>()
     private val deckLists = mutableMapOf<EntityId, List<String>>()
+    /**
+     * Per-player sideboard card names ("outside the game", CR 100.4). Flat list, one entry per
+     * copy. Empty for almost every game. Seeds [com.wingedsheep.sdk.core.Zone.SIDEBOARD] at game
+     * start so wish effects (Burning Wish, …) can fetch from it.
+     */
+    private val sideboards = mutableMapOf<EntityId, List<String>>()
     /** Per-player commander card name for commander-shape formats. Null = no commander. */
     private val commanderCardNames = mutableMapOf<EntityId, String>()
     private val spectators = mutableSetOf<PlayerSession>()
@@ -255,6 +262,7 @@ class GameSession(
         playerSession: PlayerSession,
         deckList: Map<String, Int>,
         commanderCardName: String? = null,
+        sideboard: Map<String, Int> = emptyMap(),
     ): EntityId {
         require(!isFull) { "Game session is full" }
 
@@ -266,6 +274,7 @@ class GameSession(
             List(count) { cardName }
         }
         deckLists[playerId] = cards
+        sideboards[playerId] = sideboard.flatMap { (cardName, count) -> List(count) { cardName } }
         if (commanderCardName != null) {
             commanderCardNames[playerId] = commanderCardName
         } else {
@@ -283,6 +292,7 @@ class GameSession(
         players[playerId]?.currentGameSessionId = null
         players.remove(playerId)
         deckLists.remove(playerId)
+        sideboards.remove(playerId)
     }
 
     /**
@@ -404,7 +414,10 @@ class GameSession(
         val playerConfigs = players.map { (playerId, session) ->
             PlayerConfig(
                 name = session.playerName,
-                deck = Deck(deckLists[playerId]!!),
+                deck = Deck(
+                    cards = deckLists[playerId]!!,
+                    sideboard = sideboards[playerId].orEmpty().map { CardEntry(it) },
+                ),
                 playerId = playerId,  // Pass existing player ID to the engine
                 commanderCardName = commanderCardNames[playerId],
             )
@@ -1286,6 +1299,11 @@ class GameSession(
     internal fun getDeckListsForPersistence(): Map<EntityId, List<String>> = deckLists.toMap()
 
     /**
+     * Get the per-player sideboards for persistence. Empty for almost every session.
+     */
+    internal fun getSideboardsForPersistence(): Map<EntityId, List<String>> = sideboards.toMap()
+
+    /**
      * Get the game logs for persistence.
      */
     internal fun getLogsForPersistence(): Map<EntityId, List<ClientEvent>> =
@@ -1308,12 +1326,15 @@ class GameSession(
         state: GameState?,
         decks: Map<EntityId, List<String>>,
         logs: Map<EntityId, MutableList<ClientEvent>>,
-        lastIds: Map<EntityId, String>
+        lastIds: Map<EntityId, String>,
+        sideboardLists: Map<EntityId, List<String>> = emptyMap()
     ) {
         synchronized(stateLock) {
             gameState = state
             deckLists.clear()
             deckLists.putAll(decks)
+            sideboards.clear()
+            sideboards.putAll(sideboardLists)
             gameLogs.clear()
             gameLogs.putAll(logs)
             lastProcessedMessageId.clear()

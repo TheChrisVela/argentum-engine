@@ -22,6 +22,7 @@ fun GameSession.toPersistent(
         sessionId = sessionId,
         gameState = getStateForPersistence(),
         deckLists = getDeckListsForPersistence().mapKeys { it.key.value },
+        sideboards = getSideboardsForPersistence().mapKeys { it.key.value },
         lastProcessedMessageId = getLastMessageIdsForPersistence().mapKeys { it.key.value },
         gameLogs = getLogsForPersistence().mapKeys { it.key.value },
         playerInfos = getPlayerPersistenceInfo().map { (playerId, info) ->
@@ -64,6 +65,7 @@ fun restoreGameSession(
 
     // Convert persisted data back to EntityId-keyed maps
     val deckLists = persistent.deckLists.mapKeys { EntityId(it.key) }
+    val sideboards = persistent.sideboards.mapKeys { EntityId(it.key) }
     val lastMessageIds = persistent.lastProcessedMessageId.mapKeys { EntityId(it.key) }
     val logs = persistent.gameLogs.mapKeys { EntityId(it.key) }
         .mapValues { it.value.toMutableList() }
@@ -73,7 +75,8 @@ fun restoreGameSession(
         state = persistent.gameState,
         decks = deckLists,
         logs = logs,
-        lastIds = lastMessageIds
+        lastIds = lastMessageIds,
+        sideboardLists = sideboards
     )
 
     // Restore player persistence info

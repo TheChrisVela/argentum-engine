@@ -16,7 +16,8 @@ data class PersistentGameSession(
     val lastProcessedMessageId: Map<String, String>,  // playerId.value -> messageId
     val gameLogs: Map<String, List<ClientEvent>>,  // playerId.value -> events
     val playerInfos: List<PersistentPlayerInfo>,
-    val lobbyId: String?
+    val lobbyId: String?,
+    val sideboards: Map<String, List<String>> = emptyMap(),  // playerId.value -> sideboard card names
 )
 
 /**

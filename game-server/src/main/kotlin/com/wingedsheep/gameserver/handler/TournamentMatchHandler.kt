@@ -476,8 +476,14 @@ class TournamentMatchHandler(
         val ps1 = player1State.identity.toPlayerSession()
         val ps2 = player2State.identity.toPlayerSession()
 
-        gameSession.addPlayer(ps1, deck1, commanderCardName = commander1)
-        gameSession.addPlayer(ps2, deck2, commanderCardName = commander2)
+        gameSession.addPlayer(
+            ps1, deck1, commanderCardName = commander1,
+            sideboard = lobby.getSubmittedSideboard(match.player1Id),
+        )
+        gameSession.addPlayer(
+            ps2, deck2, commanderCardName = commander2,
+            sideboard = lobby.getSubmittedSideboard(match.player2Id),
+        )
 
         // Carry isAi / aiModelOverride from each identity so a server restart can rehydrate and
         // re-wire an AI seat. Omitting these persisted the AI as isAi=false, so on recovery it was

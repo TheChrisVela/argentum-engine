@@ -125,7 +125,9 @@ class GamePlayHandler(
             printingRegistry = printingRegistry,
         )
         gameSession.quickGameSetCode = quickGameSetCode
-        gameSession.addPlayer(playerSession, deckList)
+        // A generated random/quick deck has no sideboard; only a real submitted deck carries one.
+        val sideboard = if (quickGameSetCode != null) emptyMap() else message.sideboard
+        gameSession.addPlayer(playerSession, deckList, sideboard = sideboard)
 
         // Store player info for persistence
         val token = sessionRegistry.getTokenByWsId(session.id)
@@ -261,7 +263,9 @@ class GamePlayHandler(
             message.deckList
         }
 
-        gameSession.addPlayer(playerSession, deckList)
+        // A generated random deck (empty submission) has no sideboard.
+        val sideboard = if (message.deckList.isEmpty()) emptyMap() else message.sideboard
+        gameSession.addPlayer(playerSession, deckList, sideboard = sideboard)
 
         // Store player info for persistence
         val token = sessionRegistry.getTokenByWsId(session.id)

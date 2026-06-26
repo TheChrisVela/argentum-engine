@@ -63,7 +63,8 @@ data class PersistentLobbyPlayer(
     val submittedDeck: Map<String, Int>?,  // cardName -> count
     val currentSpectatingGameId: String? = null,  // Game being spectated (for bye players)
     val isAi: Boolean = false,
-    val aiModelOverride: String? = null
+    val aiModelOverride: String? = null,
+    val submittedSideboard: Map<String, Int> = emptyMap(),  // cardName -> count (outside the game)
 )
 
 /**
@@ -86,5 +87,6 @@ data class PersistentSealedPlayer(
     val playerId: String,
     val playerName: String,
     val cardPoolNames: List<String>,
-    val submittedDeck: Map<String, Int>?
+    val submittedDeck: Map<String, Int>?,
+    val submittedSideboard: Map<String, Int> = emptyMap()
 )

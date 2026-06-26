@@ -1,5 +1,6 @@
 package com.wingedsheep.gameserver.lobby
 
+import com.wingedsheep.gameserver.deck.SideboardDerivation
 import com.wingedsheep.gameserver.protocol.ServerMessage
 import com.wingedsheep.engine.limited.BoosterGenerator
 import com.wingedsheep.gameserver.session.PlayerIdentity
@@ -167,6 +168,13 @@ data class LobbyPlayerState(
      */
     var poolSizeAtRoundStart: Int = 0,
     var submittedDeck: Map<String, Int>? = null,
+    /**
+     * The player's sideboard ("outside the game", CR 100.4), card name → count. In Limited it is
+     * derived as `pool − maindeck` (CR 100.4b) at submission via [SideboardDerivation]; in
+     * PREMADE_DECKS (constructed) it is whatever explicit sideboard the client sent. Seeds the
+     * SIDEBOARD zone at game start so wish effects can fetch from it.
+     */
+    var submittedSideboard: Map<String, Int> = emptyMap(),
     /**
      * Commander card name when the lobby's [TournamentLobby.deckFormat] is commander-shape
      * (Commander / Brawl / Standard Brawl). Null otherwise. The card name is expected to
@@ -1365,6 +1373,7 @@ class TournamentLobby(
         playerId: EntityId,
         deckList: Map<String, Int>,
         commander: String? = null,
+        sideboard: Map<String, Int> = emptyMap(),
     ): DeckSubmissionResult {
         val isPremade = format == TournamentFormat.PREMADE_DECKS
         // PREMADE_DECKS: players pick their deck while WAITING_FOR_PLAYERS, before the host starts.
@@ -1399,8 +1408,18 @@ class TournamentLobby(
             }
         }
 
+        // Sideboard (CR 100.4). In Limited the pool is authoritative, so the sideboard is
+        // *derived* as pool − maindeck (CR 100.4b) and any client-sent value is ignored. In
+        // PREMADE_DECKS (constructed) there is no pool, so the explicit client sideboard is kept.
+        val effectiveSideboard = if (isPremade) {
+            sideboard
+        } else {
+            SideboardDerivation.fromPool(playerState.cardPool, deckList)
+        }
+
         players[playerId] = playerState.copy(
             submittedDeck = deckList,
+            submittedSideboard = effectiveSideboard,
             // Commander is meaningful only for commander-shape deckFormats; keep whatever the
             // caller passed (LobbyHandler is responsible for clearing it for non-commander
             // submissions).
@@ -1430,7 +1449,11 @@ class TournamentLobby(
         }
 
         // Clear deck and ready state
-        players[playerId] = playerState.copy(submittedDeck = null, commander = null)
+        players[playerId] = playerState.copy(
+            submittedDeck = null,
+            submittedSideboard = emptyMap(),
+            commander = null,
+        )
         playersReadyForNextRound.remove(playerId)
         return true
     }
@@ -1495,6 +1518,15 @@ class TournamentLobby(
      */
     fun getSubmittedDeck(playerId: EntityId): Map<String, Int>? {
         return players[playerId]?.submittedDeck
+    }
+
+    /**
+     * Get the player's sideboard ("outside the game", CR 100.4) — card name → count. Derived as
+     * pool − maindeck in Limited, or the explicit constructed sideboard in PREMADE_DECKS. Empty
+     * when the player has no sideboard.
+     */
+    fun getSubmittedSideboard(playerId: EntityId): Map<String, Int> {
+        return players[playerId]?.submittedSideboard ?: emptyMap()
     }
 
     /**

@@ -35,6 +35,11 @@ sealed interface ClientMessage {
          * is used (no per-card printing pinning).
          */
         val cardEntries: List<DeckEntryDTO>? = null,
+        /**
+         * Constructed sideboard ("outside the game", CR 100.4a), card name → count. Reachable
+         * in-game only by wish effects (Burning Wish, …). Empty for almost every deck.
+         */
+        val sideboard: Map<String, Int> = emptyMap(),
     ) : ClientMessage
 
     /**
@@ -47,6 +52,8 @@ sealed interface ClientMessage {
         val deckList: Map<String, Int>,
         /** Rich, optionally-pinned entries. See [CreateGame.cardEntries]. */
         val cardEntries: List<DeckEntryDTO>? = null,
+        /** Constructed sideboard, card name → count. See [CreateGame.sideboard]. */
+        val sideboard: Map<String, Int> = emptyMap(),
     ) : ClientMessage
 
     /**

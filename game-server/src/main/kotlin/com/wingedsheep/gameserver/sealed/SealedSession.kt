@@ -1,6 +1,7 @@
 package com.wingedsheep.gameserver.sealed
 
 import com.wingedsheep.engine.limited.BoosterGenerator
+import com.wingedsheep.gameserver.deck.SideboardDerivation
 import com.wingedsheep.gameserver.session.PlayerSession
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.EntityId
@@ -27,7 +28,12 @@ enum class SealedSessionState {
 data class SealedPlayerState(
     val session: PlayerSession,
     val cardPool: List<CardDefinition>,
-    var submittedDeck: Map<String, Int>? = null
+    var submittedDeck: Map<String, Int>? = null,
+    /**
+     * Sideboard ("outside the game", CR 100.4), card name → count. Derived as `pool − maindeck`
+     * (CR 100.4b) when the deck is submitted; seeds the SIDEBOARD zone at game start.
+     */
+    var submittedSideboard: Map<String, Int> = emptyMap()
 ) {
     val hasSubmittedDeck: Boolean get() = submittedDeck != null
 }
@@ -149,8 +155,11 @@ class SealedSession(
             return DeckSubmissionResult.Error(validationResult)
         }
 
-        // Update player state with submitted deck
-        players[playerId] = playerState.copy(submittedDeck = deckList)
+        // Update player state with submitted deck + derived sideboard (pool − maindeck, CR 100.4b)
+        players[playerId] = playerState.copy(
+            submittedDeck = deckList,
+            submittedSideboard = SideboardDerivation.fromPool(playerState.cardPool, deckList),
+        )
 
         // Update session state
         state = if (bothPlayersSubmitted()) {
