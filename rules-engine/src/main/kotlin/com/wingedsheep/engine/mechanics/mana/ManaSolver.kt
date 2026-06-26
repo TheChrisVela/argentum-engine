@@ -871,6 +871,14 @@ class ManaSolver(
             // For lands: check projected basic land subtypes first (Rule 305.7)
             // Basic land types grant intrinsic mana abilities, and type-changing effects
             // like Sea's Claim change what mana a land produces
+            //
+            // When the land carries no statically-granted mana abilities, the subtype-derived
+            // intrinsic ability is its whole mana story, so we short-circuit here. When a static
+            // grant is in play (e.g. Greenhouse: "Lands you control have '{T}: Add one mana of any
+            // color.'"), we must NOT short-circuit — we carry the intrinsic subtype colors forward
+            // to seed the combined-ability loop below so the granted ability's colors (and any
+            // restrictions/riders/activation costs) fold in correctly.
+            var landSubtypeSeedColors: Set<Color>? = null
             if (card.typeLine.isLand) {
                 val projectedSubtypes = projected.getSubtypes(entityId)
                 val subtypeColors = mutableSetOf<Color>()
@@ -891,19 +899,22 @@ class ManaSolver(
                         overrideColor != null -> setOf(overrideColor)
                         else -> subtypeColors
                     }
-                    return@mapNotNull ManaSource(
-                        entityId = entityId,
-                        name = card.name,
-                        producesColors = effectiveColors,
-                        producesColorless = false,
-                        isBasicLand = isBasicLand,
-                        isLand = true,
-                        isCreature = isCreature,
-                        hasNonManaAbilities = hasNonManaAbilities,
-                        hasPainCost = false,
-                        painAmount = 0,
-                        canAttack = canAttack
-                    )
+                    if (staticGrantedManaAbilities.isEmpty()) {
+                        return@mapNotNull ManaSource(
+                            entityId = entityId,
+                            name = card.name,
+                            producesColors = effectiveColors,
+                            producesColorless = false,
+                            isBasicLand = isBasicLand,
+                            isLand = true,
+                            isCreature = isCreature,
+                            hasNonManaAbilities = hasNonManaAbilities,
+                            hasPainCost = false,
+                            painAmount = 0,
+                            canAttack = canAttack
+                        )
+                    }
+                    landSubtypeSeedColors = effectiveColors
                 }
             }
 
@@ -946,6 +957,17 @@ class ManaSolver(
             // MakesSpellUncounterable on every color it can produce, while its
             // plain `{T}: Add {C}` ability contributes nothing).
             val perColorRiders = mutableMapOf<Color, MutableSet<ManaSpellRider>>()
+
+            // Seed the accumulators with a basic land's intrinsic subtype mana (Rule 305.7) when a
+            // static grant kept us out of the short-circuit above. The intrinsic ability is
+            // unrestricted, free, sacrifice-free and rider-free; the granted abilities then add
+            // their own colors/restrictions on top in the loop below.
+            landSubtypeSeedColors?.let { seed ->
+                combinedColors.addAll(seed)
+                sacrificeFreeColors.addAll(seed)
+                for (color in seed) perColorRestrictions[color] = null
+                hasUnrestrictedAbility = true
+            }
 
             for (ability in manaAbilities) {
                 // Skip abilities whose activation restrictions aren't satisfied
