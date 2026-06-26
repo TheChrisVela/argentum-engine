@@ -3453,6 +3453,23 @@ activatedAbility {
 }
 ```
 
+**`genericCostReduction` — "this ability costs {N} less to activate for each …".** The
+`activatedAbility { }` builder exposes `genericCostReduction: DynamicAmount?`. When set, the engine
+reduces the generic-mana portion of the ability's `cost` by that amount at activation time (floored
+at {0}; colored pips are never touched — CR 118.9a), and both the legal-action enumerator and
+`ActivateAbilityHandler` apply the same reduction so the displayed/affordable cost matches what's
+paid. It accepts **any** `DynamicAmount`, so the reduction can read:
+- a **per-source property** — `DynamicAmount.EntityProperty(Source, Power)` for "costs {X} less,
+  where X is this creature's power" (The Dominion Bracelet);
+- the **chosen target** — `DynamicAmounts.targetColorCount()` for "costs {1} less for each color of
+  the creature it targets" (Dragonfire Blade; the enumerator gates affordability on the largest
+  reduction over the legal targets, since the target isn't picked until activation);
+- a **battlefield count** — `DynamicAmounts.battlefield(Player.You, GameObjectFilter.Land.withSubtype("Town")).count()`
+  for "costs {1} less to activate for each Town you control" (Qiqirn Merchant).
+
+No new vocabulary is needed for a "costs {N} less per «permanents you control matching a filter»"
+ability — feed the matching count `DynamicAmount` to `genericCostReduction`.
+
 **`TimingRule`**
 
 - `Normal` — at instant speed (default for most abilities).
