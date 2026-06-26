@@ -11,7 +11,6 @@ import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.effects.AddCombatPhaseEffect
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
 import com.wingedsheep.sdk.scripting.effects.Mode
@@ -36,9 +35,9 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * and per-mode `additionalManaCost` (CR 702.166).
  *
  * Mode 1's extra combat is gated on [Conditions.IsInPhase] — the additional combat phase only
- * happens if it's the caster's combat phase. [AddCombatPhaseEffect] inserts an additional
- * combat phase (followed by a main phase) after the current main phase, which is the correct
- * end result for a spell cast during combat.
+ * happens if it's the caster's combat phase. `Effects.AddCombatPhase` inserts a single additional
+ * combat phase with no trailing main phase, matching the printed "there is an additional combat
+ * phase after this phase".
  *
  * Mode 3 registers a turn-scoped (non-one-shot) event-based delayed trigger via
  * [CreateDelayedTriggerEffect] whose recipient is scoped to the chosen opponent
@@ -62,7 +61,7 @@ val GreatTrainHeist = card("Great Train Heist") {
                         .then(
                             ConditionalEffect(
                                 condition = Conditions.IsInPhase(Phase.COMBAT, yoursOnly = true),
-                                effect = AddCombatPhaseEffect
+                                effect = Effects.AddCombatPhase
                             )
                         ),
                     description = "+ {2}{R} — Untap all creatures you control. If it's your combat phase, there is an additional combat phase after this phase.",

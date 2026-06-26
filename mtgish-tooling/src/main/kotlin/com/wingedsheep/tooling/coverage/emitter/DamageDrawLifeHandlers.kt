@@ -183,6 +183,13 @@ internal val damageDrawLifeHandlers: Map<String, ActionHandler> = actionHandlers
     // (Malcolm, the Eyes — "investigate"). "Investigate N times" appears as N stacked actions.
     simple("Investigate", dsl = "Effects.Investigate()")
     simple("TakeAnExtraTurn", dsl = "TakeExtraTurnEffect()")
+    // Extra phases (CR 500.8). The combat-only atom and the combat+main composition; both are
+    // member-qualified by `Effects`, so importsFor resolves only the `Effects` import.
+    simple("ThereIsAnAdditionalCombatPhase", dsl = "Effects.AddCombatPhase")
+    simple(
+        "ThereIsAnAdditionalCombatPhaseAndAnAdditionalMainPhase",
+        dsl = "Effects.Composite(listOf(Effects.AddCombatPhase, Effects.AddMainPhase))"
+    )
     simple("DiscardACardAtRandom", dsl = "Patterns.Hand.discardRandom(1)")
 
     on("GainLife") { _, args, _ ->

@@ -84,15 +84,39 @@ data class PlayAdditionalLandsEffect(
 }
 
 /**
- * Add an additional combat phase followed by an additional main phase after the current main phase.
- * Used for Aggravated Assault: "{3}{R}{R}: Untap all creatures you control. After this main phase,
- * there is an additional combat phase followed by an additional main phase."
+ * Insert a single additional combat phase into the current turn — and *only* a combat phase, with
+ * no trailing main phase (Aurelia, the Warleader / Combat Celebrant / Fear of Missing Out:
+ * "After this phase, there is an additional combat phase").
+ *
+ * This is the atomic "extra combat phase" piece. The Aggravated-Assault shape ("an additional combat
+ * phase followed by an additional main phase") is a composition of this with [AddMainPhaseEffect]
+ * (see `Effects.AddCombatPhase` / `Effects.AddMainPhase`), so cards express exactly what they print
+ * instead of always getting the bundled combat+main pair.
+ *
+ * Per CR 500.8 extra phases are added after the specified phase; the engine inserts the queued
+ * phase(s) after the postcombat main phase.
  */
 @SerialName("AddCombatPhase")
 @Serializable
 data object AddCombatPhaseEffect : Effect {
     override val description: String =
-        "After this main phase, there is an additional combat phase followed by an additional main phase"
+        "After this phase, there is an additional combat phase"
+}
+
+/**
+ * Insert a single additional (postcombat) main phase into the current turn. The atomic counterpart
+ * to [AddCombatPhaseEffect]; compose the two to reproduce "an additional combat phase followed by an
+ * additional main phase" (Aggravated Assault, All-Out Assault). A standalone extra main phase
+ * (CR 505.1a — every main phase after the first is a postcombat main phase) is also expressible.
+ *
+ * Per CR 500.8 the phase is added after the specified phase; the engine inserts it after the
+ * postcombat main phase, in the order the queueing effects resolved.
+ */
+@SerialName("AddMainPhase")
+@Serializable
+data object AddMainPhaseEffect : Effect {
+    override val description: String =
+        "There is an additional main phase after this phase"
 }
 
 /**

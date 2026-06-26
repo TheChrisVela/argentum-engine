@@ -772,6 +772,7 @@
                     "type": "Composite",
                     "effects": [
                         "AddCombatPhase",
+                        "AddMainPhase",
                         {
                             "type": "CreateDelayedTrigger",
                             "effect": {

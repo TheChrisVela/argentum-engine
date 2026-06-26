@@ -261,19 +261,42 @@ data class MulliganStateComponent(
 }
 
 /**
- * Component tracking additional combat phases to be inserted into the current turn.
- * When the postcombat main phase would advance to the end step, if this component
- * exists, the game instead transitions to an additional combat phase followed by
- * a main phase. The count is decremented each time an additional combat phase begins.
- *
- * Applied by effects like Aggravated Assault.
- *
- * @param count Number of additional combat+main phase cycles remaining
+ * One queued extra phase (CR 500.8) inserted into the active player's turn after the postcombat
+ * main phase. Combat phases and main phases are tracked as distinct kinds so a card can ask for
+ * exactly what it prints — "an additional combat phase" (Aurelia / Fear of Missing Out) versus
+ * "an additional combat phase followed by an additional main phase" (Aggravated Assault).
  */
 @Serializable
-data class AdditionalCombatPhasesComponent(
-    val count: Int = 1
+enum class ExtraPhaseKind { COMBAT, MAIN }
+
+/**
+ * Component tracking the queue of additional phases to be inserted into the current turn, in the
+ * order they should occur (CR 500.8). When the postcombat main phase would advance to the end step,
+ * if this component exists the game drains the queue one entry at a time — redirecting to a fresh
+ * combat phase ([ExtraPhaseKind.COMBAT]) or postcombat main phase ([ExtraPhaseKind.MAIN]).
+ *
+ * Built atomically: [com.wingedsheep.sdk.scripting.effects.AddCombatPhaseEffect] appends a COMBAT
+ * entry, [com.wingedsheep.sdk.scripting.effects.AddMainPhaseEffect] appends a MAIN entry. Composing
+ * the two (Aggravated Assault, All-Out Assault) yields `[COMBAT, MAIN]`; the combat atom alone
+ * (Great Train Heist, Raph & Leo, Éomer, Fear of Missing Out) yields `[COMBAT]` and adds no main.
+ *
+ * @param phases Remaining extra phases to insert, head first.
+ */
+@Serializable
+data class AdditionalPhasesComponent(
+    val phases: List<ExtraPhaseKind> = emptyList()
 ) : Component
+
+/**
+ * Marker placed on the active player while the game is inside an *inserted* extra combat phase
+ * (see [AdditionalPhasesComponent]). It tells the TurnManager that advancing out of that combat
+ * phase's end-of-combat step must drain the extra-phase queue rather than fall through into a
+ * postcombat main phase — so a combat-only extra phase never grants an unwanted main phase. The
+ * trailing main phase is added only when an explicit [ExtraPhaseKind.MAIN] is queued. Consumed when
+ * the queue is exhausted (the game proceeds to the end step) or when a queued main phase begins.
+ */
+@Serializable
+data object InAdditionalCombatPhaseComponent : Component
 
 /**
  * Component tracking additional upkeep steps to be inserted into the current turn

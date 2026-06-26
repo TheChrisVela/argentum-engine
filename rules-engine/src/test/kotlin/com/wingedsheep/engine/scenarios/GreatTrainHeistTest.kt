@@ -5,7 +5,8 @@ import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.player.AdditionalCombatPhasesComponent
+import com.wingedsheep.engine.state.components.player.AdditionalPhasesComponent
+import com.wingedsheep.engine.state.components.player.ExtraPhaseKind
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.otj.cards.GreatTrainHeist
@@ -143,8 +144,9 @@ class GreatTrainHeistTest : FunSpec({
 
         // Creatures you control untapped.
         driver.isTapped(attacker) shouldBe false
-        // An additional combat phase is queued because it was cast during the caster's combat.
-        driver.state.getEntity(me)?.get<AdditionalCombatPhasesComponent>() shouldBe
-            AdditionalCombatPhasesComponent(1)
+        // A single additional combat phase is queued (combat only — no trailing main phase),
+        // because the spell was cast during the caster's combat.
+        driver.state.getEntity(me)?.get<AdditionalPhasesComponent>() shouldBe
+            AdditionalPhasesComponent(listOf(ExtraPhaseKind.COMBAT))
     }
 })

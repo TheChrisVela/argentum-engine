@@ -42,6 +42,7 @@ class PlayerExecutors(
         AddAdditionalUpkeepStepsExecutor(),
         AddAdditionalEndStepsExecutor(),
         AddCombatPhaseExecutor(),
+        AddMainPhaseExecutor(),
         AnyPlayerMayPayExecutor(executeEffect = effectExecutor),
         CantActivateLoyaltyAbilitiesExecutor(),
         CantCastSpellsExecutor(),

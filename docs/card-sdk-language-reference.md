@@ -1021,6 +1021,21 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `PhaseOutEffect(target = Self)` — phase the target permanent out (Rule 702.26); facade `Effects.PhaseOut(target)`. While phased out it's treated as though it doesn't exist (excluded from `getBattlefield`, so from projection, triggers, combat, targeting, and SBAs) and phases back in before its controller's next untap step. Indirect phasing (attached Auras/Equipment) is handled automatically. Used as the `suffer` branch of a pay-or-phase trigger (Vaporous Djinn: "phases out unless you pay {U}{U}" = `PayOrSufferEffect(Costs.pay.Mana(...), Effects.PhaseOut())`), or as the reaction of a "becomes the target of a spell, it phases out" trigger (King of the Oathbreakers = `Triggers.BecomesTargetOfSpell(...)` + `Effects.PhaseOut(EffectTarget.TriggeringEntity)`). The matching phase-in moment is the `Triggers.PhasesIn(filter?)` trigger (see Triggers below).
 - `PhaseOutUntilLeavesEffect(target, tapOnPhaseIn)` / `Effects.PhaseOutUntilLeaves(target, tapOnPhaseIn)` — phase the target out **indefinitely, linked to the effect's source** (the phasing analogue of `ExileUntilLeaves`): it skips its untap-step phase-in and stays out until the source leaves the battlefield. Pair with `Effects.PhaseInLinkedToSource()` on the source's `LeavesBattlefield` trigger, which phases everything the source phased out this way back in (tapping those flagged `tapOnPhaseIn`). The link lives on the phased-out permanent (`PhasedOutComponent.phaseInOnSourceLeaves`); indirect phasing carries Auras/Equipment out with the creature. This is Oubliette (ETB phase-out + leaves-trigger phase-in, tapped).
 - `MarkExileOnDeathEffect(target)` — replace next "to graveyard" with "to exile".
+- `Effects.AddCombatPhase` / `Effects.AddMainPhase` — the two **atomic extra-phase** effects
+  (CR 500.8: extra phases are added after the specified phase). `AddCombatPhase` queues *one combat
+  phase and nothing else* — "After this phase, there is an additional combat phase" (Aurelia, the
+  Warleader / Combat Celebrant / Fear of Missing Out / Great Train Heist / Raph & Leo / Éomer);
+  `AddMainPhase` queues one extra postcombat main phase (CR 505.1a: every main phase after the first
+  is a postcombat main phase). **Compose them** —
+  `Effects.Composite(listOf(Effects.AddCombatPhase, Effects.AddMainPhase))` — to reproduce "an
+  additional combat phase followed by an additional main phase" (Aggravated Assault, All-Out
+  Assault); the combat atom alone adds *no* trailing main phase. Implemented as an ordered
+  `AdditionalPhasesComponent(phases: List<ExtraPhaseKind>)` queue on the active player (`COMBAT` /
+  `MAIN` entries), drained one at a time by `TurnManager.advanceStep` after the postcombat main phase
+  and, for an inserted combat phase, again at its end-of-combat step (marked by
+  `InAdditionalCombatPhaseComponent`) so a combat-only extra phase proceeds straight to the end step
+  instead of granting an unwanted main phase. Engine simplification: all queued phases are inserted
+  after the postcombat main phase regardless of when the effect resolved.
 - `Effects.AddAdditionalUpkeepSteps(amount)` (`amount: DynamicAmount` or `Int`) — give the
   controller `amount` additional upkeep steps after the current phase (Obeka, Splitter of Seconds:
   "you get that many additional upkeep steps after this phase"). Per CR 500.10, each added upkeep

@@ -4,18 +4,28 @@ import com.wingedsheep.engine.core.EffectResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.components.player.AdditionalCombatPhasesComponent
+import com.wingedsheep.engine.state.components.player.AdditionalPhasesComponent
+import com.wingedsheep.engine.state.components.player.ExtraPhaseKind
+import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.AddCombatPhaseEffect
 import kotlin.reflect.KClass
 
 /**
- * Executor for AddCombatPhaseEffect.
- * "After this main phase, there is an additional combat phase followed by
- * an additional main phase."
+ * Append [kind] to the active player's [AdditionalPhasesComponent] queue (CR 500.8). The queue is
+ * drained by the TurnManager after the postcombat main phase. Shared by [AddCombatPhaseExecutor]
+ * and [AddMainPhaseExecutor] so the two atoms stay a single append.
+ */
+internal fun GameState.queueAdditionalPhase(player: EntityId, kind: ExtraPhaseKind): GameState {
+    val existing = getEntity(player)?.get<AdditionalPhasesComponent>()
+    val newPhases = (existing?.phases ?: emptyList()) + kind
+    return updateEntity(player) { it.with(AdditionalPhasesComponent(newPhases)) }
+}
+
+/**
+ * Executor for [AddCombatPhaseEffect] — "After this phase, there is an additional combat phase."
  *
- * Adds (or increments) an AdditionalCombatPhasesComponent on the active player.
- * The TurnManager checks this component when advancing from POSTCOMBAT_MAIN
- * and redirects to BEGIN_COMBAT instead of END step.
+ * Queues a single COMBAT phase on the active player; it is inserted after the postcombat main phase
+ * and is NOT followed by an extra main phase (that requires composing with [AddMainPhaseEffect]).
  */
 class AddCombatPhaseExecutor : EffectExecutor<AddCombatPhaseEffect> {
 
@@ -28,14 +38,6 @@ class AddCombatPhaseExecutor : EffectExecutor<AddCombatPhaseEffect> {
     ): EffectResult {
         val activePlayer = state.activePlayerId
             ?: return EffectResult.error(state, "No active player for AddCombatPhaseEffect")
-
-        val existing = state.getEntity(activePlayer)?.get<AdditionalCombatPhasesComponent>()
-        val newCount = (existing?.count ?: 0) + 1
-
-        val newState = state.updateEntity(activePlayer) { container ->
-            container.with(AdditionalCombatPhasesComponent(count = newCount))
-        }
-
-        return EffectResult.success(newState)
+        return EffectResult.success(state.queueAdditionalPhase(activePlayer, ExtraPhaseKind.COMBAT))
     }
 }

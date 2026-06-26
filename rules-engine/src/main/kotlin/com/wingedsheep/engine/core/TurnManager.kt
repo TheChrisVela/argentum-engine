@@ -11,7 +11,9 @@ import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.combat.BlockingComponent
 import com.wingedsheep.engine.state.components.combat.MustAttackPlayerComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.player.AdditionalCombatPhasesComponent
+import com.wingedsheep.engine.state.components.player.AdditionalPhasesComponent
+import com.wingedsheep.engine.state.components.player.ExtraPhaseKind
+import com.wingedsheep.engine.state.components.player.InAdditionalCombatPhaseComponent
 import com.wingedsheep.engine.state.components.player.AdditionalUpkeepStepsComponent
 import com.wingedsheep.engine.state.components.player.InAdditionalUpkeepStepComponent
 import com.wingedsheep.engine.state.components.player.AdditionalEndStepsComponent
@@ -178,6 +180,49 @@ class TurnManager(
     }
 
     /**
+     * Pop the next entry from the active player's [AdditionalPhasesComponent] queue (CR 500.8) and
+     * redirect the turn into that phase, or return `null` if the queue is empty. A COMBAT entry
+     * re-enters the combat phase at its begin-combat step and sets [InAdditionalCombatPhaseComponent]
+     * so the end-of-combat advance drains the queue again instead of falling into a postcombat main
+     * phase; a MAIN entry re-enters a fresh postcombat main phase and clears that marker. The active
+     * player gets priority in the new phase.
+     */
+    private fun drainAdditionalPhase(state: GameState, activePlayer: EntityId): ExecutionResult? {
+        val component = state.getEntity(activePlayer)?.get<AdditionalPhasesComponent>() ?: return null
+        val next = component.phases.firstOrNull() ?: return null
+        val remaining = component.phases.drop(1)
+
+        var redirectedState = if (remaining.isEmpty()) {
+            state.updateEntity(activePlayer) { it.without<AdditionalPhasesComponent>() }
+        } else {
+            state.updateEntity(activePlayer) { it.with(AdditionalPhasesComponent(remaining)) }
+        }
+
+        val (step, phase) = when (next) {
+            ExtraPhaseKind.COMBAT -> {
+                redirectedState = redirectedState
+                    .updateEntity(activePlayer) { it.with(InAdditionalCombatPhaseComponent) }
+                Step.BEGIN_COMBAT to Phase.COMBAT
+            }
+            ExtraPhaseKind.MAIN -> {
+                redirectedState = redirectedState
+                    .updateEntity(activePlayer) { it.without<InAdditionalCombatPhaseComponent>() }
+                Step.POSTCOMBAT_MAIN to Phase.POSTCOMBAT_MAIN
+            }
+        }
+
+        redirectedState = redirectedState
+            .copy(step = step, phase = phase, priorityPassedBy = emptySet())
+            .withPriority(activePlayer)
+
+        val events = mutableListOf<GameEvent>(
+            PhaseChangedEvent(phase),
+            StepChangedEvent(step)
+        )
+        return ExecutionResult.success(redirectedState, events)
+    }
+
+    /**
      * Advance to the next step.
      * Handles automatic step-based actions and turn transitions.
      */
@@ -215,34 +260,38 @@ class TurnManager(
             return ExecutionResult.success(redirectedState, events)
         }
 
-        // Check for additional combat phases (Aggravated Assault, etc.)
+        // Leaving an *inserted* extra combat phase (Aurelia / Fear of Missing Out / the combat half
+        // of Aggravated Assault). The InAdditionalCombatPhaseComponent marker distinguishes these
+        // from the natural combat phase: an extra combat phase must NOT fall through into a
+        // postcombat main phase (Step.next() of END_COMBAT) — a trailing main phase only exists when
+        // an explicit AddMainPhaseEffect queued one. So we drain the queue here instead: the next
+        // queued phase begins, or if the queue is empty the turn proceeds to the end step.
+        if (currentStep == Step.END_COMBAT &&
+            state.getEntity(activePlayer)?.has<InAdditionalCombatPhaseComponent>() == true
+        ) {
+            drainAdditionalPhase(state, activePlayer)?.let { return it }
+
+            // Queue exhausted after the last inserted combat phase: clear the marker and end the
+            // extra-phase progression at the end step (never a postcombat main).
+            var redirectedState = state
+                .updateEntity(activePlayer) { it.without<InAdditionalCombatPhaseComponent>() }
+                .copy(step = Step.END, phase = Phase.ENDING, priorityPassedBy = emptySet())
+            val events = mutableListOf<GameEvent>(
+                PhaseChangedEvent(Phase.ENDING),
+                StepChangedEvent(Step.END)
+            )
+            redirectedState = redirectedState.withPriority(activePlayer)
+            return ExecutionResult.success(redirectedState, events)
+        }
+
+        // Check for additional phases queued after the postcombat main phase (Aggravated Assault,
+        // Aurelia, Fear of Missing Out, …). CR 500.8: extra phases are inserted after the specified
+        // phase; the engine inserts them after the postcombat main phase, draining the queue one
+        // entry at a time (combat phases occur before any extra upkeep steps — see below).
         if (currentStep == Step.POSTCOMBAT_MAIN) {
-            val additionalPhases = state.getEntity(activePlayer)?.get<AdditionalCombatPhasesComponent>()
-            if (additionalPhases != null && additionalPhases.count > 0) {
-                var redirectedState = if (additionalPhases.count <= 1) {
-                    state.updateEntity(activePlayer) { it.without<AdditionalCombatPhasesComponent>() }
-                } else {
-                    state.updateEntity(activePlayer) { container ->
-                        container.with(AdditionalCombatPhasesComponent(additionalPhases.count - 1))
-                    }
-                }
+            drainAdditionalPhase(state, activePlayer)?.let { return it }
 
-                redirectedState = redirectedState.copy(
-                    step = Step.BEGIN_COMBAT,
-                    phase = Phase.COMBAT,
-                    priorityPassedBy = emptySet()
-                )
-
-                val events = mutableListOf<GameEvent>(
-                    PhaseChangedEvent(Phase.COMBAT),
-                    StepChangedEvent(Step.BEGIN_COMBAT)
-                )
-
-                redirectedState = redirectedState.withPriority(activePlayer)
-                return ExecutionResult.success(redirectedState, events)
-            }
-
-            // No more additional combat phases — now drain any additional upkeep steps
+            // No more additional combat/main phases — now drain any additional upkeep steps
             // (Obeka, Splitter of Seconds). Per the card's rulings, extra combat phases (created
             // earlier) happen before the extra beginning phases, which is why this check follows
             // the combat-phase check above. Each remaining count inserts one fresh beginning phase

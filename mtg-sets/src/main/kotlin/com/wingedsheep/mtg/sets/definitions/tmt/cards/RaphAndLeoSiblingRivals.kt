@@ -4,7 +4,6 @@ import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.AddCombatPhaseEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachTargetEffect
 import com.wingedsheep.sdk.scripting.effects.TapUntapEffect
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
@@ -23,7 +22,8 @@ import com.wingedsheep.sdk.scripting.targets.TargetCreature
  *
  * Mirrors the LTR Éomer, Marshal of Rohan shape — attack trigger
  * with an anti-loop limiter, untap a small group of attackers, then
- * `AddCombatPhaseEffect` to add a second combat phase.
+ * `Effects.AddCombatPhase` to add a second combat phase (combat only,
+ * no trailing main phase).
  *
  * **Approximation note:** the printed rider is *"if it's the first
  * combat phase of the turn"* (intervening-if), but the engine has no
@@ -56,7 +56,8 @@ val RaphAndLeoSiblingRivals = card("Raph & Leo, Sibling Rivals") {
                 ForEachTargetEffect(
                     listOf(TapUntapEffect(EffectTarget.ContextTarget(0), tap = false))
                 ),
-                AddCombatPhaseEffect,
+                // "After this phase, there is an additional combat phase." (combat only — no main)
+                Effects.AddCombatPhase,
             )
         )
     }

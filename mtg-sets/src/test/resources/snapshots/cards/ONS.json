@@ -118,7 +118,8 @@
                                 "tap": false
                             }
                         },
-                        "AddCombatPhase"
+                        "AddCombatPhase",
+                        "AddMainPhase"
                     ]
                 },
                 "timing": "SorcerySpeed"

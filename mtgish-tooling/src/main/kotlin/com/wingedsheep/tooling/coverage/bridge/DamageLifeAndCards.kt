@@ -68,6 +68,14 @@ internal fun BridgeBuilder.damageLifeAndCards() {
     effect("CopySpell", "CopyTargetSpell")
     effect("ChangeTargetsOfSpellOrAbility", "ChangeTarget")
     effect("TakeAnExtraTurn", "TakeExtraTurn")
+    // Extra phases (CR 500.8). The combat-only shape is the atom `Effects.AddCombatPhase`; the
+    // combat+main shape composes it with `Effects.AddMainPhase` (Aggravated Assault).
+    effect("ThereIsAnAdditionalCombatPhase", "AddCombatPhase")
+    composed(
+        "ThereIsAnAdditionalCombatPhaseAndAnAdditionalMainPhase",
+        "Composite(Effects.AddCombatPhase + Effects.AddMainPhase)",
+        composes = listOf("AddCombatPhase", "AddMainPhase")
+    )
     effect("LoseTheGame", "LoseGame")
     // A turn-scoped game-wide continuous effect. Only "Damage can't be prevented this turn"
     // (DamageCantBePrevented + UntilEndOfTurn) renders -> Effects.DamageCantBePreventedThisTurn()

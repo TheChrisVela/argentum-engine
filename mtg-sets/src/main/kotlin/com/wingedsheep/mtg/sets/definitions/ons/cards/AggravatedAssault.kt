@@ -3,7 +3,6 @@ package com.wingedsheep.mtg.sets.definitions.ons.cards
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.AddCombatPhaseEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.effects.TapUntapEffect
@@ -29,7 +28,9 @@ val AggravatedAssault = card("Aggravated Assault") {
         effect = Effects.Composite(
             listOf(
                 Effects.ForEachInGroup(GroupFilter.AllCreaturesYouControl, TapUntapEffect(EffectTarget.Self, tap = false)),
-                AddCombatPhaseEffect
+                // "an additional combat phase followed by an additional main phase"
+                Effects.AddCombatPhase,
+                Effects.AddMainPhase
             )
         )
     }

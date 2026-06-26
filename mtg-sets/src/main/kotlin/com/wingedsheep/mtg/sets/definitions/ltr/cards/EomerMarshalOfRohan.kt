@@ -7,7 +7,6 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TriggerBinding
-import com.wingedsheep.sdk.scripting.effects.AddCombatPhaseEffect
 import com.wingedsheep.sdk.scripting.effects.TapUntapEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -48,8 +47,8 @@ val EomerMarshalOfRohan = card("Éomer, Marshal of Rohan") {
                     GroupFilter.AllCreaturesYouControl,
                     TapUntapEffect(EffectTarget.Self, tap = false)
                 ),
-                // After this phase, there is an additional combat phase
-                AddCombatPhaseEffect
+                // After this phase, there is an additional combat phase (combat only — no main)
+                Effects.AddCombatPhase
             )
         )
     }

@@ -2979,6 +2979,21 @@ object Effects {
         com.wingedsheep.sdk.scripting.effects.ForceBlockEffect(target)
 
     /**
+     * Insert a single additional combat phase — and *only* a combat phase, no trailing main phase
+     * (Aurelia, the Warleader / Combat Celebrant / Fear of Missing Out: "After this phase, there is
+     * an additional combat phase"). Compose with [AddMainPhase] for the Aggravated-Assault shape
+     * ("an additional combat phase followed by an additional main phase"). CR 500.8.
+     */
+    val AddCombatPhase: Effect = com.wingedsheep.sdk.scripting.effects.AddCombatPhaseEffect
+
+    /**
+     * Insert a single additional (postcombat) main phase. The atomic counterpart to [AddCombatPhase];
+     * `Effects.Composite(listOf(AddCombatPhase, AddMainPhase))` reproduces "an additional combat phase
+     * followed by an additional main phase" (Aggravated Assault, All-Out Assault). CR 500.8 / 505.1a.
+     */
+    val AddMainPhase: Effect = com.wingedsheep.sdk.scripting.effects.AddMainPhaseEffect
+
+    /**
      * Give the controller [amount] additional upkeep steps after the current phase
      * (Obeka, Splitter of Seconds). Each is a beginning phase containing only an upkeep step
      * (untap and draw skipped, CR 500.10); they occur after any additional combat phases (CR 500.8).
