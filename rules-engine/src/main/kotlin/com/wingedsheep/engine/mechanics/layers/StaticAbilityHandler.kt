@@ -292,6 +292,12 @@ class StaticAbilityHandler(
             is AnimateLandGroup -> convertAnimateLandGroup(ability)
             is GrantAdditionalTypesToGroup -> convertGrantAdditionalTypesToGroup(ability)
             is TransformPermanent -> convertTransformPermanent(ability)
+            // A ConditionalStaticAbility wrapping a multi-effect ability (e.g. TransformPermanent)
+            // must lower through the plural converter too, then gate every resulting effect on the
+            // condition — otherwise the singular path returns null and the whole gated ability is
+            // silently dropped (Enduring's "becomes an enchantment" return).
+            is ConditionalStaticAbility ->
+                convertStaticAbilities(ability.ability).map { it.copy(sourceCondition = ability.condition) }
             else -> listOfNotNull(convertStaticAbility(ability))
         }
     }
@@ -376,8 +382,9 @@ class StaticAbilityHandler(
             ))
         }
 
-        // Layer 4 (TYPE): Set subtypes (replaces all existing)
-        if (ability.setSubtypes.isNotEmpty()) {
+        // Layer 4 (TYPE): Set subtypes (replaces all existing). A non-empty set replaces all
+        // subtypes; clearSubtypes replaces them with the empty set ("has no subtypes").
+        if (ability.setSubtypes.isNotEmpty() || ability.clearSubtypes) {
             effects.add(ContinuousEffectData(
                 modification = Modification.SetAllSubtypes(ability.setSubtypes),
                 affectsFilter = filter

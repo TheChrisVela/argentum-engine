@@ -144,6 +144,20 @@ data class CrewSaddleContributorsComponent(
 data object CastForImpendingComponent : Component
 
 /**
+ * Marks a permanent that returned to the battlefield via its Enduring triggered ability
+ * (Duskmourn Glimmer cycle). The card's [com.wingedsheep.sdk.scripting.ConditionalStaticAbility]
+ * — a [com.wingedsheep.sdk.scripting.TransformPermanent] gated on
+ * [com.wingedsheep.sdk.scripting.conditions.SourceReturnedAsEnchantment] — reads this marker to
+ * make the returned permanent an enchantment with no other card types or subtypes
+ * ("It's an enchantment. It's not a creature."). The original creature instance has no marker.
+ *
+ * A fresh entity is created on each battlefield entry, so this transient marker never leaks
+ * onto a later copy; it persists for as long as the returned permanent stays on the battlefield.
+ */
+@Serializable
+data object EnduringReturnComponent : Component
+
+/**
  * Marks a creature permanent as prepared (Secrets of Strixhaven, [com.wingedsheep.sdk.model.CardLayout.PREPARE]).
  *
  * A creature with a prepare spell becomes prepared as it enters (per the "This creature enters

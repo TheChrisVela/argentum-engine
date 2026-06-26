@@ -365,6 +365,75 @@ class DeathAndLeaveTriggerDetector(
     }
 
     /**
+     * Detect Enduring triggers (Duskmourn Glimmer cycle) when a permanent dies.
+     *
+     * Enduring: "When this permanent dies, if it was a creature, return it to the battlefield
+     * under its owner's control. It's an enchantment. (It's not a creature.)"
+     *
+     * Modeled like persist — a synthesized SELF dies-trigger — with two Enduring-specific gates:
+     *  - Fires only if the permanent was a creature when it died (CR intervening-if). This stops
+     *    the returned enchantment from looping: when the enchantment-only instance later dies it
+     *    isn't a creature, so the trigger doesn't fire again.
+     *  - Suppressed on tokens (CR 111.7): a token copy ceases to exist via 704.5s before any
+     *    return could happen, matching the printed ruling ("a token that's a copy of [it] won't
+     *    return").
+     *
+     * The synthesized effect moves the card from graveyard to the battlefield under its owner's
+     * control, then stamps [com.wingedsheep.engine.state.components.battlefield.EnduringReturnComponent]
+     * via [com.wingedsheep.sdk.scripting.effects.MarkEnduringReturnEffect]; the card's
+     * conditional type-changing static (gated on that marker) makes it enchantment-only.
+     *
+     * Reads projected keywords captured on the event so both intrinsic Enduring and any future
+     * granted Enduring reach it identically.
+     */
+    fun detectEnduringTriggers(
+        state: GameState,
+        event: ZoneChangeEvent,
+        triggers: MutableList<PendingTrigger>
+    ) {
+        if (event.fromZone != Zone.BATTLEFIELD || event.toZone != Zone.GRAVEYARD) return
+        if (event.lastKnownWasToken) return
+        if (event.lastKnownTypeLine?.isCreature != true) return
+        if (Keyword.ENDURING.name !in event.lastKnownKeywords) return
+
+        val info = resolveDyingEntity(state, event) ?: return
+
+        val enduringAbility = TriggeredAbility.create(
+            trigger = EventPattern.ZoneChangeEvent(
+                from = Zone.BATTLEFIELD,
+                to = Zone.GRAVEYARD
+            ),
+            binding = TriggerBinding.SELF,
+            effect = CompositeEffect(
+                listOf(
+                    // No controllerOverride: MoveToZoneEffect returns the card under its owner's
+                    // control by default (CR — "under its owner's control"). fromZone guards the
+                    // move so a card that already left the graveyard isn't disturbed.
+                    MoveToZoneEffect(
+                        target = EffectTarget.Self,
+                        destination = Zone.BATTLEFIELD,
+                        fromZone = Zone.GRAVEYARD
+                    ),
+                    com.wingedsheep.sdk.scripting.effects.MarkEnduringReturnEffect
+                )
+            ),
+            descriptionOverride =
+                "Enduring — Return ${info.name} to the battlefield under its owner's control. " +
+                    "It's an enchantment."
+        )
+
+        triggers.add(
+            PendingTrigger(
+                ability = enduringAbility,
+                sourceId = event.entityId,
+                sourceName = info.name,
+                controllerId = event.ownerId,
+                triggerContext = TriggerContext.fromEvent(event)
+            )
+        )
+    }
+
+    /**
      * Detect "leaves the battlefield" triggers on permanents that just left.
      * Similar to detectDeathTriggers, but handles ZoneChangeEvent(from=BATTLEFIELD).
      *

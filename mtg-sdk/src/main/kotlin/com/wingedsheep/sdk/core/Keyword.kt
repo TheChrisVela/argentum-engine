@@ -207,6 +207,23 @@ enum class Keyword(val displayName: String) {
     PERSIST("Persist"),
 
     /**
+     * Enduring (Duskmourn: House of Horror — the Glimmer "Enduring" cycle).
+     * "When this permanent dies, if it was a creature, return it to the battlefield under its
+     * owner's control. It's an enchantment. (It's not a creature.)"
+     *
+     * Modeled (like Persist) as a synthesized self-return triggered ability detected in
+     * [com.wingedsheep.engine.event.DeathAndLeaveTriggerDetector]: it fires only when the
+     * dying permanent was a creature (so the returned enchantment doesn't loop on its second
+     * death) and is suppressed on tokens (CR 111.7 — tokens cease to exist). On return the
+     * engine stamps an enduring-return marker; a [com.wingedsheep.sdk.scripting.ConditionalStaticAbility]
+     * gated on that marker ([com.wingedsheep.sdk.scripting.conditions.SourceReturnedAsEnchantment])
+     * makes the permanent an enchantment with no other card types or subtypes. Wired in one call
+     * via the `enduring()` helper on [com.wingedsheep.sdk.dsl.CardBuilder]; the keyword itself is
+     * display-only (no reminder badge beyond the printed text).
+     */
+    ENDURING("Enduring"),
+
+    /**
      * Renew (Tarkir: Dragonstorm, Sultai clan keyword).
      * "Renew — [cost], Exile this card from your graveyard: [effect]. Activate only as a sorcery."
      *

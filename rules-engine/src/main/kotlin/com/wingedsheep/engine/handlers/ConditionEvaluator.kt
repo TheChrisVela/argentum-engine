@@ -71,6 +71,7 @@ import com.wingedsheep.sdk.scripting.conditions.NotCondition
 import com.wingedsheep.sdk.scripting.conditions.OpponentSpellOnStack
 import com.wingedsheep.sdk.scripting.conditions.ControllerTurnsTakenAtMost
 import com.wingedsheep.sdk.scripting.conditions.SourceCastForImpending
+import com.wingedsheep.sdk.scripting.conditions.SourceReturnedAsEnchantment
 import com.wingedsheep.sdk.scripting.conditions.SourceIsModified
 import com.wingedsheep.sdk.scripting.conditions.SourceReceivedCounterThisTurn
 import com.wingedsheep.sdk.scripting.conditions.SourceChosenModeIs
@@ -230,6 +231,13 @@ class ConditionEvaluator(
                 sourceId != null && state.getEntity(sourceId)?.has<CastForImpendingComponent>() == true
             }
 
+            is SourceReturnedAsEnchantment -> {
+                val sourceId = ctx.sourceId
+                sourceId != null &&
+                    state.getEntity(sourceId)
+                        ?.has<com.wingedsheep.engine.state.components.battlefield.EnduringReturnComponent>() == true
+            }
+
             is SourceReceivedCounterThisTurn -> {
                 val sourceId = ctx.sourceId
                 sourceId != null &&
@@ -303,6 +311,24 @@ class ConditionEvaluator(
             is PlayerCommittedCrimeThisTurn -> {
                 val playerId = resolvePlayer(state, condition.player, ctx)
                 playerId != null && playerId in state.playersWhoCommittedCrimeThisTurn
+            }
+            is com.wingedsheep.sdk.scripting.conditions.PermanentEnteredFaceDownThisTurn -> {
+                val playerId = resolvePlayer(state, condition.player, ctx)
+                val count = playerId?.let {
+                    state.getEntity(it)
+                        ?.get<com.wingedsheep.engine.state.components.player.PermanentEnteredFaceDownThisTurnComponent>()
+                        ?.count
+                } ?: 0
+                count > 0
+            }
+            is com.wingedsheep.sdk.scripting.conditions.PlayerTurnedPermanentFaceUpThisTurn -> {
+                val playerId = resolvePlayer(state, condition.player, ctx)
+                val count = playerId?.let {
+                    state.getEntity(it)
+                        ?.get<com.wingedsheep.engine.state.components.player.TurnedPermanentFaceUpThisTurnComponent>()
+                        ?.count
+                } ?: 0
+                count > 0
             }
             is PlayerHasCitysBlessing -> evaluateHasCitysBlessingCtx(state, condition, ctx)
 

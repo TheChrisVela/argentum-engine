@@ -60,6 +60,8 @@ import com.wingedsheep.engine.state.components.player.CreaturesDiedThisTurnCompo
 import com.wingedsheep.engine.state.components.player.NonTokenCreaturesDiedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PermanentLeftBattlefieldThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PermanentsSacrificedThisTurnComponent
+import com.wingedsheep.engine.state.components.player.PermanentEnteredFaceDownThisTurnComponent
+import com.wingedsheep.engine.state.components.player.TurnedPermanentFaceUpThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PlayerDescendedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.OpponentCreaturesExiledThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PlayerEffectRemoval
@@ -666,6 +668,12 @@ class CleanupPhaseManager(
                 }
                 if (result.has<PermanentsSacrificedThisTurnComponent>()) {
                     result = result.without<PermanentsSacrificedThisTurnComponent>()
+                }
+                if (result.has<PermanentEnteredFaceDownThisTurnComponent>()) {
+                    result = result.without<PermanentEnteredFaceDownThisTurnComponent>()
+                }
+                if (result.has<TurnedPermanentFaceUpThisTurnComponent>()) {
+                    result = result.without<TurnedPermanentFaceUpThisTurnComponent>()
                 }
                 if (result.has<LifeGainedThisTurnComponent>()) {
                     result = result.without<LifeGainedThisTurnComponent>()

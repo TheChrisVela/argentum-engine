@@ -14,6 +14,7 @@ import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantStaticAb
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantToEnchantedCreatureTypeGroupExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.GrantTriggeredAbilityExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.IncrementAbilityResolutionCountExecutor
+import com.wingedsheep.engine.handlers.effects.permanent.abilities.MarkEnduringReturnExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.LevelUpClassExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.RemoveAllAbilitiesExecutor
 import com.wingedsheep.engine.handlers.effects.permanent.abilities.RemoveKeywordExecutor
@@ -186,6 +187,7 @@ class PermanentExecutors(
         RemoveAllAbilitiesExecutor(),
         LevelUpClassExecutor(staticAbilityHandler),
         IncrementAbilityResolutionCountExecutor(),
+        MarkEnduringReturnExecutor(),
         ExploreEffectExecutor(),
         // tapping
         TapUntapExecutor(),

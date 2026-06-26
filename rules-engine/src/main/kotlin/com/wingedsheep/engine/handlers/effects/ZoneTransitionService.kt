@@ -28,6 +28,7 @@ import com.wingedsheep.engine.state.components.player.CreatureSubtypesDiedThisTu
 import com.wingedsheep.engine.state.components.player.CreaturesDiedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.NonTokenCreaturesDiedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.OpponentCreaturesExiledThisTurnComponent
+import com.wingedsheep.engine.state.components.player.PermanentEnteredFaceDownThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PermanentLeftBattlefieldThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PermanentsSacrificedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PlayerDescendedThisTurnComponent
@@ -727,7 +728,7 @@ object ZoneTransitionService {
         options: ZoneEntryOptions,
         fromZone: Zone? = null
     ): GameState {
-        return state.updateEntity(entityId) { c ->
+        val withEntity = state.updateEntity(entityId) { c ->
             var updated = c.with(ControllerComponent(controllerId))
 
             // Clear stale LinkedExileComponent from previous battlefield visit (Rule 400.7:
@@ -795,6 +796,16 @@ object ZoneTransitionService {
             }
 
             updated
+        }
+
+        // Track "a permanent entered the battlefield face down under your control this turn"
+        // (Oblivious Bookworm). Per-player count, cleared at the turn boundary by
+        // CleanupPhaseManager.
+        if (!options.faceDown) return withEntity
+        return withEntity.updateEntity(controllerId) { playerContainer ->
+            val existing = playerContainer.get<PermanentEnteredFaceDownThisTurnComponent>()
+                ?: PermanentEnteredFaceDownThisTurnComponent()
+            playerContainer.with(PermanentEnteredFaceDownThisTurnComponent(existing.count + 1))
         }
     }
 

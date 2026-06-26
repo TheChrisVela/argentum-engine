@@ -496,3 +496,35 @@ data class RingHasTemptedPlayerAtLeast(
         "if the Ring has tempted ${player.description} $times or more times this game"
 }
 
+/**
+ * Resolution condition: "if a permanent entered the battlefield face down under [player]'s
+ * control this turn".
+ *
+ * Backed by the per-player `PermanentEnteredFaceDownThisTurnComponent`, incremented in
+ * `ZoneTransitionService` whenever a permanent enters the battlefield face down (morph,
+ * manifest, disguise, cloak, or any face-down entry) under that player's control, and cleared
+ * at the turn boundary. The `Conditions.PermanentEnteredFaceDownThisTurn` DSL helper passes
+ * [Player.You], resolved to the source's controller. Used by Oblivious Bookworm.
+ */
+@SerialName("PermanentEnteredFaceDownThisTurn")
+@Serializable
+data class PermanentEnteredFaceDownThisTurn(val player: Player = Player.You) : Condition {
+    override val description: String =
+        "if a permanent entered the battlefield face down under your control this turn"
+}
+
+/**
+ * Resolution condition: "if [player] turned a permanent face up this turn".
+ *
+ * Backed by the per-player `TurnedPermanentFaceUpThisTurnComponent`, incremented in the
+ * turn-face-up handler whenever that player turns a permanent face up, and cleared at the turn
+ * boundary. The `Conditions.YouTurnedPermanentFaceUpThisTurn` DSL helper passes [Player.You],
+ * resolved to the source's controller. Used by Oblivious Bookworm.
+ */
+@SerialName("PlayerTurnedPermanentFaceUpThisTurn")
+@Serializable
+data class PlayerTurnedPermanentFaceUpThisTurn(val player: Player = Player.You) : Condition {
+    override val description: String =
+        "if ${player.description} turned a permanent face up this turn"
+}
+

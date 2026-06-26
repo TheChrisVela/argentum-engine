@@ -337,8 +337,12 @@ data class AnimateLandGroup(
  * separately for ability removal/granting.
  *
  * @property setCardTypes Card types to set (replaces ALL existing card types)
- * @property setSubtypes Subtypes to set (replaces ALL existing subtypes)
+ * @property setSubtypes Subtypes to set (replaces ALL existing subtypes). A non-empty set
+ *   replaces all subtypes; an empty set leaves subtypes unchanged unless [clearSubtypes] is set.
  * @property setColors Colors to set (null = don't change, empty = colorless)
+ * @property clearSubtypes When true, removes all subtypes (used with `setSubtypes = emptySet()`
+ *   to express "has no subtypes" — e.g. the Enduring cycle's enchantment-only return, which
+ *   strips Sheep/Glimmer). Distinguishes "clear subtypes" from "don't change subtypes".
  * @property filter What this ability applies to
  */
 @SerialName("TransformPermanent")
@@ -347,6 +351,7 @@ data class TransformPermanent(
     val setCardTypes: Set<String> = emptySet(),
     val setSubtypes: Set<String> = emptySet(),
     val setColors: Set<Color>? = null,
+    val clearSubtypes: Boolean = false,
     val filter: GroupFilter = GroupFilter.attachedCreature()
 ) : StaticAbility {
     override val description: String = buildString {

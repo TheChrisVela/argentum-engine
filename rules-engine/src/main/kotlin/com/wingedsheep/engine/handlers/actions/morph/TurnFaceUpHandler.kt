@@ -29,6 +29,7 @@ import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.ManifestedComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
+import com.wingedsheep.engine.state.components.player.TurnedPermanentFaceUpThisTurnComponent
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.scripting.costs.CostAtom
@@ -405,6 +406,14 @@ class TurnFaceUpHandler(
             xValue = if (action.xValue != null && action.xValue > 0) action.xValue else null
         )
         events.add(turnFaceUpEvent)
+
+        // Track "you turned a permanent face up this turn" (Oblivious Bookworm). Per-player
+        // count, cleared at the turn boundary by CleanupPhaseManager.
+        currentState = currentState.updateEntity(action.playerId) { container ->
+            val existing = container.get<TurnedPermanentFaceUpThisTurnComponent>()
+                ?: TurnedPermanentFaceUpThisTurnComponent()
+            container.with(TurnedPermanentFaceUpThisTurnComponent(existing.count + 1))
+        }
 
         // Detect and process "when turned face up" triggers
         val triggers = triggerDetector.detectTriggers(currentState, events)

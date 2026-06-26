@@ -3357,6 +3357,145 @@
     ]
 }
 
+// Enduring Courage
+{
+    "name": "Enduring Courage",
+    "manaCost": "{2}{R}{R}",
+    "typeLine": "Enchantment Creature — Dog Glimmer",
+    "oracleText": "Whenever another creature you control enters, it gets +2/+0 and gains haste until end of turn.\nWhen Enduring Courage dies, if it was a creature, return it to the battlefield under its owner's control. It's an enchantment. (It's not a creature.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "ENDURING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "ModifyStats",
+                            "powerModifier": {
+                                "type": "Fixed",
+                                "amount": 2
+                            },
+                            "toughnessModifier": {
+                                "type": "Fixed",
+                                "amount": 0
+                            },
+                            "target": "TriggeringEntity"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "HASTE",
+                            "target": "TriggeringEntity"
+                        }
+                    ]
+                }
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "TransformPermanent",
+                    "setCardTypes": [
+                        "ENCHANTMENT"
+                    ],
+                    "clearSubtypes": true,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "SourceReturnedAsEnchantment"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "133",
+        "rarity": "RARE",
+        "artist": "Yigit Koroglu",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/4/f46ac55f-d68e-4d5d-af0a-3879f97f705e.jpg?1726286344"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
+// Enduring Innocence
+{
+    "name": "Enduring Innocence",
+    "manaCost": "{1}{W}{W}",
+    "typeLine": "Enchantment Creature — Sheep Glimmer",
+    "oracleText": "Lifelink\nWhenever one or more other creatures you control with power 2 or less enter, draw a card. This ability triggers only once each turn.\nWhen Enduring Innocence dies, if it was a creature, return it to the battlefield under its owner's control. It's an enchantment. (It's not a creature.)",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "LIFELINK",
+        "ENDURING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature pow<=2 ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "oncePerTurn": true
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "TransformPermanent",
+                    "setCardTypes": [
+                        "ENCHANTMENT"
+                    ],
+                    "clearSubtypes": true,
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "SourceReturnedAsEnchantment"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "6",
+        "rarity": "RARE",
+        "artist": "Liiga Smilshkalne",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/8/08f79439-b8f8-418f-9772-26d81844749e.jpg?1726285879"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Enter the Enigma
 {
     "name": "Enter the Enigma",
@@ -8212,6 +8351,110 @@
     },
     "colorIdentityOverride": [
         "BLACK"
+    ]
+}
+
+// Oblivious Bookworm
+{
+    "name": "Oblivious Bookworm",
+    "manaCost": "{G}{U}",
+    "typeLine": "Creature — Human Wizard",
+    "oracleText": "At the beginning of your end step, you may draw a card. If you do, discard a card unless a permanent entered the battlefield face down under your control this turn or you turned a permanent face up this turn.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Gated",
+                        "gate": {
+                            "type": "Gate.DoAction",
+                            "action": {
+                                "type": "DrawCards",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "successCriterion": "SuccessCriterion.Always"
+                        },
+                        "then": {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "Not",
+                                    "condition": {
+                                        "type": "Any",
+                                        "conditions": [
+                                            "PermanentEnteredFaceDownThisTurn",
+                                            "PlayerTurnedPermanentFaceUpThisTurn"
+                                        ]
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded",
+                                        "prompt": "Choose 1 card to discard"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "225",
+        "rarity": "UNCOMMON",
+        "artist": "Josh Newton",
+        "flavorText": "\"Huh, the detector won't stop beeping. Must be on the fritz again.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/7/c7b4c50b-fe76-430d-8f96-208f15ca4cd7.jpg?1726286707"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
+        "BLUE"
     ]
 }
 

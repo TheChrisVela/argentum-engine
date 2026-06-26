@@ -2987,7 +2987,12 @@ staticAbility {
 - `GrantCardType(cardType, filter)` / `RemoveCardType(cardType, filter)` — Layer 4 type-changing statics that add or
   remove a card type (e.g. `"CREATURE"`). `RemoveCardType` backs Impending's "isn't a creature while it has a time
   counter" (wrapped in a `ConditionalStaticAbility`); reuse it for any "it's no longer a [type]" effect.
-- `ConditionalStaticAbility` — static gated by a runtime `Condition`.
+- `TransformPermanent(setCardTypes, setSubtypes, setColors?, clearSubtypes, filter)` — Layer 4/5 "becomes a whole new
+  identity" (Sugar Coat, Darksteel Mutation). A non-empty `setSubtypes` replaces all subtypes; an empty `setSubtypes`
+  leaves subtypes alone **unless** `clearSubtypes = true`, which replaces them with none ("has no subtypes" — the
+  Enduring return strips Sheep/Glimmer). `setColors = null` keeps colors.
+- `ConditionalStaticAbility` — static gated by a runtime `Condition`. A conditional wrapping a *multi-effect* ability
+  (e.g. `TransformPermanent`) lowers through the plural converter and gates every resulting effect on the condition.
 - `CantBeTurnedFaceUp(filter)` — matching permanents can't be turned face up (Layer 6; projects a
   `cantBeTurnedFaceUp` flag read by the turn-face-up handler/enumerator). Only meaningful while the
   permanent is face down (a face-up permanent can't be "turned face up"), so it's applied
@@ -3550,13 +3555,25 @@ ability — feed the matching count `DynamicAmount` to `genericCostReduction`.
 > **Where set-mechanic helpers live.** The `card { … }` keyword helpers below for *set-specific*
 > mechanics — `leyline()`, `flurry { }`, `mobilize(…)`, `firebending(n)`, `sneak(cost)`, `decayed()`,
 > `vividEtb { }` / `vividCostReduction()`, `convergeEntersWithCounters(counterType?)`,
-> `impending(time, cost)`, `renew(cost) { }`,
+> `impending(time, cost)`, `renew(cost) { }`, `enduring()`,
 > `craft(filter, cost)`, `station()`, `jobSelect()` — are `CardBuilder` **extension functions** in
 > `mtg-sdk/.../dsl/mechanics/` (one file per mechanic), not methods on the core `CardBuilder`. They
 > stay in package `com.wingedsheep.sdk.dsl`, so the call syntax is unchanged, but a card file that
 > uses one needs the matching import (e.g. `import com.wingedsheep.sdk.dsl.station`). Evergreen /
 > multi-set parameterized keywords (`prowess()`, `rampage(n)`, `keywordAbility(…)`) remain on the core
 > builder. New set mechanics get an extension file in `dsl/mechanics/`.
+
+> **Enduring** (Duskmourn Glimmer cycle). `card { enduring() }` wires the full mechanic: "When this
+> permanent dies, if it was a creature, return it to the battlefield under its owner's control. It's an
+> enchantment. (It's not a creature.)" Modeled like **Persist** — a synthesized SELF dies-trigger detected
+> in `DeathAndLeaveTriggerDetector.detectEnduringTriggers`, gated on the last-known type being a creature
+> (so the returned enchantment never loops on its second death) and suppressed on tokens (CR 111.7). The
+> synthesized effect returns the card via `MoveToZoneEffect(Self, BATTLEFIELD, fromZone = GRAVEYARD)` then
+> stamps an enduring-return marker (`MarkEnduringReturnEffect` → `EnduringReturnComponent`). The helper also
+> adds a `ConditionalStaticAbility(TransformPermanent(setCardTypes = {"ENCHANTMENT"}, clearSubtypes = true),
+> SourceReturnedAsEnchantment)` so, while the marker is present, the permanent is an enchantment with no other
+> card types or subtypes. Author the printed dies-clause + reminder text into `oracleText`. The
+> `Keyword.ENDURING` display keyword carries no combat behavior.
 
 > **Converge** (ability word, CR 207.2c — flavor only, no keyword, like Opus/Vivid). Scales an effect
 > by the number of distinct colors of mana spent to cast the spell. Three shapes:
@@ -3574,7 +3591,7 @@ Flying, Menace, Intimidate, Fear, Shadow, Horsemanship, all basic landwalks (Pla
 `LandwalkRule` checks `typeLine.isLand && !isBasicLand`; Trailblazer's Boots), First Strike, Double
 Strike, Trample, Deathtouch, Lifelink, Vigilance, Reach, Provoke, Flanking, Defender, Indestructible, Hexproof, Shroud, Haste,
 Flash, Prowess, Flurry, Changeling, Convoke, Delve, Affinity, Storm, Flashback, Harmonize, Evoke, Sneak, Impending, Conspire, Casualty, Miracle, Hideaway, Cascade, Plot,
-Offspring, Persist, Ascend, Wither, Toxic, Eerie, Vivid, Fateful Bite, … (display-only — engine effect lives in handlers or
+Offspring, Persist, Enduring, Ascend, Wither, Toxic, Eerie, Vivid, Fateful Bite, … (display-only — engine effect lives in handlers or
 composite abilities).
 
 **Parameterized `KeywordAbility.*`**
@@ -4210,6 +4227,12 @@ default to "you" so card authors don't need to pass it explicitly.
   crime-committing spell/ability is countered. Resolves identically in resolution and projection (e.g.
   cost-reduction) contexts. Pairs with `CostGating.OnlyIf(...)` for "costs {N} less if you've committed
   a crime this turn" (Seize the Secrets).
+- `PermanentEnteredFaceDownThisTurn` / `YouTurnedPermanentFaceUpThisTurn` — Duskmourn (Oblivious
+  Bookworm) gates: true when a permanent entered the battlefield face down under your control this turn,
+  or you turned a permanent face up this turn. Backed by per-player `PermanentEnteredFaceDownThisTurnComponent`
+  (stamped in `ZoneTransitionService` on any face-down battlefield entry) and `TurnedPermanentFaceUpThisTurnComponent`
+  (stamped in the turn-face-up handler), both cleared at the turn boundary. Compose with `Conditions.Not` /
+  `Conditions.Any` for the "unless A or B" rider.
 - `YouHaveCitysBlessing` — Ascend gate. Backed by `PlayerHasCitysBlessing(Player.You)`.
 - `IsFirstSpellPaidWithTreasureManaCastThisTurn` — gates a triggered ability to fire only
   on the first spell each turn that mana from a Treasure was spent to cast (Rain of

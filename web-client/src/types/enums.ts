@@ -205,6 +205,8 @@ export enum Keyword {
   TOXIC = 'TOXIC',
   // Death replacement
   PERSIST = 'PERSIST',
+  // Dies-and-returns-as-enchantment (Duskmourn Glimmer cycle)
+  ENDURING = 'ENDURING',
   // Resolution-time city's blessing grant (Ixalan)
   ASCEND = 'ASCEND',
   // Token decay (Innistrad: Midnight Hunt / TDM decayed counter)
@@ -270,6 +272,7 @@ export const KeywordDisplayNames: Record<Keyword, string> = {
   [Keyword.WITHER]: 'Wither',
   [Keyword.TOXIC]: 'Toxic',
   [Keyword.PERSIST]: 'Persist',
+  [Keyword.ENDURING]: 'Enduring',
   [Keyword.ASCEND]: 'Ascend',
   [Keyword.DECAYED]: 'Decayed',
   [Keyword.JOB_SELECT]: 'Job select',

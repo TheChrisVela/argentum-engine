@@ -305,6 +305,23 @@ data object SourceCastForImpending : Condition {
 }
 
 /**
+ * Condition: "this permanent returned via its Enduring ability" (Duskmourn Glimmer cycle).
+ *
+ * Reads the `EnduringReturnComponent` marker stamped on a permanent when its Enduring
+ * triggered ability returns it from the graveyard to the battlefield. Used (like
+ * [SourceCastForImpending]) to gate a [com.wingedsheep.sdk.scripting.ConditionalStaticAbility]
+ * — here a [com.wingedsheep.sdk.scripting.TransformPermanent] that makes the returned
+ * permanent an enchantment with no other card types or subtypes ("It's an enchantment. It's
+ * not a creature."). The original creature instance has no marker, so the static doesn't apply
+ * to it; only the returned enchantment instance is affected.
+ */
+@SerialName("SourceReturnedAsEnchantment")
+@Serializable
+data object SourceReturnedAsEnchantment : Condition {
+    override val description: String = "this permanent returned with its Enduring ability"
+}
+
+/**
  * Condition: "If the chosen mode is [modeId]".
  *
  * Reads the `CastChoicesComponent` stored on the source permanent (set by an

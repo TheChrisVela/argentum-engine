@@ -901,6 +901,29 @@ data object SacrificedFoodThisTurnComponent : Component
 data class PermanentsSacrificedThisTurnComponent(val count: Int = 0) : Component
 
 /**
+ * Tracks whether a permanent entered the battlefield face down under this player's control during
+ * the current turn (morph, manifest, disguise, cloak, or any face-down entry). Incremented in
+ * `ZoneTransitionService` at the moment of a face-down battlefield entry and cleared at the turn
+ * boundary by `CleanupPhaseManager`.
+ *
+ * Backs Oblivious Bookworm's "...unless a permanent entered the battlefield face down under your
+ * control this turn..." via the `PermanentEnteredFaceDownThisTurn` condition.
+ */
+@Serializable
+data class PermanentEnteredFaceDownThisTurnComponent(val count: Int = 0) : Component
+
+/**
+ * Tracks whether this player turned a permanent face up during the current turn (morph/disguise
+ * turn-up special action, or any "turn it face up" effect). Incremented in the turn-face-up
+ * handler and cleared at the turn boundary by `CleanupPhaseManager`.
+ *
+ * Backs Oblivious Bookworm's "...or you turned a permanent face up this turn." via the
+ * `PlayerTurnedPermanentFaceUpThisTurn` condition.
+ */
+@Serializable
+data class TurnedPermanentFaceUpThisTurnComponent(val count: Int = 0) : Component
+
+/**
  * Tracks the number of permanent (nontoken) cards put into this player's graveyard from
  * any zone during the current turn — i.e. the number of times this player has
  * "descended" per CR 700.11. Cleared at end of turn by CleanupPhaseManager.

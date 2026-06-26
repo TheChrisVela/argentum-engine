@@ -83,6 +83,20 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.SourceReceivedCounterThisTurn
 
     /**
+     * If a permanent entered the battlefield face down under your control this turn (Duskmourn —
+     * Oblivious Bookworm). Reads the per-player face-down-entered tracker, cleared each turn.
+     */
+    val PermanentEnteredFaceDownThisTurn: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.PermanentEnteredFaceDownThisTurn()
+
+    /**
+     * If you turned a permanent face up this turn (Duskmourn — Oblivious Bookworm). Reads the
+     * per-player turned-face-up tracker, cleared each turn.
+     */
+    val YouTurnedPermanentFaceUpThisTurn: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.PlayerTurnedPermanentFaceUpThisTurn()
+
+    /**
      * If the Ring has tempted you [times] or more times this game (CR 701.54). Reads the cumulative
      * tempt count on your The Ring emblem; a player never tempted counts as 0.
      */

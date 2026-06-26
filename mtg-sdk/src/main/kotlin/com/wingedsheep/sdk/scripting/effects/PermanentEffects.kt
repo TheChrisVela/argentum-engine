@@ -421,6 +421,20 @@ data object IncrementAbilityResolutionCountEffect : Effect {
     override val description: String = "Track ability resolution"
 }
 
+/**
+ * Stamps the source permanent as having returned via its Enduring ability (Duskmourn Glimmer
+ * cycle). Composed after a return-to-battlefield move so the card's
+ * [com.wingedsheep.sdk.scripting.ConditionalStaticAbility] (gated on
+ * [com.wingedsheep.sdk.scripting.conditions.SourceReturnedAsEnchantment]) makes the returned
+ * permanent an enchantment with no other card types or subtypes. No-op if the source is no
+ * longer on the battlefield.
+ */
+@SerialName("MarkEnduringReturn")
+@Serializable
+data object MarkEnduringReturnEffect : Effect {
+    override val description: String = "It's an enchantment. It's not a creature."
+}
+
 // =============================================================================
 // Explore
 // =============================================================================
