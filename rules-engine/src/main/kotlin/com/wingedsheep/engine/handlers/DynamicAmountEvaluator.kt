@@ -513,13 +513,23 @@ class DynamicAmountEvaluator(
                 // excludeSelf drops the resolving spell's own record, matched by the spell's
                 // stack entity id (CastSpellRecord.sourceEntityId == context.sourceId).
                 val selfId = if (amount.excludeSelf) context.sourceId else null
-                playerIds.sumOf { playerId ->
-                    val records = state.spellsCastThisTurnByPlayer[playerId] ?: emptyList()
-                    records.count { record ->
-                        (selfId == null || record.sourceEntityId != selfId) &&
-                            // Zone qualifier is checked independently of the filter (see condition note).
-                            (amount.fromZone == null || record.castFromZone == amount.fromZone) &&
-                            predicateEvaluator.matchesFilter(record, amount.filter)
+                fun matches(record: com.wingedsheep.engine.state.CastSpellRecord) =
+                    (selfId == null || record.sourceEntityId != selfId) &&
+                        // Zone qualifier is checked independently of the filter (see condition note).
+                        (amount.fromZone == null || record.castFromZone == amount.fromZone) &&
+                        predicateEvaluator.matchesFilter(record, amount.filter)
+                if (amount.countDistinctCardTypes) {
+                    // "for each card type among spells you've cast this turn" — union the card types
+                    // across every matching record (an artifact creature spell counts for both).
+                    playerIds
+                        .flatMap { state.spellsCastThisTurnByPlayer[it] ?: emptyList() }
+                        .filter { matches(it) }
+                        .flatMap { it.typeLine.cardTypes }
+                        .toSet()
+                        .size
+                } else {
+                    playerIds.sumOf { playerId ->
+                        (state.spellsCastThisTurnByPlayer[playerId] ?: emptyList()).count { matches(it) }
                     }
                 }
             }

@@ -2,13 +2,13 @@
 
 **Set Size:** 190 cards (excluding basic lands)
 **Release Date:** March 6, 2026
-**Implemented:** 156 / 190
+**Implemented:** 171 / 190
 ---
 
 - [x] Action News Crew
 - [x] Agent Bishop, Man in Black
 - [x] Anchovy & Banana Pizza
-- [ ] April O'Neil, Hacktivist
+- [x] April O'Neil, Hacktivist
 - [x] April O'Neil, Kunoichi Trainee
 - [x] April, Reporter of the Weird
 - [x] Armaggon, Future Shark
@@ -43,19 +43,19 @@
 - [x] East Wind Avatar
 - [x] EPF Point Squad
 - [x] Escape Tunnel
-- [ ] Everything Pizza
+- [x] Everything Pizza
 - [x] Featherbrained Filcher
 - [x] Foot Elite
 - [x] Foot Headquarters
 - [x] Foot Mystic
 - [x] Foot Ninjas
 - [x] Frog Butler
-- [ ] Fugitive Droid
+- [x] Fugitive Droid
 - [x] General Traag, Heart of Stone
 - [x] Genghis Frog
 - [x] Go Ninja Go
 - [x] Groundchuck & Dirtbag
-- [ ] Grounded for Life
+- [x] Grounded for Life
 - [x] Guac & Marshmallow Pizza
 - [x] Hamato Guardian Stance
 - [x] Hard-Won Jitte
@@ -70,8 +70,8 @@
 - [x] Karai's Technique
 - [x] Karai, Future of the Foot
 - [x] Kitsune's Technique
-- [ ] Kitsune, Dragon's Daughter
-- [ ] Koya, Death from Above
+- [x] Kitsune, Dragon's Daughter
+- [x] Koya, Death from Above
 - [ ] Krang & Shredder
 - [x] Krang, Master Mind
 - [x] Krang, Utrom Warlord
@@ -85,12 +85,12 @@
 - [x] Lessons from Life
 - [ ] Lita, Little Orphan Amphibian
 - [x] Lord Dregg, Insect Invader
-- [ ] Madame Null, Power Broker
+- [x] Madame Null, Power Broker
 - [x] Make Your Move
 - [x] Manhole Missile
 - [x] Mechanized Ninja Cavalry
 - [x] Metalhead
-- [ ] Michelangelo's Technique
+- [x] Michelangelo's Technique
 - [x] Michelangelo, Game Master
 - [x] Michelangelo, Improviser
 - [x] Michelangelo, Mutant BFF
@@ -113,7 +113,7 @@
 - [ ] Ninja Teen
 - [x] Nobody
 - [ ] North Wind Avatar
-- [ ] Northampton Farm
+- [x] Northampton Farm
 - [x] Novel Nunchaku
 - [x] Null Group Biological Assets
 - [x] Old Hob, Alleycat Blues
@@ -134,22 +134,22 @@
 - [x] Raph & Leo, Sibling Rivals
 - [x] Raph & Mikey, Troublemakers
 - [x] Raphael's Technique
-- [ ] Raphael, Most Attitude
+- [x] Raphael, Most Attitude
 - [ ] Raphael, Ninja Destroyer
 - [x] Raphael, the Nightwatcher
 - [x] Raphael, Tough Turtle
 - [ ] Rat King, Verminister
 - [x] Ravenous Robots
-- [ ] Ray Fillet, Man Ray
+- [x] Ray Fillet, Man Ray
 - [x] Renet, Temporal Apprentice
-- [ ] Retro-Mutation
+- [x] Retro-Mutation
 - [x] Return to the Sewers
 - [x] Rock Soldiers
 - [x] Rocksteady, Crash Courser
 - [x] Sally Pride, Lioness Leader
 - [x] Savanti Romero, Time's Exile
 - [x] Saved by the Shell
-- [ ] Sewer-veillance Cam
+- [x] Sewer-veillance Cam
 - [x] Shark Shredder, Killer Clone
 - [x] Shredder's Armor
 - [x] Shredder's Revenge
@@ -184,12 +184,12 @@
 - [x] Turtle Blimp
 - [x] Turtle Lair
 - [x] Turtle Power!
-- [ ] Turtle Van
+- [x] Turtle Van
 - [ ] Turtles Forever
 - [ ] Turtles in Time
 - [x] Uneasy Alliance
 - [x] Utrom Scientists
-- [ ] Venus, Torn Between Worlds
+- [x] Venus, Torn Between Worlds
 - [x] Weather Maker
 - [x] West Wind Avatar
 - [x] Wingnut, Bat on the Belfry

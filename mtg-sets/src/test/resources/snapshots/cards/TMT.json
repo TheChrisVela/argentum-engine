@@ -197,6 +197,48 @@
     ]
 }
 
+// April O'Neil, Hacktivist
+{
+    "name": "April O'Neil, Hacktivist",
+    "manaCost": "{3}{U}",
+    "typeLine": "Legendary Creature — Human Scientist",
+    "oracleText": "At the beginning of your end step, draw a card for each card type among spells you've cast this turn.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "SpellsCastThisTurn",
+                        "countDistinctCardTypes": true
+                    }
+                },
+                "descriptionOverride": "At the beginning of your end step, draw a card for each card type among spells you've cast this turn."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "29",
+        "rarity": "RARE",
+        "artist": "Xabi Gaztelua",
+        "flavorText": "In the fight between mutants, ninjas, and aliens, don't underestimate a resourceful human.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/0/f0147f6d-b797-4d5e-aca2-a9d309896eca.jpg?1760102651"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // April O'Neil, Kunoichi Trainee
 {
     "name": "April O'Neil, Kunoichi Trainee",
@@ -2489,6 +2531,194 @@
     ]
 }
 
+// Everything Pizza
+{
+    "name": "Everything Pizza",
+    "manaCost": "{2}",
+    "typeLine": "Artifact — Food",
+    "oracleText": "When this artifact enters, search your library for a basic land card, reveal it, put it into your hand, then shuffle.\n{2}{W}{U}{B}{R}{G}, {T}, Sacrifice this artifact: Target player gains 3 life and draws a card. Each of your opponents discards a card. This artifact deals 3 damage to any target. Put three +1/+1 counters on up to one target creature.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "basicland"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary"
+                    ]
+                },
+                "descriptionOverride": "When this artifact enters, search your library for a basic land card, reveal it, put it into your hand, then shuffle."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}{W}{U}{B}{R}{G}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GainLife",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target player"
+                            }
+                        },
+                        {
+                            "type": "DrawCards",
+                            "count": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target player"
+                            }
+                        },
+                        {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Players",
+                                "players": "EachOpponent"
+                            },
+                            "body": {
+                                "type": "Composite",
+                                "effects": [
+                                    {
+                                        "type": "GatherCards",
+                                        "source": {
+                                            "type": "FromZone",
+                                            "zone": "Hand"
+                                        },
+                                        "storeAs": "hand"
+                                    },
+                                    {
+                                        "type": "SelectFromCollection",
+                                        "from": "hand",
+                                        "selection": {
+                                            "type": "ChooseExactly",
+                                            "count": {
+                                                "type": "Fixed",
+                                                "amount": 1
+                                            }
+                                        },
+                                        "storeSelected": "discarded"
+                                    },
+                                    {
+                                        "type": "MoveCollection",
+                                        "from": "discarded",
+                                        "destination": {
+                                            "type": "ToZone",
+                                            "zone": "Graveyard"
+                                        },
+                                        "moveType": "Discard"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 3
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "any target"
+                            },
+                            "damageSource": "Self"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 3,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target creature"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetPlayer",
+                        "id": "target player"
+                    },
+                    {
+                        "type": "AnyTarget",
+                        "id": "any target"
+                    },
+                    {
+                        "type": "TargetObject",
+                        "optional": true,
+                        "filter": {
+                            "baseFilter": "creature"
+                        },
+                        "id": "up to one target creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "173",
+        "rarity": "UNCOMMON",
+        "artist": "James Bousema",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/f/df2cdaa5-9ea0-4aa5-89d3-9edf40fa2a39.jpg?1771476702"
+    }
+}
+
 // Featherbrained Filcher
 {
     "name": "Featherbrained Filcher",
@@ -2803,6 +3033,87 @@
     ]
 }
 
+// Fugitive Droid
+{
+    "name": "Fugitive Droid",
+    "manaCost": "{U}",
+    "typeLine": "Artifact Creature — Robot Scientist",
+    "oracleText": "This creature can't be blocked if an artifact entered the battlefield under your control this turn.\n{U}, Sacrifice this creature: Counter target spell that targets an artifact or creature you control.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{U}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": "Counter",
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": {
+                                "cardPredicates": [
+                                    {
+                                        "type": "TargetsMatching",
+                                        "subfilter": {
+                                            "cardPredicates": [
+                                                {
+                                                    "type": "Or",
+                                                    "predicates": [
+                                                        "IsCreature",
+                                                        "IsArtifact"
+                                                    ]
+                                                }
+                                            ],
+                                            "controllerPredicate": "ControlledByYou"
+                                        }
+                                    }
+                                ]
+                            },
+                            "zone": "Stack"
+                        },
+                        "id": "target spell that targets an artifact or creature you control"
+                    }
+                ]
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": "CantBeBlocked",
+                "condition": {
+                    "type": "PermanentTypeEnteredBattlefieldThisTurn",
+                    "cardType": "ARTIFACT"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "40",
+        "rarity": "UNCOMMON",
+        "artist": "Narendra Bintara Adi",
+        "flavorText": "\"A freak accident transferred Professor Honeycutt's mind into his robot assistant. Blamed for his own death, he fled . . . as the FUGITOID!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/0/50c4e65f-00dc-4fc5-bd5c-8482c2848f4c.jpg?1771586801"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // General Traag, Heart of Stone
 {
     "name": "General Traag, Heart of Stone",
@@ -3037,6 +3348,57 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Grounded for Life
+{
+    "name": "Grounded for Life",
+    "manaCost": "{4}{W}",
+    "typeLine": "Instant",
+    "oracleText": "This spell costs {3} less to cast if it targets a tapped creature.\nDestroy target creature.",
+    "script": {
+        "spellEffect": {
+            "type": "MoveToZone",
+            "target": {
+                "type": "BoundVariable",
+                "name": "target creature"
+            },
+            "destination": "Graveyard",
+            "byDestruction": true
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "id": "target creature"
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ModifySpellCost",
+                "target": "SelfCast",
+                "modification": {
+                    "type": "ReduceGenericBy",
+                    "source": {
+                        "type": "FixedIfAnyTargetMatches",
+                        "amount": 3,
+                        "filter": "creature tapped"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "7",
+        "artist": "Andrea Tentori Montalto",
+        "flavorText": "\"Of course I know what you did! You always do precisely what I told you not to do!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/2/72388199-85fa-4eba-9a9c-c2904e6da9ed.jpg?1771502482"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
     ]
 }
 
@@ -4007,6 +4369,210 @@
     ]
 }
 
+// Kitsune, Dragon's Daughter
+{
+    "name": "Kitsune, Dragon's Daughter",
+    "manaCost": "{4}{U}{U}",
+    "typeLine": "Legendary Creature — Fox Warlock Avatar",
+    "oracleText": "Vigilance\nWhenever Kitsune enters or deals combat damage to a player, you may exchange control of two other target creatures controlled by different players.",
+    "creatureStats": {
+        "power": 6,
+        "toughness": 6
+    },
+    "keywords": [
+        "VIGILANCE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ExchangeControl",
+                        "target1": {
+                            "type": "BoundVariable",
+                            "name": "target creature you control"
+                        },
+                        "target2": {
+                            "type": "BoundVariable",
+                            "name": "target creature an opponent controls"
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    },
+                    "id": "target creature you control"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:opponent"
+                        },
+                        "id": "target creature an opponent controls"
+                    }
+                ],
+                "descriptionOverride": "When Kitsune enters, you may exchange control of two other target creatures controlled by different players."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "ExchangeControl",
+                        "target1": {
+                            "type": "BoundVariable",
+                            "name": "target creature you control"
+                        },
+                        "target2": {
+                            "type": "BoundVariable",
+                            "name": "target creature an opponent controls"
+                        }
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature ctrl:you",
+                        "excludeSelf": true
+                    },
+                    "id": "target creature you control"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature ctrl:opponent"
+                        },
+                        "id": "target creature an opponent controls"
+                    }
+                ],
+                "descriptionOverride": "Whenever Kitsune deals combat damage to a player, you may exchange control of two other target creatures controlled by different players."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "41",
+        "rarity": "RARE",
+        "artist": "Robin Har",
+        "flavorText": "\"You hunger for retribution, I know. And so I come to you with an offering . . .\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/8/a87a9257-4535-4286-8b59-a842ac45d05e.jpg?1769005699"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Koya, Death from Above
+{
+    "name": "Koya, Death from Above",
+    "manaCost": "{2}{W}",
+    "typeLine": "Legendary Creature — Mutant Ninja Bird",
+    "oracleText": "Flying\nWhen Koya enters, exile up to one other target creature. At the beginning of the next end step, you may pay {3}{B}. If you don't, return that card to the battlefield under its owner's control.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 1
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one other target creature"
+                            },
+                            "destination": "Exile",
+                            "linkToSource": true
+                        },
+                        {
+                            "type": "CreateDelayedTrigger",
+                            "step": "END",
+                            "effect": {
+                                "type": "PayOrSuffer",
+                                "cost": {
+                                    "type": "PayAtom",
+                                    "atom": {
+                                        "type": "AtomMana",
+                                        "cost": "{3}{B}"
+                                    }
+                                },
+                                "suffer": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "GatherCards",
+                                            "source": "FromLinkedExile",
+                                            "storeAs": "koyaExile"
+                                        },
+                                        {
+                                            "type": "MoveCollection",
+                                            "from": "koyaExile",
+                                            "destination": {
+                                                "type": "ToZone",
+                                                "zone": "Battlefield"
+                                            },
+                                            "underOwnersControl": true
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "creature",
+                        "excludeSelf": true
+                    },
+                    "id": "up to one other target creature"
+                },
+                "descriptionOverride": "When Koya enters, exile up to one other target creature. At the beginning of the next end step, you may pay {3}{B}. If you don't, return that card to the battlefield under its owner's control."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "11",
+        "rarity": "UNCOMMON",
+        "artist": "Irina Nordsol",
+        "flavorText": "\"Hello, prey.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/a/7a4f1ccc-2225-4cd0-abef-0eb7a8eae9cf.jpg?1771586885"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
+    ]
+}
+
 // Krang, Master Mind
 {
     "name": "Krang, Master Mind",
@@ -4638,6 +5204,69 @@
     ]
 }
 
+// Madame Null, Power Broker
+{
+    "name": "Madame Null, Power Broker",
+    "manaCost": "{2}{B}",
+    "typeLine": "Legendary Creature — Demon Advisor",
+    "oracleText": "Deathtouch\nWhenever another creature you control enters, you may pay life equal to its power. If you do, put that many +1/+1 counters on it.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "keywords": [
+        "DEATHTOUCH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayDynamicLife",
+                            "amount": {
+                                "type": "EntityProperty",
+                                "entity": "Triggering",
+                                "numericProperty": "Power"
+                            }
+                        }
+                    },
+                    "then": {
+                        "type": "AddDynamicCounters",
+                        "counterType": "+1/+1",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "Triggering",
+                            "numericProperty": "Power"
+                        },
+                        "target": "TriggeringEntity"
+                    }
+                },
+                "descriptionOverride": "Whenever another creature you control enters, you may pay life equal to its power. If you do, put that many +1/+1 counters on it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "rarity": "RARE",
+        "artist": "Irina Nordsol",
+        "flavorText": "\"We suffered a bit of a setback tonight, but rest assured: We'll have the planet purged and primed for you right on schedule.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/e/4e712d5c-d6fe-40bb-b8e5-5f50c6ea8d4f.jpg?1769005736"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Make Your Move
 {
     "name": "Make Your Move",
@@ -4904,6 +5533,92 @@
     "colorIdentityOverride": [
         "BLUE",
         "RED"
+    ]
+}
+
+// Michelangelo's Technique
+{
+    "name": "Michelangelo's Technique",
+    "manaCost": "{4}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Sneak {3}{G} (You may cast this spell for {3}{G} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nLook at the top eight cards of your library. Put up to two creature cards with total mana value 6 or less from among them onto the battlefield and the rest on the bottom of your library in a random order.",
+    "keywords": [
+        "SNEAK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Sneak",
+            "cost": "{3}{G}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 8
+                        }
+                    },
+                    "storeAs": "looked"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "looked",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    },
+                    "filter": "creature",
+                    "storeSelected": "toBattlefield",
+                    "storeRemainder": "toBottom",
+                    "prompt": "Put up to two creature cards with total mana value 6 or less onto the battlefield",
+                    "selectedLabel": "Put onto the battlefield",
+                    "remainderLabel": "Put on the bottom of your library",
+                    "showAllCards": true,
+                    "restrictions": [
+                        {
+                            "type": "TotalManaValueAtMost",
+                            "max": 6
+                        }
+                    ]
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "toBattlefield",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield"
+                    }
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "toBottom",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Library",
+                        "placement": "Bottom"
+                    },
+                    "order": "Random"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "122",
+        "rarity": "RARE",
+        "artist": "Dominik Mayer",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/a/3a63c06a-7c59-4b72-b916-e5b6ad78c684.jpg?1769006772"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -5948,6 +6663,131 @@
         "BLUE",
         "RED"
     ]
+}
+
+// Northampton Farm
+{
+    "name": "Northampton Farm",
+    "manaCost": "",
+    "typeLine": "Land",
+    "oracleText": "{T}: Add {C}.\n{1}, {T}: Exile target creature you own.\n{2}, {T}, Sacrifice this land: Return a creature card exiled with this land to the battlefield under your control. Return each other card exiled with this land to its owner's hand.",
+    "script": {
+        "activatedAbilities": [
+            {
+                "id": "ability_1",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "AddColorlessMana",
+                    "amount": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                "isManaAbility": true
+            },
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you own"
+                    },
+                    "destination": "Exile",
+                    "linkToSource": true
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature own:you"
+                        },
+                        "id": "target creature you own"
+                    }
+                ]
+            },
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        "CostTap",
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "exiled"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "exiled",
+                            "selection": {
+                                "type": "ChooseExactly",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "filter": "creature",
+                            "storeSelected": "toBattlefield",
+                            "storeRemainder": "toHand",
+                            "prompt": "Return a creature card to the battlefield under your control",
+                            "selectedLabel": "Return to the battlefield",
+                            "remainderLabel": "Return to owner's hand",
+                            "showAllCards": true
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toBattlefield",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield"
+                            }
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "toHand",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "188",
+        "rarity": "RARE",
+        "artist": "Marina Ortega Lorente",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/b/dbca168e-095f-4fbc-88f8-3048d83caf94.jpg?1769006600"
+    }
 }
 
 // Novel Nunchaku
@@ -7273,6 +8113,92 @@
     ]
 }
 
+// Raphael, Most Attitude
+{
+    "name": "Raphael, Most Attitude",
+    "manaCost": "{3}{R}",
+    "typeLine": "Legendary Creature — Mutant Ninja Turtle",
+    "oracleText": "Menace\nAlliance — Whenever another creature you control enters, you may exile the top card of your library.\nWhenever Raphael attacks, until end of turn, you may play a card exiled with Raphael.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "creature ctrl:you",
+                    "to": "Battlefield"
+                },
+                "binding": "OTHER",
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Composite",
+                        "effects": [
+                            {
+                                "type": "GatherCards",
+                                "source": {
+                                    "type": "TopOfLibrary",
+                                    "count": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                },
+                                "storeAs": "raphaelTop"
+                            },
+                            {
+                                "type": "MoveCollection",
+                                "from": "raphaelTop",
+                                "destination": {
+                                    "type": "ToZone",
+                                    "zone": "Exile"
+                                },
+                                "linkToSource": true
+                            }
+                        ]
+                    }
+                },
+                "descriptionOverride": "Alliance — Whenever another creature you control enters, you may exile the top card of your library."
+            },
+            {
+                "id": "ability_2",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": "FromLinkedExile",
+                            "storeAs": "raphaelExile"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "raphaelExile"
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever Raphael attacks, until end of turn, you may play a card exiled with Raphael."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "101",
+        "rarity": "UNCOMMON",
+        "artist": "Thomas Chamberlain-Keen",
+        "imageUri": "https://cards.scryfall.io/normal/front/8/8/88385a87-f931-409f-8a21-250f0866d63d.jpg?1771502673"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Raphael, Tough Turtle
 {
     "name": "Raphael, Tough Turtle",
@@ -7446,6 +8372,75 @@
     ]
 }
 
+// Ray Fillet, Man Ray
+{
+    "name": "Ray Fillet, Man Ray",
+    "manaCost": "{3}{U}",
+    "typeLine": "Legendary Creature — Fish Mutant",
+    "oracleText": "Flying\nWhen Ray Fillet enters, create a Mutagen token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")\n{2}, Remove a +1/+1 counter from a creature you control: Draw a card.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 3
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Mutagen"
+                },
+                "descriptionOverride": "When Ray Fillet enters, create a Mutagen token."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{2}"
+                            }
+                        },
+                        {
+                            "type": "CostRemovePlusOnePlusOneCounters",
+                            "filter": "creature ctrl:you",
+                            "count": 1
+                        }
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "49",
+        "rarity": "UNCOMMON",
+        "artist": "Mirko Failoni",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/4/14e0892c-a556-43c3-974f-6be44188da2e.jpg?1771502589"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Renet, Temporal Apprentice
 {
     "name": "Renet, Temporal Apprentice",
@@ -7499,6 +8494,57 @@
         "artist": "Yuhong Ding",
         "flavorText": "\"You guys don't get sick during time travel, do you?\"",
         "imageUri": "https://cards.scryfall.io/normal/front/2/a/2ae30766-c858-4f4e-a042-14af55698cb2.jpg?1769005718"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
+// Retro-Mutation
+{
+    "name": "Retro-Mutation",
+    "manaCost": "{2}{U}",
+    "typeLine": "Enchantment — Aura",
+    "oracleText": "Flash\nEnchant creature\nEnchanted creature is a Turtle with base power and toughness 0/1. It can't attack and loses all abilities. (It also loses all other creature types.)",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "TransformPermanent",
+                "setCardTypes": [
+                    "CREATURE"
+                ],
+                "setSubtypes": [
+                    "Turtle"
+                ]
+            },
+            {
+                "type": "SetBasePowerToughnessStatic",
+                "power": 0,
+                "toughness": 1
+            },
+            {
+                "type": "CantAttack",
+                "filter": {
+                    "baseFilter": "permanent",
+                    "scope": "AttachedTo"
+                }
+            },
+            "LoseAllAbilities"
+        ],
+        "auraTarget": {
+            "type": "TargetObject",
+            "filter": {
+                "baseFilter": "creature"
+            }
+        }
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "artist": "Leonardo Santanna",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/a/4af284ba-fa54-43c5-8c76-3e1128957452.jpg?1771586820"
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -7878,6 +8924,147 @@
     },
     "colorIdentityOverride": [
         "GREEN"
+    ]
+}
+
+// Sewer-veillance Cam
+{
+    "name": "Sewer-veillance Cam",
+    "manaCost": "{U}",
+    "typeLine": "Artifact",
+    "oracleText": "Flash\nWhen this artifact enters or leaves the battlefield, you may tap or untap target creature.\n{3}{U}, Sacrifice this artifact: Draw two cards.",
+    "keywords": [
+        "FLASH"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature"
+                                    }
+                                },
+                                "description": "Tap that creature"
+                            },
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature"
+                                    },
+                                    "tap": false
+                                },
+                                "description": "Untap that creature"
+                            }
+                        ],
+                        "countsAsModalSpell": false
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                },
+                "descriptionOverride": "When this artifact enters, you may tap or untap target creature."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield"
+                },
+                "effect": {
+                    "type": "Gated",
+                    "gate": "Gate.MayDecide",
+                    "then": {
+                        "type": "Modal",
+                        "modes": [
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature"
+                                    }
+                                },
+                                "description": "Tap that creature"
+                            },
+                            {
+                                "effect": {
+                                    "type": "TapUntap",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target creature"
+                                    },
+                                    "tap": false
+                                },
+                                "description": "Untap that creature"
+                            }
+                        ],
+                        "countsAsModalSpell": false
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "creature"
+                    },
+                    "id": "target creature"
+                },
+                "descriptionOverride": "When this artifact leaves the battlefield, you may tap or untap target creature."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_3",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{3}{U}"
+                            }
+                        },
+                        "CostSacrificeSelf"
+                    ]
+                },
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "53",
+        "artist": "Nicholas Gregory",
+        "flavorText": "No one in New York was going to notice one more cockroach.",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/b/ab47a37b-b66d-4f70-9bf0-4d5ed6b518f3.jpg?1779102308"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
     ]
 }
 
@@ -10008,6 +11195,104 @@
     ]
 }
 
+// Turtle Van
+{
+    "name": "Turtle Van",
+    "manaCost": "{3}",
+    "typeLine": "Artifact — Vehicle",
+    "oracleText": "Whenever this Vehicle attacks, put a +1/+1 counter on target creature that crewed it this turn. Then if that creature is a Mutant, Ninja, or Turtle, double the number of +1/+1 counters on it.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 4
+    },
+    "keywords": [
+        "CREW"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Numeric",
+            "keyword": "CREW",
+            "n": 1
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature that crewed it this turn"
+                            }
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": {
+                                "type": "Gate.WhenCondition",
+                                "condition": {
+                                    "type": "EntityMatches",
+                                    "entity": {
+                                        "type": "ContextTarget",
+                                        "index": 0
+                                    },
+                                    "filter": {
+                                        "cardPredicates": [
+                                            "IsCreature",
+                                            {
+                                                "type": "HasAnyOfSubtypes",
+                                                "subtypes": [
+                                                    "Mutant",
+                                                    "Ninja",
+                                                    "Turtle"
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            },
+                            "then": {
+                                "type": "DoubleCounters",
+                                "target": {
+                                    "type": "BoundVariable",
+                                    "name": "target creature that crewed it this turn"
+                                }
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": {
+                            "cardPredicates": [
+                                "IsCreature"
+                            ],
+                            "statePredicates": [
+                                "CrewedOrSaddledSourceThisTurn"
+                            ]
+                        }
+                    },
+                    "id": "target creature that crewed it this turn"
+                },
+                "descriptionOverride": "Whenever this Vehicle attacks, put a +1/+1 counter on target creature that crewed it this turn. Then if that creature is a Mutant, Ninja, or Turtle, double the number of +1/+1 counters on it."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "181",
+        "rarity": "RARE",
+        "artist": "Jakob Eirich",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/c/fce6a8b6-b43c-4045-9378-97b2463f9b4d.jpg?1769006474"
+    }
+}
+
 // Uneasy Alliance
 {
     "name": "Uneasy Alliance",
@@ -10148,6 +11433,82 @@
     },
     "colorIdentityOverride": [
         "BLUE"
+    ]
+}
+
+// Venus, Torn Between Worlds
+{
+    "name": "Venus, Torn Between Worlds",
+    "manaCost": "{4}{G}",
+    "typeLine": "Legendary Creature — Mutant Frog Turtle",
+    "oracleText": "Whenever Venus is dealt damage, put that many +1/+1 counters on her. (She must survive the damage to get the counters.)\nWhenever a creature you control with a counter on it deals combat damage to a player, you may pay {U}. If you do, draw a card.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "DamageReceivedEvent",
+                "effect": {
+                    "type": "AddDynamicCounters",
+                    "counterType": "+1/+1",
+                    "amount": {
+                        "type": "ContextProperty",
+                        "key": "TRIGGER_DAMAGE_AMOUNT"
+                    },
+                    "target": "Self"
+                },
+                "descriptionOverride": "Whenever Venus is dealt damage, put that many +1/+1 counters on her."
+            },
+            {
+                "id": "ability_2",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer",
+                    "sourceFilter": {
+                        "cardPredicates": [
+                            "IsCreature"
+                        ],
+                        "statePredicates": [
+                            "HasAnyCounter"
+                        ],
+                        "controllerPredicate": "ControlledByYou"
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Gated",
+                    "gate": {
+                        "type": "Gate.MayPay",
+                        "cost": {
+                            "type": "PayManaCost",
+                            "cost": "{U}"
+                        }
+                    },
+                    "then": {
+                        "type": "DrawCards",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    }
+                },
+                "descriptionOverride": "Whenever a creature you control with a counter on it deals combat damage to a player, you may pay {U}. If you do, draw a card."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "136",
+        "rarity": "UNCOMMON",
+        "artist": "April Prime",
+        "flavorText": "Built from scraps. Defined by self.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/c/fcb59b16-3d76-478e-9306-969dd2cb1b5a.jpg?1771586980"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 

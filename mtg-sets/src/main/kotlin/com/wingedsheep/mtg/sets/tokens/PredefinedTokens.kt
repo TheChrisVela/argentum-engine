@@ -460,6 +460,10 @@ object PredefinedTokens {
             effect = Effects.AddCounters(Counters.PLUS_ONE_PLUS_ONE, 1, creature)
             timing = TimingRule.SorcerySpeed
         }
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/6/5/6559c423-449c-4e8e-8384-3ce78183e317.jpg?1760102885"
+        }
     }
 
     /**

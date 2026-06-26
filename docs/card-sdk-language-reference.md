@@ -341,6 +341,11 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 ### Life
 
 - `GainLife(amount, target?)` — target gains life (default: controller).
+- `PayDynamicLife(amount: DynamicAmount, payer?)` — pay life equal to a `DynamicAmount` (e.g.
+  "pay life equal to its power" via `EntityProperty(Triggering, Power)`), evaluated at resolution.
+  The dynamic, payer-parametric twin of the fixed `PayLifeEffect`; use it as the `cost` of an
+  `OptionalCostEffect` (`Gate.MayPay`) so the same amount can also feed the `ifPaid` effect. A
+  non-positive evaluated amount pays nothing and still counts as paid (CR 119.4).
 - `LoseLife(amount, target)` — target loses life.
 - `SetLifeTotal(amount, target)` — set target's life total to N.
 - `ExchangeLifeAndPower(target)` — swap target's power with controller's life total.
@@ -4418,6 +4423,11 @@ Numbers computed at resolution time.
     `Add(Fixed(2), SpellsCastThisTurn(Player.You, excludeSelf = true))`.
   - Magebane Lizard ("the number of noncreature spells they've cast this turn"):
     `SpellsCastThisTurn(Player.TriggeringPlayer, GameObjectFilter.Noncreature)`.
+  - `countDistinctCardTypes` (default `false`) switches the aggregation from *count of spells* to
+    *count of distinct card types among them* — April O'Neil, Hacktivist ("draw a card for each card
+    type among spells you've cast this turn"): `SpellsCastThisTurn(Player.You, countDistinctCardTypes
+    = true)`. An artifact creature spell contributes both Artifact and Creature; types are unioned
+    across the matching records (and across every player the ref resolves to).
   - Pairs with the `YouCastSpellsThisTurn` **condition** (§ conditions) — that gates a yes/no
     threshold, this yields the count.
 - `CraftedMaterialsTotalPower` — total printed power of the cards exiled to craft the source

@@ -1088,6 +1088,10 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
      * @param filter Spell characteristics to match (default [GameObjectFilter.Any])
      * @param excludeSelf Exclude the resolving spell's own cast record (default false)
      * @param fromZone Restrict to spells cast from this zone, independently of [filter] (default any zone)
+     * @param countDistinctCardTypes When true, instead of counting matching spells, count the
+     *   *distinct card types* among them (April O'Neil, Hacktivist: "for each card type among
+     *   spells you've cast this turn"). An artifact creature spell contributes both Artifact and
+     *   Creature. Card types are unioned across every player resolved by [player].
      */
     @SerialName("SpellsCastThisTurn")
     @Serializable
@@ -1095,7 +1099,8 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
         val player: Player = Player.You,
         val filter: GameObjectFilter = GameObjectFilter.Any,
         val excludeSelf: Boolean = false,
-        val fromZone: Zone? = null
+        val fromZone: Zone? = null,
+        val countDistinctCardTypes: Boolean = false
     ) : DynamicAmount {
         override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount {
             val newFilter = filter.applyTextReplacement(replacer)
@@ -1103,9 +1108,16 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
         }
         override val description: String = buildString {
             append("the number of ")
-            if (excludeSelf) append("other ")
-            if (filter == GameObjectFilter.Any) append("spells")
-            else append("${filter.description} spells")
+            if (countDistinctCardTypes) {
+                append("card types among ")
+                if (excludeSelf) append("other ")
+                if (filter != GameObjectFilter.Any) append("${filter.description} ")
+                append("spells")
+            } else {
+                if (excludeSelf) append("other ")
+                if (filter == GameObjectFilter.Any) append("spells")
+                else append("${filter.description} spells")
+            }
             append(" ")
             when (player) {
                 Player.You -> append("you've cast")
