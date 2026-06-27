@@ -76,7 +76,9 @@ object SneakWindow {
     ): com.wingedsheep.sdk.core.ManaCost? {
         for (permId in state.getBattlefield()) {
             val container = state.getEntity(permId) ?: continue
-            if (container.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId != playerId) continue
+            // Projected controller — a control-changing effect on the granting permanent must move
+            // the grant with it (CR 613), consistent with unblockedAttackers above.
+            if (state.projectedState.getController(permId) != playerId) continue
             val defId = container.get<com.wingedsheep.engine.state.components.identity.CardComponent>()?.cardDefinitionId ?: continue
             val def = cardRegistry.getCard(defId) ?: continue
             val classLevel = container.get<com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent>()?.currentLevel

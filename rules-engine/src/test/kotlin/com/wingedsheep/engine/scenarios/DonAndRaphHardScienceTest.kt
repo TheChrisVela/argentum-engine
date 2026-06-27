@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 
 /**
@@ -58,5 +59,42 @@ class DonAndRaphHardScienceTest : FunSpec({
         cast.error shouldBe null
         // The rider is one-shot: consumed by that cast.
         d.state.pendingNextSpellAffinities.size shouldBe 0
+    }
+
+    test("an unused affinity rider does not leak into the next turn (it's a 'this turn' grant)") {
+        val d = createDriver()
+        val me = d.player1
+        val opp = d.player2
+
+        val donRaph = d.putCreatureOnBattlefield(me, "Don & Raph, Hard Science")
+        d.removeSummoningSickness(donRaph)
+
+        d.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        d.declareAttackers(me, listOf(donRaph), opp)
+        // Resolve the attack trigger, which arms the affinity rider.
+        var guard = 0
+        while (d.state.pendingNextSpellAffinities.isEmpty() && guard < 20) {
+            if (d.state.pendingDecision != null) d.autoResolveDecision() else d.bothPass()
+            guard++
+        }
+        d.state.pendingNextSpellAffinities.size shouldBe 1
+
+        // Cast NO matching spell this turn, then cross the turn boundary. TurnManager must clear the
+        // turn-scoped rider so a later noncreature spell isn't wrongly given affinity.
+        val startTurn = d.state.turnNumber
+        guard = 0
+        while (d.state.turnNumber == startTurn && guard < 500) {
+            if (d.state.gameOver) throw AssertionError("Game ended before the turn advanced")
+            when {
+                d.state.pendingDecision != null -> d.autoResolveDecision()
+                d.state.priorityPlayerId != null -> {
+                    d.autoSubmitCombatDeclarationIfNeeded()
+                    d.passPriority(d.state.priorityPlayerId!!)
+                }
+            }
+            guard++
+        }
+
+        d.state.pendingNextSpellAffinities.shouldBeEmpty()
     }
 })

@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
 
 /**
  * Tests for the `CreaturesAttackYourOpponent` trigger (Party Dude level 3): fires when one or more
@@ -47,5 +48,38 @@ class CreaturesAttackYourOpponentTriggerTest : FunSpec({
         d.bothPass() // resolve the watcher's trigger
 
         d.assertLifeTotal(me, 23) // 20 + 3 from the trigger
+    }
+
+    test("does NOT fire when the controller themself is attacked") {
+        val d = createDriver()
+        val me = d.player1
+        val opp = d.player2
+
+        // Watcher belongs to `me`; the attacker belongs to `opp`. When opp attacks me, from the
+        // watcher's perspective MY opponent (opp) is NOT attacked — I am — so it must stay silent.
+        // This is the whole distinction from the "CreaturesAttackYou" trigger.
+        d.removeSummoningSickness(d.putCreatureOnBattlefield(me, "Test Attack Watcher"))
+        val attacker = d.putCreatureOnBattlefield(opp, "Test Bear")
+        d.removeSummoningSickness(attacker)
+
+        // Advance to opp's declare-attackers step (skip past my own combat with no attackers).
+        var guard = 0
+        while (!(d.state.activePlayerId == opp && d.state.step == Step.DECLARE_ATTACKERS) && guard < 500) {
+            if (d.state.gameOver) throw AssertionError("Game ended before opp's declare-attackers step")
+            when {
+                d.state.pendingDecision != null -> d.autoResolveDecision()
+                d.state.priorityPlayerId != null -> {
+                    d.autoSubmitCombatDeclarationIfNeeded()
+                    d.passPriority(d.state.priorityPlayerId!!)
+                }
+            }
+            guard++
+        }
+
+        d.declareAttackers(opp, listOf(attacker), me)
+        // The watcher's trigger would be on the stack here if it had fired (cf. the positive test);
+        // an empty stack proves it didn't.
+        d.state.stack.isEmpty() shouldBe true
+        d.assertLifeTotal(me, 20)
     }
 })
