@@ -146,10 +146,9 @@ object ZoneTransitionService {
         val fromZone = currentZoneKey.zoneType
         val leavingBattlefield = fromZone == Zone.BATTLEFIELD
 
-        // 2. Capture last-known info if leaving battlefield
-        var lastKnownCounterCount = 0
-        var lastKnownMinusOneMinusOneCounterCount = 0
-        var lastKnownTotalCounterCount = 0
+        // 2. Capture last-known info if leaving battlefield (assembled into one EntitySnapshot
+        // below). The +1/+1, -1/-1, and total counter counts are derived from this map by the
+        // snapshot's accessors, so they are no longer captured as separate scalars.
         var lastKnownCounters: Map<String, Int> = emptyMap()
         var lastKnownPower: Int? = null
         var lastKnownToughness: Int? = null
@@ -168,10 +167,6 @@ object ZoneTransitionService {
 
         if (leavingBattlefield) {
             val countersComponent = container.get<CountersComponent>()
-            lastKnownCounterCount = countersComponent?.getCount(CounterType.PLUS_ONE_PLUS_ONE) ?: 0
-            lastKnownMinusOneMinusOneCounterCount =
-                countersComponent?.getCount(CounterType.MINUS_ONE_MINUS_ONE) ?: 0
-            lastKnownTotalCounterCount = countersComponent?.counters?.values?.sum() ?: 0
             lastKnownCounters = countersComponent?.counters
                 ?.filterValues { it > 0 }
                 ?.mapKeys { (type, _) ->
@@ -435,22 +430,28 @@ object ZoneTransitionService {
                 fromZone = fromZone,
                 toZone = actualDestZone,
                 ownerId = ownerId,
-                lastKnownController = if (leavingBattlefield) controllerId else null,
-                lastKnownCounterCount = lastKnownCounterCount,
-                lastKnownMinusOneMinusOneCounterCount = lastKnownMinusOneMinusOneCounterCount,
-                lastKnownTotalCounterCount = lastKnownTotalCounterCount,
-                lastKnownCounters = lastKnownCounters,
-                lastKnownWasToken = lastKnownWasToken,
-                lastKnownPower = lastKnownPower,
-                lastKnownToughness = lastKnownToughness,
-                lastKnownTypeLine = lastKnownTypeLine,
-                lastKnownKeywords = lastKnownKeywords,
-                lastKnownLostAllAbilities = lastKnownLostAllAbilities,
-                lastKnownAttachedTo = if (leavingBattlefield) lastKnownAttachedTo else null,
-                lastKnownBlockingOrBlockedByIds = if (leavingBattlefield) lastKnownBlockingOrBlockedByIds else emptyList(),
-                lastKnownCardDefinitionId = if (leavingBattlefield) cardComponent.cardDefinitionId else null,
-                lastKnownDamageDealtByPlayers = lastKnownDamageDealtByPlayers,
-                lastKnownDamageSources = lastKnownDamageSources,
+                // One frozen snapshot of the permanent as it last existed on the battlefield
+                // (CR 113.7a / 603.10 / 608.2h), or null when this transition didn't leave the
+                // battlefield. The former ~16 lastKnown* scalars are now its fields; the counter
+                // counts derive from its `counters` map (plusOnePlusOneCounters / etc.).
+                lastKnown = if (leavingBattlefield) {
+                    com.wingedsheep.engine.state.components.stack.EntitySnapshot(
+                        entityId = entityId,
+                        power = lastKnownPower,
+                        toughness = lastKnownToughness,
+                        controllerId = controllerId,
+                        counters = lastKnownCounters,
+                        keywords = lastKnownKeywords,
+                        lostAllAbilities = lastKnownLostAllAbilities,
+                        typeLine = lastKnownTypeLine,
+                        cardDefinitionId = cardComponent.cardDefinitionId,
+                        attachedTo = lastKnownAttachedTo,
+                        blockingOrBlockedByIds = lastKnownBlockingOrBlockedByIds,
+                        wasToken = lastKnownWasToken,
+                        damageDealtByPlayers = lastKnownDamageDealtByPlayers,
+                        damageSources = lastKnownDamageSources,
+                    )
+                } else null,
                 xValue = lastKnownCastX,
                 wasSacrificed = wasSacrificed
             )

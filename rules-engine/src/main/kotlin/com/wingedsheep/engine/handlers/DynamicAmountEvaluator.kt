@@ -1,7 +1,10 @@
 package com.wingedsheep.engine.handlers
 
 import com.wingedsheep.engine.core.GameLimits
+import com.wingedsheep.engine.handlers.effects.LkiPolicy
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.lkiPolicyFor
+import com.wingedsheep.engine.handlers.effects.lkiSnapshotFor
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -318,76 +321,23 @@ class DynamicAmountEvaluator(
                     return context.enchantedCreatureLastKnownPower ?: 0
                 }
                 if (entityId == null) return 0
-                // Sacrificed entities already left battlefield — consult the P/T snapshot
-                // captured at sacrifice time (Rule 112.7a / 608.2h — "as it last existed
-                // on the battlefield") before falling through to base stats.
-                if (amount.entity is EntityReference.Sacrificed) {
-                    val snapshot = context.sacrificedPermanents.firstOrNull { it.entityId == entityId }
-                    when (amount.numericProperty) {
-                        is EntityNumericProperty.Power ->
-                            snapshot?.power?.let { return it }
-                        is EntityNumericProperty.Toughness ->
-                            snapshot?.toughness?.let { return it }
-                        else -> { /* fall through */ }
-                    }
-                    return resolveNumericProperty(state, entityId, amount.numericProperty, context, useProjected = false)
-                }
-                // The source sacrificing/exiling itself as a cost has already left the battlefield
-                // by resolution — consult the P/T snapshot captured at cost-payment time (CR 112.7a /
-                // 608.2h) so "Sacrifice this creature: it deals damage equal to its power" reads the
-                // pre-sacrifice power rather than zero (Ghitu Fire-Eater, Cinder Shade, Blazing Bomb's
-                // Blow Up). Mirrors LastKnownSourceCounters. Only intercepts when a snapshot exists,
-                // so live on-battlefield Source reads are unaffected.
-                if (amount.entity is EntityReference.Source &&
+                // Last-known-information fallback (CR 112.7a / 603.10 / 608.2h): one rule for every
+                // reference that reads a permanent after it has left the battlefield — a
+                // self-sacrificing source, or a sacrificed / tapped / chosen cost permanent. When
+                // such a reference resolves off the battlefield, read its captured snapshot's P/T
+                // before falling through to base characteristics. [LkiPolicy.LIVE_ONLY] references
+                // (targets, iteration, …) skip this and read the live board. Off the battlefield the
+                // projected P/T is null, so the final resolveNumericProperty yields base
+                // characteristics anyway — this replaces the former per-reference
+                // `useProjected = false` branches (Ghitu Fire-Eater, Heart-Piercer Manticore, …).
+                if (lkiPolicyFor(amount.entity) == LkiPolicy.LIVE_THEN_LKI &&
                     entityId !in state.getBattlefield()
                 ) {
-                    val snapshot = context.lastKnownSourceSnapshot?.takeIf { it.entityId == entityId }
+                    val snapshot = context.lkiSnapshotFor(amount.entity, entityId)
                     when (amount.numericProperty) {
                         is EntityNumericProperty.Power -> snapshot?.power?.let { return it }
                         is EntityNumericProperty.Toughness -> snapshot?.toughness?.let { return it }
-                        else -> { /* fall through */ }
-                    }
-                }
-                // Cost-storage reads of Power/Toughness mirror the Sacrificed path — the
-                // chosen entity may have left the battlefield (or never been on it, for an
-                // exile-zone pick) between cost payment and resolution (Rule 112.7a).
-                // Resolution order: live projected value if still on battlefield → snapshot
-                // captured at cost-pay time → base stats.
-                if (amount.entity is EntityReference.FromCostStorage) {
-                    val onBattlefield = entityId in state.getBattlefield()
-                    when (amount.numericProperty) {
-                        is EntityNumericProperty.Power,
-                        is EntityNumericProperty.Toughness -> {
-                            if (!onBattlefield) {
-                                val snapshot = context.chosenEntitySnapshots.firstOrNull { it.entityId == entityId }
-                                val snapVal = when (amount.numericProperty) {
-                                    is EntityNumericProperty.Power -> snapshot?.power
-                                    is EntityNumericProperty.Toughness -> snapshot?.toughness
-                                    else -> null
-                                }
-                                if (snapVal != null) return snapVal
-                                return resolveNumericProperty(state, entityId, amount.numericProperty, context, useProjected = false)
-                            }
-                        }
-                        else -> { /* fall through to projected path */ }
-                    }
-                    return resolveNumericProperty(state, entityId, amount.numericProperty, context, useProjected = true, explicitProjected = projectedState)
-                }
-                // Tap-as-cost reads of Power/Toughness mirror the Sacrificed path — the tapped
-                // permanent may have left the battlefield between cost payment and resolution
-                // (Rule 112.7a), so consult the snapshot captured at cost-pay time before falling
-                // back to live stats. (The Station-using-toughness substitution of CR 702.184c is
-                // NOT applied here — it is scoped to the station amount node, [DynamicAmount.
-                // StationCharge], so an unrelated "tap a creature: do X equal to its power" ability
-                // reads plain power.)
-                if (amount.entity is EntityReference.TappedAsCost &&
-                    entityId !in state.getBattlefield()
-                ) {
-                    val snapshot = context.tappedPermanentSnapshots.firstOrNull { it.entityId == entityId }
-                    when (amount.numericProperty) {
-                        is EntityNumericProperty.Power -> snapshot?.power?.let { return it }
-                        is EntityNumericProperty.Toughness -> snapshot?.toughness?.let { return it }
-                        else -> { /* fall through */ }
+                        else -> { /* fall through to base characteristics */ }
                     }
                 }
                 resolveNumericProperty(state, entityId, amount.numericProperty, context, useProjected = true, explicitProjected = projectedState)
@@ -401,7 +351,7 @@ class DynamicAmountEvaluator(
             // confines the substitution to station abilities.
             is DynamicAmount.StationCharge -> {
                 val entityId = context.tappedPermanents.firstOrNull() ?: return 0
-                val snapshot = context.tappedPermanentSnapshots.firstOrNull { it.entityId == entityId }
+                val snapshot = context.tappedEntitySnapshots.firstOrNull { it.entityId == entityId }
                 val useSnapshot = snapshot != null && entityId !in state.getBattlefield()
                 val power = if (useSnapshot) snapshot.power ?: 0
                     else resolveNumericProperty(state, entityId, EntityNumericProperty.Power, context, useProjected = true, explicitProjected = projectedState)

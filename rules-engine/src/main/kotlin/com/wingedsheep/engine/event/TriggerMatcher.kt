@@ -713,10 +713,10 @@ class TriggerMatcher(
             // captures the projected types/subtypes at the moment of leaving (e.g., a creature
             // that was a Food artifact only because of Ygra's continuous effect). The base
             // cardComponent.typeLine in the new zone has only the printed types.
-            val typeLine = if (event.fromZone == Zone.BATTLEFIELD && event.lastKnownTypeLine != null) {
-                event.lastKnownTypeLine
+            val typeLine = if (event.fromZone == Zone.BATTLEFIELD && event.lastKnown?.typeLine != null) {
+                event.lastKnown?.typeLine
             } else {
-                cardComponent?.typeLine ?: event.lastKnownTypeLine
+                cardComponent?.typeLine ?: event.lastKnown?.typeLine
             }
             val isFaceDown = entity?.has<FaceDownComponent>() == true
 
@@ -767,8 +767,8 @@ class TriggerMatcher(
                         // the creature is no longer on the battlefield and projected state won't
                         // have its keywords (e.g., Jackdaw Savior: "whenever a creature you control
                         // with flying dies").
-                        if (event.fromZone == Zone.BATTLEFIELD && event.lastKnownKeywords.isNotEmpty()) {
-                            if (predicate.keyword.name !in event.lastKnownKeywords) return false
+                        if (event.fromZone == Zone.BATTLEFIELD && event.lastKnown?.keywords?.isNotEmpty() == true) {
+                            if (predicate.keyword.name !in (event.lastKnown?.keywords ?: emptySet())) return false
                         } else {
                             if (!projected.hasKeyword(event.entityId, predicate.keyword)) return false
                         }
@@ -796,7 +796,7 @@ class TriggerMatcher(
                         // we check. For enter-battlefield events the entity is still in state
                         // and lastKnownWasToken is not populated — read TokenComponent live.
                         val isToken = if (event.fromZone == Zone.BATTLEFIELD) {
-                            event.lastKnownWasToken
+                            event.lastKnown?.wasToken == true
                         } else {
                             entity?.has<com.wingedsheep.engine.state.components.identity.TokenComponent>() == true
                         }
@@ -804,7 +804,7 @@ class TriggerMatcher(
                     }
                     is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsToken -> {
                         val isToken = if (event.fromZone == Zone.BATTLEFIELD) {
-                            event.lastKnownWasToken
+                            event.lastKnown?.wasToken == true
                         } else {
                             entity?.has<com.wingedsheep.engine.state.components.identity.TokenComponent>() == true
                         }
@@ -815,9 +815,9 @@ class TriggerMatcher(
                         if (cardComponent == null) return false
                         if (!matchesCardPredicate(
                                 predicate, cardComponent, projected, event.entityId, isFaceDown,
-                                lastKnownPower = event.lastKnownPower,
-                                lastKnownToughness = event.lastKnownToughness,
-                                lastKnownWasToken = event.lastKnownWasToken
+                                lastKnownPower = event.lastKnown?.power,
+                                lastKnownToughness = event.lastKnown?.toughness,
+                                lastKnownWasToken = event.lastKnown?.wasToken == true
                             )) return false
                     }
                 }
@@ -834,7 +834,7 @@ class TriggerMatcher(
             // always goes to its owner's graveyard regardless of who last controlled it
             // (CR 400.3, e.g. Soulcatchers' Aerie).
             trigger.filter.controllerPredicate?.let { pred ->
-                val effectiveController = event.lastKnownController ?: event.ownerId
+                val effectiveController = event.lastKnown?.controllerId ?: event.ownerId
                 val controllerMatches = pred.evaluateWith { leaf ->
                     when (leaf) {
                         is ControllerPredicate.ControlledByYou -> effectiveController == controllerId
@@ -861,7 +861,7 @@ class TriggerMatcher(
         lastKnownToughness: Int? = null,
         /**
          * Token-ness for zone-change triggers where the entity may already be gone
-         * (CR 704.5s sweeps tokens out of non-battlefield zones). Pass [ZoneChangeEvent.lastKnownWasToken]
+         * (CR 704.5s sweeps tokens out of non-battlefield zones). Pass [ZoneChangeEvent.lastKnown?.wasToken == true]
          * so `IsNontoken` / `IsToken` can still resolve. When `null`, the token bit is read
          * from the base state via the projected snapshot (entity must still exist).
          */
@@ -1532,8 +1532,8 @@ class TriggerMatcher(
             // the entity is live and the projected path applies.
             val leavingBattlefield = event.fromZone == Zone.BATTLEFIELD
             if (leavingBattlefield) {
-                val dyingPower = event.lastKnownPower
-                val dyingController = event.lastKnownController ?: event.ownerId
+                val dyingPower = event.lastKnown?.power
+                val dyingController = event.lastKnown?.controllerId ?: event.ownerId
                 if (dyingPower == null) false
                 else {
                     val projected = state.projectedState
@@ -1555,7 +1555,7 @@ class TriggerMatcher(
             // gone; gate against the counters captured on the event (LKI). For non-leave triggers
             // (e.g. ETB, to=BATTLEFIELD) the entity is live, so read its current counters.
             if (event.fromZone == Zone.BATTLEFIELD) {
-                event.lastKnownCounters.any { (type, count) ->
+                (event.lastKnown?.counters ?: emptyMap()).any { (type, count) ->
                     count > 0 && counterTypesMatch(predicate.counterType, type)
                 }
             } else {
@@ -1567,7 +1567,7 @@ class TriggerMatcher(
         }
         com.wingedsheep.sdk.scripting.predicates.StatePredicate.HasAnyCounter -> {
             if (event.fromZone == Zone.BATTLEFIELD) {
-                event.lastKnownTotalCounterCount > 0
+                (event.lastKnown?.totalCounters ?: 0) > 0
             } else {
                 val counters = state.getEntity(event.entityId)?.get<CountersComponent>()
                 counters?.counters?.values?.any { it > 0 } ?: false

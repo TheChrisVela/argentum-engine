@@ -31,83 +31,27 @@ data class ZoneChangeEvent(
     val toZone: Zone,
     val ownerId: EntityId,
     /**
-     * Last-known controller when leaving the battlefield. Differs from [ownerId] for stolen
-     * creatures (Threaten / Mind Control) and for tokens whose controller ≠ creator's owner.
-     * Trigger filters that scope "creatures that player controls" (e.g., "the creature with
-     * the greatest power among creatures that player controls" — Kraven the Hunter) read
-     * this in preference to [ownerId]. Null for non-battlefield transitions.
+     * Frozen last-known information (CR 113.7a / 603.10 / 608.2h) captured the instant this
+     * permanent left the battlefield: projected power/toughness, counters, keywords, type line,
+     * controller, the aura host it was attached to, combat pairings, token-ness, per-player damage,
+     * damage sources, and lost-abilities. `null` for any transition that did not leave the
+     * battlefield (entries, library→graveyard mill, etc.), so readers fall back to live state.
+     *
+     * This replaces what were ~16 parallel `lastKnown*` scalar fields. See [EntitySnapshot] for the
+     * per-field documentation, and its derived `plusOnePlusOneCounters` / `minusOneMinusOneCounters`
+     * / `totalCounters` accessors for the former counter-count scalars.
      */
-    val lastKnownController: EntityId? = null,
-    /** Last known +1/+1 counter count when leaving battlefield (for death triggers needing last known info) */
-    val lastKnownCounterCount: Int = 0,
-    /** Last known -1/-1 counter count when leaving battlefield (used by the persist keyword's "had no -1/-1 counters" check) */
-    val lastKnownMinusOneMinusOneCounterCount: Int = 0,
-    /** Last known total counter count (all counter types) when leaving battlefield. Used by triggers that care about any counter (e.g., Shadow Urchin). */
-    val lastKnownTotalCounterCount: Int = 0,
-    /** True if the leaving entity was a token. Used to suppress persist-style return triggers on tokens (Rule 704.5d — tokens cease to exist when they leave the battlefield). */
-    val lastKnownWasToken: Boolean = false,
-    /** Last known projected power when leaving battlefield (for trigger filters needing last known info) */
-    val lastKnownPower: Int? = null,
-    /** Last known projected toughness when leaving battlefield (for trigger filters needing last known info) */
-    val lastKnownToughness: Int? = null,
+    val lastKnown: com.wingedsheep.engine.state.components.stack.EntitySnapshot? = null,
     /** The original card name when this permanent entered as a copy (e.g., "Clever Impersonator") */
     val copyOfOriginalName: String? = null,
-    /** For auras: the entity this aura was attached to when it left the battlefield (for "enchanted creature dies" triggers) */
-    val lastKnownAttachedTo: EntityId? = null,
-    /**
-     * Creatures that were blocking, or blocked by, this creature when it left the battlefield
-     * (the union of its [com.wingedsheep.engine.state.components.combat.BlockedComponent] blockers
-     * and its [com.wingedsheep.engine.state.components.combat.BlockingComponent] blocked-attackers,
-     * CR 509). Captured as last-known information because the live combat cross-references are torn
-     * down as the creature leaves — read by "destroy all creatures blocking or blocked by it" dies
-     * triggers (Abu Ja'far). Empty for non-combat / non-battlefield transitions.
-     */
-    val lastKnownBlockingOrBlockedByIds: List<EntityId> = emptyList(),
-    /** Last known type line when leaving battlefield (for trigger detection when entity has been cleaned up, e.g., tokens) */
-    val lastKnownTypeLine: TypeLine? = null,
-    /**
-     * Last known card definition id when leaving battlefield. Needed so dies/leaves triggers can
-     * still be resolved for tokens after 704.5s cleans them out of the graveyard in the same SBA
-     * pass as they were put there.
-     */
-    val lastKnownCardDefinitionId: String? = null,
-    /** Last known projected keywords when leaving battlefield (for trigger filters needing keyword info after death) */
-    val lastKnownKeywords: Set<String> = emptySet(),
-    /**
-     * True if the leaving entity had its abilities stripped (via a layer-6 `RemoveAllAbilities`
-     * floating effect) at the moment it left the battlefield. CR 603.10a — leaves-the-battlefield
-     * triggers look back in time at the object's appearance immediately prior to the event — so
-     * the dies / leaves-battlefield detector reads this snapshot, not the (now-cleared) projected
-     * `lostAllAbilities` flag.
-     */
-    val lastKnownLostAllAbilities: Boolean = false,
-    /**
-     * Last-known counter map (counter-type-string → count) when leaving the battlefield.
-     * Used by triggers that move every counter (e.g., Essence Channeler), not just one
-     * specific kind. Counter-type strings match the wire format used on counter effects
-     * (e.g., "+1/+1", "-1/-1", "loyalty", "charge", ...).
-     */
-    val lastKnownCounters: Map<String, Int> = emptyMap(),
     /**
      * The `{X}` associated with this object's zone change. On entry to the battlefield it is the X
      * of the spell that put the permanent there (for ETB triggers using `DynamicAmount.XValue`). On
      * leaving the battlefield it is the cast-time X carried by `CastChoicesComponent`, captured as
-     * last-known information so dies/leaves triggers can still read `DynamicAmount.CastX`.
+     * last-known information so dies/leaves triggers can still read `DynamicAmount.CastX`. Kept off
+     * [lastKnown] because, unlike that leave-only snapshot, it is also populated on entry.
      */
     val xValue: Int? = null,
-    /**
-     * Per-player damage dealt to this entity this turn (keyed by source-controller player id),
-     * captured at the moment of leaving the battlefield. Read by LTB triggers like Grothama:
-     * "each player draws cards equal to the damage dealt to ~ this turn by sources they controlled."
-     */
-    val lastKnownDamageDealtByPlayers: Map<EntityId, Int> = emptyMap(),
-    /**
-     * Last-known snapshots of the sources that dealt damage to this entity this turn, captured at
-     * the moment of leaving the battlefield. Read by observer death triggers of the form "whenever
-     * another creature dealt damage this turn by [a source matching a filter] dies" (Shelob, Child
-     * of Ungoliant) so a source that died in the same combat is still evaluated against the filter.
-     */
-    val lastKnownDamageSources: Set<com.wingedsheep.engine.state.components.battlefield.DamageSourceLki> = emptySet(),
     /**
      * True when this battlefield exit was a sacrifice (CR 701.21). Lets leaves/dies triggers
      * distinguish a sacrifice from any other way a permanent is put into the graveyard —

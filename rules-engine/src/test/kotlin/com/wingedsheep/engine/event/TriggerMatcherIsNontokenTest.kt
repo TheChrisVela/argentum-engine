@@ -122,7 +122,7 @@ class TriggerMatcherIsNontokenTest : FunSpec({
             fromZone = Zone.BATTLEFIELD,
             toZone = Zone.HAND,
             ownerId = driver.player1,
-            lastKnownWasToken = false,
+            lastKnown = com.wingedsheep.engine.state.components.stack.EntitySnapshot(entityId = bounced, wasToken = false),
         )
 
         val triggers = detectorFor(driver).detectTriggers(driver.state, listOf(event))
@@ -147,7 +147,7 @@ class TriggerMatcherIsNontokenTest : FunSpec({
             fromZone = Zone.BATTLEFIELD,
             toZone = Zone.HAND,
             ownerId = driver.player1,
-            lastKnownWasToken = true,
+            lastKnown = com.wingedsheep.engine.state.components.stack.EntitySnapshot(entityId = token, wasToken = true),
         )
 
         val triggers = detectorFor(driver).detectTriggers(driver.state, listOf(event))
@@ -208,7 +208,7 @@ class TriggerMatcherIsNontokenTest : FunSpec({
             fromZone = Zone.BATTLEFIELD,
             toZone = Zone.HAND,
             ownerId = driver.player1,
-            lastKnownWasToken = true,
+            lastKnown = com.wingedsheep.engine.state.components.stack.EntitySnapshot(entityId = token, wasToken = true),
         )
 
         val triggers = detectorFor(driver).detectTriggers(driver.state, listOf(event))

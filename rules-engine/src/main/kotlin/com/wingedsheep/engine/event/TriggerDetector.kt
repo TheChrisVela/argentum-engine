@@ -2038,10 +2038,10 @@ class TriggerDetector(
         for (event in events) {
             if (event !is ZoneChangeEvent) continue
             if (event.fromZone != Zone.BATTLEFIELD || event.toZone != Zone.GRAVEYARD) continue
-            val typeLine = event.lastKnownTypeLine
+            val typeLine = event.lastKnown?.typeLine
                 ?: state.getEntity(event.entityId)?.get<CardComponent>()?.typeLine
             if (typeLine?.isCreature != true) continue
-            val controllerId = event.lastKnownController ?: event.ownerId
+            val controllerId = event.lastKnown?.controllerId ?: event.ownerId
             deathsByController.getOrPut(controllerId) { mutableListOf() }
                 .add(CreatureDeathInfo(event.entityId, typeLine))
         }
@@ -2078,8 +2078,8 @@ class TriggerDetector(
             // Face-down permanents have no abilities (Rule 708.2).
             if (container?.has<FaceDownComponent>() == true) continue
             val cardDefId = container?.get<CardComponent>()?.cardDefinitionId
-                ?: event.lastKnownCardDefinitionId ?: continue
-            val controllerId = event.lastKnownController ?: event.ownerId
+                ?: event.lastKnown?.cardDefinitionId ?: continue
+            val controllerId = event.lastKnown?.controllerId ?: event.ownerId
             val sourceName = container?.get<CardComponent>()?.name ?: event.entityName
             for (ability in abilityResolver.getTriggeredAbilities(event.entityId, cardDefId, state)) {
                 if (ability.trigger !is EventPattern.CreaturesYouControlDiedEvent) continue
@@ -2473,7 +2473,7 @@ class TriggerDetector(
                         BattlefieldDirection.ENTERING ->
                             projected.getController(causeEntityId) ?: event.ownerId
                         BattlefieldDirection.LEAVING ->
-                            event.lastKnownController ?: event.ownerId
+                            event.lastKnown?.controllerId ?: event.ownerId
                     }
                     if (causeController != doubler.controllerId) continue
                 }
@@ -2538,14 +2538,14 @@ class TriggerDetector(
             return predicateEvaluator.matches(state, projected, event.entityId, filter, context)
         }
 
-        val lastKnownTypeLine = event.lastKnownTypeLine
+        val lastKnownTypeLine = event.lastKnown?.typeLine
         val existing = state.getEntity(event.entityId)
         val existingCard = existing?.get<CardComponent>()
         val overlayCard = when {
             existingCard != null ->
                 existingCard.copy(typeLine = lastKnownTypeLine ?: existingCard.typeLine)
             lastKnownTypeLine != null -> CardComponent(
-                cardDefinitionId = event.lastKnownCardDefinitionId ?: event.entityName,
+                cardDefinitionId = event.lastKnown?.cardDefinitionId ?: event.entityName,
                 name = event.entityName,
                 manaCost = ManaCost.ZERO,
                 typeLine = lastKnownTypeLine

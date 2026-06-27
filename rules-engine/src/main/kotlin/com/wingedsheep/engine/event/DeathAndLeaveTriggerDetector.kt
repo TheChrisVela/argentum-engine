@@ -48,7 +48,7 @@ class DeathAndLeaveTriggerDetector(
         }
         // Entity is gone (e.g., token already cleaned up by 704.5s). Fall back to the
         // last-known info captured on the event.
-        val cardDefId = event.lastKnownCardDefinitionId ?: return null
+        val cardDefId = event.lastKnown?.cardDefinitionId ?: return null
         return DyingEntityInfo(cardDefId, event.entityName)
     }
 
@@ -61,7 +61,7 @@ class DeathAndLeaveTriggerDetector(
         // "It's a Skeleton ... and has no abilities" rider). Its own dies triggers don't
         // fire. Other creatures' "Whenever a creature dies" triggers are detected from
         // their own sources elsewhere, so they're unaffected by this short-circuit.
-        if (event.lastKnownLostAllAbilities) return
+        if (event.lastKnown?.lostAllAbilities == true) return
 
         val entityId = event.entityId
         val info = resolveDyingEntity(state, event) ?: return
@@ -143,7 +143,7 @@ class DeathAndLeaveTriggerDetector(
             // Skip creatures whose abilities were stripped at leaving time (Xu-Ifit's
             // ability-stripped reanimate target contributes no triggers of its own even
             // when it dies alongside other creatures).
-            if (deadEvent.lastKnownLostAllAbilities) continue
+            if (deadEvent.lastKnown?.lostAllAbilities == true) continue
 
             val info = resolveDyingEntity(state, deadEvent) ?: continue
 
@@ -173,7 +173,7 @@ class DeathAndLeaveTriggerDetector(
     /**
      * Detect ATTACHED zone-change triggers on auras that went to graveyard with their creature.
      * When an aura goes to graveyard because its enchanted creature died/left, the ZoneChangeEvent
-     * for the aura carries [ZoneChangeEvent.lastKnownAttachedTo] = the creature's ID.
+     * for the aura carries [ZoneChangeEvent.lastKnown?.attachedTo] = the creature's ID.
      * We look up the aura's card definition for ATTACHED-bound ZoneChangeEvent triggers.
      *
      * Handles both "enchanted creature dies" and "enchanted permanent leaves the battlefield".
@@ -186,9 +186,9 @@ class DeathAndLeaveTriggerDetector(
         // An aura whose abilities were stripped at leaving time (e.g. via a Xu-Ifit-shaped
         // reanimate on an aura, or Humility-style suppression in effect at LTB) contributes
         // no attached zone-change triggers.
-        if (event.lastKnownLostAllAbilities) return
+        if (event.lastKnown?.lostAllAbilities == true) return
 
-        val attachedEntityId = event.lastKnownAttachedTo ?: return
+        val attachedEntityId = event.lastKnown?.attachedTo ?: return
 
         val auraEntityId = event.entityId
         val container = state.getEntity(auraEntityId) ?: return
@@ -250,7 +250,7 @@ class DeathAndLeaveTriggerDetector(
                     // Observer shape (Shelob): any source that dealt damage to the dying creature this
                     // turn must match the filter, evaluated against its last-known state when it dealt
                     // the damage (CR 608.2h). "you control" resolves to the trigger's controller.
-                    matchesDamageSourceFilter(event.lastKnownDamageSources, sourceFilter, entry.controllerId)
+                    matchesDamageSourceFilter(event.lastKnown?.damageSources ?: emptySet(), sourceFilter, entry.controllerId)
                 }
                 // "another creature": never fire for the source observing its own death.
                 if (fires && ability.binding == com.wingedsheep.sdk.scripting.TriggerBinding.ANY &&
@@ -325,9 +325,9 @@ class DeathAndLeaveTriggerDetector(
         triggers: MutableList<PendingTrigger>
     ) {
         if (event.fromZone != Zone.BATTLEFIELD || event.toZone != Zone.GRAVEYARD) return
-        if (event.lastKnownWasToken) return
-        if (event.lastKnownMinusOneMinusOneCounterCount > 0) return
-        if (Keyword.PERSIST.name !in event.lastKnownKeywords) return
+        if (event.lastKnown?.wasToken == true) return
+        if ((event.lastKnown?.minusOneMinusOneCounters ?: 0) > 0) return
+        if (Keyword.PERSIST.name !in (event.lastKnown?.keywords ?: emptySet())) return
 
         val info = resolveDyingEntity(state, event) ?: return
 
@@ -392,9 +392,9 @@ class DeathAndLeaveTriggerDetector(
         triggers: MutableList<PendingTrigger>
     ) {
         if (event.fromZone != Zone.BATTLEFIELD || event.toZone != Zone.GRAVEYARD) return
-        if (event.lastKnownWasToken) return
-        if (event.lastKnownTypeLine?.isCreature != true) return
-        if (Keyword.ENDURING.name !in event.lastKnownKeywords) return
+        if (event.lastKnown?.wasToken == true) return
+        if (event.lastKnown?.typeLine?.isCreature != true) return
+        if (Keyword.ENDURING.name !in (event.lastKnown?.keywords ?: emptySet())) return
 
         val info = resolveDyingEntity(state, event) ?: return
 
@@ -450,7 +450,7 @@ class DeathAndLeaveTriggerDetector(
     ) {
         // See [detectDeathTriggers]: an entity that lost all its abilities at leaving time
         // contributes no SELF/ANY leaves-battlefield triggers from itself.
-        if (event.lastKnownLostAllAbilities) return
+        if (event.lastKnown?.lostAllAbilities == true) return
 
         val entityId = event.entityId
         val info = resolveDyingEntity(state, event) ?: return

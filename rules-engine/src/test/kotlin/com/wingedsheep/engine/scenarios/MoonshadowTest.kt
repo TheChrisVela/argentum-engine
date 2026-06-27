@@ -413,7 +413,7 @@ class MoonshadowTest : FunSpec({
                 fromZone = com.wingedsheep.sdk.core.Zone.BATTLEFIELD,
                 toZone = com.wingedsheep.sdk.core.Zone.GRAVEYARD,
                 ownerId = activePlayer,
-                lastKnownWasToken = true
+                lastKnown = com.wingedsheep.engine.state.components.stack.EntitySnapshot(entityId = token, wasToken = true)
             )
         )
 

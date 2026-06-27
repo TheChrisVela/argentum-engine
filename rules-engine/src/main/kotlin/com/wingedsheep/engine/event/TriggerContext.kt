@@ -159,19 +159,18 @@ data class TriggerContext(
                     // what "that creature's controller" / "they" mean in a dies/leaves trigger, so
                     // Player.TriggeringPlayer resolves to the dying creature's controller rather than
                     // (previously) falling through to the dead creature's entity id.
-                    triggeringPlayerId = event.lastKnownController ?: event.ownerId,
-                    counterCount = if (event.lastKnownCounterCount > 0) event.lastKnownCounterCount else null,
-                    totalCounterCount = if (event.lastKnownTotalCounterCount > 0) event.lastKnownTotalCounterCount else null,
-                    minusOneMinusOneCounterCount = if (event.lastKnownMinusOneMinusOneCounterCount > 0)
-                        event.lastKnownMinusOneMinusOneCounterCount else null,
+                    triggeringPlayerId = event.lastKnown?.controllerId ?: event.ownerId,
+                    counterCount = event.lastKnown?.plusOnePlusOneCounters?.takeIf { it > 0 },
+                    totalCounterCount = event.lastKnown?.totalCounters?.takeIf { it > 0 },
+                    minusOneMinusOneCounterCount = event.lastKnown?.minusOneMinusOneCounters?.takeIf { it > 0 },
                     xValue = event.xValue,
-                    lastKnownPower = event.lastKnownPower,
-                    lastKnownToughness = event.lastKnownToughness,
-                    lastKnownCounters = event.lastKnownCounters.takeIf { it.isNotEmpty() },
+                    lastKnownPower = event.lastKnown?.power,
+                    lastKnownToughness = event.lastKnown?.toughness,
+                    lastKnownCounters = event.lastKnown?.counters?.takeIf { it.isNotEmpty() },
                     lastKnownDamageDealtByPlayers =
-                        event.lastKnownDamageDealtByPlayers.takeIf { it.isNotEmpty() },
+                        event.lastKnown?.damageDealtByPlayers?.takeIf { it.isNotEmpty() },
                     lastKnownBlockingOrBlockedByIds =
-                        event.lastKnownBlockingOrBlockedByIds.takeIf { it.isNotEmpty() }
+                        event.lastKnown?.blockingOrBlockedByIds?.takeIf { it.isNotEmpty() }
                 )
                 is DamageDealtEvent -> TriggerContext(
                     triggeringEntityId = event.targetId,

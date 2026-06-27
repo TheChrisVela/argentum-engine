@@ -636,6 +636,23 @@ back it with a source-scanning hygiene test (e.g. `TapEventEnforcementTest` bans
 enters-tapped / cleanup sites, the same way `FacadeBoundaryTest` bans raw effect construction in
 cards). The atom makes the event impossible to forget; the test makes the bypass impossible to add.
 
+**Last-known information is one frozen value, not scattered scalars (CR 113.7a / 603.10 / 608.2h).**
+A dies/leaves trigger or a cost that has already moved its permanent resolves *after* that permanent
+is gone, so it must read the object "as it last existed on the battlefield." Rather than spray a
+parallel family of `lastKnown*` scalars across every event and context that might need one, the
+engine captures a single immutable [`EntitySnapshot`](../rules-engine/src/main/kotlin/com/wingedsheep/engine/state/components/stack/EntitySnapshot.kt)
+at the instant the permanent leaves (power, toughness, counters, keywords, type line, controller,
+combat pairings, token-ness, damage taken, …). `ZoneChangeEvent.lastKnown` carries it for
+death/leave triggers; cost-time references (sacrificed / tapped / chosen permanents, a
+self-sacrificing source) carry lists of the same type. `EntitySnapshot` and the live, projection-
+backed `LiveEntityView` both implement one `EntityView` interface, so a read site asks for one view
+of an entity — live if it is still on the battlefield, otherwise its snapshot — and reads the same
+accessors either way. Whether a given reference falls back to its snapshot once the permanent has
+left is a declared property, not ad-hoc per-call logic: `lkiPolicyFor(reference)` is an exhaustive
+`when` over `EntityReference` returning `LIVE_THEN_LKI` or `LIVE_ONLY`, so a new reference variant is
+a compile error until its last-known behavior is classified — and filtered enumeration
+(Gather/ForEach) is deliberately `LIVE_ONLY`: a permanent that has left simply is not in the set.
+
 ### 2.6 Strategy-Based Registries
 
 **Principle:** Action handling and effect execution are fully decoupled from the core engine loop.
