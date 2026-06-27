@@ -92,6 +92,18 @@ export async function verifyLogin(token: string): Promise<LoginResponse> {
   return (await res.json()) as LoginResponse
 }
 
+/** Update the signed-in account's display name. Returns the updated account. */
+export async function updateProfile(displayName: string): Promise<AccountUser> {
+  const res = await fetch('/api/auth/me', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ displayName }),
+  })
+  if (res.status === 401) throw new UnauthorizedError()
+  if (!res.ok) throw new Error(await errorMessage(res, `Failed to update profile (${res.status})`))
+  return (await res.json()) as AccountUser
+}
+
 /** Fetch the current account, or null if not signed in / accounts disabled. */
 export async function fetchMe(): Promise<AccountUser | null> {
   if (!getAuthToken()) return null
@@ -136,6 +148,17 @@ export async function saveDeck(deck: SharedDeck): Promise<DeckDetail> {
   })
   if (res.status === 401) throw new UnauthorizedError()
   if (!res.ok) throw new Error(`Failed to save deck (${res.status})`)
+  return (await res.json()) as DeckDetail
+}
+
+export async function updateDeck(id: number, deck: SharedDeck): Promise<DeckDetail> {
+  const res = await fetch(`/api/account/decks/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(deck),
+  })
+  if (res.status === 401) throw new UnauthorizedError()
+  if (!res.ok) throw new Error(`Failed to update deck (${res.status})`)
   return (await res.json()) as DeckDetail
 }
 

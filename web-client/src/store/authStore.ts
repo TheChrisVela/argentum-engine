@@ -11,6 +11,7 @@ import {
   fetchAppConfig,
   fetchMe,
   setAuthToken,
+  updateProfile,
 } from '@/api/account'
 
 export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'anonymous'
@@ -28,6 +29,8 @@ interface AuthState {
   init: () => Promise<void>
   /** Apply a fresh login (stores the token and the user). */
   setSession: (login: LoginResponse) => void
+  /** Change the signed-in user's display name (persists to the server, then updates the store). */
+  updateDisplayName: (displayName: string) => Promise<void>
   /** Sign out: drop the token and the user. */
   logout: () => void
 }
@@ -55,6 +58,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   setSession: (login) => {
     setAuthToken(login.authToken)
     set({ user: login.user, status: 'authenticated' })
+  },
+
+  updateDisplayName: async (displayName) => {
+    const user = await updateProfile(displayName)
+    set({ user })
   },
 
   logout: () => {

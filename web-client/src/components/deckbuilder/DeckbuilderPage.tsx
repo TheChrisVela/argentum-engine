@@ -50,7 +50,13 @@ import {
   type SharedDeck,
 } from './shareDeck'
 import { AccountDeckBar } from './AccountDeckBar'
-import { getDeck as getAccountDeck } from '@/api/account'
+import {
+  getDeck as getAccountDeck,
+  listDecks as apiListDecks,
+  saveDeck as apiSaveDeck,
+  updateDeck as apiUpdateDeck,
+} from '@/api/account'
+import { useAuthStore } from '@/store/authStore'
 import {
   detectProducedColors,
   suggestBasicLands,
@@ -302,6 +308,14 @@ export function DeckbuilderPage() {
   // derived server-side (CR 100.4b).
   const [sideboardCards, setSideboardCards] = useState<Record<string, number>>({})
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null)
+  // When signed in, the unified Save targets the account (cloud); otherwise it writes to the local
+  // browser library. `saveFlash` briefly overrides the Save button label to confirm the result.
+  const isLoggedIn = useAuthStore((s) => s.status) === 'authenticated'
+  const [saveFlash, setSaveFlash] = useState<string | null>(null)
+  const flashSave = useCallback((msg: string) => {
+    setSaveFlash(msg)
+    window.setTimeout(() => setSaveFlash(null), 2000)
+  }, [])
   // Pinned printings, keyed by card name. Empty unless the user opens the printing picker
   // and chooses a non-default printing for some row. Persisted via [SavedDeck.entries] (v2)
   // and round-tripped on load. Same-name-different-printing rows are not surfaced as separate
@@ -855,7 +869,30 @@ export function DeckbuilderPage() {
     navigate(`/deckbuilder${searchSuffix()}`)
   }
 
-  const handleSave = () => {
+  // Unified Save: when signed in, persist to the account (cloud); otherwise to the local browser
+  // library. We dedupe the cloud deck by name (the same rule the sign-in migration prompt uses) so
+  // re-saving the same deck overwrites it rather than piling up duplicates — no client-side id to
+  // thread through every load path. `optionalName` overrides the deck name for "Save as".
+  const saveToCloud = async (overrideName?: string) => {
+    const built = buildSharedDeck()
+    if (!built) {
+      flashSave('Deck is empty')
+      return
+    }
+    const shared = overrideName ? { ...built, name: overrideName } : built
+    try {
+      const existing = await apiListDecks()
+      const match = existing.find((d) => d.name.toLowerCase() === shared.name.toLowerCase())
+      if (match) await apiUpdateDeck(match.id, shared)
+      else await apiSaveDeck(shared)
+      if (overrideName) setDeckName(overrideName)
+      flashSave('Saved to account')
+    } catch {
+      flashSave('Save failed')
+    }
+  }
+
+  const saveLocal = (overrideName?: string): string => {
     // Per `SavedDeck.commander`: the commander is stored separately from `cards` (the
     // library), matching the server's `Deck.cards` convention. Strip it out on save so
     // reloading + re-validating doesn't double-count.
@@ -863,29 +900,11 @@ export function DeckbuilderPage() {
     const cardsForSave = stripCommanderFromCards(deckCards, designated)
     const entries = entriesFromCards(cardsForSave, pinnedPrintings)
     const commanderPrintingForSave = designated ? pinnedPrintings[designated] : undefined
+    const isRename = overrideName !== undefined
     const saved = saveDeck({
-      ...(activeDeckId ? { id: activeDeckId } : {}),
-      name: deckName.trim() || 'Untitled deck',
-      cards: cardsForSave,
-      ...(activeFormat ? { format: activeFormat } : {}),
-      ...(designated ? { commander: designated } : {}),
-      ...(commanderPrintingForSave ? { commanderPrinting: commanderPrintingForSave } : {}),
-      ...(entries ? { entries } : {}),
-      ...(Object.keys(sideboardCards).length > 0 ? { sideboard: sideboardCards } : {}),
-    })
-    setActiveDeckId(saved.id)
-    if (saved.id !== deckId) navigate(`/deckbuilder/${saved.id}${searchSuffix()}`, { replace: true })
-  }
-
-  const handleSaveAs = () => {
-    const name = window.prompt('New deck name', `${deckName} (copy)`)
-    if (!name) return
-    const designated = isCommanderFormat ? commander : null
-    const cardsForSave = stripCommanderFromCards(deckCards, designated)
-    const entries = entriesFromCards(cardsForSave, pinnedPrintings)
-    const commanderPrintingForSave = designated ? pinnedPrintings[designated] : undefined
-    const saved = saveDeck({
-      name: name.trim(),
+      // "Save as" always creates a fresh local deck; plain Save updates the active one.
+      ...(!isRename && activeDeckId ? { id: activeDeckId } : {}),
+      name: (overrideName ?? deckName).trim() || 'Untitled deck',
       cards: cardsForSave,
       ...(activeFormat ? { format: activeFormat } : {}),
       ...(designated ? { commander: designated } : {}),
@@ -895,7 +914,27 @@ export function DeckbuilderPage() {
     })
     setDeckName(saved.name)
     setActiveDeckId(saved.id)
-    navigate(`/deckbuilder/${saved.id}${searchSuffix()}`, { replace: true })
+    return saved.id
+  }
+
+  const handleSave = async () => {
+    if (isLoggedIn) {
+      await saveToCloud()
+      return
+    }
+    const id = saveLocal()
+    if (id !== deckId) navigate(`/deckbuilder/${id}${searchSuffix()}`, { replace: true })
+  }
+
+  const handleSaveAs = async () => {
+    const name = window.prompt('New deck name', `${deckName} (copy)`)
+    if (!name || !name.trim()) return
+    if (isLoggedIn) {
+      await saveToCloud(name.trim())
+      return
+    }
+    const id = saveLocal(name.trim())
+    navigate(`/deckbuilder/${id}${searchSuffix()}`, { replace: true })
   }
 
   const handleDelete = () => {
@@ -911,7 +950,7 @@ export function DeckbuilderPage() {
   // any pinned printings. Mirrors the save path's commander-stripping so a shared deck
   // re-imports without double-counting the commander.
   // Snapshot the working deck as a SharedDeck (the canonical wire shape), or null if empty. Used by
-  // both the share-link path and the account "Save online" path so they capture identical content.
+  // both the share-link path and the account (cloud) save path so they capture identical content.
   const buildSharedDeck = useCallback((): SharedDeck | null => {
     const designated = isCommanderFormat ? commander : null
     const cardsForShare = stripCommanderFromCards(deckCards, designated)
@@ -1220,7 +1259,7 @@ export function DeckbuilderPage() {
         >
           {shareCopied ? 'Link copied!' : 'Share'}
         </button>
-        <AccountDeckBar buildSharedDeck={buildSharedDeck} onLoad={applySharedDeck} />
+        <AccountDeckBar onLoad={(detail) => applySharedDeck(detail.deck)} />
         <button className={styles.iconButton} onClick={handleNew}>
           New deck
         </button>
@@ -1384,7 +1423,8 @@ export function DeckbuilderPage() {
             </div>
 
             <DeckActionRow
-              activeDeckId={activeDeckId}
+              saveLabel={saveFlash ?? (activeDeckId ? 'Save' : 'Save deck')}
+              canDelete={!!activeDeckId}
               isEmpty={Object.keys(deckCards).length === 0}
               onSave={handleSave}
               onSaveAs={handleSaveAs}
@@ -1451,7 +1491,8 @@ export function DeckbuilderPage() {
             validation={validation}
             totalCards={totalCards}
             stats={stats}
-            activeDeckId={activeDeckId}
+            saveLabel={saveFlash ?? (activeDeckId ? 'Save' : 'Save deck')}
+            canDelete={!!activeDeckId}
             isEmpty={Object.keys(deckCards).length === 0}
             onSave={handleSave}
             onSaveAs={handleSaveAs}
@@ -1484,13 +1525,15 @@ export function DeckbuilderPage() {
 // ---------------------------------------------------------------------------
 
 function DeckActionRow({
-  activeDeckId,
+  saveLabel,
+  canDelete,
   isEmpty,
   onSave,
   onSaveAs,
   onDelete,
 }: {
-  activeDeckId: string | null
+  saveLabel: string
+  canDelete: boolean
   isEmpty: boolean
   onSave: () => void
   onSaveAs: () => void
@@ -1499,12 +1542,12 @@ function DeckActionRow({
   return (
     <div className={styles.actionRow}>
       <button className={styles.primaryButton} onClick={onSave} disabled={isEmpty}>
-        {activeDeckId ? 'Save' : 'Save deck'}
+        {saveLabel}
       </button>
       <button className={styles.secondaryButton} onClick={onSaveAs} disabled={isEmpty}>
         Save as
       </button>
-      <button className={styles.dangerButton} onClick={onDelete} disabled={!activeDeckId}>
+      <button className={styles.dangerButton} onClick={onDelete} disabled={!canDelete}>
         Delete
       </button>
     </div>
@@ -1523,7 +1566,8 @@ function DeckCentricFooter({
   validation,
   totalCards,
   stats,
-  activeDeckId,
+  saveLabel,
+  canDelete,
   isEmpty,
   onSave,
   onSaveAs,
@@ -1532,7 +1576,8 @@ function DeckCentricFooter({
   validation: ValidationResult | null
   totalCards: number
   stats: DeckStats
-  activeDeckId: string | null
+  saveLabel: string
+  canDelete: boolean
   isEmpty: boolean
   onSave: () => void
   onSaveAs: () => void
@@ -1577,12 +1622,12 @@ function DeckCentricFooter({
 
       <div className={styles.footerActions}>
         <button className={styles.primaryButton} onClick={onSave} disabled={isEmpty}>
-          {activeDeckId ? 'Save' : 'Save deck'}
+          {saveLabel}
         </button>
         <button className={styles.secondaryButton} onClick={onSaveAs} disabled={isEmpty}>
           Save as
         </button>
-        <button className={styles.dangerButton} onClick={onDelete} disabled={!activeDeckId}>
+        <button className={styles.dangerButton} onClick={onDelete} disabled={!canDelete}>
           Delete
         </button>
       </div>

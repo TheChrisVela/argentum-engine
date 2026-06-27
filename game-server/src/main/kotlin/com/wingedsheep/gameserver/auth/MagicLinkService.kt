@@ -79,6 +79,16 @@ class MagicLinkService(
 
     fun findUser(userId: Long): UserRow? = users.findById(userId).orElse(null)
 
+    /**
+     * Set a user's chosen display name. The email stays the immutable identity; the display name is a
+     * free-form label (duplicates across accounts are allowed). Returns the updated account, or null if
+     * it no longer exists. Caller is responsible for trimming/length-validating [displayName].
+     */
+    fun updateDisplayName(userId: Long, displayName: String): UserRow? {
+        val user = users.findById(userId).orElse(null) ?: return null
+        return users.save(user.copy(displayName = displayName))
+    }
+
     private fun sha256Hex(value: String): String =
         MessageDigest.getInstance("SHA-256")
             .digest(value.toByteArray(Charsets.UTF_8))

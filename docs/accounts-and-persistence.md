@@ -94,6 +94,7 @@ the account's stats.
 | POST | `/api/auth/request-login` | `{ email }` → 200 |
 | POST | `/api/auth/verify` | `{ token }` → `{ authToken, user }` |
 | GET | `/api/auth/me` | Bearer → `user` |
+| PUT | `/api/auth/me` | Bearer + `{ displayName }` → updated `user` (1–40 chars; duplicates allowed) |
 | GET | `/api/account/decks` | list summaries |
 | GET | `/api/account/decks/{id}` | full deck |
 | POST | `/api/account/decks` | body = `SharedDeck` JSON → created deck |
@@ -108,8 +109,15 @@ the account's stats.
 
 - `authStore` (standalone Zustand) holds the signed-in user; `api/account.ts` is the REST client.
 - Sign-in modal (`LoginModal`) + `/login/verify` page; a nav entry in the connection overlay.
-- Deckbuilder: "Save online" / "My decks" via `AccountDeckBar`; profile page at `/profile` shows
-  stats + saved decks (deep-linking to `/deckbuilder?accountDeck=<id>`).
+- **Unified Save:** the deckbuilder has one Save / Save as. When signed in it saves to the account
+  (cloud); when anonymous it saves to the browser library (localStorage). The cloud path dedupes by
+  deck name (same rule as the migration prompt) so re-saving overwrites rather than duplicating.
+  `AccountDeckBar` is now just the cloud "My decks" browser + a sign-in affordance.
+- **Display name:** editable on the profile page (`PUT /api/auth/me`); the email stays the identity.
+- Profile page at `/profile` shows stats + saved decks via the shared `SavedDeckList`, which renders
+  both account (online) and browser-only decks with an **Online / Browser only** badge so the user
+  can see what's backed up. Deck names deep-link into the deckbuilder
+  (`/deckbuilder?accountDeck=<id>` for cloud, `/deckbuilder/<id>` for local).
 - On sign-in, a landing-page prompt (`DeckMigrationPrompt`) offers to copy browser-only decks to the
   account.
 

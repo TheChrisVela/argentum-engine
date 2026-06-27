@@ -1,37 +1,36 @@
 /**
- * Deckbuilder toolbar control for cloud-saved decks. When signed in, lets you save the current deck
- * to your account and load/delete your saved decks; when anonymous, offers a sign-in prompt. Kept
- * self-contained so the (large) DeckbuilderPage only has to provide a build + load callback.
+ * Deckbuilder toolbar control for browsing the signed-in user's cloud-saved decks. Saving is handled
+ * by the deckbuilder's unified Save button (which routes to the account when signed in, or to
+ * localStorage when not), so this control is purely the cloud "My decks" browser plus a sign-in
+ * affordance when anonymous. Kept self-contained so the (large) DeckbuilderPage only provides a load
+ * callback.
  */
 import { useEffect, useState } from 'react'
 import type React from 'react'
 import {
+  type DeckDetail,
   type DeckSummary,
   deleteDeck as apiDeleteDeck,
   getDeck,
   listDecks,
-  saveDeck,
 } from '@/api/account'
 import { LoginModal } from '@/components/auth/LoginModal'
-import type { SharedDeck } from '@/components/deckbuilder/shareDeck'
+import { SavedDeckList, type SavedDeckListItem } from '@/components/deckbuilder/SavedDeckList'
 import { useAuthStore } from '@/store/authStore'
 
 interface AccountDeckBarProps {
-  /** Build a SharedDeck from the current builder state, or null if the deck is empty. */
-  buildSharedDeck: () => SharedDeck | null
-  /** Apply a loaded SharedDeck into the builder. */
-  onLoad: (shared: SharedDeck) => void
+  /** Apply a loaded cloud deck (with its id, so the builder can overwrite it on the next save). */
+  onLoad: (detail: DeckDetail) => void
   className?: string
 }
 
-export function AccountDeckBar({ buildSharedDeck, onLoad, className }: AccountDeckBarProps) {
+export function AccountDeckBar({ onLoad, className }: AccountDeckBarProps) {
   const status = useAuthStore((s) => s.status)
   const accountsEnabled = useAuthStore((s) => s.accountsEnabled)
   const init = useAuthStore((s) => s.init)
   const [loginOpen, setLoginOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
   const [decks, setDecks] = useState<DeckSummary[]>([])
-  const [feedback, setFeedback] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === 'idle') void init()
@@ -45,33 +44,13 @@ export function AccountDeckBar({ buildSharedDeck, onLoad, className }: AccountDe
     if (listOpen) refresh()
   }, [listOpen])
 
-  const flash = (msg: string) => {
-    setFeedback(msg)
-    window.setTimeout(() => setFeedback(null), 2000)
-  }
-
-  const handleSave = async () => {
-    const shared = buildSharedDeck()
-    if (!shared) {
-      flash('Deck is empty')
-      return
-    }
-    try {
-      await saveDeck(shared)
-      flash('Saved!')
-      if (listOpen) refresh()
-    } catch {
-      flash('Save failed')
-    }
-  }
-
   const handleLoad = async (id: number) => {
     try {
       const detail = await getDeck(id)
-      onLoad(detail.deck)
+      onLoad(detail)
       setListOpen(false)
     } catch {
-      flash('Load failed')
+      /* not found / not signed in — leave the builder as-is */
     }
   }
 
@@ -80,47 +59,39 @@ export function AccountDeckBar({ buildSharedDeck, onLoad, className }: AccountDe
     setDecks((prev) => prev.filter((d) => d.id !== id))
   }
 
-  // No accounts subsystem on this server → no cloud-save controls at all.
+  // No accounts subsystem on this server → no cloud-deck controls at all.
   if (!accountsEnabled) return null
 
   if (status !== 'authenticated') {
     return (
       <div className={className}>
         <button type="button" style={styles.button} onClick={() => setLoginOpen(true)}>
-          Sign in to save
+          Sign in
         </button>
         <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
       </div>
     )
   }
 
+  const items: SavedDeckListItem[] = decks.map((d) => ({
+    key: `c:${d.id}`,
+    name: d.name,
+    online: true,
+    ...(d.format ? { format: d.format } : {}),
+  }))
+
   return (
     <div className={className} style={styles.wrap}>
-      <button type="button" style={styles.button} onClick={() => void handleSave()}>
-        {feedback ?? 'Save online'}
-      </button>
       <button type="button" style={styles.button} onClick={() => setListOpen((v) => !v)}>
         My decks
       </button>
       {listOpen && (
         <div style={styles.popover}>
-          {decks.length === 0 ? (
-            <div style={styles.empty}>No saved decks yet.</div>
-          ) : (
-            <ul style={styles.list}>
-              {decks.map((deck) => (
-                <li key={deck.id} style={styles.item}>
-                  <button type="button" style={styles.itemName} onClick={() => void handleLoad(deck.id)}>
-                    {deck.name}
-                    {deck.format ? <span style={styles.format}> · {deck.format}</span> : null}
-                  </button>
-                  <button type="button" style={styles.delete} onClick={() => void handleDelete(deck.id)}>
-                    ×
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <SavedDeckList
+            decks={items}
+            onOpen={(item) => void handleLoad(Number(item.key.slice(2)))}
+            onDelete={(item) => void handleDelete(Number(item.key.slice(2)))}
+          />
         </div>
       )}
     </div>
@@ -143,7 +114,7 @@ const styles: Record<string, React.CSSProperties> = {
     top: '100%',
     right: 0,
     marginTop: 6,
-    minWidth: 240,
+    minWidth: 280,
     maxHeight: 320,
     overflowY: 'auto',
     backgroundColor: '#14141f',
@@ -153,20 +124,4 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 1500,
     boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
   },
-  empty: { color: '#888', fontSize: 13, padding: 8 },
-  list: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 4 },
-  item: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  itemName: {
-    flex: 1,
-    background: 'none',
-    border: 'none',
-    color: '#fff',
-    textAlign: 'left',
-    cursor: 'pointer',
-    fontSize: 14,
-    padding: '6px 8px',
-    borderRadius: 6,
-  },
-  format: { color: '#888', fontSize: 12 },
-  delete: { background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: 16 },
 }

@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
@@ -32,8 +33,13 @@ class AuthController(
 ) {
     data class RequestLoginBody(val email: String)
     data class VerifyBody(val token: String)
+    data class UpdateProfileBody(val displayName: String)
     data class UserDto(val id: Long, val email: String, val displayName: String)
     data class LoginResponse(val authToken: String, val user: UserDto)
+
+    companion object {
+        const val MAX_DISPLAY_NAME_LENGTH = 40
+    }
 
     @PostMapping("/request-login")
     fun requestLogin(@RequestBody body: RequestLoginBody): ResponseEntity<Any> {
@@ -61,6 +67,23 @@ class AuthController(
         val user = magicLinkService.findUser(claims.uid)
             ?: return ResponseEntity.status(401).body(mapOf("error" to "Account no longer exists"))
         return ResponseEntity.ok(user.toDto())
+    }
+
+    /** Update the signed-in account's display name (free-form label; the email stays the identity). */
+    @PutMapping("/me")
+    fun updateMe(
+        @RequestHeader(HttpHeaders.AUTHORIZATION, required = false) authorization: String?,
+        @RequestBody body: UpdateProfileBody,
+    ): ResponseEntity<Any> {
+        val claims = authSupport.requireUser(authorization)
+        val name = body.displayName.trim()
+        if (name.isEmpty() || name.length > MAX_DISPLAY_NAME_LENGTH) {
+            return ResponseEntity.badRequest()
+                .body(mapOf("error" to "Display name must be 1–$MAX_DISPLAY_NAME_LENGTH characters"))
+        }
+        val updated = magicLinkService.updateDisplayName(claims.uid, name)
+            ?: return ResponseEntity.status(401).body(mapOf("error" to "Account no longer exists"))
+        return ResponseEntity.ok(updated.toDto())
     }
 
     private fun UserRow.toDto() = UserDto(id = id!!, email = email, displayName = displayName)
