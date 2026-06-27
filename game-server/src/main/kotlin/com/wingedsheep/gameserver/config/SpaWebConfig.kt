@@ -24,6 +24,13 @@ class SpaWebConfig : WebMvcConfigurer {
             .resourceChain(true)
             .addResolver(object : PathResourceResolver() {
                 override fun getResource(resourcePath: String, location: Resource): Resource? {
+                    // Never SPA-fallback API/WebSocket paths: an unmatched `/api/**` route must 404
+                    // rather than return the HTML shell. A disabled subsystem (e.g. accounts) leaves
+                    // its endpoints unmounted, and a JSON client choking on index.html — or getting a
+                    // confusing 405 on POST — is exactly the bug this avoids. Returning null yields 404.
+                    if (resourcePath.startsWith("api/") || resourcePath.startsWith("game/")) {
+                        return null
+                    }
                     val requested = location.createRelative(resourcePath)
                     return if (requested.exists() && requested.isReadable) {
                         requested

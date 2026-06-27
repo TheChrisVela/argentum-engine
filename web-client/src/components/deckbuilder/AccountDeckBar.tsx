@@ -26,6 +26,7 @@ interface AccountDeckBarProps {
 
 export function AccountDeckBar({ buildSharedDeck, onLoad, className }: AccountDeckBarProps) {
   const status = useAuthStore((s) => s.status)
+  const accountsEnabled = useAuthStore((s) => s.accountsEnabled)
   const init = useAuthStore((s) => s.init)
   const [loginOpen, setLoginOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
@@ -78,6 +79,9 @@ export function AccountDeckBar({ buildSharedDeck, onLoad, className }: AccountDe
     await apiDeleteDeck(id)
     setDecks((prev) => prev.filter((d) => d.id !== id))
   }
+
+  // No accounts subsystem on this server → no cloud-save controls at all.
+  if (!accountsEnabled) return null
 
   if (status !== 'authenticated') {
     return (

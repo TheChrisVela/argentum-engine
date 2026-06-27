@@ -8,6 +8,7 @@ import {
   type AccountUser,
   type LoginResponse,
   clearAuthToken,
+  fetchAppConfig,
   fetchMe,
   setAuthToken,
 } from '@/api/account'
@@ -17,7 +18,13 @@ export type AuthStatus = 'idle' | 'loading' | 'authenticated' | 'anonymous'
 interface AuthState {
   user: AccountUser | null
   status: AuthStatus
-  /** Resolve the current session from a stored token (call once on app start). */
+  /**
+   * Whether the server runs the accounts subsystem. Defaults to false (hide all account UI) until
+   * {@link init} learns otherwise, so a server with accounts disabled never shows a sign-in form
+   * that can only fail.
+   */
+  accountsEnabled: boolean
+  /** Resolve server config + the current session from a stored token (call once on app start). */
   init: () => Promise<void>
   /** Apply a fresh login (stores the token and the user). */
   setSession: (login: LoginResponse) => void
@@ -28,11 +35,21 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   status: 'idle',
+  accountsEnabled: false,
 
   init: async () => {
     set({ status: 'loading' })
+    const { accountsEnabled } = await fetchAppConfig()
+    if (!accountsEnabled) {
+      set({ user: null, status: 'anonymous', accountsEnabled: false })
+      return
+    }
     const user = await fetchMe()
-    set(user ? { user, status: 'authenticated' } : { user: null, status: 'anonymous' })
+    set(
+      user
+        ? { user, status: 'authenticated', accountsEnabled: true }
+        : { user: null, status: 'anonymous', accountsEnabled: true },
+    )
   },
 
   setSession: (login) => {

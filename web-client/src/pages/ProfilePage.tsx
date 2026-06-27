@@ -19,6 +19,7 @@ export function ProfilePage() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const status = useAuthStore((s) => s.status)
+  const accountsEnabled = useAuthStore((s) => s.accountsEnabled)
   const init = useAuthStore((s) => s.init)
   const logout = useAuthStore((s) => s.logout)
 
@@ -91,6 +92,8 @@ export function ProfilePage() {
     )
   }
 
+  const resolving = status === 'idle' || status === 'loading'
+
   return (
     <div style={styles.wrap}>
       <div style={styles.container}>
@@ -98,11 +101,21 @@ export function ProfilePage() {
           ← Home
         </button>
         <h1 style={styles.title}>Your account</h1>
-        <p style={styles.muted}>Sign in to save decks to the cloud and track your win/loss record.</p>
-        <button type="button" style={styles.primary} onClick={() => setLoginOpen(true)}>
-          Sign in
-        </button>
-        <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+        {accountsEnabled ? (
+          <>
+            <p style={styles.muted}>
+              Sign in to save decks to the cloud and track your win/loss record.
+            </p>
+            <button type="button" style={styles.primary} onClick={() => setLoginOpen(true)}>
+              Sign in
+            </button>
+            <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+          </>
+        ) : resolving ? (
+          <p style={styles.muted}>Loading…</p>
+        ) : (
+          <p style={styles.muted}>Accounts aren't available on this server.</p>
+        )}
       </div>
     </div>
   )

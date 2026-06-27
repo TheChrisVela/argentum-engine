@@ -1,7 +1,8 @@
 /**
  * REST client for the optional accounts subsystem: magic-link auth, server-side saved decks, and
- * win/loss stats. All endpoints 404 when the server has accounts disabled — callers should treat
- * failures gracefully (the UI hides account features until {@link fetchMe} succeeds).
+ * win/loss stats. The account endpoints aren't mounted when the server has accounts disabled, so the
+ * client first asks {@link fetchAppConfig} whether accounts exist and hides all account UI when they
+ * don't; the individual calls still fail gracefully as a backstop.
  *
  * The auth token (a signed token from magic-link login) lives in localStorage under `argentum-auth`
  * and is sent as `Authorization: Bearer <token>` on authenticated calls. It is also picked up by the
@@ -43,6 +44,29 @@ export interface AccountUser {
 export interface LoginResponse {
   readonly authToken: string
   readonly user: AccountUser
+}
+
+// ----- App config -----
+
+/** Client bootstrap config from the always-mounted `/api/config` endpoint. */
+export interface AppConfig {
+  /** True when the server runs the optional accounts/magic-link subsystem. */
+  readonly accountsEnabled: boolean
+}
+
+/**
+ * Fetch server feature availability. Used on startup to decide whether to show the accounts/sign-in
+ * UI at all — on a server with accounts disabled the auth endpoints don't exist, so showing a
+ * sign-in form would only produce a confusing error. Fails closed (accounts hidden) on any error.
+ */
+export async function fetchAppConfig(): Promise<AppConfig> {
+  try {
+    const res = await fetch('/api/config')
+    if (!res.ok) return { accountsEnabled: false }
+    return (await res.json()) as AppConfig
+  } catch {
+    return { accountsEnabled: false }
+  }
 }
 
 // ----- Auth -----
