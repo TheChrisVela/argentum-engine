@@ -66,6 +66,14 @@ scripts/card-status --set BLB          # implemented vs missing cards (--list / 
 Direct gradle: `./gradlew :rules-engine:test --tests "CreatureStatsTest"` ·
 Web client: `cd web-client && npm run dev | build | typecheck`.
 
+**Multi-agent safety:** always verify through the `just test*` / `just build` recipes, not raw `./gradlew`.
+Each worktree is a separate Gradle root, so parallel agents otherwise each spawn their own 4g daemon +
+4g Kotlin daemon + 2g test JVM and all grab every core — on a normal box three concurrent `./gradlew test`
+runs thrash so hard that tests cross the 300s hang-watchdog cap and every agent times out. The `just`
+recipes route through `scripts/gradle-locked`, a machine-global lock (`~/.cache/argentum/gradle.lock`) that
+serializes heavy Gradle runs across all worktrees — others queue (with a 30m timeout, `GRADLE_LOCK_TIMEOUT`)
+instead of competing.
+
 ## Load-bearing rules
 
 - **Immutability:** never mutate components in place — always return new state.

@@ -8,32 +8,32 @@ default:
 # Build the entire project
 [group: 'build']
 build:
-    ./gradlew build
+    scripts/gradle-locked build
 
 # Run all tests
 [group: 'build']
 test:
-    ./gradlew test
+    scripts/gradle-locked test
 
 # Run tests for rules-engine only
 [group: 'build']
 test-rules:
-    ./gradlew :rules-engine:test
+    scripts/gradle-locked :rules-engine:test
 
 # Run tests for game-server only
 [group: 'build']
 test-server:
-    ./gradlew :game-server:test
+    scripts/gradle-locked :game-server:test
 
 # Run tests for gym only
 [group: 'build']
 test-gym:
-    ./gradlew :gym:test
+    scripts/gradle-locked :gym:test
 
 # Run a specific test class (e.g., just test-class CreatureStatsTest)
 [group: 'build']
 test-class CLASS:
-    ./gradlew :rules-engine:test --tests "{{CLASS}}"
+    scripts/gradle-locked :rules-engine:test --tests "{{CLASS}}"
 
 # CLASS options (all in :ai): AdvisorBenchmark   - AI advisor vs random, per-card timing
 #                             GameBenchmark      - full AI-vs-AI games, sealed decks
@@ -211,12 +211,12 @@ gym-server:
 # Run gym-server tests
 [group: 'build']
 test-gym-server:
-    ./gradlew :gym-server:test
+    scripts/gradle-locked :gym-server:test
 
 # Run gym-trainer tests (MCTS + self-play)
 [group: 'build']
 test-gym-trainer:
-    ./gradlew :gym-trainer:test
+    scripts/gradle-locked :gym-trainer:test
 
 # Start the web client in dev mode
 [group: 'dev']
