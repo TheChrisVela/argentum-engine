@@ -148,13 +148,18 @@ satisfy: non-empty, and (`x.length >= 4` (universal) OR every color of `x` ∈ `
 `d = max(0, 17 - usefulPoolLands.size)` basics to add.
 
 ### 3.4 Allocate basics `u` proportional to pip demand
-`p = pipDemand entries with count>0, sorted desc`; `f = Σ counts`.
+Restrict the demand to the deck color set first: `o' = o` keys ∩ `i` (fall back to `o` if that is
+empty). Basics only ever fix the deck's committed colors — `CX` always counts plain `{X}` pips even
+when `X ∉ a`, so a castability-relaxed off-color fill card (e.g. a lone `{W}` card in an RU build)
+would otherwise leak its color into `o` and have §3.5 fabricate basics the deck can't use, yielding a
+manabase whose colors no longer match `forcedColors`. Then over `o'`:
+`p = entries with count>0, sorted desc`; `f = Σ counts`.
 - Each color gets `floor((demand/f) * d)` basics; distribute the `d - Σfloor` remainder to the
   colors with the largest fractional parts.
 - If only one demanded color → it gets all `d`.
 
 ### 3.5 Splash floor (≥2 demanded colors)
-For each demanded color beyond the top 2: let `B` = max single-card pip requirement of that color in
+Operates on the same restricted demand `o'`. For each demanded color beyond the top 2: let `B` = max single-card pip requirement of that color in
 the deck. If `B>0`, target sources `W = B + 3`; have = (pool lands fixing it) + (basics already
 allocated). If short by `j = W - have > 0`: add `j` basics of that color, **stealing** `j` from the
 largest other basic piles (so total basics unchanged).

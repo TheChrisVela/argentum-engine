@@ -314,10 +314,17 @@ class DraftsimDeckBuilder(private val tables: DraftsimSetTables) {
         }.take(DECK_LANDS)
         var basicsCount = max(0, DECK_LANDS - usefulLands.size)
 
+        // Basics only ever fix the deck's committed colors ([deckColorSet]) — never an off-color card
+        // that the castability-relaxed greedy fill dragged in. `pipCounts` always counts plain colored
+        // pips even when they fall outside the allowed set, so a {W} filler in an RU build would
+        // otherwise leak White demand and have `splashFloor` fabricate Plains the deck can't use — a
+        // manabase whose colors no longer match the build's reported [forcedColors].
+        val basicDemand = demand.filterKeys { it in deckColorSet }.ifEmpty { demand }
+
         // §3.4 allocate basics proportional to pip demand.
-        val basics = allocateBasics(demand, basicsCount)
+        val basics = allocateBasics(basicDemand, basicsCount)
         // §3.5 splash floor for demanded colors beyond the top 2.
-        splashFloor(basics, demand, deckCards, usefulLands)
+        splashFloor(basics, basicDemand, deckCards, usefulLands)
         // §3.6 trim to 17 total.
         trimLands(basics, usefulLands.size)
 
