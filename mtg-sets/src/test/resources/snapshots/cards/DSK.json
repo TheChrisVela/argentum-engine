@@ -6822,25 +6822,7 @@
     "metadata": {
         "collectorNumber": "137",
         "artist": "Sergey Glushakov",
-        "imageUri": "https://cards.scryfall.io/normal/front/f/e/fe32f667-8d9f-4414-913e-256cbc2fbc45.jpg?1726780646",
-        "rulings": [
-            {
-                "date": "2024-09-20",
-                "text": "To cast a Room spell, choose a half (or \"door\") to cast. There's no way to cast both halves of a Room card. When the Room spell resolves, the corresponding door becomes unlocked as the Room enters."
-            },
-            {
-                "date": "2024-09-20",
-                "text": "An ability that triggers \"when you unlock this door\" triggers when that door becomes unlocked, either on the battlefield or as the Room enters because you cast the corresponding half."
-            },
-            {
-                "date": "2024-09-20",
-                "text": "Some doors have abilities that trigger whenever you unlock that door and require one or more targets. You can unlock that door even if there would be insufficient legal targets for that triggered ability. The triggered ability won't go on the stack."
-            },
-            {
-                "date": "2024-09-20",
-                "text": "If a Room enters from any zone other than the stack, it will enter with both halves locked."
-            }
-        ]
+        "imageUri": "https://cards.scryfall.io/normal/front/f/e/fe32f667-8d9f-4414-913e-256cbc2fbc45.jpg?1726780646"
     },
     "colorIdentityOverride": [
         "RED"
@@ -9774,21 +9756,11 @@
     "name": "Meat Locker // Drowned Diner",
     "manaCost": "",
     "typeLine": "Enchantment — Room",
-    "oracleText": "When you unlock this door, tap up to one target creature and put two stun counters on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)\n//\nWhen you unlock this door, draw three cards, then discard a card.",
+    "oracleText": "When you unlock this door, tap up to one target creature and put two stun counters on it.\n//\nWhen you unlock this door, draw three cards, then discard a card.",
     "metadata": {
         "collectorNumber": "65",
         "artist": "Sergey Glushakov",
-        "imageUri": "https://cards.scryfall.io/normal/front/b/3/b3c773f0-9e65-48de-a362-a9a943198693.jpg?1726780679",
-        "rulings": [
-            {
-                "date": "2024-09-20",
-                "text": "An ability that triggers \"when you unlock this door\" triggers when that door becomes unlocked, either on the battlefield or as the Room enters because you cast the corresponding half."
-            },
-            {
-                "date": "2024-09-20",
-                "text": "You can unlock a door even if there would be insufficient legal targets for its triggered ability; the triggered ability simply won't go on the stack."
-            }
-        ]
+        "imageUri": "https://cards.scryfall.io/normal/front/b/3/b3c773f0-9e65-48de-a362-a9a943198693.jpg?1726780679"
     },
     "colorIdentityOverride": [
         "BLUE"
@@ -9799,7 +9771,7 @@
             "name": "Meat Locker",
             "manaCost": "{2}{U}",
             "typeLine": "Enchantment — Room",
-            "oracleText": "When you unlock this door, tap up to one target creature and put two stun counters on it. (If a permanent with a stun counter would become untapped, remove one from it instead.)",
+            "oracleText": "When you unlock this door, tap up to one target creature and put two stun counters on it.",
             "script": {
                 "triggeredAbilities": [
                     {
@@ -9812,16 +9784,16 @@
                                     "type": "TapUntap",
                                     "target": {
                                         "type": "BoundVariable",
-                                        "name": "target"
+                                        "name": "up to one target creature"
                                     }
                                 },
                                 {
                                     "type": "AddCounters",
-                                    "counterType": "stun",
+                                    "counterType": "STUN",
                                     "count": 2,
                                     "target": {
                                         "type": "BoundVariable",
-                                        "name": "target"
+                                        "name": "up to one target creature"
                                     }
                                 }
                             ]
@@ -9832,7 +9804,7 @@
                             "filter": {
                                 "baseFilter": "creature"
                             },
-                            "id": "target"
+                            "id": "up to one target creature"
                         },
                         "descriptionOverride": "When you unlock this door, tap up to one target creature and put two stun counters on it."
                     }
@@ -9895,7 +9867,8 @@
                                     ]
                                 }
                             ]
-                        }
+                        },
+                        "descriptionOverride": "When you unlock this door, draw three cards, then discard a card."
                     }
                 ]
             }
@@ -11862,163 +11835,108 @@
     ]
 }
 
-// Overlord of the Mistmoors
+// Painter's Studio // Defaced Gallery
 {
-    "name": "Overlord of the Mistmoors",
-    "manaCost": "{5}{W}{W}",
-    "typeLine": "Enchantment Creature — Avatar Horror",
-    "oracleText": "Impending 4—{2}{W}{W} (If you cast this spell for its impending cost, it enters with four time counters and isn't a creature until the last is removed. At the beginning of your end step, remove a time counter from it.)\nWhenever this permanent enters or attacks, create two 2/1 white Insect creature tokens with flying.",
-    "creatureStats": {
-        "power": 6,
-        "toughness": 6
-    },
-    "keywords": [
-        "IMPENDING"
-    ],
-    "keywordAbilities": [
-        {
-            "type": "Impending",
-            "time": 4,
-            "cost": "{2}{W}{W}"
-        }
-    ],
-    "script": {
-        "triggeredAbilities": [
-            {
-                "id": "ability_1",
-                "trigger": {
-                    "type": "StepEvent",
-                    "step": "END"
-                },
-                "binding": "ANY",
-                "effect": {
-                    "type": "RemoveCounters",
-                    "counterType": "time",
-                    "count": 1,
-                    "target": "Self"
-                },
-                "triggerCondition": {
-                    "type": "All",
-                    "conditions": [
-                        "SourceCastForImpending",
-                        {
-                            "type": "EntityMatches",
-                            "entity": "Self",
-                            "filter": {
-                                "statePredicates": [
-                                    {
-                                        "type": "HasCounter",
-                                        "counterType": "TIME"
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                },
-                "descriptionOverride": "At the beginning of your end step, remove a time counter from this permanent."
-            },
-            {
-                "id": "ability_2",
-                "trigger": {
-                    "type": "ZoneChangeEvent",
-                    "to": "Battlefield"
-                },
-                "effect": {
-                    "type": "CreateToken",
-                    "count": {
-                        "type": "Fixed",
-                        "amount": 2
-                    },
-                    "power": 2,
-                    "toughness": 1,
-                    "colors": [
-                        "WHITE"
-                    ],
-                    "creatureTypes": [
-                        "Insect"
-                    ],
-                    "keywords": [
-                        "FLYING"
-                    ],
-                    "imageUri": "https://cards.scryfall.io/normal/front/b/8/b802aea8-0ca3-4d2c-a8ef-a80e16729c9b.jpg?1726236464"
-                },
-                "descriptionOverride": "Whenever this permanent enters, create two 2/1 white Insect creature tokens with flying."
-            },
-            {
-                "id": "ability_3",
-                "trigger": "AttackEvent",
-                "effect": {
-                    "type": "CreateToken",
-                    "count": {
-                        "type": "Fixed",
-                        "amount": 2
-                    },
-                    "power": 2,
-                    "toughness": 1,
-                    "colors": [
-                        "WHITE"
-                    ],
-                    "creatureTypes": [
-                        "Insect"
-                    ],
-                    "keywords": [
-                        "FLYING"
-                    ],
-                    "imageUri": "https://cards.scryfall.io/normal/front/b/8/b802aea8-0ca3-4d2c-a8ef-a80e16729c9b.jpg?1726236464"
-                },
-                "descriptionOverride": "Whenever this permanent attacks, create two 2/1 white Insect creature tokens with flying."
-            }
-        ],
-        "staticAbilities": [
-            {
-                "type": "ConditionalStaticAbility",
-                "ability": {
-                    "type": "RemoveCardType",
-                    "cardType": "CREATURE"
-                },
-                "condition": {
-                    "type": "All",
-                    "conditions": [
-                        "SourceCastForImpending",
-                        {
-                            "type": "EntityMatches",
-                            "entity": "Self",
-                            "filter": {
-                                "statePredicates": [
-                                    {
-                                        "type": "HasCounter",
-                                        "counterType": "TIME"
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            }
-        ]
-    },
+    "name": "Painter's Studio // Defaced Gallery",
+    "manaCost": "",
+    "typeLine": "Enchantment — Room",
+    "oracleText": "When you unlock this door, exile the top two cards of your library. You may play them until the end of your next turn.\n//\nWhenever you attack, attacking creatures you control get +1/+0 until end of turn.",
     "metadata": {
-        "collectorNumber": "23",
-        "rarity": "MYTHIC",
-        "artist": "Steven Belledin",
-        "imageUri": "https://cards.scryfall.io/normal/front/6/b/6bcafc2e-cef6-412d-8c5d-1658c3337292.jpg?1726285942",
-        "rulings": [
-            {
-                "date": "2024-09-20",
-                "text": "If you choose to pay the impending cost rather than the mana cost, you're still casting the spell. It goes on the stack and can be responded to, countered, and so on."
-            },
-            {
-                "date": "2024-09-20",
-                "text": "If you choose to pay the impending cost of a creature spell, it's still a creature spell on the stack. You can cast that spell for its impending cost only when you could normally cast that creature spell. Most of the time, this means during your main phase when the stack is empty."
-            },
-            {
-                "date": "2024-09-20",
-                "text": "If an object enters as a copy of a permanent that was cast with its impending cost, it won't enter with time counters, and it will be a creature."
-            }
-        ]
+        "collectorNumber": "147",
+        "rarity": "UNCOMMON",
+        "artist": "Marc Simonetti",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/9/e96901eb-5b57-43f4-a7b1-ae3b809bc36e.jpg?1726780710"
     },
     "colorIdentityOverride": [
-        "WHITE"
+        "RED"
+    ],
+    "layout": "SPLIT",
+    "cardFaces": [
+        {
+            "name": "Painter's Studio",
+            "manaCost": "{2}{R}",
+            "typeLine": "Enchantment — Room",
+            "oracleText": "When you unlock this door, exile the top two cards of your library. You may play them until the end of your next turn.",
+            "script": {
+                "triggeredAbilities": [
+                    {
+                        "id": "ability_1",
+                        "trigger": "DoorUnlockedEvent",
+                        "effect": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "TopOfLibrary",
+                                        "count": {
+                                            "type": "Fixed",
+                                            "amount": 2
+                                        }
+                                    },
+                                    "storeAs": "impulseExiled"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "impulseExiled",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Exile"
+                                    }
+                                },
+                                {
+                                    "type": "GrantMayPlayFromExile",
+                                    "from": "impulseExiled",
+                                    "expiry": {
+                                        "type": "UntilControllerStep",
+                                        "step": "CLEANUP",
+                                        "includeCurrentTurn": false
+                                    }
+                                }
+                            ]
+                        },
+                        "descriptionOverride": "When you unlock this door, exile the top two cards of your library. You may play them until the end of your next turn."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Defaced Gallery",
+            "manaCost": "{1}{R}",
+            "typeLine": "Enchantment — Room",
+            "oracleText": "Whenever you attack, attacking creatures you control get +1/+0 until end of turn.",
+            "script": {
+                "triggeredAbilities": [
+                    {
+                        "id": "ability_2",
+                        "trigger": "YouAttackEvent",
+                        "binding": "ANY",
+                        "effect": {
+                            "type": "ForEach",
+                            "space": {
+                                "type": "IterationSpace.Group",
+                                "filter": {
+                                    "baseFilter": "creature attacking ctrl:you"
+                                }
+                            },
+                            "body": {
+                                "type": "ModifyStats",
+                                "powerModifier": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "toughnessModifier": {
+                                    "type": "Fixed",
+                                    "amount": 0
+                                },
+                                "target": "Self"
+                            }
+                        },
+                        "descriptionOverride": "Whenever you attack, attacking creatures you control get +1/+0 until end of turn."
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -12860,6 +12778,82 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Restricted Office // Lecture Hall
+{
+    "name": "Restricted Office // Lecture Hall",
+    "manaCost": "",
+    "typeLine": "Enchantment — Room",
+    "oracleText": "When you unlock this door, destroy all creatures with power 3 or greater.\n//\nOther permanents you control have hexproof.",
+    "metadata": {
+        "collectorNumber": "227",
+        "rarity": "RARE",
+        "artist": "Antonio José Manzanedo",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/c/ac794b2f-b5ea-449d-bb0b-4f0e6cc145ef.jpg?1726867717"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE"
+    ],
+    "layout": "SPLIT",
+    "cardFaces": [
+        {
+            "name": "Restricted Office",
+            "manaCost": "{2}{W}{W}",
+            "typeLine": "Enchantment — Room",
+            "oracleText": "When you unlock this door, destroy all creatures with power 3 or greater.",
+            "script": {
+                "triggeredAbilities": [
+                    {
+                        "id": "ability_1",
+                        "trigger": "DoorUnlockedEvent",
+                        "effect": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "GatherCards",
+                                    "source": {
+                                        "type": "BattlefieldMatching",
+                                        "filter": "creature pow>=3"
+                                    },
+                                    "storeAs": "destroyAll_gathered"
+                                },
+                                {
+                                    "type": "MoveCollection",
+                                    "from": "destroyAll_gathered",
+                                    "destination": {
+                                        "type": "ToZone",
+                                        "zone": "Graveyard"
+                                    },
+                                    "moveType": "Destroy"
+                                }
+                            ]
+                        },
+                        "descriptionOverride": "When you unlock this door, destroy all creatures with power 3 or greater."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Lecture Hall",
+            "manaCost": "{5}{U}{U}",
+            "typeLine": "Enchantment — Room",
+            "oracleText": "Other permanents you control have hexproof.",
+            "script": {
+                "staticAbilities": [
+                    {
+                        "type": "GrantKeyword",
+                        "keyword": "HEXPROOF",
+                        "filter": {
+                            "baseFilter": "permanent ctrl:you",
+                            "excludeSelf": true
+                        }
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -15046,6 +15040,90 @@
     "colorIdentityOverride": [
         "BLACK",
         "GREEN"
+    ]
+}
+
+// Surgical Suite // Hospital Room
+{
+    "name": "Surgical Suite // Hospital Room",
+    "manaCost": "",
+    "typeLine": "Enchantment — Room",
+    "oracleText": "When you unlock this door, return target creature card with mana value 3 or less from your graveyard to the battlefield.\n//\nWhenever you attack, put a +1/+1 counter on target attacking creature.",
+    "metadata": {
+        "collectorNumber": "34",
+        "rarity": "UNCOMMON",
+        "artist": "Titus Lunter",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/6/96b2dc14-4477-4444-a9eb-4fa4c02dfbde.jpg?1726780782"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ],
+    "layout": "SPLIT",
+    "cardFaces": [
+        {
+            "name": "Surgical Suite",
+            "manaCost": "{1}{W}",
+            "typeLine": "Enchantment — Room",
+            "oracleText": "When you unlock this door, return target creature card with mana value 3 or less from your graveyard to the battlefield.",
+            "script": {
+                "triggeredAbilities": [
+                    {
+                        "id": "ability_1",
+                        "trigger": "DoorUnlockedEvent",
+                        "effect": {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target creature card with mana value 3 or less"
+                            },
+                            "destination": "Battlefield",
+                            "fromZone": "Graveyard"
+                        },
+                        "targetRequirement": {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature mv<=3 own:you",
+                                "zone": "Graveyard"
+                            },
+                            "id": "target creature card with mana value 3 or less"
+                        },
+                        "descriptionOverride": "When you unlock this door, return target creature card with mana value 3 or less from your graveyard to the battlefield."
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Hospital Room",
+            "manaCost": "{3}{W}",
+            "typeLine": "Enchantment — Room",
+            "oracleText": "Whenever you attack, put a +1/+1 counter on target attacking creature.",
+            "script": {
+                "triggeredAbilities": [
+                    {
+                        "id": "ability_2",
+                        "trigger": "YouAttackEvent",
+                        "binding": "ANY",
+                        "effect": {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target attacking creature"
+                            }
+                        },
+                        "targetRequirement": {
+                            "type": "TargetObject",
+                            "filter": {
+                                "baseFilter": "creature attacking"
+                            },
+                            "id": "target attacking creature"
+                        },
+                        "descriptionOverride": "Whenever you attack, put a +1/+1 counter on target attacking creature."
+                    }
+                ]
+            }
+        }
     ]
 }
 
@@ -17785,79 +17863,6 @@
     },
     "colorIdentityOverride": [
         "RED"
-    ]
-}
-
-// Vile Mutilator
-{
-    "name": "Vile Mutilator",
-    "manaCost": "{5}{B}{B}",
-    "typeLine": "Creature — Demon",
-    "oracleText": "Flying, trample\nWhen this creature enters, each opponent sacrifices a nontoken enchantment of their choice, then sacrifices a nontoken creature of their choice.",
-    "creatureStats": {
-        "power": 6,
-        "toughness": 5
-    },
-    "keywords": [
-        "FLYING",
-        "TRAMPLE"
-    ],
-    "script": {
-        "triggeredAbilities": [
-            {
-                "id": "ability_1",
-                "trigger": {
-                    "type": "ZoneChangeEvent",
-                    "to": "Battlefield"
-                },
-                "effect": {
-                    "type": "Composite",
-                    "effects": [
-                        {
-                            "type": "ForceSacrifice",
-                            "filter": "enchantment nontoken",
-                            "target": {
-                                "type": "PlayerRef",
-                                "player": "EachOpponent"
-                            }
-                        },
-                        {
-                            "type": "ForceSacrifice",
-                            "filter": "creature nontoken",
-                            "target": {
-                                "type": "PlayerRef",
-                                "player": "EachOpponent"
-                            }
-                        }
-                    ]
-                },
-                "descriptionOverride": "When this creature enters, each opponent sacrifices a nontoken enchantment of their choice, then sacrifices a nontoken creature of their choice."
-            }
-        ],
-        "additionalCosts": [
-            {
-                "type": "AdditionalAtom",
-                "atom": {
-                    "type": "AtomSacrifice",
-                    "filter": "creature|enchantment"
-                }
-            }
-        ]
-    },
-    "metadata": {
-        "collectorNumber": "122",
-        "rarity": "UNCOMMON",
-        "artist": "Néstor Ossandón Leal",
-        "imageUri": "https://cards.scryfall.io/normal/front/3/8/383fe040-98bb-40f3-b809-48c429b83f47.jpg?1726286303",
-        "rulings": [
-            {
-                "date": "2024-09-20",
-                "text": "While resolving Vile Mutilator's last ability, the next opponent in turn order chooses a nontoken enchantment they control, then each other opponent in turn order does the same. Then each of the chosen nontoken enchantments are sacrificed simultaneously. Finally, repeat this process for nontoken creatures."
-            }
-        ]
-    },
-    "colorIdentityOverride": [
-        "BLACK"
     ]
 }
 
