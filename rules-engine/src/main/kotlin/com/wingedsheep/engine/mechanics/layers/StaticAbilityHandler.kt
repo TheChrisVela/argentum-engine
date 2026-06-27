@@ -896,6 +896,7 @@ class StaticAbilityHandler(
             is com.wingedsheep.sdk.scripting.RedirectDamage,
             is com.wingedsheep.sdk.scripting.DamageCantBePrevented,
             is ReplaceDamageWithCounters,
+            is com.wingedsheep.sdk.scripting.ReplaceDamageWithMill,
             // Life gain/loss:
             is PreventLifeGain,
             is com.wingedsheep.sdk.scripting.ModifyLifeGain,

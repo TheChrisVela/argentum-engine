@@ -5301,6 +5301,13 @@ replacementEffect {
   Martyrs of Korlis uses `Conditions.SourceIsUntapped` for "As long as this creature is untapped, all
   damage that would be dealt to you by artifacts is dealt to this creature instead" (`redirectTo =
   EffectTarget.Self`, `source = SourceFilter.Matching(GameObjectFilter.Artifact)`).
+- `ReplaceDamageWithMill(appliesTo = DamageEvent(recipient = Opponent))` — replace matching damage
+  (CR 615, neither dealt nor prevented): each opponent of the replacement's controller mills that many
+  cards instead. The Mindskinner: `DamageEvent(recipient = RecipientFilter.Opponent, source =
+  SourceFilter.Matching(GameObjectFilter.Any.youControl()))` covers both the unblockable creature's
+  combat damage and noncombat damage from any source you control. Mirrors `ReplaceDamageWithCounters`;
+  wired in both damage paths (`DamageUtils.applyReplaceDamageWithMill` for the general path,
+  `CombatDamageManager` for combat). Damage-type filtering is not applied (matches any type).
 - **DamageEvent filters (gap #7):** `EventPattern.DamageEvent(recipient, source, damageType, amount)`.
   `amount: AmountFilter` (`Any` / `AtMost(n)` / `AtLeast(n)` / `Exactly(n)`) gates on the would-be
   amount (Callous Giant: `AtMost(3)`). `source = SourceFilter.Matching(filter)` can carry relational

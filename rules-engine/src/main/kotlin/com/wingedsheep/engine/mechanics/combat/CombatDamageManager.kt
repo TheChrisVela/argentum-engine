@@ -824,6 +824,15 @@ internal class CombatDamageManager(
             return newState
         }
 
+        // Replace combat damage to an opponent → prevent + each opponent mills that many
+        // (The Mindskinner: an unblockable attacker's combat damage routes through here).
+        val millResult = DamageUtils.applyReplaceDamageWithMill(newState, targetId, amplifiedAmount, sourceId)
+        if (millResult != null) {
+            newState = millResult.state
+            events.addAll(millResult.events)
+            return newState
+        }
+
         // Deflection / reflection shields (Deflecting Palm prevents; Eye for an Eye reflects but
         // lets the damage proceed).
         when (val deflect = DamageUtils.checkDeflectDamageShield(newState, targetId, amplifiedAmount, sourceId)) {

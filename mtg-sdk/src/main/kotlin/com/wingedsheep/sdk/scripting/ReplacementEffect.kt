@@ -1300,6 +1300,35 @@ data class ReplaceDamageWithCounters(
     }
 }
 
+/**
+ * Prevent matched damage and, instead, each opponent of this permanent's controller mills that
+ * many cards.
+ *
+ * Models The Mindskinner (DSK): "If a source you control would deal damage to an opponent, prevent
+ * that damage and each opponent mills that many cards." The [appliesTo] pattern scopes which damage
+ * is replaced — typically `DamageEvent(recipient = Opponent, source = Matching(<you control>))`.
+ *
+ * Like [ReplaceDamageWithCounters], the damage is neither dealt nor prevented in the
+ * "prevention shield" sense — it is *replaced* (CR 615): the mill happens instead. The mill goes to
+ * every opponent of the controller, not just the damaged one, matching the printed "each opponent"
+ * wording (identical to a single opponent in a two-player game).
+ */
+@SerialName("ReplaceDamageWithMill")
+@Serializable
+data class ReplaceDamageWithMill(
+    override val appliesTo: EventPattern = EventPattern.DamageEvent(
+        recipient = RecipientFilter.Opponent
+    )
+) : ReplacementEffect {
+    override val description: String =
+        "If ${appliesTo.description}, prevent that damage and each opponent mills that many cards instead"
+
+    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
+        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
+        return if (newAppliesTo !== appliesTo) copy(appliesTo = newAppliesTo) else this
+    }
+}
+
 // =============================================================================
 // Extra Turn Replacement Effects
 // =============================================================================

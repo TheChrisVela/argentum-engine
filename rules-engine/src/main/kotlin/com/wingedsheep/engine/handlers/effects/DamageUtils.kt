@@ -52,6 +52,7 @@ import com.wingedsheep.sdk.scripting.PreventLifeGain
 import com.wingedsheep.sdk.scripting.RedirectDamage
 import com.wingedsheep.sdk.scripting.effects.RedirectScope
 import com.wingedsheep.sdk.scripting.ReplaceDamageWithCounters
+import com.wingedsheep.sdk.scripting.ReplaceDamageWithMill
 import com.wingedsheep.sdk.scripting.ReplacementEffect
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.events.DamageType
@@ -213,6 +214,10 @@ object DamageUtils {
         if (isPlayer) {
             val counterResult = applyReplaceDamageWithCounters(newState, targetId, effectiveAmount, sourceId)
             if (counterResult != null) return counterResult
+
+            // Damage-to-an-opponent → prevent + each opponent mills that many (The Mindskinner).
+            val millResult = applyReplaceDamageWithMill(newState, targetId, effectiveAmount, sourceId)
+            if (millResult != null) return millResult
         }
 
         // Events from a reflect shield (Eye for an Eye) that fired but let the damage proceed.
@@ -1719,6 +1724,81 @@ object DamageUtils {
                     events.addAll(transitionResult.events)
                 }
 
+                return EffectResult.success(newState, events)
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * Check for [ReplaceDamageWithMill] replacement effects (The Mindskinner).
+     *
+     * Scans the battlefield for permanents whose replacement effect prevents damage matching its
+     * [ReplaceDamageWithMill.appliesTo] pattern and instead mills that many cards from each opponent
+     * of the replacement's controller. [targetId] is the damage recipient (a player), [sourceId] the
+     * damage source (required — the modelled cards scope to "a source you control"). Returns a
+     * short-circuiting [EffectResult] when a replacement applies (so the original damage is replaced,
+     * not dealt), or null when none matches.
+     *
+     * Mirrors [applyReplaceDamageWithCounters]; like it, damage-type filtering is not applied
+     * (the modelled card replaces damage of any type).
+     */
+    fun applyReplaceDamageWithMill(
+        state: GameState,
+        targetId: EntityId,
+        amount: Int,
+        sourceId: EntityId?
+    ): EffectResult? {
+        if (amount <= 0 || sourceId == null) return null
+        val projected = state.projectedState
+
+        for (entityId in state.getBattlefield()) {
+            val container = state.getEntity(entityId) ?: continue
+            val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
+            val sourceControllerId = replacementHostController(state, entityId) ?: continue
+
+            for (effect in replacementComponent.replacementEffects) {
+                if (effect !is ReplaceDamageWithMill) continue
+
+                val damageEvent = effect.appliesTo
+                if (damageEvent !is EventPattern.DamageEvent) continue
+                if (!damageEvent.amount.matches(amount)) continue
+
+                val sourceMatches = when (val source = damageEvent.source) {
+                    is SourceFilter.Any -> true
+                    is SourceFilter.Matching -> {
+                        val context = PredicateContext(controllerId = sourceControllerId, sourceId = entityId, recipientId = targetId)
+                        predicateEvaluator.matches(state, projected, sourceId, source.filter, context)
+                    }
+                    else -> false
+                }
+                if (!sourceMatches) continue
+
+                val recipientMatches = when (val recipient = damageEvent.recipient) {
+                    is RecipientFilter.Any -> true
+                    is RecipientFilter.Opponent -> targetId in state.turnOrder && targetId != sourceControllerId
+                    is RecipientFilter.You -> targetId == sourceControllerId
+                    is RecipientFilter.Matching -> {
+                        val context = PredicateContext(controllerId = sourceControllerId, sourceId = entityId)
+                        predicateEvaluator.matches(state, projected, targetId, recipient.filter, context)
+                    }
+                    else -> false
+                }
+                if (!recipientMatches) continue
+
+                // Replace the damage: each opponent of the controller mills `amount` cards. Snapshot
+                // the top cards before moving so a shrinking library doesn't re-read shifted slots.
+                var newState = state
+                val events = mutableListOf<EngineGameEvent>()
+                for (opponentId in state.getOpponents(sourceControllerId)) {
+                    val topCards = newState.getLibrary(opponentId).take(amount)
+                    for (cardId in topCards) {
+                        val result = ZoneTransitionService.moveToZone(newState, cardId, Zone.GRAVEYARD)
+                        newState = result.state
+                        events.addAll(result.events)
+                    }
+                }
                 return EffectResult.success(newState, events)
             }
         }

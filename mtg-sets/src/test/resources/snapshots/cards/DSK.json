@@ -16519,6 +16519,46 @@
     ]
 }
 
+// The Mindskinner
+{
+    "name": "The Mindskinner",
+    "manaCost": "{U}{U}{U}",
+    "typeLine": "Legendary Enchantment Creature — Nightmare",
+    "oracleText": "The Mindskinner can't be blocked.\nIf a source you control would deal damage to an opponent, prevent that damage and each opponent mills that many cards.",
+    "creatureStats": {
+        "power": 10,
+        "toughness": 1
+    },
+    "flags": [
+        "CANT_BE_BLOCKED"
+    ],
+    "script": {
+        "replacementEffects": [
+            {
+                "type": "ReplaceDamageWithMill",
+                "appliesTo": {
+                    "type": "DamageEvent",
+                    "recipient": "RecipientOpponent",
+                    "source": {
+                        "type": "SourceMatching",
+                        "filter": "ctrl:you"
+                    }
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "66",
+        "rarity": "RARE",
+        "artist": "Abz J Harding",
+        "flavorText": "It slices away the most precious memories first, then the mundane, until all that remains is blank, formless fear.",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/f/7f1bb4c5-99be-46cc-ad54-7affb5f0144c.jpg?1726286101"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // The Rollercrusher Ride
 {
     "name": "The Rollercrusher Ride",
