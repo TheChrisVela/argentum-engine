@@ -133,6 +133,7 @@ function ConnectionOverlay({
   const spectateGame = useGameStore((state) => state.spectateGame)
   const setPendingSpectateGameId = useGameStore((state) => state.setPendingSpectateGameId)
   const authStatus = useAuthStore((state) => state.status)
+  const accountsEnabled = useAuthStore((state) => state.accountsEnabled)
   const authInit = useAuthStore((state) => state.init)
   // Bootstrap server config + session on landing so the AuthWidget knows whether to show at all.
   useEffect(() => {
@@ -307,7 +308,6 @@ function ConnectionOverlay({
   return (
     <div className={styles.connectionOverlay} style={{ backgroundImage: `url(${randomBackground})` }}>
       <FullscreenButton />
-      <AuthWidget />
       <div className={styles.landingLayout}>
         <div className={styles.contentBackdrop}>
           <h1 className={styles.title}>Argentum Engine</h1>
@@ -464,8 +464,9 @@ function ConnectionOverlay({
           )}
         </div>
 
-        {(showPublicLobbies || showLiveGames) && (
+        {(accountsEnabled || showPublicLobbies || showLiveGames) && (
           <div className={styles.sidePanelStack}>
+            <AuthWidget />
             {showPublicLobbies && (
               <PublicLobbyList
                 lobbies={publicLobbies}

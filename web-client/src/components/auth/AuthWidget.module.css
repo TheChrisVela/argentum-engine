@@ -1,23 +1,14 @@
 /**
- * Landing-screen account widget. Anchored top-right (top-left is the fullscreen control). Frosted
- * pills matching the app's other overlay controls, kept visually distinct from the navigation row.
+ * Landing-screen account widget. Lives at the top of the fixed top-right side-panel stack (above the
+ * Public Lobbies / Live Games panels), right-aligned so it never overlaps them. Frosted pills
+ * matching the app's other overlay controls, kept visually distinct from the navigation row.
  */
 .widget {
-  position: fixed;
-  top: var(--space-3);
-  right: var(--space-3);
-  z-index: var(--z-controls);
   display: flex;
+  justify-content: flex-end;
   align-items: stretch;
   gap: var(--space-2);
-}
-
-@media (max-width: 639px) {
-  .widget {
-    top: var(--space-2);
-    right: var(--space-2);
-    gap: var(--space-1);
-  }
+  width: 100%;
 }
 
 /* Shared frosted-pill base for every control in the widget. */
