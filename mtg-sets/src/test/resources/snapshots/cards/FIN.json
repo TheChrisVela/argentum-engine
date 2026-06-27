@@ -6378,6 +6378,46 @@
     ]
 }
 
+// Laughing Mad
+{
+    "name": "Laughing Mad",
+    "manaCost": "{2}{R}",
+    "typeLine": "Instant",
+    "oracleText": "As an additional cost to cast this spell, discard a card.\nDraw two cards.\nFlashback {3}{R} (You may cast this card from your graveyard for its flashback cost and any additional costs. Then exile it.)",
+    "keywords": [
+        "FLASHBACK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Flashback",
+            "cost": "{3}{R}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "DrawCards",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            }
+        },
+        "additionalCosts": [
+            {
+                "type": "AdditionalAtom",
+                "atom": "AtomDiscard"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "143",
+        "artist": "RARE ENGINE",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/d/cd5b9daf-6325-4eb4-a069-4a8cc7807884.jpg?1748706298"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Lindblum, Industrial Regency
 {
     "name": "Lindblum, Industrial Regency",
@@ -8034,6 +8074,103 @@
     ]
 }
 
+// Prishe's Wanderings
+{
+    "name": "Prishe's Wanderings",
+    "manaCost": "{2}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Search your library for a basic land card or Town card, put it onto the battlefield tapped, then shuffle. When you search your library this way, put a +1/+1 counter on target creature you control.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": {
+                                    "cardPredicates": [
+                                        {
+                                            "type": "Or",
+                                            "predicates": [
+                                                "IsBasicLand",
+                                                {
+                                                    "type": "And",
+                                                    "predicates": [
+                                                        "IsLand",
+                                                        {
+                                                            "type": "HasSubtype",
+                                                            "subtype": "Town"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Battlefield",
+                                "placement": "Tapped"
+                            }
+                        },
+                        "ShuffleLibrary"
+                    ]
+                },
+                {
+                    "type": "AddCounters",
+                    "counterType": "+1/+1",
+                    "count": 1,
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target creature you control"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "target creature you control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "193",
+        "artist": "Daniel Correia",
+        "flavorText": "\"There's only one reason. They smell an adventure! C'mon! We've got no time to lose!\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/6/d6e1dee0-e2cd-4899-a3ea-7d0df717c9ab.jpg?1748706482"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Prompto Argentum
 {
     "name": "Prompto Argentum",
@@ -8581,6 +8718,85 @@
     },
     "colorIdentityOverride": [
         "RED"
+    ]
+}
+
+// Reach the Horizon
+{
+    "name": "Reach the Horizon",
+    "manaCost": "{3}{G}",
+    "typeLine": "Sorcery",
+    "oracleText": "Search your library for up to two basic land cards and/or Town cards with different names, put them onto the battlefield tapped, then shuffle.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "FromZone",
+                        "zone": "Library",
+                        "filter": {
+                            "cardPredicates": [
+                                {
+                                    "type": "Or",
+                                    "predicates": [
+                                        "IsBasicLand",
+                                        {
+                                            "type": "And",
+                                            "predicates": [
+                                                "IsLand",
+                                                {
+                                                    "type": "HasSubtype",
+                                                    "subtype": "Town"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "storeAs": "searchable"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "searchable",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 2
+                        }
+                    },
+                    "storeSelected": "found",
+                    "prompt": "Search for up to two basic land or Town cards with different names",
+                    "restrictions": [
+                        "OnePerCardName"
+                    ]
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "found",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Battlefield",
+                        "placement": "Tapped"
+                    }
+                },
+                "ShuffleLibrary"
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "195",
+        "rarity": "UNCOMMON",
+        "artist": "ikeda_cpt",
+        "flavorText": "\"Guess this is goodbye, City of Mako.\"\n—Tifa Lockhart",
+        "imageUri": "https://cards.scryfall.io/normal/front/c/2/c25960e0-5779-4e20-89f3-03950ad9d91c.jpg?1748706490"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
     ]
 }
 
@@ -9258,6 +9474,59 @@
     },
     "colorIdentityOverride": [
         "WHITE"
+    ]
+}
+
+// Rufus Shinra
+{
+    "name": "Rufus Shinra",
+    "manaCost": "{1}{W}{B}",
+    "typeLine": "Legendary Creature — Human Noble",
+    "oracleText": "Whenever Rufus Shinra attacks, if you don't control a creature named Darkstar, create Darkstar, a legendary 2/2 white and black Dog creature token.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 4
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 2,
+                    "toughness": 2,
+                    "colors": [
+                        "WHITE",
+                        "BLACK"
+                    ],
+                    "creatureTypes": [
+                        "Dog"
+                    ],
+                    "name": "Darkstar",
+                    "imageUri": "https://cards.scryfall.io/normal/front/1/9/19faca08-0eef-4da4-ab6f-c3aed63ac77b.jpg?1748704096",
+                    "legendary": true
+                },
+                "triggerCondition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "creature name:Darkstar",
+                    "negate": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "238",
+        "rarity": "UNCOMMON",
+        "artist": "Ittoku",
+        "flavorText": "\"I'll control the world with fear. It takes too much to do it like my old man.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/5/f5fff00b-c9a0-4e90-abc0-349f8716c885.jpg?1748706668"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLACK"
     ]
 }
 
