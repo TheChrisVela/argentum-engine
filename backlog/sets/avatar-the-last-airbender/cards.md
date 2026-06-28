@@ -89,7 +89,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [ ] Avatar's Wrath
 - [x] Azula Always Lies
 - [ ] Azula, Cunning Usurper
-- [ ] Azula, On the Hunt
+- [x] Azula, On the Hunt
 - [x] Ba Sing Se
 - [x] Badgermole
 - [x] Badgermole Cub
