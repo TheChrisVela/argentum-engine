@@ -7366,6 +7366,78 @@
     ]
 }
 
+// North Wind Avatar
+{
+    "name": "North Wind Avatar",
+    "manaCost": "{2}{U}{U}{R}",
+    "typeLine": "Creature — Dragon Spirit Avatar",
+    "oracleText": "Flying\nWhen this creature enters, if you cast it, you may put a card you own from outside the game into your hand.",
+    "creatureStats": {
+        "power": 5,
+        "toughness": 5
+    },
+    "keywords": [
+        "FLYING"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Sideboard"
+                            },
+                            "storeAs": "wishable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "wishable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "wishableFound"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "wishableFound",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            }
+                        }
+                    ]
+                },
+                "triggerCondition": "WasCast",
+                "descriptionOverride": "When this creature enters, if you cast it, you may put a card you own from outside the game into your hand."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "162",
+        "rarity": "MYTHIC",
+        "artist": "Andrey Kuzinskiy",
+        "flavorText": "Glyph has claimed to be a survivor of an alien war, a deposed minister of weather, and the last of the dinosaurs. Whatever the truth, his origin stories always bear a lesson.",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/1/41439cfe-bb3e-42f3-9d81-de9db537ce68.jpg?1769006359"
+    },
+    "colorIdentityOverride": [
+        "BLUE",
+        "RED"
+    ]
+}
+
 // Northampton Farm
 {
     "name": "Northampton Farm",
