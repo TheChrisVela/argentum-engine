@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.costs.CostAtom
 import com.wingedsheep.sdk.scripting.costs.PayCost
 import com.wingedsheep.sdk.scripting.effects.WardCost
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import com.wingedsheep.sdk.dsl.firebending
@@ -83,6 +84,7 @@ sealed interface KeywordAbility {
         override val description: String = when (cost) {
             is WardCost.Mana -> "Ward ${cost.manaCost}"
             is WardCost.Life -> "Ward—Pay ${cost.amount} life"
+            is WardCost.DynamicLife -> "Ward—Pay life equal to ${cost.amount.description}"
             is WardCost.Discard -> "Ward—Discard ${cost.description}"
             is WardCost.Sacrifice -> "Ward—Sacrifice ${cost.description}"
             is WardCost.Composite -> "Ward—${cost.description}"
@@ -715,9 +717,16 @@ sealed interface KeywordAbility {
         fun ward(cost: String): KeywordAbility = Ward(WardCost.Mana(cost))
 
         /**
-         * Create Ward with life cost.
+         * Create Ward with a fixed life cost.
          */
         fun wardLife(amount: Int): KeywordAbility = Ward(WardCost.Life(amount))
+
+        /**
+         * Create Ward with a [DynamicAmount] life cost — "Ward—Pay life equal to ~"
+         * (e.g. Raubahn, Bull of Ala Mhigo with [com.wingedsheep.sdk.dsl.DynamicAmounts.sourcePower]).
+         * The amount is evaluated when the ward triggered ability resolves.
+         */
+        fun wardLife(amount: DynamicAmount): KeywordAbility = Ward(WardCost.DynamicLife(amount))
 
         /**
          * Create Ward with discard cost. When [filter] is non-null the discarded

@@ -68,8 +68,9 @@ internal fun BridgeBuilder.keywords() {
     // (`Ward—Discard a card`, `Ward {2}`, `Ward—Pay N life`, `Ward—Sacrifice <filter>`). Like Saddle,
     // it must be `supported`, not `keyword`: a bare `keywords(Keyword.WARD)` would drop the cost. The
     // emitter's `rname == "Ward"` branch renders `keywordAbility(KeywordAbility.ward(...)/wardDiscard()/
-    // wardLife(N)/wardSacrifice(filter))` for the cost shapes it can express; richer/compound costs
-    // decline -> SCAFFOLD. This entry only marks the capability covered (never blocking).
+    // wardLife(N)/wardLife(DynamicAmounts.sourcePower())/wardSacrifice(filter))` for the cost shapes it
+    // can express ("Ward—Pay life equal to ~'s power", Raubahn, renders the dynamic form); richer/compound
+    // costs decline -> SCAFFOLD. This entry only marks the capability covered (never blocking).
     supported("Ward", "keyword ability: Ward—<cost> (CR 702.21) -> keywordAbility(KeywordAbility.ward(...)/wardDiscard()/wardLife(N)/wardSacrifice(filter))")
 
     composed("Landwalk", "specific *WALK keywords (SWAMPWALK, FORESTWALK, ...)")

@@ -11518,6 +11518,80 @@
     ]
 }
 
+// Raubahn, Bull of Ala Mhigo
+{
+    "name": "Raubahn, Bull of Ala Mhigo",
+    "manaCost": "{1}{R}",
+    "typeLine": "Legendary Creature — Human Warrior",
+    "oracleText": "Ward—Pay life equal to Raubahn's power.\nWhenever Raubahn attacks, attach up to one target Equipment you control to target attacking creature.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 2
+    },
+    "keywords": [
+        "WARD"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Ward",
+            "cost": {
+                "type": "WardCost.DynamicLife",
+                "amount": {
+                    "type": "EntityProperty",
+                    "entity": "Source",
+                    "numericProperty": "Power"
+                }
+            }
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "AttachTargetEquipmentToCreature",
+                    "equipmentTarget": {
+                        "type": "BoundVariable",
+                        "name": "up to one target Equipment you control"
+                    },
+                    "creatureTarget": {
+                        "type": "BoundVariable",
+                        "name": "target attacking creature"
+                    }
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "artifact Equipment ctrl:you"
+                    },
+                    "id": "up to one target Equipment you control"
+                },
+                "additionalTargetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "creature attacking"
+                        },
+                        "id": "target attacking creature"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "151",
+        "rarity": "RARE",
+        "artist": "Julia Vasilyeva",
+        "flavorText": "\"Come, then! Who will be next to die on my steel!?\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/7/0/7035d11b-525f-4120-8dcb-610095196681.jpg?1748706327"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Reach the Horizon
 {
     "name": "Reach the Horizon",

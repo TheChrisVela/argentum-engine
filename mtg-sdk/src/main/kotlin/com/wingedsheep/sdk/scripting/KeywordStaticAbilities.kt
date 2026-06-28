@@ -82,6 +82,7 @@ data class GrantWard(
     override val description: String = when (cost) {
         is WardCost.Mana -> "${filter.description} have ward ${cost.manaCost}"
         is WardCost.Life -> "${filter.description} have \"Ward—Pay ${cost.amount} life.\""
+        is WardCost.DynamicLife -> "${filter.description} have \"Ward—Pay life equal to ${cost.amount.description}.\""
         is WardCost.Discard -> "${filter.description} have \"Ward—Discard ${cost.description}.\""
         is WardCost.Sacrifice -> "${filter.description} have \"Ward—Sacrifice ${cost.description}.\""
         is WardCost.Composite -> "${filter.description} have \"Ward—${cost.description}.\""

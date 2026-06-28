@@ -13,6 +13,12 @@ import kotlin.reflect.KClass
  * Executor for [AttachTargetEquipmentToCreatureEffect].
  * Attaches a targeted Equipment to a targeted creature.
  * Both the Equipment and creature are explicit targets (not the source).
+ *
+ * Either target may be declared optional ("up to one target"). When either resolves to nothing —
+ * the player declined an optional target, or a required target became illegal before resolution
+ * (CR 608.2c) — there is nothing to attach, so the effect is a graceful no-op (Raubahn, Bull of
+ * Ala Mhigo attaches "up to one target Equipment"; Blacksmith's Talent attaches to "up to one
+ * target creature").
  */
 class AttachTargetEquipmentToCreatureExecutor : EffectExecutor<AttachTargetEquipmentToCreatureEffect> {
 
@@ -24,11 +30,12 @@ class AttachTargetEquipmentToCreatureExecutor : EffectExecutor<AttachTargetEquip
         effect: AttachTargetEquipmentToCreatureEffect,
         context: EffectContext
     ): EffectResult {
+        // "up to one" / fizzled target — nothing to attach, so this is a no-op (not an error).
         val equipmentId = context.resolveTarget(effect.equipmentTarget, state)
-            ?: return EffectResult.error(state, "No valid equipment target for attach")
+            ?: return EffectResult.success(state)
 
         val creatureId = context.resolveTarget(effect.creatureTarget, state)
-            ?: return EffectResult.success(state) // "up to one" — no creature target is OK
+            ?: return EffectResult.success(state)
 
         var newState = state
 

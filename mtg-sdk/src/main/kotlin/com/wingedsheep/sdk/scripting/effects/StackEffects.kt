@@ -331,6 +331,22 @@ sealed interface WardCost {
     }
 
     /**
+     * Ward with a life cost whose amount is a game-state-dependent [DynamicAmount] — e.g.
+     * Raubahn, Bull of Ala Mhigo's "Ward—Pay life equal to Raubahn's power"
+     * ([com.wingedsheep.sdk.dsl.DynamicAmounts.sourcePower]). The amount is evaluated when the
+     * ward triggered ability *resolves* (CR 702.21b), reading the source's power at that time,
+     * or its last-known value if the source has left the battlefield (CR 112.7a) — both handled
+     * by [com.wingedsheep.sdk.scripting.values.EntityReference.Source]'s last-known-information
+     * fallback. The fixed-Int [Life] stays the common case; this variant covers only costs that
+     * read live game state.
+     */
+    @SerialName("WardCost.DynamicLife")
+    @Serializable
+    data class DynamicLife(val amount: DynamicAmount) : WardCost {
+        override val description: String = "pay life equal to ${amount.description}"
+    }
+
+    /**
      * Ward with a discard cost — e.g. Ward—Discard a card.
      *
      * When [filter] is non-null the discarded card(s) must match it — e.g.
@@ -399,6 +415,7 @@ data class WardCounterEffect(
     override val description: String = when (cost) {
         is WardCost.Mana -> "Counter it unless its controller pays ${cost.manaCost}"
         is WardCost.Life -> "Counter it unless its controller pays ${cost.amount} life"
+        is WardCost.DynamicLife -> "Counter it unless its controller pays life equal to ${cost.amount.description}"
         is WardCost.Discard -> "Counter it unless its controller discards ${cost.description}"
         is WardCost.Sacrifice -> "Counter it unless its controller sacrifices ${cost.description}"
         is WardCost.Composite -> "Counter it unless its controller pays ${cost.description}"

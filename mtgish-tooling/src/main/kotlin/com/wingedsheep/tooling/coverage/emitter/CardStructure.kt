@@ -12,6 +12,7 @@ import com.wingedsheep.tooling.coverage.Local
 import com.wingedsheep.tooling.coverage.RawLine
 import com.wingedsheep.tooling.coverage.Stmt
 import com.wingedsheep.tooling.coverage.Sub
+import com.wingedsheep.tooling.coverage.amountNode
 import com.wingedsheep.tooling.coverage.arg
 import com.wingedsheep.tooling.coverage.argWordsTagged
 import com.wingedsheep.tooling.coverage.asArr
@@ -3258,9 +3259,18 @@ internal fun EmitCtx.wardKeywordLine(rule: JsonObject): List<Stmt>? {
         "DiscardACard" -> call("KeywordAbility.wardDiscard")
         "DiscardACardAtRandom" -> call("KeywordAbility.wardDiscard", arg("random", "true"))
         "PayLife" -> {
-            // Only a fixed integer life cost renders; dynamic life (PowerOfPermanent, X) declines.
-            val n = (cost["args"].asInt()) ?: ((cost["args"] as? JsonObject)?.get("args").asInt()) ?: return null
-            call("KeywordAbility.wardLife", arg("$n"))
+            // A fixed integer life cost renders to wardLife(N). A dynamic life cost renders to
+            // wardLife(<DynamicAmount>) only for the source-power shape it recognizes — Raubahn,
+            // Bull of Ala Mhigo's "Ward—Pay life equal to ~'s power" maps PowerOfPermanent(ThisPermanent)
+            // to DynamicAmounts.sourcePower(). Any other dynamic shape (X, another permanent's power)
+            // still declines -> SCAFFOLD rather than emit an inexact cost.
+            val n = (cost["args"].asInt()) ?: ((cost["args"] as? JsonObject)?.get("args").asInt())
+            if (n != null) {
+                call("KeywordAbility.wardLife", arg("$n"))
+            } else {
+                val dynamic = dynamicAmountExpr(amountNode(cost.field("args"))) ?: return null
+                call("KeywordAbility.wardLife", arg(dynamic))
+            }
         }
         "SacrificeAPermanent" -> {
             val filter = gameObjectFilterDsl(cost.field("args")) ?: return null

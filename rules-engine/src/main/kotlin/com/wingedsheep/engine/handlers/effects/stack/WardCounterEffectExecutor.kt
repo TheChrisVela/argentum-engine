@@ -12,6 +12,7 @@ import com.wingedsheep.engine.core.ManaSourceOption
 import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.core.YesNoDecision
 import com.wingedsheep.engine.handlers.DecisionHandler
+import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
@@ -82,10 +83,17 @@ class WardCounterEffectExecutor(
             ?: container.get<TriggeredAbilityOnStackComponent>()?.controllerId
             ?: return EffectResult.success(state)
 
+        // Resolve any DynamicLife component to a fixed Life amount at ward-resolution time
+        // (CR 702.21b): "Ward—Pay life equal to ~" reads the live value now — e.g. Raubahn's
+        // power, using last-known information if Raubahn has left the battlefield (handled by
+        // EntityReference.Source's LkiPolicy). All downstream payment / continuation machinery
+        // then operates on a plain WardCost.Life, so no other branch needs to change.
+        val resolvedCost = resolveDynamicLife(state, effect.cost, context)
+
         return chargeWardCost(
             state = state,
             cardRegistry = cardRegistry,
-            cost = effect.cost,
+            cost = resolvedCost,
             remainingParts = emptyList(),
             spellEntityId = spellEntityId,
             container = container,
@@ -93,6 +101,23 @@ class WardCounterEffectExecutor(
             wardSourceId = context.sourceId,
             controllerId = context.controllerId
         )
+    }
+
+    /**
+     * Replace every [WardCost.DynamicLife] (including those nested in a [WardCost.Composite])
+     * with a fixed [WardCost.Life] by evaluating its [com.wingedsheep.sdk.scripting.values.DynamicAmount]
+     * against the current state, clamped to >= 0. Other cost shapes pass through unchanged.
+     */
+    private fun resolveDynamicLife(
+        state: GameState,
+        cost: WardCost,
+        context: EffectContext
+    ): WardCost = when (cost) {
+        is WardCost.DynamicLife ->
+            WardCost.Life(DynamicAmountEvaluator().evaluate(state, cost.amount, context).coerceAtLeast(0))
+        is WardCost.Composite ->
+            WardCost.Composite(cost.parts.map { resolveDynamicLife(state, it, context) })
+        else -> cost
     }
 
     companion object {
@@ -141,6 +166,13 @@ class WardCounterEffectExecutor(
                         spellEntityId, container, payingPlayerId, wardSourceId, controllerId
                     )
                 }
+                // The dynamic life amount is resolved to a fixed WardCost.Life by execute()'s
+                // resolveDynamicLife before any cost reaches here (including inside a Composite),
+                // so this branch is unreachable; charge a 0-life cost defensively if it ever isn't.
+                is WardCost.DynamicLife -> handleLifeCost(
+                    state, cardRegistry, spellEntityId, container, payingPlayerId,
+                    0, remainingParts, wardSourceId, controllerId
+                )
             }
         }
 

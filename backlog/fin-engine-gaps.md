@@ -46,7 +46,12 @@ Verified against source (file:line). These appear across the remaining FIN cards
   Shantotto, Vivi (the whole "magic-counter" sub-theme).
 - **Equip** — `equipAbility("{N}")` (`CardBuilder.kt:515`) + `AttachEquipmentExecutor`; **attach-to-target as a
   spell/triggered effect** — `Effects.AttachTargetEquipmentToCreature(...)` (`Effects.kt:3048`,
-  `AttachTargetEquipmentToCreatureExecutor`), covering Raubahn, Weapons Vendor, Beatrix, Gilgamesh, Zack Fair.
+  `AttachTargetEquipmentToCreatureExecutor`), covering Weapons Vendor, Beatrix, Gilgamesh, Zack Fair.
+  **Raubahn, Bull of Ala Mhigo is implemented** (attack trigger reuses that effect; "up to one target Equipment"
+  is an optional target, declining/illegal attach is a no-op).
+- **Dynamic ward cost ("Ward—Pay life equal to ~")** — `KeywordAbility.wardLife(DynamicAmount)` →
+  `WardCost.DynamicLife`, resolved at ward-trigger resolution (CR 702.21b) with last-known power if the source
+  has left (CR 112.7a). Implemented for Raubahn, Bull of Ala Mhigo.
   **Equip cost reduction** — `ActivatedAbility.genericCostReduction` (`ActivatedAbility.kt:58`). **`Filters.EquippedCreature`**
   for equipped-creature static buffs (`Filters.kt:137`).
 - **Affinity for a subtype** — `KeywordAbility.AffinityForSubtype` (`KeywordAbility.kt:217`) → Bartz and Boko

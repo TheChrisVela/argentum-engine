@@ -3856,7 +3856,8 @@ composite abilities).
 **Parameterized `KeywordAbility.*`**
 
 - `Ward(amount)` — opponent pays a mana cost to target this (CR 702.21). Non-mana costs use
-  `KeywordAbility.Ward(WardCost.X)`: `WardCost.Mana`, `WardCost.Life(n)`, `WardCost.Discard(n, random, filter)`,
+  `KeywordAbility.Ward(WardCost.X)`: `WardCost.Mana`, `WardCost.Life(n)`, `WardCost.DynamicLife(amount)`,
+  `WardCost.Discard(n, random, filter)`,
   and `WardCost.Sacrifice(filter, count = 1)` ("Ward—Sacrifice a Food", Ygra; "Ward—Sacrifice three
   nonland permanents" with `count = 3`, Valgavoth, Terror Eater, via `KeywordAbility.wardSacrifice(filter, count)`).
   For sacrifice ward, the opponent chooses which `count` matching permanent(s) they control to sacrifice
@@ -3872,6 +3873,13 @@ composite abilities).
   `GameObjectFilter`: when set, only matching hand cards count toward the can-pay check and only matching
   cards are offered for discard — e.g. Saruman of Many Colors' "Ward—Discard an enchantment, instant, or
   sorcery card" (`wardDiscard(filter = Enchantment or Instant or Sorcery)`).
+  `WardCost.DynamicLife(amount)` (built via `KeywordAbility.wardLife(amount: DynamicAmount)`) is a life
+  cost whose amount is a `DynamicAmount` read when the ward trigger *resolves* (CR 702.21b) — e.g.
+  Raubahn, Bull of Ala Mhigo's "Ward—Pay life equal to Raubahn's power"
+  (`wardLife(DynamicAmounts.sourcePower())`), which reads the source's projected power then, or its
+  last-known power if the source has left the battlefield (CR 112.7a, via `EntityReference.Source`'s
+  last-known-information policy). It resolves down to a fixed `WardCost.Life` in the executor, so it
+  composes inside `WardCost.Composite` and uses the same pay-or-counter prompt.
 - `Protection(color)` — protection from a single color.
 - `ProtectionFrom(set)` — protection from a set of colors/types.
 - `Protection(ProtectionScope.Supertype("Legendary"))` / `KeywordAbility.protectionFromSupertype("Legendary")` — protection from a supertype, e.g. "protection from legendary creatures" (Tsabo Tavoc). Enforced across targeting, blocking, and combat damage via projected `PROTECTION_FROM_SUPERTYPE_<X>` keywords.
