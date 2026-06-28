@@ -267,6 +267,24 @@ object SetArchetypes {
                     creatureTypes = listOf("Mount")),
             )
         ),
+        "DSK" to SetSynergies(
+            setCode = "DSK",
+            setName = "Duskmourn: House of Horror",
+            archetypes = listOf(
+                Archetype("Eerie Enchantments", listOf(Color.WHITE, Color.BLUE),
+                    "Trigger Eerie by playing enchantments and unlocking Rooms. A tempo-value deck that builds an enchantment engine, churning out Glimmer tokens and incremental advantage while flyers close in the air."),
+                Archetype("Survival", listOf(Color.GREEN, Color.WHITE),
+                    "Keep creatures untapped through your second main phase to switch on Survival payoffs. A go-tall midrange that piles on +1/+1 counters and rewards a sturdy, defensive board."),
+                Archetype("Manifest Dread", listOf(Color.BLUE, Color.GREEN),
+                    "Manifest dread to flood the board with face-down 2/2s while stocking your graveyard. A value-midrange that converts card selection into board presence and creatures-entering payoffs."),
+                Archetype("Delirium", listOf(Color.BLACK, Color.GREEN),
+                    "Fill your graveyard with four or more card types to unlock Delirium bonuses. A grindy graveyard-value deck that mills, sacrifices, and recurs threats to out-attrition the table."),
+                Archetype("Sacrifice Aggro", listOf(Color.BLACK, Color.RED),
+                    "Throw expendable creatures and tokens at sacrifice outlets for value and reach. An aggressive deck that drains the opponent and turns dying bodies into damage."),
+                Archetype("Impending", listOf(Color.RED, Color.GREEN),
+                    "Deploy big threats early with Impending time counters, then ramp into the format's largest creatures. A midrange-ramp deck that overpowers opponents once its haymakers come online."),
+            )
+        ),
     )
 
     /** Get archetypes for a specific set code, or null if not found. */

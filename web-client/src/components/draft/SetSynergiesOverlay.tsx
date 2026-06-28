@@ -629,6 +629,42 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
       },
     ],
   },
+  DSK: {
+    setCode: 'DSK',
+    setName: 'Duskmourn: House of Horror',
+    archetypes: [
+      {
+        name: 'Eerie Enchantments',
+        colors: ['W', 'U'],
+        description: 'Trigger Eerie by playing enchantments and unlocking Rooms. A tempo-value deck that builds an enchantment engine, churning out Glimmer tokens and incremental advantage while flyers close in the air.',
+      },
+      {
+        name: 'Survival',
+        colors: ['G', 'W'],
+        description: 'Keep creatures untapped through your second main phase to switch on Survival payoffs. A go-tall midrange that piles on +1/+1 counters and rewards a sturdy, defensive board.',
+      },
+      {
+        name: 'Manifest Dread',
+        colors: ['U', 'G'],
+        description: 'Manifest dread to flood the board with face-down 2/2s while stocking your graveyard. A value-midrange that converts card selection into board presence and creatures-entering payoffs.',
+      },
+      {
+        name: 'Delirium',
+        colors: ['B', 'G'],
+        description: 'Fill your graveyard with four or more card types to unlock Delirium bonuses. A grindy graveyard-value deck that mills, sacrifices, and recurs threats to out-attrition the table.',
+      },
+      {
+        name: 'Sacrifice Aggro',
+        colors: ['B', 'R'],
+        description: 'Throw expendable creatures and tokens at sacrifice outlets for value and reach. An aggressive deck that drains the opponent and turns dying bodies into damage.',
+      },
+      {
+        name: 'Impending',
+        colors: ['R', 'G'],
+        description: "Deploy big threats early with Impending time counters, then ramp into the format's largest creatures. A midrange-ramp deck that overpowers opponents once its haymakers come online.",
+      },
+    ],
+  },
 }
 
 /**
