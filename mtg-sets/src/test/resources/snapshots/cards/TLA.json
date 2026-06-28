@@ -922,6 +922,59 @@
     ]
 }
 
+// Callous Inspector
+{
+    "name": "Callous Inspector",
+    "manaCost": "{B}",
+    "typeLine": "Creature — Human Soldier",
+    "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)\nWhen this creature dies, it deals 1 damage to you. Create a Clue token. (It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 1
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "from": "Battlefield",
+                    "to": "Graveyard"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "DealDamage",
+                            "amount": {
+                                "type": "Fixed",
+                                "amount": 1
+                            },
+                            "target": "Controller"
+                        },
+                        {
+                            "type": "CreatePredefinedToken",
+                            "tokenType": "Clue"
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "89",
+        "artist": "Enishi",
+        "flavorText": "Protection fees can burn a hole in your pocket, but they're better than the alternative.",
+        "imageUri": "https://cards.scryfall.io/normal/front/f/2/f22610e9-6b14-4914-bb67-bd6723bec9aa.jpg?1764120614"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Cat-Gator
 {
     "name": "Cat-Gator",
