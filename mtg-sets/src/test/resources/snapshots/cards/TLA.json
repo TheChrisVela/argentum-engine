@@ -11473,6 +11473,162 @@
     ]
 }
 
+// The Cave of Two Lovers
+{
+    "name": "The Cave of Two Lovers",
+    "manaCost": "{3}{R}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Create two 1/1 white Ally creature tokens.\nII — Search your library for a Mountain or Cave card, reveal it, put it into your hand, then shuffle.\nIII — Earthbend 3. (Target land you control becomes a 0/0 creature with haste that's still a land. Put three +1/+1 counters on it. When it dies or is exiled, return it to the battlefield tapped.)",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "CreateToken",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 2
+                    },
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Ally"
+                    ]
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "FromZone",
+                                "zone": "Library",
+                                "filter": "Mountain|Cave"
+                            },
+                            "storeAs": "searchable"
+                        },
+                        {
+                            "type": "SelectFromCollection",
+                            "from": "searchable",
+                            "selection": {
+                                "type": "ChooseUpTo",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeSelected": "found"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "found",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Hand"
+                            },
+                            "revealed": true
+                        },
+                        "ShuffleLibrary"
+                    ]
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "AnimateLand",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target land you control"
+                            },
+                            "power": 0,
+                            "toughness": 0,
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "GrantKeyword",
+                            "keyword": "HASTE",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target land you control"
+                            },
+                            "duration": "Permanent"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "+1/+1",
+                            "count": 3,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target land you control"
+                            }
+                        },
+                        {
+                            "type": "GrantTriggeredAbility",
+                            "ability": {
+                                "id": "ability_1",
+                                "trigger": {
+                                    "type": "ZoneChangeEvent",
+                                    "from": "Battlefield"
+                                },
+                                "effect": {
+                                    "type": "Composite",
+                                    "effects": [
+                                        {
+                                            "type": "MoveToZone",
+                                            "target": "Self",
+                                            "destination": "Battlefield",
+                                            "placement": "Tapped",
+                                            "fromZone": "Graveyard"
+                                        },
+                                        {
+                                            "type": "MoveToZone",
+                                            "target": "Self",
+                                            "destination": "Battlefield",
+                                            "placement": "Tapped",
+                                            "fromZone": "Exile"
+                                        }
+                                    ]
+                                },
+                                "descriptionOverride": "When this dies or is exiled, return it to the battlefield tapped."
+                            },
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target land you control"
+                            },
+                            "duration": "Permanent"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "land ctrl:you"
+                    },
+                    "id": "target land you control"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "126",
+        "rarity": "UNCOMMON",
+        "artist": "Ittoku",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/0/50bf5c8b-f218-46b7-843c-8d8083f02fd2.jpg?1782135432"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // The Lion-Turtle
 {
     "name": "The Lion-Turtle",
