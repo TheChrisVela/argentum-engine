@@ -309,7 +309,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [ ] The Spirit Oasis
 - [ ] The Unagi of Kyoshi Island
 - [x] The Walls of Ba Sing Se
-- [ ] Tiger-Dillo
+- [x] Tiger-Dillo
 - [x] Tiger-Seal
 - [ ] Tolls of War
 - [ ] Toph, Hardheaded Teacher

@@ -7244,6 +7244,52 @@
     "colorIdentityOverride": []
 }
 
+// Tiger-Dillo
+{
+    "name": "Tiger-Dillo",
+    "manaCost": "{1}{R}",
+    "typeLine": "Creature — Cat Armadillo",
+    "oracleText": "This creature can't attack or block unless you control another creature with power 4 or greater.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "CantAttackUnless",
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "creature pow>=4",
+                    "excludeSelf": true
+                }
+            },
+            {
+                "type": "CantBlockUnless",
+                "condition": {
+                    "type": "Exists",
+                    "player": "You",
+                    "zone": "Battlefield",
+                    "filter": "creature pow>=4",
+                    "excludeSelf": true
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "155",
+        "rarity": "UNCOMMON",
+        "artist": "John Di Giovanni",
+        "flavorText": "Predators with armor plating can be as bold or as cowardly as they desire.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/6/067bd117-04e6-410e-89c4-6d431d627751.jpg?1764121066"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Tiger-Seal
 {
     "name": "Tiger-Seal",
