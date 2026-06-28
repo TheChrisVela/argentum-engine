@@ -9263,6 +9263,87 @@
     ]
 }
 
+// The Mechanist, Aerial Artisan
+{
+    "name": "The Mechanist, Aerial Artisan",
+    "manaCost": "{2}{U}",
+    "typeLine": "Legendary Creature — Human Artificer Ally",
+    "oracleText": "Whenever you cast a noncreature spell, create a Clue token. (It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\n{T}: Until end of turn, target artifact token you control becomes a 3/1 Construct artifact creature with flying.",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "SpellCastEvent",
+                    "spellFilter": {
+                        "cardPredicates": [
+                            "IsNoncreature"
+                        ]
+                    }
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                }
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": "CostTap",
+                "effect": {
+                    "type": "BecomeCreature",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target artifact token you control"
+                    },
+                    "power": {
+                        "type": "Fixed",
+                        "amount": 3
+                    },
+                    "toughness": {
+                        "type": "Fixed",
+                        "amount": 1
+                    },
+                    "keywords": [
+                        "FLYING"
+                    ],
+                    "creatureTypes": [
+                        "Construct"
+                    ],
+                    "addTypes": [
+                        "ARTIFACT"
+                    ]
+                },
+                "targetRequirements": [
+                    {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact token ctrl:you"
+                        },
+                        "id": "target artifact token you control"
+                    }
+                ]
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "64",
+        "rarity": "RARE",
+        "artist": "Le Vuong",
+        "flavorText": "\"We're just in the process of improving upon what's already here.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/b/9/b910851e-9332-4c83-a790-d379667cabfc.jpg?1764120376"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // The Walls of Ba Sing Se
 {
     "name": "The Walls of Ba Sing Se",

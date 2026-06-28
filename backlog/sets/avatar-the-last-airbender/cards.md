@@ -304,7 +304,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [ ] The Legend of Roku
 - [ ] The Legend of Yangchen
 - [x] The Lion-Turtle
-- [ ] The Mechanist, Aerial Artisan
+- [x] The Mechanist, Aerial Artisan
 - [ ] The Rise of Sozin
 - [ ] The Spirit Oasis
 - [ ] The Unagi of Kyoshi Island
