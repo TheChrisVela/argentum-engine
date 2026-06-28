@@ -5025,6 +5025,61 @@
     ]
 }
 
+// Foggy Swamp Hunters
+{
+    "name": "Foggy Swamp Hunters",
+    "manaCost": "{3}{B}",
+    "typeLine": "Creature — Human Ranger Ally",
+    "oracleText": "As long as you've drawn two or more cards this turn, this creature has lifelink and menace. (It can't be blocked except by two or more creatures.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 4
+    },
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "PlayerDrewCardsThisTurn",
+                    "atLeast": 2
+                }
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "MENACE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": {
+                    "type": "PlayerDrewCardsThisTurn",
+                    "atLeast": 2
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "101",
+        "artist": "Bun Toujo",
+        "flavorText": "\"Set my lines by the riverbed! Caught ten fish and I killed 'em dead!\"\n—Foggy Swamp Tribe ditty",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/f/3f6e5869-ca25-4b98-a844-8a498cb40aab.jpg?1764120698"
+    },
+    "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
 // Foggy Swamp Spirit Keeper
 {
     "name": "Foggy Swamp Spirit Keeper",

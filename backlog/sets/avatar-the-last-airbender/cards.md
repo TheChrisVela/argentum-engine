@@ -165,7 +165,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [ ] Flexible Waterbender
 - [ ] Flopsie, Bumi's Buddy
 - [x] Foggy Bottom Swamp
-- [ ] Foggy Swamp Hunters
+- [x] Foggy Swamp Hunters
 - [x] Foggy Swamp Spirit Keeper
 - [ ] Foggy Swamp Vinebender
 - [ ] Foggy Swamp Visions
