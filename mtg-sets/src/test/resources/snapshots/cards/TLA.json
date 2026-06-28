@@ -10980,6 +10980,80 @@
     ]
 }
 
+// Sun Warriors
+{
+    "name": "Sun Warriors",
+    "manaCost": "{2}{R}{W}",
+    "typeLine": "Creature — Human Warrior Ally",
+    "oracleText": "Firebending X, where X is the number of creatures you control. (Whenever this creature attacks, add X {R}. This mana lasts until end of combat.)\n{5}: Create a 1/1 white Ally creature token.",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "keywords": [
+        "FIREBENDING"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Variable",
+            "keyword": "FIREBENDING"
+        }
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "AttackEvent",
+                "effect": {
+                    "type": "AddMana",
+                    "color": "RED",
+                    "amount": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "creature"
+                    },
+                    "expiry": "END_OF_COMBAT"
+                },
+                "descriptionOverride": "Whenever this creature attacks, add X {R}, where X is the number of creatures you control. Until end of combat, you don't lose this mana as steps and phases end."
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostAtomWrapper",
+                    "atom": {
+                        "type": "AtomMana",
+                        "cost": "{5}"
+                    }
+                },
+                "effect": {
+                    "type": "CreateToken",
+                    "power": 1,
+                    "toughness": 1,
+                    "colors": [
+                        "WHITE"
+                    ],
+                    "creatureTypes": [
+                        "Ally"
+                    ]
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "244",
+        "rarity": "UNCOMMON",
+        "artist": "Boell Oyino",
+        "flavorText": "A secretive people who protect the ancient origins of firebending.",
+        "imageUri": "https://cards.scryfall.io/normal/front/e/4/e477d750-42d2-48c8-bc1f-8148d15d5f53.jpg?1774851714"
+    },
+    "colorIdentityOverride": [
+        "RED",
+        "WHITE"
+    ]
+}
+
 // Sun-Blessed Peak
 {
     "name": "Sun-Blessed Peak",
