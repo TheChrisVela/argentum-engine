@@ -213,7 +213,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [ ] Kyoshi Island Plaza
 - [x] Kyoshi Village
 - [x] Kyoshi Warriors
-- [ ] Leaves from the Vine
+- [x] Leaves from the Vine
 - [x] Lightning Strike
 - [ ] Lo and Li, Twin Tutors
 - [ ] Long Feng, Grand Secretariat
