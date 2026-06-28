@@ -321,7 +321,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [x] Tundra Tank
 - [x] Turtle-Duck
 - [x] Twin Blades
-- [ ] Ty Lee, Artful Acrobat
+- [x] Ty Lee, Artful Acrobat
 - [ ] Ty Lee, Chi Blocker
 - [ ] Uncle Iroh
 - [x] United Front
