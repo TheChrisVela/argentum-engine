@@ -8161,6 +8161,7 @@
                             "from": "Battlefield",
                             "to": "Graveyard"
                         },
+                        "binding": "ANY",
                         "effect": {
                             "type": "DrawCards",
                             "count": {
