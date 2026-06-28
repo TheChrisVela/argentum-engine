@@ -17,6 +17,7 @@ import {
   createSetQuickGameLobbyReadyMessage,
   createSetQuickGameLobbySetCodeMessage,
   createSetQuickGameLobbyPublicMessage,
+  createSetQuickGameLobbyRankedMessage,
   createSetQuickGameLobbyFormatMessage,
 } from '@/types'
 import type { SliceCreator } from './types'
@@ -27,13 +28,21 @@ export interface QuickGameLobbySliceState {
 }
 
 export interface QuickGameLobbySliceActions {
-  createQuickGameLobby: (vsAi?: boolean, setCode?: string, isPublic?: boolean, format?: DeckFormat, momirBasic?: boolean) => void
+  createQuickGameLobby: (
+    vsAi?: boolean,
+    setCode?: string,
+    isPublic?: boolean,
+    format?: DeckFormat,
+    momirBasic?: boolean,
+    ranked?: boolean,
+  ) => void
   joinQuickGameLobby: (lobbyId: string) => void
   leaveQuickGameLobby: () => void
   submitQuickGameLobbyDeck: (deckList: Record<string, number>, commander?: string | null) => void
   setQuickGameLobbyReady: (ready: boolean) => void
   setQuickGameLobbySetCode: (setCode: string | null) => void
   setQuickGameLobbyPublic: (isPublic: boolean) => void
+  setQuickGameLobbyRanked: (ranked: boolean) => void
   setQuickGameLobbyFormat: (format: DeckFormat | null, momirBasic?: boolean) => void
 }
 
@@ -42,8 +51,8 @@ export type QuickGameLobbySlice = QuickGameLobbySliceState & QuickGameLobbySlice
 export const createQuickGameLobbySlice: SliceCreator<QuickGameLobbySlice> = (set) => ({
   quickGameLobbyState: null,
 
-  createQuickGameLobby: (vsAi, setCode, isPublic, format, momirBasic) => {
-    getWebSocket()?.send(createCreateQuickGameLobbyMessage(vsAi, setCode, isPublic, format, momirBasic))
+  createQuickGameLobby: (vsAi, setCode, isPublic, format, momirBasic, ranked) => {
+    getWebSocket()?.send(createCreateQuickGameLobbyMessage(vsAi, setCode, isPublic, format, momirBasic, ranked))
   },
 
   joinQuickGameLobby: (lobbyId) => {
@@ -69,6 +78,10 @@ export const createQuickGameLobbySlice: SliceCreator<QuickGameLobbySlice> = (set
 
   setQuickGameLobbyPublic: (isPublic) => {
     getWebSocket()?.send(createSetQuickGameLobbyPublicMessage(isPublic))
+  },
+
+  setQuickGameLobbyRanked: (ranked) => {
+    getWebSocket()?.send(createSetQuickGameLobbyRankedMessage(ranked))
   },
 
   setQuickGameLobbyFormat: (format, momirBasic) => {

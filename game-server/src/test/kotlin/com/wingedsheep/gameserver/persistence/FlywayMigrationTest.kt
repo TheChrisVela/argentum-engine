@@ -136,7 +136,53 @@ class FlywayMigrationTest : FunSpec({
         }
     }
 
-    test("V4 migrates BIGINT account ids to UUID, preserving rows and foreign keys").config(enabled = dockerAvailable) {
+    test("V5 migration adds game_replays and supports the history replay join").config(enabled = dockerAvailable) {
+        val postgres = PostgreSQLContainer<Nothing>(DockerImageName.parse("postgres:16-alpine"))
+        postgres.start()
+        try {
+            migrateAll(postgres)
+
+            DriverManager.getConnection(postgres.jdbcUrl, postgres.username, postgres.password).use { conn ->
+                conn.createStatement().use { st ->
+                    st.executeQuery(
+                        "SELECT count(*) FROM information_schema.tables WHERE table_name = 'game_replays'"
+                    ).use { rs -> rs.next(); rs.getInt(1) shouldBe 1 }
+
+                    // One user with two games; only one has a stored replay.
+                    st.execute("INSERT INTO users(id, email, display_name) VALUES ('$alice', 'a@test.com', 'Alice')")
+                    st.execute("INSERT INTO match_results(id, game_id) VALUES (10, 'g-with-replay')")
+                    st.execute("INSERT INTO match_results(id, game_id) VALUES (11, 'g-no-replay')")
+                    st.execute("INSERT INTO match_participants(match_id, user_id, player_name, won) VALUES (10, '$alice', 'Alice', true)")
+                    st.execute("INSERT INTO match_participants(match_id, user_id, player_name, won) VALUES (11, '$alice', 'Alice', false)")
+                    st.execute("INSERT INTO game_replays(game_id, data) VALUES ('g-with-replay', 'GZIPPED')")
+
+                    // game_id is unique (upsert depends on it).
+                    runCatching {
+                        st.execute("INSERT INTO game_replays(game_id, data) VALUES ('g-with-replay', 'DUP')")
+                    }.isFailure shouldBe true
+
+                    // The history LEFT JOIN flags exactly the game that has a stored replay.
+                    st.executeQuery(
+                        """
+                        SELECT r.game_id, (gr.id IS NOT NULL) AS has_replay
+                        FROM match_participants me
+                        JOIN match_results r ON r.id = me.match_id
+                        LEFT JOIN game_replays gr ON gr.game_id = r.game_id
+                        WHERE me.user_id = '$alice'
+                        ORDER BY r.game_id
+                        """.trimIndent()
+                    ).use { rs ->
+                        rs.next(); rs.getString("game_id") shouldBe "g-no-replay"; rs.getBoolean("has_replay") shouldBe false
+                        rs.next(); rs.getString("game_id") shouldBe "g-with-replay"; rs.getBoolean("has_replay") shouldBe true
+                    }
+                }
+            }
+        } finally {
+            postgres.stop()
+        }
+    }
+
+    test("V6 migrates BIGINT account ids to UUID, preserving rows and foreign keys").config(enabled = dockerAvailable) {
         val postgres = PostgreSQLContainer<Nothing>(DockerImageName.parse("postgres:16-alpine"))
         postgres.start()
         try {
@@ -158,7 +204,7 @@ class FlywayMigrationTest : FunSpec({
                 }
             }
 
-            // Now run V4 + V5.
+            // Now run the remaining migrations, including the V6 UUID swap.
             migrateAll(postgres)
 
             DriverManager.getConnection(postgres.jdbcUrl, postgres.username, postgres.password).use { conn ->
@@ -194,7 +240,7 @@ class FlywayMigrationTest : FunSpec({
         }
     }
 
-    test("V5 friends schema supports the request/accept round-trip and cascades").config(enabled = dockerAvailable) {
+    test("V7 friends schema supports the request/accept round-trip and cascades").config(enabled = dockerAvailable) {
         val postgres = PostgreSQLContainer<Nothing>(DockerImageName.parse("postgres:16-alpine"))
         postgres.start()
         try {

@@ -24,12 +24,20 @@ import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.core.Zone
 
+/**
+ * The minimal seat identity the spectator projection needs: an id and a display name. Decouples
+ * [SpectatorStateBuilder] from the live [PlayerSession] (which wraps a WebSocket), so an offline
+ * [com.wingedsheep.gameserver.replay.ReplayReconstructor] can build the same snapshots from a
+ * stored replay's seat list without fabricating sockets.
+ */
+data class SpectatorSeat(val playerId: EntityId, val playerName: String)
+
 class SpectatorStateBuilder(
     private val cardRegistry: CardRegistry,
     private val stateTransformer: ClientStateTransformer
 ) {
     /**
-     * Build a spectator view of an N-player game. [players] is every seated player in turn order;
+     * Build a spectator view of an N-player game. [seats] is every seated player in turn order;
      * [seatRoster] is the lightweight seat list echoed to the client. The heavy per-player board
      * state rides in the embedded [ClientGameState] (already N-player); the [SpectatorStateUpdate]'s
      * `player1`/`player2` legacy fields are the first two seats, kept for the current spectator
@@ -37,20 +45,20 @@ class SpectatorStateBuilder(
      */
     fun buildState(
         state: GameState,
-        players: List<PlayerSession>,
+        seats: List<SpectatorSeat>,
         seatRoster: List<ServerMessage.PlayerSeatInfo>,
         sessionId: String
     ): ServerMessage.SpectatorStateUpdate {
-        require(players.size >= 2) { "Spectator state needs at least 2 seated players" }
-        val p1 = players[0]
-        val p2 = players[1]
+        require(seats.size >= 2) { "Spectator state needs at least 2 seated players" }
+        val p1 = seats[0]
+        val p2 = seats[1]
 
         // Build full ClientGameState with every player's hand masked for GameBoard reuse
-        val spectatorClientState = buildClientGameState(state, players.map { it.playerId })
+        val spectatorClientState = buildClientGameState(state, seats.map { it.playerId })
 
         // Build decision status if there's a pending decision
         val decisionStatus = state.pendingDecision?.let { decision ->
-            val decidingPlayer = players.firstOrNull { it.playerId == decision.playerId } ?: p1
+            val decidingPlayer = seats.firstOrNull { it.playerId == decision.playerId } ?: p1
             createDecisionStatus(decision, decidingPlayer.playerName)
         }
 
@@ -176,8 +184,8 @@ class SpectatorStateBuilder(
         )
     }
 
-    private fun buildPlayerState(state: GameState, playerSession: PlayerSession): ServerMessage.SpectatorPlayerState {
-        val playerId = playerSession.playerId
+    private fun buildPlayerState(state: GameState, seat: SpectatorSeat): ServerMessage.SpectatorPlayerState {
+        val playerId = seat.playerId
         val playerEntity = state.getEntity(playerId)
 
         val life = playerEntity?.get<LifeTotalComponent>()?.life ?: 20
@@ -192,7 +200,7 @@ class SpectatorStateBuilder(
 
         return ServerMessage.SpectatorPlayerState(
             playerId = playerId.value,
-            playerName = playerSession.playerName,
+            playerName = seat.playerName,
             life = life,
             poisonCounters = poisonCounters,
             handSize = hand.size,

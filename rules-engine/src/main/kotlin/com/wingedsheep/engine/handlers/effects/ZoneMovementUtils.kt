@@ -68,11 +68,16 @@ import com.wingedsheep.sdk.scripting.predicates.evaluateWith
  * @param additionalEffect An optional effect to execute when the redirect applies
  *        (e.g., TakeExtraTurnEffect from Ugin's Nexus)
  * @param effectControllerId The controller of the replacement effect source
+ * @param linkSourceId When non-null (and [destinationZone] is [Zone.EXILE]), the redirected
+ *        card should be linked to this source permanent's `LinkedExileComponent` after the move
+ *        — set by a [RedirectZoneChange] with `linkToSource = true` (Valgavoth, Terror Eater).
+ *        Each mover applies the link via [ZoneMovementUtils.linkExiledToSource].
  */
 data class ZoneChangeRedirectResult(
     val destinationZone: Zone,
     val additionalEffect: com.wingedsheep.sdk.scripting.effects.Effect? = null,
-    val effectControllerId: EntityId? = null
+    val effectControllerId: EntityId? = null,
+    val linkSourceId: EntityId? = null
 )
 
 /**
@@ -142,6 +147,21 @@ object ZoneMovementUtils {
             }
         }
         return newState
+    }
+
+    /**
+     * Append [exiledId] to [sourceId]'s [LinkedExileComponent]. Called by zone movers after a
+     * [RedirectZoneChange] with `linkToSource = true` sends a card to exile (Valgavoth, Terror
+     * Eater), so the source can later reference — and grant casting/playing of — the cards it
+     * exiled. No-op if the source has left the battlefield, or the card is already linked.
+     */
+    fun linkExiledToSource(state: GameState, exiledId: EntityId, sourceId: EntityId): GameState {
+        val container = state.getEntity(sourceId) ?: return state
+        val existing = container.get<LinkedExileComponent>()?.exiledIds ?: emptyList()
+        if (exiledId in existing) return state
+        return state.updateEntity(sourceId) { c ->
+            c.with(LinkedExileComponent(existing + exiledId))
+        }
     }
 
     /**
@@ -501,8 +521,11 @@ object ZoneMovementUtils {
                         // Check filter against the entity being moved
                         if (!matchesZoneChangeFilter(state, entityId, container, event.filter, sourceControllerId)) continue
 
-                        // Match found — redirect to new destination
-                        return ZoneChangeRedirectResult(effect.newDestination)
+                        // Match found — redirect to new destination. When the replacement links
+                        // its exiled cards to the source (Valgavoth), carry the source id so the
+                        // mover can attach the card to its LinkedExileComponent after the move.
+                        val linkSource = if (effect.linkToSource && effect.newDestination == Zone.EXILE) permanentId else null
+                        return ZoneChangeRedirectResult(effect.newDestination, linkSourceId = linkSource)
                     }
                     is RedirectZoneChangeWithEffect -> {
                         // selfOnly: only applies when the entity being moved IS this permanent

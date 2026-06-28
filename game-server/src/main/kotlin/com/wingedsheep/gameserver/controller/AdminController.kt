@@ -3,8 +3,7 @@ package com.wingedsheep.gameserver.controller
 import com.wingedsheep.gameserver.auth.AdminAuthService
 import com.wingedsheep.gameserver.handler.MessageSender
 import com.wingedsheep.gameserver.protocol.ServerMessage
-import com.wingedsheep.gameserver.replay.GameHistoryRepository
-import com.wingedsheep.gameserver.replay.GameReplayRecord
+import com.wingedsheep.gameserver.replay.ReplayService
 import com.wingedsheep.gameserver.replay.SpectatorReplayDelta
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.encodeToString
@@ -25,7 +24,7 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/admin")
 class AdminController(
-    private val gameHistoryRepository: GameHistoryRepository,
+    private val replayService: ReplayService,
     private val adminAuth: AdminAuthService,
     private val messageSender: MessageSender
 ) {
@@ -35,7 +34,7 @@ class AdminController(
         @RequestHeader("X-Admin-Password", required = false) password: String?,
         @RequestHeader(HttpHeaders.AUTHORIZATION, required = false) authorization: String?,
     ): ResponseEntity<Any> = adminAuth.guard(password, authorization) {
-        ResponseEntity.ok(gameHistoryRepository.findAll().map { it.toSummary() })
+        ResponseEntity.ok(replayService.recentGames().map { it.toSummary() })
     }
 
     @GetMapping("/games/{gameId}/replay", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -44,33 +43,22 @@ class AdminController(
         @RequestHeader("X-Admin-Password", required = false) password: String?,
         @RequestHeader(HttpHeaders.AUTHORIZATION, required = false) authorization: String?,
     ): ResponseEntity<Any> = adminAuth.guard(password, authorization) {
-        val record = gameHistoryRepository.findById(gameId)
+        val replay = replayService.find(gameId)
             ?: return@guard ResponseEntity.status(404).body(mapOf("error" to "Replay not found"))
+        val reconstructed = replayService.reconstruct(replay)
 
         val initialJson = messageSender.json.encodeToString(
             ServerMessage.SpectatorStateUpdate.serializer(),
-            record.initialSnapshot
+            reconstructed.initialSnapshot
         )
         val deltasJson = messageSender.json.encodeToString(
             ListSerializer(SpectatorReplayDelta.serializer()),
-            record.deltas
+            reconstructed.deltas
         )
         ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_JSON)
             .body("""{"initialSnapshot":$initialJson,"deltas":$deltasJson}""")
     }
-
-    private fun GameReplayRecord.toSummary() = GameSummary(
-        gameId = gameId,
-        player1Name = players.getOrNull(0)?.name ?: "",
-        player2Name = players.getOrNull(1)?.name ?: "",
-        startedAt = startedAt.toString(),
-        endedAt = endedAt.toString(),
-        winnerName = winnerName,
-        snapshotCount = frameCount,
-        tournamentName = tournamentName,
-        tournamentRound = tournamentRound
-    )
 }
 
 data class GameSummary(

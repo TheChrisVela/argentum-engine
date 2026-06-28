@@ -731,10 +731,11 @@ sealed interface KeywordAbility {
             Ward(WardCost.Discard(count, random, filter))
 
         /**
-         * Create Ward with sacrifice cost.
+         * Create Ward with sacrifice cost. Pass [count] > 1 for "Ward—Sacrifice N ~"
+         * (e.g. Valgavoth, Terror Eater — "Ward—Sacrifice three nonland permanents").
          */
-        fun wardSacrifice(filter: GameObjectFilter): KeywordAbility =
-            Ward(WardCost.Sacrifice(filter))
+        fun wardSacrifice(filter: GameObjectFilter, count: Int = 1): KeywordAbility =
+            Ward(WardCost.Sacrifice(filter, count))
 
         /**
          * Create Ward with a composite cost — all components must be paid. E.g.

@@ -569,6 +569,32 @@ data class SelectManaSourcesDecision(
 sealed interface DecisionResponse {
     /** Must match the PendingDecision.id */
     val decisionId: String
+
+    /**
+     * The same response retargeted at a different pending-decision id. The id is only a routing
+     * nonce — the choice payload is unchanged — so this lets a caller that holds a recorded response
+     * re-bind it to a freshly created decision. Used by replay reconstruction, where decision ids
+     * are minted afresh each run (they are not part of the deterministic state).
+     */
+    fun withDecisionId(newId: String): DecisionResponse = when (this) {
+        is TargetsResponse -> copy(decisionId = newId)
+        is CardsSelectedResponse -> copy(decisionId = newId)
+        is YesNoResponse -> copy(decisionId = newId)
+        is BatchYesNoResponse -> copy(decisionId = newId)
+        is ModesChosenResponse -> copy(decisionId = newId)
+        is ColorChosenResponse -> copy(decisionId = newId)
+        is NumberChosenResponse -> copy(decisionId = newId)
+        is DistributionResponse -> copy(decisionId = newId)
+        is OrderedResponse -> copy(decisionId = newId)
+        is PilesSplitResponse -> copy(decisionId = newId)
+        is OptionChosenResponse -> copy(decisionId = newId)
+        is ReplacementChosenResponse -> copy(decisionId = newId)
+        is BudgetModalResponse -> copy(decisionId = newId)
+        is DamageAssignmentResponse -> copy(decisionId = newId)
+        is ManaSourcesSelectedResponse -> copy(decisionId = newId)
+        is CombatResolutionResponse -> copy(decisionId = newId)
+        is CancelDecisionResponse -> copy(decisionId = newId)
+    }
 }
 
 /**

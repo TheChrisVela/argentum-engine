@@ -61,6 +61,8 @@ data class MatchResultRow(
     val tournamentName: String? = null,
     /** Matchmaking context: a [LobbyGameMode] name, or QUICK_GAME / CASUAL / HOTSEAT for non-lobby games. */
     val gameMode: String? = null,
+    /** True for a ranked (ELO-adjusting) game. */
+    val ranked: Boolean = false,
     /** Replay frame count at game-over — the activity measure behind the recording gate. */
     val frameCount: Int = 0,
     /** GameState.turnNumber at game-over. */
@@ -96,6 +98,30 @@ data class MatchCardRow(
     @Id val id: Long? = null,
     val cardName: String,
     val copies: Int,
+)
+
+/**
+ * A durable, compact replay of a finished game — the reproducible setup plus the input stream,
+ * gzip+base64-encoded in [data] (see [com.wingedsheep.gameserver.replay.ReplayCodec]). Keyed by
+ * [gameId] (the same id the live in-memory cache and the spectator/share links use). The metadata
+ * columns mirror [com.wingedsheep.gameserver.replay.CompactReplay] so a history list never has to
+ * decode + re-simulate just to render a row.
+ */
+@Table("game_replays")
+data class GameReplayRow(
+    @Id val id: Long? = null,
+    val gameId: String,
+    val format: String? = null,
+    val winnerName: String? = null,
+    val tournamentName: String? = null,
+    val startedAt: Instant? = null,
+    val endedAt: Instant = Instant.now(),
+    /** Reconstructable frames (initial + one per action) — the activity measure for the UI. */
+    val frameCount: Int = 0,
+    /** Player display names in seat order, comma-joined — enough for a summary row. */
+    val playerNames: String = "",
+    /** gzip+base64-encoded CompactReplay JSON. */
+    val data: String,
 )
 
 @Table("tournaments")
@@ -150,3 +176,40 @@ data class FriendshipRow(
 )
 
 enum class FriendshipStatus { PENDING, ACCEPTED }
+
+/**
+ * A signed-in account's current ELO rating in one ranked [mode] (RankedMode name). Created lazily on
+ * the account's first ranked game in that mode; absence means "unrated" (treated as the starting
+ * rating). [gamesPlayed] drives the provisional placement window and the displayed tier.
+ */
+@Table("user_ratings")
+data class UserRatingRow(
+    @Id val id: Long? = null,
+    val userId: UUID,
+    val mode: String,
+    val rating: Double = 1200.0,
+    val gamesPlayed: Int = 0,
+    val wins: Int = 0,
+    val losses: Int = 0,
+    val draws: Int = 0,
+    val peakRating: Double = 1200.0,
+    val updatedAt: Instant = Instant.now(),
+)
+
+/** One ranked game's rating change for one player — the data behind the "rating over time" chart. */
+@Table("rating_history")
+data class RatingHistoryRow(
+    @Id val id: Long? = null,
+    val userId: UUID,
+    val mode: String,
+    val ratingBefore: Double,
+    val ratingAfter: Double,
+    val delta: Double,
+    /** WIN / LOSS / DRAW. */
+    val result: String,
+    /** Null if the opponent was later deleted. */
+    val opponentUserId: UUID? = null,
+    val opponentRating: Double? = null,
+    val gameId: String? = null,
+    val createdAt: Instant = Instant.now(),
+)

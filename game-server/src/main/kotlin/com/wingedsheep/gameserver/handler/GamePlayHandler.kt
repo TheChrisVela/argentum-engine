@@ -7,8 +7,9 @@ import com.wingedsheep.gameserver.protocol.ClientMessage
 import com.wingedsheep.gameserver.protocol.ErrorCode
 import com.wingedsheep.gameserver.protocol.GameOverReason
 import com.wingedsheep.gameserver.protocol.ServerMessage
-import com.wingedsheep.gameserver.replay.GameHistoryRepository
-import com.wingedsheep.gameserver.replay.GameReplayRecord
+import com.wingedsheep.gameserver.replay.CompactReplay
+import com.wingedsheep.gameserver.replay.ReplayPlayerInfo
+import com.wingedsheep.gameserver.replay.ReplayService
 import com.wingedsheep.gameserver.repository.GameRepository
 import com.wingedsheep.gameserver.repository.LobbyRepository
 import com.wingedsheep.gameserver.session.GameSession
@@ -39,9 +40,10 @@ class GamePlayHandler(
     private val printingRegistry: com.wingedsheep.engine.registry.PrintingRegistry,
     private val deckGenerator: SealedDeckGenerator,
     private val gameProperties: GameProperties,
-    private val gameHistoryRepository: GameHistoryRepository,
+    private val replayService: ReplayService,
     private val aiGameManager: AiGameManager,
     private val matchResultSink: com.wingedsheep.gameserver.stats.MatchResultSink,
+    private val rankedResultSink: com.wingedsheep.gameserver.ranking.RankedResultSink,
     private val deckProfiler: com.wingedsheep.gameserver.stats.DeckProfiler
 ) {
     private val logger = LoggerFactory.getLogger(GamePlayHandler::class.java)
@@ -636,10 +638,12 @@ class GamePlayHandler(
             handleMatchResultCallback?.invoke(lobbyId, gameSessionId, winnerId, winnerLifeRemaining)
         }
 
-        // Save replay history if the game had meaningful activity (>= 5 frames)
-        val initialSnapshot = gameSession.getReplayInitialSnapshot()
+        // Save the compact replay if the game had meaningful activity (>= 5 frames) and was started
+        // through the normal path (so its inputs were recorded and it can be re-simulated). Dev
+        // scenario / hotseat games inject state directly and have no setup, so they aren't saved.
+        val replaySetup = gameSession.getReplaySetup()
         val frameCount = gameSession.getReplayFrameCount()
-        if (initialSnapshot != null && frameCount >= 5) {
+        if (replaySetup != null && frameCount >= 5) {
             val winnerName = winnerId?.let { wId ->
                 gameSession.getPlayers().find { it.playerId == wId }?.playerName
             }
@@ -654,22 +658,25 @@ class GamePlayHandler(
             }
             val tournamentRound = replayTournament?.getRoundForMatch(gameSessionId)?.roundNumber
 
-            val record = GameReplayRecord(
+            val replay = CompactReplay(
                 gameId = gameSessionId,
                 players = gameSession.getPlayers().map {
-                    com.wingedsheep.gameserver.replay.ReplayPlayerInfo(it.playerId.value, it.playerName)
+                    ReplayPlayerInfo(it.playerId.value, it.playerName)
                 },
-                startedAt = gameSession.replayStartedAt ?: Instant.now(),
-                endedAt = Instant.now(),
+                startedAt = (gameSession.replayStartedAt ?: Instant.now()).toString(),
+                endedAt = Instant.now().toString(),
                 winnerName = winnerName,
                 tournamentName = tournamentName,
                 tournamentRound = tournamentRound,
-                initialSnapshot = initialSnapshot,
-                deltas = gameSession.getReplayDeltas(),
-                fullStates = gameSession.getReplayFullStates()
+                setup = replaySetup,
+                actions = gameSession.getRecordedActions(),
             )
-            gameHistoryRepository.save(record)
-            logger.info("Saved replay for game $gameSessionId ($frameCount frames)")
+            // AI-only games (e.g. the LLM tournament) stay in the in-memory cache for live viewing
+            // but aren't persisted — they never appear in any account's history.
+            val persistenceInfo = gameSession.getPlayerPersistenceInfo()
+            val hasHumanSeat = gameSession.getPlayers().any { persistenceInfo[it.playerId]?.isAi != true }
+            replayService.save(replay, durable = hasHumanSeat)
+            logger.info("Saved compact replay for game $gameSessionId ($frameCount frames, ${replay.actions.size} actions, durable=$hasHumanSeat)")
         }
 
         // Record a durable match-history row for account stats. The sink is a no-op unless accounts
@@ -691,6 +698,7 @@ class GamePlayHandler(
                             .replaceFirstChar { c -> c.uppercase() }
                     },
                     gameMode = gameMode,
+                    ranked = gameSession.ranked,
                     frameCount = frameCount,
                     turnCount = gameSession.getStateForTesting()?.turnNumber ?: 0,
                     startedAt = gameSession.replayStartedAt,
@@ -717,6 +725,38 @@ class GamePlayHandler(
                     },
                 )
             )
+
+            // Ranked games adjust both players' ELO for the game's mode. Only fire for a game flagged
+            // ranked at creation that ended with exactly two signed-in human seats (defensive: AI or
+            // guest seats can never have been flagged ranked, but re-check rather than trust it). The
+            // winner earns rating from the loser; a winner-less game (mutual loss / no contest) is a
+            // draw. Per-game, so each game of a best-of-N tournament match counts.
+            val rankedMode = gameSession.rankedMode
+            if (gameSession.ranked && rankedMode != null) {
+                val accounts = gameSession.getPlayers().mapNotNull { player ->
+                    val identity = sessionRegistry.getIdentityByWsId(player.webSocketSession.id)
+                    val isAi = persistenceInfo[player.playerId]?.isAi == true
+                    val userId = identity?.userId
+                    if (isAi || userId == null) null else player.playerId to userId
+                }
+                if (accounts.size == 2) {
+                    val (p1, u1) = accounts[0]
+                    val (p2, u2) = accounts[1]
+                    rankedResultSink.record(
+                        com.wingedsheep.gameserver.ranking.RankedGameResult(
+                            gameId = gameSessionId,
+                            mode = rankedMode,
+                            playerOneUserId = u1,
+                            playerTwoUserId = u2,
+                            winnerUserId = when (winnerId) {
+                                p1 -> u1
+                                p2 -> u2
+                                else -> null
+                            },
+                        )
+                    )
+                }
+            }
         }
 
         // Notify the dev LLM-tournament orchestrator (no-op for games it doesn't own).
@@ -770,12 +810,10 @@ class GamePlayHandler(
                 else logger.warn("createStateUpdate returned null for player ${session.playerId.value}")
             }
 
-            // Update spectators
+            // Update spectators. (Replay recording no longer happens here — the compact replay
+            // records the input stream as actions are applied, and reconstructs snapshots on demand.)
             val spectatorState = gameSession.buildSpectatorState()
             if (spectatorState != null) {
-                // Record snapshot for replay
-                gameSession.recordSnapshot(spectatorState)
-
                 for (spectator in gameSession.getSpectators()) {
                     if (spectator.webSocketSession.isOpen) {
                         sender.send(spectator.webSocketSession, spectatorState)

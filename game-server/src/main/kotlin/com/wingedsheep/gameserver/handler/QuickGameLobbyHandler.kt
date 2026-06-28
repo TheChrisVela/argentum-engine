@@ -74,6 +74,7 @@ class QuickGameLobbyHandler(
             is ClientMessage.SetQuickGameLobbyReady -> handleSetReady(session, message)
             is ClientMessage.SetQuickGameLobbySetCode -> handleSetSetCode(session, message)
             is ClientMessage.SetQuickGameLobbyPublic -> handleSetPublic(session, message)
+            is ClientMessage.SetQuickGameLobbyRanked -> handleSetRanked(session, message)
             is ClientMessage.SetQuickGameLobbyFormat -> handleSetFormat(session, message)
             else -> {}
         }
@@ -138,6 +139,28 @@ class QuickGameLobbyHandler(
         }
     }
 
+    private fun handleSetRanked(session: WebSocketSession, message: ClientMessage.SetQuickGameLobbyRanked) {
+        val playerSession = sessionRegistry.getPlayerSession(session.id) ?: run {
+            sender.sendError(session, ErrorCode.NOT_CONNECTED, "Not connected"); return
+        }
+        val lobby = lobbyRepository.findContainingPlayer(playerSession.playerId) ?: run {
+            sender.sendError(session, ErrorCode.GAME_NOT_FOUND, "Not in a lobby"); return
+        }
+        lobbyRepository.withLock(lobby.lobbyId) { current ->
+            if (current == null) return@withLock
+            val host = current.players.firstOrNull { !it.isAi }
+            if (host?.playerId != playerSession.playerId) {
+                sender.sendError(session, ErrorCode.INVALID_ACTION, "Only the host can change ranked")
+                return@withLock
+            }
+            // Ranked is only offered for a standard 1v1 human-vs-human lobby.
+            val effective = message.ranked && current.rankedEligible
+            if (current.ranked == effective) return@withLock
+            current.ranked = effective
+            broadcastState(current)
+        }
+    }
+
     private fun handleSetSetCode(session: WebSocketSession, message: ClientMessage.SetQuickGameLobbySetCode) {
         val playerSession = sessionRegistry.getPlayerSession(session.id) ?: run {
             sender.sendError(session, ErrorCode.NOT_CONNECTED, "Not connected"); return
@@ -187,6 +210,8 @@ class QuickGameLobbyHandler(
             momirBasic = message.momirBasic,
             twoHeadedGiant = message.twoHeadedGiant,
         )
+        // Ranked only applies to a standard 1v1 human-vs-human lobby (not AI / Two-Headed Giant).
+        lobby.ranked = message.ranked && lobby.rankedEligible
         lobby.players += QuickGameLobbyPlayer(
             playerId = playerSession.playerId,
             playerName = playerSession.playerName
@@ -393,6 +418,17 @@ class QuickGameLobbyHandler(
             }
         }
 
+        // Ranked play only counts when every human seat is a signed-in account (no guests). A guest may
+        // have joined a public ranked lobby since the host toggled it on; rather than block the start we
+        // downgrade to a casual game and play on.
+        if (lobby.ranked) {
+            val humans = lobby.players.filter { !it.isAi }
+            if (!lobby.rankedEligible || humans.any { userIdOf(it.playerId) == null }) {
+                logger.info("Quick lobby ${lobby.lobbyId}: starting unranked — not all players signed in")
+                lobby.ranked = false
+            }
+        }
+
         val gameSession = GameSession(
             cardRegistry = cardRegistry,
             useHandSmoother = gameProperties.handSmoother.enabled,
@@ -401,6 +437,12 @@ class QuickGameLobbyHandler(
             // Four seats for Two-Headed Giant (CR 810), two otherwise.
             maxPlayers = lobby.maxPlayers,
         )
+        // A validated ranked lobby: this game adjusts both players' ELO for the derived mode.
+        if (lobby.ranked) {
+            gameSession.ranked = true
+            gameSession.rankedMode = com.wingedsheep.gameserver.ranking.Ranked
+                .modeForQuickGame(lobby.format, lobby.momirBasic)
+        }
         // Commander-shape formats (Commander / Brawl / Standard Brawl) run on the engine's 1v1
         // Commander rules. Other formats fall through to Standard. Brawl-specific tweaks
         // (60 cards, alternative life total) are Phase 4 territory — Phase 1 covers Commander.
@@ -537,9 +579,15 @@ class QuickGameLobbyHandler(
             momirBasic = lobby.momirBasic,
             twoHeadedGiant = lobby.twoHeadedGiant,
             maxPlayers = lobby.maxPlayers,
+            ranked = lobby.ranked,
+            rankedEligible = lobby.rankedEligible,
         )
         sender.send(session, msg)
     }
+
+    /** The signed-in account id behind a lobby seat, or null for a guest. */
+    private fun userIdOf(playerId: com.wingedsheep.sdk.model.EntityId): java.util.UUID? =
+        sessionRegistry.getAllIdentities().firstOrNull { it.playerId == playerId }?.userId
 
     private fun resolveDeck(player: QuickGameLobbyPlayer, randomFallbackSet: String): Map<String, Int> {
         val submitted = player.deckList ?: emptyMap()
@@ -571,6 +619,8 @@ class QuickGameLobbyHandler(
                 momirBasic = lobby.momirBasic,
                 twoHeadedGiant = lobby.twoHeadedGiant,
                 maxPlayers = lobby.maxPlayers,
+                ranked = lobby.ranked,
+                rankedEligible = lobby.rankedEligible,
             )
             sender.send(ws, msg)
         }

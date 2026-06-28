@@ -25,6 +25,10 @@ data class GameHistoryEntry(
     val colors: String?,
     val opponents: String?,
     val won: Boolean,
+    /** Stable game id, used to open/share the replay. */
+    val gameId: String,
+    /** True when a compact replay was stored for this game and can be watched/shared. */
+    val hasReplay: Boolean,
 )
 
 /** Global, cross-user totals for the admin dashboard. */
@@ -147,7 +151,7 @@ class StatsQueryService(private val jdbc: JdbcTemplate) {
         LEFT JOIN users u ON u.id = opp.user_id
         WHERE me.user_id = ?
         GROUP BY COALESCE(u.display_name, opp.player_name), opp.user_id
-        ORDER BY wins + losses DESC, opponent ASC
+        ORDER BY count(*) DESC, opponent ASC
         """.trimIndent(),
         { rs, _ ->
             HeadToHead(
@@ -165,13 +169,15 @@ class StatsQueryService(private val jdbc: JdbcTemplate) {
     fun recentGames(userId: UUID, limit: Int, offset: Int): List<GameHistoryEntry> = jdbc.query(
         """
         SELECT r.ended_at AS ended_at, r.game_mode AS game_mode, r.format AS format,
-               me.won AS won, me.colors AS colors,
+               me.won AS won, me.colors AS colors, r.game_id AS game_id,
+               (gr.id IS NOT NULL) AS has_replay,
                (SELECT string_agg(COALESCE(u2.display_name, o.player_name), ', ')
                   FROM match_participants o
                   LEFT JOIN users u2 ON u2.id = o.user_id
                   WHERE o.match_id = r.id AND o.id <> me.id) AS opponents
         FROM match_participants me
         JOIN match_results r ON r.id = me.match_id
+        LEFT JOIN game_replays gr ON gr.game_id = r.game_id
         WHERE me.user_id = ?
         ORDER BY r.ended_at DESC
         LIMIT ? OFFSET ?
@@ -184,6 +190,8 @@ class StatsQueryService(private val jdbc: JdbcTemplate) {
                 colors = rs.getString("colors"),
                 opponents = rs.getString("opponents"),
                 won = rs.getBoolean("won"),
+                gameId = rs.getString("game_id"),
+                hasReplay = rs.getBoolean("has_replay"),
             )
         },
         userId, limit, offset,

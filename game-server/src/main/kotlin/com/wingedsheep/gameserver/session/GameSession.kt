@@ -10,8 +10,6 @@ import com.wingedsheep.gameserver.protocol.GameOverReason
 import com.wingedsheep.engine.view.LegalActionInfo
 import com.wingedsheep.gameserver.protocol.ServerMessage
 import com.wingedsheep.gameserver.priority.AutoPassManager
-import com.wingedsheep.gameserver.replay.SpectatorReplayDelta
-import com.wingedsheep.gameserver.replay.SpectatorReplayDiffCalculator
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.legalactions.LegalActionEnumerator
 import com.wingedsheep.engine.registry.CardRegistry
@@ -107,6 +105,16 @@ class GameSession(
     /** State saved when the active player passes priority in precombat main, used to undo combat entry */
     @Volatile
     private var preCombatState: GameState? = null
+
+    /**
+     * [recordedActions] size at each undo checkpoint, kept in lockstep with [undoCheckpoint] /
+     * [preCombatState]. When a player undoes, the replay log must roll back to exactly the actions
+     * that produced the restored checkpoint state, or reconstruction would diverge.
+     */
+    @Volatile
+    private var undoCheckpointActionCount: Int? = null
+    @Volatile
+    private var preCombatActionCount: Int? = null
     /** Set code used for quick game deck generation (so joining player uses the same set) */
     @Volatile
     var quickGameSetCode: String? = null
@@ -158,6 +166,20 @@ class GameSession(
     @Volatile
     var teams: List<List<Int>>? = null
 
+    /**
+     * True when this is a ranked 1v1 game between two signed-in accounts — its result adjusts both
+     * players' ELO for [rankedMode]. Set by the quick-game / tournament handler before [startGame],
+     * only after eligibility is confirmed (1v1, every seat a logged-in human). False — the default —
+     * for every casual, guest, AI, or multiplayer game. Stored on the session for the same reasons as
+     * [engineFormat]: the originating lobby may be gone by the time the game ends.
+     */
+    @Volatile
+    var ranked: Boolean = false
+
+    /** Which ranked queue this game counts toward when [ranked]; null otherwise. */
+    @Volatile
+    var rankedMode: com.wingedsheep.gameserver.ranking.RankedMode? = null
+
     /** Player info for persistence (playerId -> (playerName, token)) */
     private val playerPersistenceInfo = mutableMapOf<EntityId, PlayerPersistenceInfo>()
 
@@ -189,16 +211,14 @@ class GameSession(
     private val priorityModes = java.util.concurrent.ConcurrentHashMap<EntityId, PriorityMode>()
     private val stopOverrides = java.util.concurrent.ConcurrentHashMap<EntityId, StopOverrideSettings>()
 
-    // Replay recording — stores initial snapshot + diffs for memory efficiency
-    private var replayInitialSnapshot: ServerMessage.SpectatorStateUpdate? = null
-    private var replayLastSnapshot: ServerMessage.SpectatorStateUpdate? = null
-    private val replayDeltas = CopyOnWriteArrayList<SpectatorReplayDelta>()
-    // Full (unmasked) game state per frame — one entry per recorded snapshot, in lockstep with
-    // [replayInitialSnapshot] (frame 0) + [replayDeltas]. Lets "share frame as scenario"
-    // reproduce the EXACT position (stack, targets, floating effects, mana, …). Cheap to retain:
-    // GameState is immutable so frames structurally share their component objects; only the map
-    // spine duplicates. Serialized to JSON only on demand at share time, never during viewing.
-    private val replayFullStates = CopyOnWriteArrayList<GameState>()
+    // Compact replay recording — see [com.wingedsheep.gameserver.replay.CompactReplay]. Instead of
+    // storing a masked snapshot, a per-frame delta, and a full unmasked GameState for every frame,
+    // we record only the reproducible inputs: the [replaySetup] (seed + decks + seat ids, captured
+    // at [startGame]) and the ordered [recordedActions] applied to the game. The full spectator
+    // stream is re-derived on demand by ReplayReconstructor.
+    @Volatile
+    private var replaySetup: com.wingedsheep.gameserver.replay.ReplaySetup? = null
+    private val recordedActions = CopyOnWriteArrayList<GameAction>()
     var replayStartedAt: Instant? = null
         private set
 
@@ -401,7 +421,8 @@ class GameSession(
         val state = gameState ?: return null
         val seated = getPlayers()
         if (seated.size < 2) return null
-        return spectatorStateBuilder.buildState(state, seated, seatInfos(), sessionId)
+        val seats = seated.map { SpectatorSeat(it.playerId, it.playerName) }
+        return spectatorStateBuilder.buildState(state, seats, seatInfos(), sessionId)
     }
 
     /**
@@ -435,6 +456,31 @@ class GameSession(
 
         val result = gameInitializer.initializeGame(config)
         gameState = result.state
+        replayStartedAt = Instant.now()
+        // Capture everything needed to reconstruct this game later, including the seed the engine
+        // actually used (so the shuffle / turn order / coin flips replay identically) and the seat
+        // roster (now that gameState exists, seatInfos() reflects the real turn order).
+        replaySetup = com.wingedsheep.gameserver.replay.ReplaySetup(
+            seed = result.seed,
+            format = engineFormat,
+            attackMode = attackMode,
+            startingHandSize = config.startingHandSize,
+            skipMulligans = config.skipMulligans,
+            useHandSmoother = config.useHandSmoother,
+            handSmootherCandidates = config.handSmootherCandidates,
+            startingPlayerIndex = config.startingPlayerIndex,
+            teams = config.teams,
+            players = playerConfigs.map { pc ->
+                com.wingedsheep.gameserver.replay.ReplayPlayerSetup(
+                    playerId = pc.playerId!!.value,
+                    name = pc.name,
+                    deck = pc.deck,
+                    startingLife = pc.startingLife,
+                    commanderCardName = pc.commanderCardName,
+                )
+            },
+            seatRoster = seatInfos(),
+        )
         return result.state
     }
 
@@ -498,6 +544,7 @@ class GameSession(
             MulliganActionResult.Failure(error)
         } else {
             gameState = result.state
+            recordAction(action)
             val mullState = result.state.getEntity(playerId)?.get<MulliganStateComponent>()
             if (mullState?.cardsToBottom ?: 0 > 0) {
                 MulliganActionResult.NeedsBottomCards(mullState!!.cardsToBottom)
@@ -523,6 +570,7 @@ class GameSession(
             MulliganActionResult.Failure(error)
         } else {
             gameState = result.state
+            recordAction(action)
             MulliganActionResult.Success
         }
     }
@@ -543,6 +591,7 @@ class GameSession(
             MulliganActionResult.Failure(error)
         } else {
             gameState = result.state
+            recordAction(action)
             MulliganActionResult.Success
         }
     }
@@ -683,6 +732,7 @@ class GameSession(
         applyUndoPolicy(undoPolicy, action, state, playerId)
 
         gameState = result.state
+        recordAction(action)
         if (messageId != null) lastProcessedMessageId[playerId] = messageId
         val pendingDecision = result.pendingDecision
         return if (pendingDecision != null) {
@@ -702,6 +752,7 @@ class GameSession(
         val result = actionProcessor.process(state, action).result
 
         gameState = result.state
+        if (result.error == null) recordAction(action)
         result.state
     }
 
@@ -983,6 +1034,11 @@ class GameSession(
         }
 
         gameState = checkpoint
+        // Roll the replay log back to the actions that produced the restored state, so a later
+        // reconstruction replays exactly this history.
+        undoCheckpointActionCount?.let { target ->
+            while (recordedActions.size > target) recordedActions.removeAt(recordedActions.size - 1)
+        }
         clearCheckpoint()
         logger.info("Player $playerId undid their last action")
         ActionResult.Success(checkpoint, emptyList())
@@ -999,24 +1055,34 @@ class GameSession(
         preActionState: GameState,
         playerId: EntityId
     ) {
+        // [recordedActions] size right now == the number of actions that produced [preActionState]
+        // (the action currently being processed has not been recorded yet — that happens after the
+        // policy is applied). Capturing it alongside each checkpoint lets [executeUndo] truncate the
+        // replay log back to the restored state.
+        val currentActionCount = recordedActions.size
         when (policy) {
             UndoCheckpointAction.SET_CHECKPOINT -> {
                 // For DeclareAttackers, use the pre-combat state so undo goes back to main phase
-                undoCheckpoint = if (action is DeclareAttackers && preCombatState != null) {
-                    preCombatState
+                if (action is DeclareAttackers && preCombatState != null) {
+                    undoCheckpoint = preCombatState
+                    undoCheckpointActionCount = preCombatActionCount
                 } else {
-                    preActionState
+                    undoCheckpoint = preActionState
+                    undoCheckpointActionCount = currentActionCount
                 }
                 undoCheckpointOwner = playerId
             }
             UndoCheckpointAction.SET_PRECOMBAT_CHECKPOINT -> {
                 preCombatState = preActionState
+                preCombatActionCount = currentActionCount
                 undoCheckpoint = preActionState
+                undoCheckpointActionCount = currentActionCount
                 undoCheckpointOwner = playerId
             }
             UndoCheckpointAction.SET_IF_NO_EXISTING_CHECKPOINT -> {
                 if (undoCheckpoint == null) {
                     undoCheckpoint = preActionState
+                    undoCheckpointActionCount = currentActionCount
                     undoCheckpointOwner = playerId
                 }
             }
@@ -1032,6 +1098,8 @@ class GameSession(
         undoCheckpoint = null
         undoCheckpointOwner = null
         preCombatState = null
+        undoCheckpointActionCount = null
+        preCombatActionCount = null
     }
 
     /**
@@ -1079,6 +1147,7 @@ class GameSession(
         applyUndoPolicy(undoPolicy, action, state, playerId)
 
         gameState = result.state
+        recordAction(action)
         val pendingDecision = result.pendingDecision
         return if (pendingDecision != null) {
             ActionResult.PausedForDecision(result.state, pendingDecision, result.events)
@@ -1149,41 +1218,25 @@ class GameSession(
     // Replay Recording
     // =========================================================================
 
-    /**
-     * Record a spectator state snapshot for replay.
-     * Internally stores it as a delta from the previous snapshot to save memory.
-     */
-    fun recordSnapshot(snapshot: ServerMessage.SpectatorStateUpdate) {
-        if (replayStartedAt == null) {
-            replayStartedAt = Instant.now()
-        }
-        val last = replayLastSnapshot
-        if (last == null) {
-            replayInitialSnapshot = snapshot
-        } else {
-            replayDeltas.add(SpectatorReplayDiffCalculator.computeDelta(last, snapshot))
-        }
-        replayLastSnapshot = snapshot
-        gameState?.let { replayFullStates.add(it) }
+    /** Append an applied, state-advancing action to the compact replay log. */
+    private fun recordAction(action: GameAction) {
+        recordedActions.add(action)
     }
 
-    /** Per-frame full game states recorded for this game (index aligns with reconstructed frames). */
-    fun getReplayFullStates(): List<GameState> = replayFullStates.toList()
+    /**
+     * The reproducible setup captured at [startGame], or null for games whose state was injected
+     * directly (dev scenarios / hotseat) and therefore can't be re-simulated from inputs.
+     */
+    fun getReplaySetup(): com.wingedsheep.gameserver.replay.ReplaySetup? = replaySetup
+
+    /** The ordered input stream applied to this game. */
+    fun getRecordedActions(): List<GameAction> = recordedActions.toList()
 
     /**
-     * Get the initial replay snapshot (null if no snapshots recorded).
+     * Total number of replay frames: the initial state plus one per recorded action. Zero until the
+     * game is started via [startGame] (injected-state sessions have no setup and aren't replayable).
      */
-    fun getReplayInitialSnapshot(): ServerMessage.SpectatorStateUpdate? = replayInitialSnapshot
-
-    /**
-     * Get all recorded replay deltas.
-     */
-    fun getReplayDeltas(): List<SpectatorReplayDelta> = replayDeltas.toList()
-
-    /**
-     * Total number of replay frames recorded.
-     */
-    fun getReplayFrameCount(): Int = if (replayInitialSnapshot != null) 1 + replayDeltas.size else 0
+    fun getReplayFrameCount(): Int = if (replaySetup != null) 1 + recordedActions.size else 0
 
     // =========================================================================
     // Test Support (for scenario-based testing)
@@ -1340,6 +1393,24 @@ class GameSession(
             lastProcessedMessageId.clear()
             lastProcessedMessageId.putAll(lastIds)
             lastSentState.clear()
+        }
+    }
+
+    /**
+     * Restore the compact-replay recording (setup + action log) after a server restart, so a game
+     * interrupted mid-play is still saved as a replay when it finishes. Null setup leaves the game
+     * unrecorded (a pre-feature game or an injected scenario).
+     */
+    internal fun restoreReplayRecording(
+        setup: com.wingedsheep.gameserver.replay.ReplaySetup?,
+        actions: List<GameAction>,
+        startedAtIso: String?,
+    ) {
+        synchronized(stateLock) {
+            replaySetup = setup
+            recordedActions.clear()
+            recordedActions.addAll(actions)
+            replayStartedAt = startedAtIso?.let { runCatching { Instant.parse(it) }.getOrNull() }
         }
     }
 

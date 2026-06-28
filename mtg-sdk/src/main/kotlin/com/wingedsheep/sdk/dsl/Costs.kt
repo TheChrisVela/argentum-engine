@@ -346,6 +346,13 @@ object Costs {
         fun PayLifePerTarget(amountPerTarget: Int): AdditionalCost =
             AdditionalCost.PayLifePerTarget(amountPerTarget)
 
+        /**
+         * Pay life equal to the cast spell's mana value — the substitute cost for "pay life equal
+         * to its mana value rather than pay its mana cost" (Valgavoth, Terror Eater). Pair with a
+         * play-from-exile grant whose mana cost is waived (`withoutPayingManaCost = true`).
+         */
+        val PayLifeEqualToManaValueOfSpell: AdditionalCost = AdditionalCost.PayLifeEqualToManaValueOfSpell
+
         /** Exile [count] cards matching [filter] from [fromZone]. */
         fun ExileCards(
             count: Int = 1,

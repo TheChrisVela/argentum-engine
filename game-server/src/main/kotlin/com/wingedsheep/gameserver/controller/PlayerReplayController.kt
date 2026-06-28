@@ -2,8 +2,8 @@ package com.wingedsheep.gameserver.controller
 
 import com.wingedsheep.gameserver.handler.MessageSender
 import com.wingedsheep.gameserver.protocol.ServerMessage
-import com.wingedsheep.gameserver.replay.GameHistoryRepository
-import com.wingedsheep.gameserver.replay.GameReplayRecord
+import com.wingedsheep.gameserver.replay.CompactReplay
+import com.wingedsheep.gameserver.replay.ReplayService
 import com.wingedsheep.gameserver.replay.SpectatorReplayDelta
 import com.wingedsheep.gameserver.repository.LobbyRepository
 import com.wingedsheep.gameserver.session.SessionRegistry
@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/replays")
 class PlayerReplayController(
-    private val gameHistoryRepository: GameHistoryRepository,
+    private val replayService: ReplayService,
     private val sessionRegistry: SessionRegistry,
     private val messageSender: MessageSender,
     private val lobbyRepository: LobbyRepository
@@ -37,19 +37,7 @@ class PlayerReplayController(
                 .body(mapOf("error" to "Invalid or missing player token"))
 
         val playerId = identity.playerId.value
-        val summaries = gameHistoryRepository.findByPlayerId(playerId).map { record ->
-            GameSummary(
-                gameId = record.gameId,
-                player1Name = record.players.getOrNull(0)?.name ?: "",
-                player2Name = record.players.getOrNull(1)?.name ?: "",
-                startedAt = record.startedAt.toString(),
-                endedAt = record.endedAt.toString(),
-                winnerName = record.winnerName,
-                snapshotCount = record.frameCount,
-                tournamentName = record.tournamentName,
-                tournamentRound = record.tournamentRound
-            )
-        }
+        val summaries = replayService.recentForPlayer(playerId).map { it.toSummary() }
         return ResponseEntity.ok(summaries)
     }
 
@@ -71,19 +59,8 @@ class PlayerReplayController(
                 .body(mapOf("error" to "Not a tournament participant"))
         }
 
-        val gameSessionIds = tournament.getCompletedGameSessionIds()
-        val summaries = gameSessionIds.mapNotNull { gameId ->
-            gameHistoryRepository.findById(gameId)?.let { record ->
-                GameSummary(
-                    gameId = record.gameId,
-                    player1Name = record.players.getOrNull(0)?.name ?: "",
-                    player2Name = record.players.getOrNull(1)?.name ?: "",
-                    startedAt = record.startedAt.toString(),
-                    endedAt = record.endedAt.toString(),
-                    winnerName = record.winnerName,
-                    snapshotCount = record.frameCount
-                )
-            }
+        val summaries = tournament.getCompletedGameSessionIds().mapNotNull { gameId ->
+            replayService.find(gameId)?.toSummary()
         }
         return ResponseEntity.ok(summaries)
     }
@@ -98,12 +75,12 @@ class PlayerReplayController(
             ?: return ResponseEntity.status(401)
                 .body(mapOf("error" to "Invalid or missing player token"))
 
-        val record = gameHistoryRepository.findById(gameId)
+        val replay = replayService.find(gameId)
             ?: return ResponseEntity.notFound().build()
 
         // Verify the player was a participant OR is in the same tournament
         val playerId = identity.playerId.value
-        val isParticipant = record.players.any { it.playerId == playerId }
+        val isParticipant = replay.players.any { it.playerId == playerId }
         val isTournamentMember = lobbyId?.let { lid ->
             val tournament = lobbyRepository.findTournamentById(lid)
             tournament != null &&
@@ -117,21 +94,35 @@ class PlayerReplayController(
 
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_JSON)
-            .body(serializeReplayRecord(record))
+            .body(serializeReplay(replay))
     }
 
     private fun resolveIdentity(token: String?) =
         token?.takeIf { it.isNotBlank() }?.let { sessionRegistry.getIdentityByToken(it) }
 
-    private fun serializeReplayRecord(record: GameReplayRecord): String {
+    private fun serializeReplay(replay: CompactReplay): String {
+        val reconstructed = replayService.reconstruct(replay)
         val initialJson = messageSender.json.encodeToString(
             ServerMessage.SpectatorStateUpdate.serializer(),
-            record.initialSnapshot
+            reconstructed.initialSnapshot
         )
         val deltasJson = messageSender.json.encodeToString(
             ListSerializer(SpectatorReplayDelta.serializer()),
-            record.deltas
+            reconstructed.deltas
         )
         return """{"initialSnapshot":$initialJson,"deltas":$deltasJson}"""
     }
 }
+
+/** Shared summary projection for a stored compact replay. */
+fun CompactReplay.toSummary() = GameSummary(
+    gameId = gameId,
+    player1Name = players.getOrNull(0)?.name ?: "",
+    player2Name = players.getOrNull(1)?.name ?: "",
+    startedAt = startedAt,
+    endedAt = endedAt,
+    winnerName = winnerName,
+    snapshotCount = frameCount,
+    tournamentName = tournamentName,
+    tournamentRound = tournamentRound
+)

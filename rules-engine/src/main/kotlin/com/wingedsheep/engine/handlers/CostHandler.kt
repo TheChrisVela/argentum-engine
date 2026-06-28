@@ -931,6 +931,11 @@ class CostHandler(
                 // enough life to pay it.
                 cost.minCount <= 0 || state.lifeTotal(controllerId) >= cost.minCount
             }
+            is AdditionalCost.PayLifeEqualToManaValueOfSpell -> {
+                // Affordability is per-cast (depends on the cast card's mana value), so it is
+                // checked at CastSpellHandler time, not here. Always "payable" at this generic gate.
+                true
+            }
             is AdditionalCost.BeholdOrPay -> {
                 // Always payable: player can always choose the "pay mana" path
                 true

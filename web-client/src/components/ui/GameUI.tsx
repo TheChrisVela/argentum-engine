@@ -973,6 +973,37 @@ function LobbyOverlay({
                 )}
               </div>
             </div>
+            {/* Ranked toggle — only a Tournament bracket (1v1 matches) is ranked-eligible. A ranked
+                tournament adjusts each player's ELO per match and can only start with everyone signed in. */}
+            {!isMultiplayer && (
+              <div className={styles.settingsRow}>
+                <span className={styles.settingsLabel}>Ranked</span>
+                <div className={styles.variantGroup}>
+                  <div className={styles.settingsButtons}>
+                    <button
+                      onClick={() => updateLobbySettings({ ranked: false })}
+                      className={`${styles.settingsButton} ${!lobbyState.settings.ranked ? styles.settingsButtonActive : ''}`}
+                      title="Casual — no rating change"
+                    >
+                      Casual
+                    </button>
+                    <button
+                      onClick={() => updateLobbySettings({ ranked: true })}
+                      className={`${styles.settingsButton} ${lobbyState.settings.ranked ? styles.settingsButtonActive : ''}`}
+                      title="Ranked — adjusts each player's ELO"
+                    >
+                      Ranked
+                    </button>
+                  </div>
+                  {lobbyState.settings.ranked && (
+                    <div className={styles.variantCaption}>
+                      Ranked matches adjust each player's ELO. All players must be signed in for the game
+                      to count as ranked — otherwise it just plays unranked. Uncheck to play casually.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             {/* Multiplayer variant sub-row: only the three single-game modes, shown once Multiplayer is on. */}
             {isMultiplayer && (
               <div className={styles.settingsRow}>

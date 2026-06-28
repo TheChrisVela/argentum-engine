@@ -172,6 +172,11 @@ sealed interface ClientMessage {
         val gameMode: String = "TOURNAMENT",
         /** Free-for-All attack rule (CR 802/803): "MULTIPLE" (default), "LEFT", or "RIGHT". */
         val attackMode: String = "MULTIPLE",
+        /**
+         * Ranked toggle, defaulting on for a tournament bracket. Only honored for "TOURNAMENT" mode.
+         * At start, if not every seat is a signed-in human the game still runs — just unranked.
+         */
+        val ranked: Boolean = true,
     ) : ClientMessage
 
     /**
@@ -294,6 +299,8 @@ sealed interface ClientMessage {
          * sent each time (not a delta). Null leaves the current assignment unchanged.
          */
         val teamAssignments: Map<String, Int>? = null,
+        /** Toggle ranked play (TOURNAMENT mode only). Null = unchanged. */
+        val ranked: Boolean? = null,
     ) : ClientMessage
 
     /**
@@ -483,6 +490,12 @@ sealed interface ClientMessage {
          * exclusive with [momirBasic].
          */
         val twoHeadedGiant: Boolean = false,
+        /**
+         * Ranked toggle. A ranked quick game adjusts both players' ELO on completion, so it requires
+         * a standard 1v1 human-vs-human lobby — ignored for [vsAi] or [twoHeadedGiant], and re-checked
+         * (both seats logged in) at start.
+         */
+        val ranked: Boolean = false,
     ) : ClientMessage
 
     /** Join an existing quick-game lobby by its short code. */
@@ -536,6 +549,14 @@ sealed interface ClientMessage {
     @Serializable
     @SerialName("setQuickGameLobbyPublic")
     data class SetQuickGameLobbyPublic(val isPublic: Boolean) : ClientMessage
+
+    /**
+     * Toggle ranked play for the quick-game lobby (host-only). Honored only for a standard 1v1
+     * human-vs-human lobby; ignored for AI / Two-Headed Giant lobbies. Re-validated at start.
+     */
+    @Serializable
+    @SerialName("setQuickGameLobbyRanked")
+    data class SetQuickGameLobbyRanked(val ranked: Boolean) : ClientMessage
 
     /**
      * Set the deck-format restriction for the lobby (host-only). Null = no restriction.

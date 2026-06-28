@@ -14,7 +14,8 @@
 /* Shared frosted-pill base for every control in the widget. */
 .identity,
 .login,
-.logout {
+.logout,
+.admin {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -67,6 +68,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Admin: matches the Log out pill's weight/casing; only renders for admin accounts. */
+.admin {
+  padding: var(--space-2) var(--space-3);
+}
+
+.admin:hover {
+  background-color: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: var(--text-primary);
 }
 
 .logout {

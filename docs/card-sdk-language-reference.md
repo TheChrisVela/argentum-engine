@@ -268,6 +268,12 @@ definitions construct these through the facade, e.g. `Costs.additional.Sacrifice
 - `Costs.additional.PayLifePerTarget(amountPerTarget)` — "this spell costs N life more to cast for
   each target." Pair with an unbounded `TargetCreature(unlimited = true)` etc.; the engine
   auto-pays `amountPerTarget × action.targets.size` at cast resolution (Phyrexian Purge).
+- `Costs.additional.PayLifeEqualToManaValueOfSpell` — auto-pays life equal to the cast spell's own
+  mana value. The substitute cost for "pay life equal to its mana value rather than pay its mana cost"
+  (Valgavoth, Terror Eater; Bolas's Citadel-style effects). Pair it with a play-from-exile grant whose
+  mana cost is waived — `GrantMayCastFromLinkedExile(withoutPayingManaCost = true, additionalCost =
+  Costs.additional.PayLifeEqualToManaValueOfSpell)` — so the only cost paid is the life. The amount is
+  read from the cast card's mana value, checked at cast time (CR 119.4 — must have at least that much life).
 - `Costs.additional.ExileFromGraveyardOrPay(exileCount, alternativeManaCost, filter = Filters.Any)`
   — "as an additional cost to cast this spell, exile N cards from your graveyard or pay {mana}"
   (Soaring Stoneglider: "exile two cards from your graveyard or pay {1}{W}"). The sibling of the
@@ -964,7 +970,8 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 - `MakeNextSpellUncounterableEffect(spellFilter = Any)` (facade `Effects.MakeNextSpellUncounterable(spellFilter)`) — one-shot rider: the controller's **next** spell matching `spellFilter` cast this turn can't be countered, then the entry is consumed. Stamps `CantBeCounteredComponent` on that spell as it's cast (so it stays uncounterable for as long as it's on the stack); non-matching casts leave the entry waiting, and an unused entry clears at the start of the controller's next turn. Same pending-rider shape as `CopyNextSpellCastEffect`. Contrast with the duration-based `GrantSpellsCantBeCountered` (Domri), which protects **every** matching spell cast for a whole duration rather than just the next one. Used by **Mistrise Village** ("{U}, {T}: The next spell you cast this turn can't be countered.").
 - `GrantNextSpellAffinityEffect(spellFilter = Noncreature, forType = ARTIFACT)` (facade `Effects.GrantNextSpellAffinity(spellFilter, forType)`) — one-shot rider mirroring `MakeNextSpellUncounterable`, but the controller's **next** matching spell this turn gains **affinity for `forType`**: the cost calculator reduces it by the caster's count of that card type *at cast time* (dynamic), then `CastSpellHandler` consumes the entry. Used by **Don & Raph, Hard Science** ("the next noncreature spell you cast this turn has affinity for artifacts").
 - `CopyCardIntoCollectionEffect(source, storeAs)` (facade `Effects.CopyCardIntoCollection(source, storeAs)`) — copy a **card in a zone** (not a spell on the stack), publishing the copy's entity id to pipeline collection `storeAs`. Per Rule 707.12 the copy is created in the card's current zone under the effect's controller and tagged as a stack-style copy, so once cast it becomes a token if it's a permanent spell and ceases to exist if it's an instant/sorcery (Rule 707.10). Pair with `CastFromCollectionWithoutPayingCostEffect(from)` (facade `Effects.CastFromCollectionWithoutPayingCost(from)`, wrap in `MayEffect` for "you may cast") to express "copy a card, then cast the copy" — e.g. **Shiko, Paragon of the Way**: `Composite(MoveToZoneEffect(target, Zone.EXILE), Effects.CopyCardIntoCollection(target, "copy"), MayEffect(Effects.CastFromCollectionWithoutPayingCost("copy")))`. A copy that is never cast is swept up by the Rule 707.10a state-based action (`PhantomCardCopiesCheck`), so no explicit cleanup step is needed. For the "you may cast it" wording that **doesn't** say "without paying its mana cost", use `Effects.CastFromCollection(from, storeCastTo?)` (`CastFromCollectionWithoutPayingCostEffect(from, payManaCost = true, storeCastTo)`): the controller pays the spell's normal cost (an {X} spell prompts for X) instead of casting for free. Pass `storeCastTo` to publish the cast card's id to that pipeline collection on a successful cast, then gate a follow-up with `IfYouDoEffect(this, then, SuccessCriterion.CollectionNonEmpty(storeCastTo))` — e.g. **Kaervek, the Punisher**: `Composite(Move(target, EXILE), CopyCardIntoCollection(target, "copy"), MayEffect(IfYouDoEffect(CastFromCollection("copy", storeCastTo = "cast"), LoseLife(2, Controller), SuccessCriterion.CollectionNonEmpty("cast"))))` — declining (or being unable to pay) leaves the collection empty, so no life is lost. (`storeCastTo` is reliably published for synchronous casts and target-selection casts; an {X}-cost spell cast with no targets is the one sub-case where the publish doesn't survive the X pause.) **Free-casting still pays the copied spell's non-mana additional costs** (CR 601.2f / 118.9 waive only the mana cost) — when the copy carries a printed sacrifice / discard / exile / tap additional cost, the engine resolves it during the synthesized cast: a forced single option is auto-paid, and a real choice pauses for an on-battlefield (sacrifice/tap) or overlay (discard/exile) selection; if the cost can't be paid the cast doesn't happen (e.g. Roving Actuator copying **Embrace Oblivion**'s "sacrifice an artifact or creature" still makes you sacrifice).
-- `CastAnyNumberFromCollectionWithoutPayingCostEffect(from)` (facade `Effects.CastAnyNumberFromCollectionWithoutPayingCost(from)`) — the multi-cast sibling of `CastFromCollectionWithoutPayingCostEffect`. **During this effect's resolution**, the controller is offered the cards in pipeline collection `from` (filtered to those still in exile) one at a time and may cast each for free until they decline; each cast's targets / X / modes flow through the normal cast machinery. Because the casts go through the synthesized-cast path (like Cascade), card-type **timing restrictions are ignored** and no lingering "you may play it later" permission is granted — cards left uncast just stay where they are (the controller can't wait until later in the turn). Hand it the eligible set: filter the collection upstream (e.g. nonland + `FilterCollection(ManaValueAtMost(...))`). Models "you may cast any number of spells with mana value X or less from among them without paying their mana costs" — e.g. **Kotis, the Fangkeeper**: `GatherCards(TopOfLibrary(damage, TriggeringPlayer)) → MoveCollection(→ exile) → FilterCollection(Nonland) → FilterCollection(ManaValueAtMost(damage)) → CastAnyNumberFromCollectionWithoutPayingCostEffect("castable")`. Also used by **Villainous Wealth** (the same chain off an {X} sorcery) and **Etali, Primal Storm** (exile the top card of each library, no MV cap).
+- `CopyCollectionIntoCollectionEffect(from, storeAs)` (facade `Effects.CopyCollectionIntoCollection(from, storeAs)`) — the collection-wide sibling of `CopyCardIntoCollectionEffect`: copy **every** card in pipeline collection `from`, publishing all the copies' entity ids (in `from` order) to `storeAs`. For "copy them" over a set of cards rather than one (`CopyCardIntoCollection` overwrites its collection, so it can't accumulate across a `ForEach`). Each copy is created in its original's current zone (Rule 707.12) and tagged as a stack-style copy, so gather/exile the originals first, then copy. Pair with `Effects.CastAnyNumberFromCollection(storeAs)` for "copy them. You may cast any number of the copies" — e.g. **The Tale of Tamiyo** IV: `Composite(ForEachTargetEffect(Move(ContextTarget(0), EXILE)), GatherCards(ChosenTargets, "exiled"), CopyCollectionIntoCollection("exiled", "copies"), CastAnyNumberFromCollection("copies"))`. Copies never cast are swept by the Rule 707.10a state-based action.
+- `CastAnyNumberFromCollectionWithoutPayingCostEffect(from, payManaCost = false)` (facades `Effects.CastAnyNumberFromCollectionWithoutPayingCost(from)` for free / `Effects.CastAnyNumberFromCollection(from)` for paid) — the multi-cast sibling of `CastFromCollectionWithoutPayingCostEffect`. **During this effect's resolution**, the controller is offered the cards in pipeline collection `from` (filtered to those still in exile) one at a time and may cast each until they decline; each cast's targets / X / modes flow through the normal cast machinery. With the default `payManaCost = false` each is cast for free; set `payManaCost = true` (facade `Effects.CastAnyNumberFromCollection`) for the "you may cast any number of [them]" wording **without** "without paying their mana costs" — each chosen card is then cast paying its normal cost (an {X} card prompts for X). Because the casts go through the synthesized-cast path (like Cascade), card-type **timing restrictions are ignored** and no lingering "you may play it later" permission is granted — cards left uncast just stay where they are (the controller can't wait until later in the turn). Hand it the eligible set: filter the collection upstream (e.g. nonland + `FilterCollection(ManaValueAtMost(...))`). The free form models "you may cast any number of spells with mana value X or less from among them without paying their mana costs" — e.g. **Kotis, the Fangkeeper**: `GatherCards(TopOfLibrary(damage, TriggeringPlayer)) → MoveCollection(→ exile) → FilterCollection(Nonland) → FilterCollection(ManaValueAtMost(damage)) → CastAnyNumberFromCollectionWithoutPayingCostEffect("castable")` (also **Villainous Wealth**, **Etali, Primal Storm**). The paid form models **The Tale of Tamiyo** IV (cast the copies paying their costs).
 - `FilterCollection(from, CollectionFilter.InZone(zone), storeMatching)` — keep only the cards in pipeline collection `from` that are **currently** in `zone`. Pipeline collections track entity refs, not live location, so a card can leave its zone mid-resolution (e.g. an exiled card cast for free moves to the stack). Use this to act on "the ones still there." Models the "you may cast it … if you don't, put that card into your hand" fallback of the **Tarkir: Dragonstorm "…storm" enchantments** (Breaching Dragonstorm): `GatherUntilMatch(Nonland) → MoveCollection(→ exile) → FilterCollection(ManaValueAtMost(8), "castable") → ConditionalOnCollection("castable", ifNotEmpty = MayEffect(CastFromCollectionWithoutPayingCost("castable"))) → FilterCollection("nonland", InZone(EXILE), "uncast") → MoveCollection("uncast" → hand)` — only the nonland still in exile (not the one just cast) goes to hand; the lands stay exiled. The `ConditionalOnCollection` wrapper suppresses the empty "you may cast" prompt when the nonland's mana value is > 8.
 - `MoveCollectionEffect(from, destination, filter = null, …)` — move a pipeline collection to a zone.
   `destination = ToZone(zone, player, placement)`; `ZonePlacement.Tapped` enters the battlefield
@@ -1240,7 +1247,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   surrounding pipeline's stored collections are carried into whichever consequence fires, so the
   consequence can reference cards gathered earlier in the same resolution (e.g. the discarded card,
   via `MoveCollection(from = "discarded", …)`).
-- `RepeatWhileEffect(condition, effect, maxIterations?)` — run effect repeatedly while condition holds.
+- `RepeatWhileEffect(body, repeatCondition)` (facade `Effects.RepeatWhile(body, repeatCondition)`) — do-while loop: run `body` once, then repeat while `repeatCondition` holds. `repeatCondition` is `RepeatCondition.PlayerChooses(decider, prompt)` (a yes/no each iteration) or `RepeatCondition.WhileCondition(condition)` (a game-state `Condition`). A `WhileCondition` is evaluated against the **body's own pipeline outputs from that iteration** (the collections/values it just stored), then the next iteration's body runs from the pristine pre-loop context — so a loop can branch on what it just produced without stale state leaking forward. Models "do X. Repeat this process [if …]" — e.g. **The Tale of Tamiyo** I–III: `RepeatWhile(body = Composite(Patterns.Library.mill(2), ConditionalEffect(CollectionSharesCardType("milled"), DrawCards(1))), repeatCondition = WhileCondition(CollectionSharesCardType("milled")))` mills two, and while the two milled cards share a card type both draws and repeats.
 
 ### Sequencing & conditional
 
@@ -1311,6 +1318,12 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
   Worked examples: `Patterns.Mechanic.explore()` (CR 701.44), Sindbad ("draw and reveal; if it isn't
   a land, discard it"), Cache Grab (Food gated on `CollectionContainsMatch("selected", Squirrel)`
   after a selection pause).
+  - **Collection conditions** (read a pipeline collection from the live `EffectContext`):
+    `Conditions.CollectionContainsMatch(name, filter?)` — true if any card in `name` matches `filter`;
+    `Conditions.CollectionSharesCardType(name)` — true if two cards in `name` share a card type (CR
+    205.2a; false for fewer than two cards). The latter models "if two cards that share a card type
+    were milled this way" (The Tale of Tamiyo I–III), typically inside both a `ConditionalEffect` and
+    a `RepeatCondition.WhileCondition` over the mill's `"milled"` collection.
 
 ### Modal & choice
 
@@ -1612,6 +1625,13 @@ effect = Effects.Pipeline {
   You may play that card from exile this turn" (Norin, Swift Survivalist): `gather(TriggeringEntity)` →
   `exile(...)` → `GrantMayPlayFromExile(EndOfTurn)`.
 - `CardSource.TappedAsCost` — the permanents tapped to pay the activation cost.
+- `CardSource.AttachedTo(host, filter?)` — the permanents attached to the `host` entity (any
+  `EffectTarget` that resolves to a permanent — a spell's `ContextTarget`, `Self`, `TriggeringEntity`, …)
+  that match `filter`, read off the host's `AttachmentsComponent` and intersected with the projected
+  filter matches. The non-targeted counterpart of "the Equipment/Aura attached to that creature": yields
+  nothing when the host has left play or has no matching attachments. Backs "destroy up to one Equipment
+  attached to that creature" (Light of Judgment): `gather(AttachedTo(targetCreature, Equipment))` →
+  `chooseUpTo(1)` → `destroy(...)`.
 - `CardSource.ChosenTargets` — the spell/ability's already-resolved targets.
 - `CardSource.FromLinkedExile(count?)` — the cards in the source's linked-exile pile.
 - `CardSource.LastKnownCombatPairedWithSource` — creatures blocking/blocked by the source at the
@@ -3593,6 +3613,16 @@ riders, matching how the engine already treats e.g. City of Brass's damage durin
   your graveyard". Lands are *played*, not cast, so they need the lands permission separately. This
   grants permission over *other* cards in your graveyard from a battlefield permanent — for a card
   that grants permission to cast *itself* from a zone, use `MayCastSelfFromZones`.
+- `GrantMayCastFromLinkedExile(filter = Nonland, duringYourTurnOnly = false, additionalCost = null, ownedByYou = false, withoutPayingManaCost = false, oncePerTurn = false, maxManaValue = null, exiledThisTurnOnly = false)`
+  — "you may cast cards exiled with this permanent" — reads the source's `LinkedExileComponent` (Rona,
+  Disciple of Gix; Maralen, Fae Ascendant; Dawnhand Dissident). Casting spells from linked exile is
+  enumerated by `CastFromZoneEnumerator.enumerateLinkedExile`; the cast path deliberately skips lands.
+  For the "pay life equal to its mana value rather than pay its mana cost" shape (Valgavoth, Terror
+  Eater), set `withoutPayingManaCost = true` (waives the mana) and `additionalCost =
+  Costs.additional.PayLifeEqualToManaValueOfSpell` (substitutes the life). When `filter` admits lands
+  (e.g. `GameObjectFilter.Any`, no `IsNonland` predicate), the permission also covers *playing* land
+  cards from the linked exile — surfaced by `PlayLandEnumerator` and authorized by `PlayLandHandler`
+  (lands cost no life). Pair with a `RedirectZoneChange(linkToSource = true)` to fill the exile pile.
 - `GraveyardCreaturesHaveSneak(cost)` — "Creature cards in your graveyard have sneak `cost`. You may
   cast creature spells from your graveyard using their sneak abilities." (Ninja Teen level 3.) While
   the controller has this static active, their graveyard creature cards become castable via the
@@ -3809,9 +3839,11 @@ composite abilities).
 
 - `Ward(amount)` — opponent pays a mana cost to target this (CR 702.21). Non-mana costs use
   `KeywordAbility.Ward(WardCost.X)`: `WardCost.Mana`, `WardCost.Life(n)`, `WardCost.Discard(n, random, filter)`,
-  and `WardCost.Sacrifice(filter)` ("Ward—Sacrifice a Food", Ygra). For sacrifice ward, the opponent
-  chooses which matching permanent(s) they control to sacrifice (declining counters their spell); valid
-  fodder is matched against projected state, so subtypes granted by continuous effects count.
+  and `WardCost.Sacrifice(filter, count = 1)` ("Ward—Sacrifice a Food", Ygra; "Ward—Sacrifice three
+  nonland permanents" with `count = 3`, Valgavoth, Terror Eater, via `KeywordAbility.wardSacrifice(filter, count)`).
+  For sacrifice ward, the opponent chooses which `count` matching permanent(s) they control to sacrifice
+  (selecting fewer, or controlling fewer than `count`, counters their spell); valid fodder is matched
+  against projected state, so subtypes granted by continuous effects count.
   Composite costs ("Ward—{2}, Pay 2 life", Gisa, the Hellraiser) use
   `KeywordAbility.wardComposite(WardCost.Mana("{2}"), WardCost.Life(2))` → `WardCost.Composite(parts)`.
   The components are charged one at a time in order; the spell/ability resolves only if every
@@ -5411,6 +5443,18 @@ replacementEffect {
   "three or more lands total". The parallel "fast land" cycle (Blooming Marsh — "two or fewer other lands")
   uses an `LTE`-direction `Compare(AggregateBattlefield(You, Land), LTE, Fixed(3))`. `payLifeCost` renders
   the "you may pay N life; if you don't, it enters tapped" variant.
+- `RedirectZoneChange(newDestination, appliesTo, linkToSource = false)` — redirect a zone change to a
+  different destination (Rest in Peace / Leyline of the Void: graveyard → exile). `appliesTo` is an
+  `EventPattern.ZoneChangeEvent(filter, from?, to?)`; the `filter`'s `controllerPredicate` scopes it
+  (e.g. `OwnedByOpponent` for Leyline). When `linkToSource = true` and `newDestination = Zone.EXILE`,
+  each redirected card is added to the source permanent's `LinkedExileComponent`, so the source can
+  later reference — and grant playing of — the cards it exiled. Valgavoth, Terror Eater pairs it with
+  `GrantMayCastFromLinkedExile`: "If a card you didn't control would be put into an opponent's graveyard
+  from anywhere, exile it instead" is `RedirectZoneChange(newDestination = Zone.EXILE, linkToSource =
+  true, appliesTo = ZoneChangeEvent(to = Zone.GRAVEYARD, filter = GameObjectFilter(cardPredicates =
+  listOf(CardPredicate.IsNontoken), controllerPredicate = ControllerPredicate.And(listOf(OwnedByOpponent,
+  Not(ControlledByYou))))))`. The redirect (and link) is honored across every graveyard path: SBA deaths,
+  mill/discard/destroy (`ZoneTransitionService`), spell resolution, counters, and fizzles (`StackResolver`).
 - `ReplacementEffect.IfYouDoBranchEffect(...)` — branch on "if you do" replacement.
 - `OnEnterRunEffect(effect)` — generic "as ~ enters the battlefield, run [effect]". The wrapped effect
   executes via the normal effect-executor pipeline at entry time (so `EffectTarget.Self` resolves to

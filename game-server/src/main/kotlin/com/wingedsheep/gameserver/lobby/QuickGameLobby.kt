@@ -55,6 +55,17 @@ class QuickGameLobby(
     @Volatile
     var started: Boolean = false
 
+    /**
+     * Ranked toggle. A ranked quick game adjusts both players' ELO on completion, so it is only
+     * allowed for a standard 1v1 lobby (not Two-Headed Giant) where the second seat is a logged-in
+     * human (not AI). The handler re-validates these at start; this flag is just the host's request.
+     */
+    @Volatile
+    var ranked: Boolean = false
+
+    /** Whether this lobby is even allowed to be ranked: standard 1v1, human opponent. */
+    val rankedEligible: Boolean get() = !twoHeadedGiant && !vsAi
+
     /** Seats this lobby fills before it can start: 4 for Two-Headed Giant, else the default 2. */
     val maxPlayers: Int get() = if (twoHeadedGiant) TWO_HEADED_GIANT_PLAYERS else MAX_PLAYERS
 

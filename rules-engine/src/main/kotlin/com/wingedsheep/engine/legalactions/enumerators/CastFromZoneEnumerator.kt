@@ -743,8 +743,23 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         context.manaSolver.canPay(state, playerId, effectiveCost, precomputedSources = context.availableManaSources)
                     }
 
+                    // "Pay life equal to its mana value rather than pay its mana cost" (Valgavoth):
+                    // the life cost is per-card (the cast card's mana value), so its affordability
+                    // and display are computed here rather than once-per-granter.
+                    val payLifeMv = grantAbility.additionalCost is AdditionalCost.PayLifeEqualToManaValueOfSpell
+                    val lifeForThisCard = if (payLifeMv) exiledCard.manaCost.cmc else 0
+                    val lifeAffordable = !payLifeMv || state.lifeTotal(playerId) >= lifeForThisCard
+                    val perCardAdditionalCostInfo = if (payLifeMv) {
+                        AdditionalCostData(
+                            description = "Pay $lifeForThisCard life",
+                            costType = "PayLife"
+                        )
+                    } else {
+                        linkedAdditionalCostInfo
+                    }
+
                     val fullyAffordable = hasCorrectTiming && meetsRestrictions && canAfford &&
-                        canPayLinkedAdditionalCost
+                        canPayLinkedAdditionalCost && lifeAffordable
                     if (fullyAffordable) {
                         val targetReqs = buildList {
                             addAll(exiledCardDef?.script?.targetRequirements ?: emptyList())
@@ -771,7 +786,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                                         xConstrainsTargetCount = firstInfo.xConstrainsCount,
                                         manaCostString = costString,
                                         sourceZone = "EXILE",
-                                        additionalCostInfo = linkedAdditionalCostInfo
+                                        additionalCostInfo = perCardAdditionalCostInfo
                                     )
                                 )
                             }
@@ -783,7 +798,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                                     action = CastSpell(playerId, exiledId),
                                     manaCostString = costString,
                                     sourceZone = "EXILE",
-                                    additionalCostInfo = linkedAdditionalCostInfo
+                                    additionalCostInfo = perCardAdditionalCostInfo
                                 )
                             )
                         }
@@ -796,7 +811,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
                                 affordable = false,
                                 manaCostString = costString,
                                 sourceZone = "EXILE",
-                                additionalCostInfo = linkedAdditionalCostInfo
+                                additionalCostInfo = perCardAdditionalCostInfo
                             )
                         )
                     }

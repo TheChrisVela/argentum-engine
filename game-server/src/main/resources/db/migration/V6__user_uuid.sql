@@ -1,10 +1,10 @@
 -- Switch the account primary key from a BIGINT identity to a UUID.
 --
 -- Why: the account id is now a shareable, non-guessable handle — you invite a friend by handing them
--- your account id, never your email (see V5). Game/replay ids were already UUIDs; only users.id was a
+-- your account id, never your email (see V7). Game/replay ids were already UUIDs; only users.id was a
 -- BIGINT. This backfills every existing row and re-points each foreign key, so no account, deck, login
--- token, or match-history association is lost. Like the other migrations it only runs when accounts
--- are enabled.
+-- token, match-history, or ranked-rating association is lost. Like the other migrations it only runs
+-- when accounts are enabled.
 
 -- gen_random_uuid() is built in on PostgreSQL 13+; the extension is a safety net for older servers.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -17,11 +17,17 @@ ALTER TABLE login_tokens            ADD COLUMN user_uuid UUID;
 ALTER TABLE decks                   ADD COLUMN user_uuid UUID;
 ALTER TABLE match_participants      ADD COLUMN user_uuid UUID;
 ALTER TABLE tournament_participants ADD COLUMN user_uuid UUID;
+ALTER TABLE user_ratings            ADD COLUMN user_uuid UUID;
+ALTER TABLE rating_history          ADD COLUMN user_uuid UUID;
+ALTER TABLE rating_history          ADD COLUMN opponent_uuid UUID;
 
 UPDATE login_tokens            c SET user_uuid = u.uuid FROM users u WHERE c.user_id = u.id;
 UPDATE decks                   c SET user_uuid = u.uuid FROM users u WHERE c.user_id = u.id;
 UPDATE match_participants      c SET user_uuid = u.uuid FROM users u WHERE c.user_id = u.id;
 UPDATE tournament_participants c SET user_uuid = u.uuid FROM users u WHERE c.user_id = u.id;
+UPDATE user_ratings            c SET user_uuid = u.uuid FROM users u WHERE c.user_id = u.id;
+UPDATE rating_history          c SET user_uuid = u.uuid FROM users u WHERE c.user_id = u.id;
+UPDATE rating_history          c SET opponent_uuid = u.uuid FROM users u WHERE c.opponent_user_id = u.id;
 
 -- 3. Drop every foreign key that references users(id), looked up dynamically so we don't depend on
 --    auto-generated constraint names.
@@ -46,8 +52,8 @@ ALTER TABLE users RENAME COLUMN uuid TO id;
 ALTER TABLE users ADD PRIMARY KEY (id);
 ALTER TABLE users ALTER COLUMN id SET DEFAULT gen_random_uuid();
 
--- 5. Point each child's user_id at the new UUID and restore its NOT NULL / index / FK
---    (dropping the old column also dropped its index, so recreate it).
+-- 5. Point each child's user reference at the new UUID and restore its NOT NULL / index / unique / FK
+--    (dropping the old column also dropped its dependent index/unique constraints, so recreate them).
 
 -- login_tokens: NOT NULL, ON DELETE CASCADE
 ALTER TABLE login_tokens DROP COLUMN user_id;
@@ -78,3 +84,24 @@ ALTER TABLE tournament_participants RENAME COLUMN user_uuid TO user_id;
 CREATE INDEX idx_tournament_participants_user ON tournament_participants (user_id);
 ALTER TABLE tournament_participants ADD CONSTRAINT tournament_participants_user_id_fkey
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL;
+
+-- user_ratings: NOT NULL, ON DELETE CASCADE, UNIQUE (user_id, mode)
+ALTER TABLE user_ratings DROP COLUMN user_id;
+ALTER TABLE user_ratings RENAME COLUMN user_uuid TO user_id;
+ALTER TABLE user_ratings ALTER COLUMN user_id SET NOT NULL;
+CREATE INDEX idx_user_ratings_user ON user_ratings (user_id);
+ALTER TABLE user_ratings ADD CONSTRAINT user_ratings_user_mode_unique UNIQUE (user_id, mode);
+ALTER TABLE user_ratings ADD CONSTRAINT user_ratings_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE;
+
+-- rating_history: user_id NOT NULL CASCADE; opponent_user_id nullable SET NULL
+ALTER TABLE rating_history DROP COLUMN user_id;
+ALTER TABLE rating_history RENAME COLUMN user_uuid TO user_id;
+ALTER TABLE rating_history ALTER COLUMN user_id SET NOT NULL;
+ALTER TABLE rating_history DROP COLUMN opponent_user_id;
+ALTER TABLE rating_history RENAME COLUMN opponent_uuid TO opponent_user_id;
+CREATE INDEX idx_rating_history_user_mode ON rating_history (user_id, mode, created_at);
+ALTER TABLE rating_history ADD CONSTRAINT rating_history_user_id_fkey
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE;
+ALTER TABLE rating_history ADD CONSTRAINT rating_history_opponent_user_id_fkey
+    FOREIGN KEY (opponent_user_id) REFERENCES users (id) ON DELETE SET NULL;

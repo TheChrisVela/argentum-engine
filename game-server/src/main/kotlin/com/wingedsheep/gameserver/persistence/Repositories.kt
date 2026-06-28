@@ -51,3 +51,16 @@ interface FriendshipRepository : CrudRepository<FriendshipRow, UUID> {
     )
     fun findPair(@Param("a") a: UUID, @Param("b") b: UUID): FriendshipRow?
 }
+
+interface GameReplayRepository : CrudRepository<GameReplayRow, Long> {
+    fun findByGameId(gameId: String): GameReplayRow?
+}
+
+interface UserRatingRepository : CrudRepository<UserRatingRow, Long> {
+    fun findByUserIdAndMode(userId: UUID, mode: String): UserRatingRow?
+    fun findByUserId(userId: UUID): List<UserRatingRow>
+}
+
+interface RatingHistoryRepository : CrudRepository<RatingHistoryRow, Long> {
+    fun findByUserIdAndModeOrderByCreatedAtAsc(userId: UUID, mode: String): List<RatingHistoryRow>
+}

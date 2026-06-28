@@ -179,6 +179,19 @@ sealed interface AdditionalCost : TextReplaceable<AdditionalCost> {
     }
 
     /**
+     * Pay life equal to the mana value of the spell being cast. Auto-paid (no player choice).
+     * Used as the substitute cost in "pay life equal to its mana value rather than pay its
+     * mana cost" permissions — Valgavoth, Terror Eater (paired with a play-from-exile grant
+     * whose mana cost is waived), and Bolas's Citadel-style effects. The amount is computed at
+     * cast time from the cast card's [com.wingedsheep.sdk.model.CardDefinition] mana value.
+     */
+    @SerialName("PayLifeEqualToManaValueOfSpell")
+    @Serializable
+    data object PayLifeEqualToManaValueOfSpell : AdditionalCost {
+        override val description: String = "pay life equal to its mana value"
+    }
+
+    /**
      * Blight N or pay additional mana: the caster must either put N -1/-1 counters on a creature
      * they control, or pay extra mana on top of the spell's base mana cost.
      * Used by Lorwyn Eclipsed cards (e.g., Wild Unraveling).

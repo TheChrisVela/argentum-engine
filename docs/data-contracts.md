@@ -436,17 +436,37 @@ banner and act for whichever seat currently holds priority (board actions ride t
 server-provided `legalActions`, which already carry the acting seat; `SubmitDecision` is stamped
 with `pendingDecision.playerId`; combat declarations with the active/defending seat).
 
+### Compact replays (record inputs, re-simulate)
+
+Replays are stored as **inputs, not snapshots**. A finished game is persisted as a `CompactReplay`:
+its `setup` (RNG seed, decks, seat ids, format/teams/attack-mode) plus the ordered `actions` stream
+that was applied. Because the engine is a pure, deterministic function and mints every entity id
+from a state-threaded counter (never a UUID), `ReplayReconstructor` rebuilds the initial
+`GameState` with that seed, folds the actions back through `ActionProcessor`, and re-runs the same
+`SpectatorStateBuilder`/diff the live broadcast used — regenerating the exact `{initialSnapshot,
+deltas}` stream the viewer consumes. This is kilobytes per game instead of a masked snapshot + a
+per-frame delta + a full unmasked `GameState` per frame.
+
+The in-progress recording (setup + action log) is part of the persisted `GameSession` snapshot
+(`PersistentGameSession`), so a game interrupted by a server restart is still saved as a replay when
+it later finishes. Storage: an in-memory cache (`GameHistoryRepository`, last 100 games) for
+just-finished games, and a durable Postgres table (`game_replays`, gzip+base64 `CompactReplay`) when
+accounts are enabled.
+`ReplayService` resolves a game id cache-first, then the store; all replay endpoints reconstruct on
+demand. Decision ids are minted afresh each run (they are not part of the deterministic state), so a
+recorded `SubmitDecision` is re-bound to the freshly created decision's id during reconstruction;
+the choice payload (entity-id targets/cards) is unchanged, so the outcome is identical.
+
 ### "Share frame as scenario" (replay)
 
-The replay viewer reproduces an **exact full-state snapshot** — stack, targets, floating effects,
-mana, counters and all trackers, not just the public board. The full (unmasked) `GameState` is
-recorded per frame (`GameReplayRecord.fullStates`; cheap because immutable frames structurally
-share their component objects) and never surfaced during normal masked viewing. Two entry points:
+The replay viewer can also reproduce an **exact full-state snapshot** — stack, targets, floating
+effects, mana, counters and all trackers, not just the public board — by re-simulating the compact
+replay up to the requested frame (so no full `GameState` is stored per frame). Two entry points:
 
 - **Share as scenario** → copies a *short* link that only references the stored frame:
   `/scenario?replay=<gameId>&frame=<n>`. Opening it `POST`s to `/api/scenarios/from-replay-frame`
-  (`{gameId, frame, mode?}`), which reads `GameReplayRecord.fullStates[frame]` and injects it into
-  a fresh hotseat session (`mode=SELF` default). The link lives as long as the in-memory replay.
+  (`{gameId, frame, mode?}`), which calls `ReplayService.reconstructStateAt(gameId, frame)` and
+  injects the result into a fresh hotseat session (`mode=SELF` default).
 - **Download** → saves the frame's full state as a JSON file
   (`GET /api/public/replays/{gameId}/frames/{frame}/full-state`). Reload it locally from the
   builder's **Load file** button, which `POST`s the file to `/api/scenarios/from-state` (a raw

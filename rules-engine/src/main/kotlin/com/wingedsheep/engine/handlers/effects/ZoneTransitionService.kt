@@ -381,6 +381,10 @@ object ZoneTransitionService {
                 if (options.faceDownExile) {
                     newState = newState.updateEntity(entityId) { c -> c.with(FaceDownComponent) }
                 }
+                // Link the exiled card to a RedirectZoneChange(linkToSource) source (Valgavoth).
+                redirectResult.linkSourceId?.let { sourceId ->
+                    newState = ZoneMovementUtils.linkExiledToSource(newState, entityId, sourceId)
+                }
             }
             else -> {
                 // HAND, GRAVEYARD, STACK — simple addToZone

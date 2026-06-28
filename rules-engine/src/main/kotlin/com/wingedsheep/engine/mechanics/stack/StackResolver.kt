@@ -1627,6 +1627,13 @@ class StackResolver(
                     }
                 }
 
+                // Link an opponent's resolving spell exiled by a RedirectZoneChange(linkToSource)
+                // replacement (Valgavoth) even when the effect paused mid-resolution.
+                if (pausedDestZone == Zone.EXILE && pausedRedirect.linkSourceId != null) {
+                    pausedState = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+                        .linkExiledToSource(pausedState, spellId, pausedRedirect.linkSourceId)
+                }
+
                 // CR 715.3d — Adventure exiled by its own resolution: re-grant cast-from-exile.
                 if (pausedAdventureFaceExile && pausedDestZone == Zone.EXILE) {
                     val (permId, stateWithPerm) = pausedState.newEntity()
@@ -1796,6 +1803,13 @@ class StackResolver(
             }
         }
 
+        // Link an opponent's resolving spell exiled by a RedirectZoneChange(linkToSource)
+        // replacement (Valgavoth, Terror Eater) so its controller may later play it.
+        if (destinationZone == Zone.EXILE && redirect.linkSourceId != null) {
+            newState = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+                .linkExiledToSource(newState, spellId, redirect.linkSourceId)
+        }
+
         redirect.additionalEffect?.let { extra ->
             newState = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.applyReplacementAdditionalEffect(
                 newState, extra, redirect.effectControllerId, spellId
@@ -1886,13 +1900,25 @@ class StackResolver(
         // Goliath Daydreamer-style components only exile on actual resolution; if the spell
         // fizzles or is countered they go to graveyard normally.
         val exileAfterResolve = exileAfterResolveComp != null && !exileAfterResolveComp.onlyIfResolved
-        val destZone = if (flashbackExile || exileAfterResolve) Zone.EXILE else Zone.GRAVEYARD
+        // A fizzled spell heading to its owner's graveyard is a card put into a graveyard
+        // "from anywhere" — honor RedirectZoneChange replacements (Valgavoth, Leyline).
+        val fizzleRedirect = if (flashbackExile || exileAfterResolve) {
+            com.wingedsheep.engine.handlers.effects.ZoneChangeRedirectResult(Zone.EXILE)
+        } else {
+            com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+                .checkZoneChangeRedirect(state, spellId, Zone.STACK, Zone.GRAVEYARD)
+        }
+        val destZone = fizzleRedirect.destinationZone
         val destZoneKey = ZoneKey(ownerId, destZone)
 
         var newState = state.updateEntity(spellId) { c ->
             c.without<SpellOnStackComponent>().without<TargetsComponent>()
         }
         newState = newState.addToZone(destZoneKey, spellId)
+        if (destZone == Zone.EXILE && fizzleRedirect.linkSourceId != null) {
+            newState = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+                .linkExiledToSource(newState, spellId, fizzleRedirect.linkSourceId)
+        }
 
         return ExecutionResult.success(
             newState,
@@ -2260,9 +2286,21 @@ class StackResolver(
         // is countered they go to graveyard normally.
         val exileComp = container.get<ExileAfterResolveComponent>()
         val exileAfterResolve = exileComp != null && !exileComp.onlyIfResolved
-        val destZone = if (exileAfterResolve) Zone.EXILE else Zone.GRAVEYARD
+        // A countered spell heading to its owner's graveyard is still a card being put into a
+        // graveyard "from anywhere" — honor RedirectZoneChange replacements (Valgavoth, Leyline).
+        val counterRedirect = if (exileAfterResolve) {
+            com.wingedsheep.engine.handlers.effects.ZoneChangeRedirectResult(Zone.EXILE)
+        } else {
+            com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+                .checkZoneChangeRedirect(state, spellId, Zone.STACK, Zone.GRAVEYARD)
+        }
+        val destZone = counterRedirect.destinationZone
         val destZoneKey = ZoneKey(ownerId, destZone)
         newState = newState.addToZone(destZoneKey, spellId)
+        if (destZone == Zone.EXILE && counterRedirect.linkSourceId != null) {
+            newState = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+                .linkExiledToSource(newState, spellId, counterRedirect.linkSourceId)
+        }
 
         // Remove stack components
         newState = newState.updateEntity(spellId) { c ->

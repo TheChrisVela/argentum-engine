@@ -34,7 +34,10 @@ fun GameSession.toPersistent(
                 aiModelOverride = info.aiModelOverride
             )
         },
-        lobbyId = lobbyId
+        lobbyId = lobbyId,
+        replaySetup = getReplaySetup(),
+        recordedActions = getRecordedActions(),
+        replayStartedAt = replayStartedAt?.toString(),
     )
 }
 
@@ -77,6 +80,13 @@ fun restoreGameSession(
         logs = logs,
         lastIds = lastMessageIds,
         sideboardLists = sideboards
+    )
+
+    // Restore the compact-replay recording so a game interrupted by a restart can still be saved.
+    session.restoreReplayRecording(
+        setup = persistent.replaySetup,
+        actions = persistent.recordedActions,
+        startedAtIso = persistent.replayStartedAt,
     )
 
     // Restore player persistence info

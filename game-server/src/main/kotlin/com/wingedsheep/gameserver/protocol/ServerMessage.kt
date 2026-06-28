@@ -477,6 +477,10 @@ sealed interface ServerMessage {
          * when [randomTeams] is false. Empty = unset (host hasn't picked teams yet).
          */
         val teamAssignments: Map<String, Int> = emptyMap(),
+        /** True when ranked play is toggled on (only possible when [rankedEligible]). */
+        val ranked: Boolean = false,
+        /** Whether ranked may be enabled: a TOURNAMENT-mode bracket (1v1 matches). */
+        val rankedEligible: Boolean = false,
     )
 
     /**
@@ -1082,6 +1086,10 @@ sealed interface ServerMessage {
         val twoHeadedGiant: Boolean = false,
         /** How many seats this lobby fills before it can start: 4 for Two-Headed Giant, else 2. */
         val maxPlayers: Int = 2,
+        /** True when the host has toggled ranked play on (only possible when [rankedEligible]). */
+        val ranked: Boolean = false,
+        /** Whether ranked is even offered for this lobby: a standard 1v1 human-vs-human lobby. */
+        val rankedEligible: Boolean = false,
     ) : ServerMessage
 
     /**

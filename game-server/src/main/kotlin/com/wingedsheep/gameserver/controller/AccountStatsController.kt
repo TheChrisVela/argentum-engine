@@ -2,6 +2,11 @@ package com.wingedsheep.gameserver.controller
 
 import com.wingedsheep.gameserver.auth.AuthSupport
 import com.wingedsheep.gameserver.persistence.MatchResultRepository
+import com.wingedsheep.gameserver.persistence.RatingHistoryRepository
+import com.wingedsheep.gameserver.persistence.UserRatingRepository
+import com.wingedsheep.gameserver.ranking.Elo
+import com.wingedsheep.gameserver.ranking.RankedMode
+import com.wingedsheep.gameserver.ranking.RatingTier
 import com.wingedsheep.gameserver.stats.CardStat
 import com.wingedsheep.gameserver.stats.GameHistoryEntry
 import com.wingedsheep.gameserver.stats.HeadToHead
@@ -27,9 +32,83 @@ import org.springframework.web.bind.annotation.RestController
 class AccountStatsController(
     private val matchResults: MatchResultRepository,
     private val statsQuery: StatsQueryService,
+    private val userRatings: UserRatingRepository,
+    private val ratingHistory: RatingHistoryRepository,
     private val authSupport: AuthSupport,
 ) {
     data class StatsDto(val games: Long, val wins: Long, val losses: Long, val winRate: Double)
+
+    /** Current ranked standing in one mode. Unrated modes report the starting rating / Provisional. */
+    data class RatingDto(
+        val mode: String,
+        val rating: Int,
+        val tier: String,
+        val provisional: Boolean,
+        val gamesPlayed: Int,
+        val wins: Int,
+        val losses: Int,
+        val draws: Int,
+        val peakRating: Int,
+    )
+
+    /** One point on the rating-over-time chart. */
+    data class RatingPointDto(
+        val mode: String,
+        val endedAt: String,
+        val ratingAfter: Int,
+        val delta: Int,
+        val result: String,
+    )
+
+    /** All three ranked queues for the signed-in user, unplayed ones shown at the starting rating. */
+    @GetMapping("/me/ratings")
+    fun ratings(@RequestHeader(HttpHeaders.AUTHORIZATION, required = false) auth: String?): List<RatingDto> {
+        val userId = authSupport.requireUser(auth).userId
+        val byMode = userRatings.findByUserId(userId).associateBy { it.mode }
+        return RankedMode.entries.map { mode ->
+            val row = byMode[mode.name]
+            val rating = row?.rating ?: Elo.STARTING_RATING
+            val games = row?.gamesPlayed ?: 0
+            val tier = Elo.tier(rating, games)
+            RatingDto(
+                mode = mode.name,
+                rating = Math.round(rating).toInt(),
+                tier = tier.displayName,
+                provisional = tier == RatingTier.PROVISIONAL,
+                gamesPlayed = games,
+                wins = row?.wins ?: 0,
+                losses = row?.losses ?: 0,
+                draws = row?.draws ?: 0,
+                peakRating = Math.round(row?.peakRating ?: Elo.STARTING_RATING).toInt(),
+            )
+        }
+    }
+
+    /**
+     * Rating-over-time points for the chart. Without [mode], returns every mode's history (the client
+     * draws one line per mode); with [mode], just that queue. Oldest first.
+     */
+    @GetMapping("/me/ratings/history")
+    fun ratingsHistory(
+        @RequestHeader(HttpHeaders.AUTHORIZATION, required = false) auth: String?,
+        @RequestParam(required = false) mode: String?,
+    ): List<RatingPointDto> {
+        val userId = authSupport.requireUser(auth).userId
+        val modes = mode
+            ?.let { listOfNotNull(runCatching { RankedMode.valueOf(it.uppercase()) }.getOrNull()) }
+            ?: RankedMode.entries
+        return modes.flatMap { m ->
+            ratingHistory.findByUserIdAndModeOrderByCreatedAtAsc(userId, m.name).map { row ->
+                RatingPointDto(
+                    mode = m.name,
+                    endedAt = row.createdAt.toString(),
+                    ratingAfter = Math.round(row.ratingAfter).toInt(),
+                    delta = Math.round(row.delta).toInt(),
+                    result = row.result,
+                )
+            }
+        }
+    }
 
     @GetMapping("/me")
     fun me(@RequestHeader(HttpHeaders.AUTHORIZATION, required = false) auth: String?): StatsDto {

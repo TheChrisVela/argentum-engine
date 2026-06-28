@@ -4,7 +4,7 @@ import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.gameserver.ai.AiGameManager
 import com.wingedsheep.gameserver.persistence.persistenceJson
-import com.wingedsheep.gameserver.replay.GameHistoryRepository
+import com.wingedsheep.gameserver.replay.ReplayService
 import com.wingedsheep.gameserver.scenario.ScenarioBuilderService
 import com.wingedsheep.gameserver.scenario.ScenarioMode
 import com.wingedsheep.gameserver.scenario.ScenarioRequest
@@ -38,7 +38,7 @@ class ScenarioController(
     private val aiGameManager: AiGameManager,
     private val scenarioBuilderService: ScenarioBuilderService,
     private val scenarioSessionFactory: ScenarioSessionFactory,
-    private val gameHistoryRepository: GameHistoryRepository,
+    private val replayService: ReplayService,
 ) {
     private val logger = LoggerFactory.getLogger(ScenarioController::class.java)
 
@@ -121,8 +121,9 @@ class ScenarioController(
 
     /**
      * Jump into a stored replay frame by reference — the short-link share path. Avoids putting
-     * the (large) serialized state in the URL: the server already holds the frame's full state
-     * in [GameHistoryRepository], so the link only carries `gameId` + `frame`.
+     * the (large) serialized state in the URL: the server re-simulates the compact replay up to
+     * the requested frame ([ReplayService.reconstructStateAt]), so the link only carries
+     * `gameId` + `frame`.
      */
     @PostMapping("/from-replay-frame")
     fun createFromReplayFrame(
@@ -133,7 +134,7 @@ class ScenarioController(
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .body(errorBody(listOf("Too many scenarios created — please wait a moment and try again.")))
         }
-        val state = gameHistoryRepository.findById(request.gameId)?.fullStates?.getOrNull(request.frame)
+        val state = replayService.reconstructStateAt(request.gameId, request.frame)
             ?: return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(errorBody(listOf("That replay frame is no longer available.")))
         return try {

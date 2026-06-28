@@ -645,6 +645,8 @@ class LobbyHandler(
             gameMode = gameMode,
             attackMode = runCatching { com.wingedsheep.sdk.core.AttackMode.valueOf(message.attackMode.uppercase()) }
                 .getOrDefault(com.wingedsheep.sdk.core.AttackMode.MULTIPLE),
+            // Ranked only applies to a TOURNAMENT-mode bracket (its matches are 1v1).
+            ranked = message.ranked && gameMode == LobbyGameMode.TOURNAMENT,
         )
         lobby.addPlayer(identity)
         lobbyRepository.saveLobby(lobby)
@@ -1144,6 +1146,22 @@ class LobbyHandler(
         if (lobby.playerCount < 2) {
             sender.sendError(session, ErrorCode.INVALID_ACTION, "Need at least 2 players")
             return
+        }
+
+        // Ranked tournaments adjust ELO, so they only count when every seat is a signed-in account
+        // (no AI, no guests). Rather than block the start, we downgrade to a casual game and play on —
+        // the host doesn't have to chase everyone to sign in just to get a game going.
+        if (lobby.ranked) {
+            val notSignedIn = lobby.players.values.filter { it.identity.isAi || it.identity.userId == null }
+            if (!lobby.rankedEligible || notSignedIn.isNotEmpty()) {
+                if (notSignedIn.isNotEmpty()) {
+                    logger.info(
+                        "Lobby ${lobby.lobbyId}: starting unranked — not all players signed in ({})",
+                        notSignedIn.joinToString(", ") { it.identity.playerName },
+                    )
+                }
+                lobby.ranked = false
+            }
         }
 
         when (lobby.format) {
@@ -2144,6 +2162,11 @@ class LobbyHandler(
         }
 
         message.aiAssistEnabled?.let { lobby.aiAssistEnabled = it }
+
+        message.ranked?.let { lobby.ranked = it }
+        // Ranked only applies to a TOURNAMENT-mode bracket (1v1 matches); a mode switch in this same
+        // update — or one that landed earlier — forces it back off.
+        if (!lobby.rankedEligible) lobby.ranked = false
 
         ctx.broadcastLobbyUpdate(lobby)
         lobbyRepository.saveLobby(lobby)

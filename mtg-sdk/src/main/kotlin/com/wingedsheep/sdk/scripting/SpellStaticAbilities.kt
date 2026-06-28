@@ -137,6 +137,15 @@ data class GrantMayCastFromLinkedExile(
     val exiledThisTurnOnly: Boolean = false
 ) : StaticAbility {
     override val description: String = buildString {
+        // "pay life equal to its mana value rather than pay its mana cost" — Valgavoth, Terror Eater
+        // (the grant waives the mana cost via [withoutPayingManaCost] and substitutes the life cost).
+        if (additionalCost is AdditionalCost.PayLifeEqualToManaValueOfSpell) {
+            if (duringYourTurnOnly) append("During your turn, you may play ") else append("You may play ")
+            append("cards exiled with this permanent")
+            if (exiledThisTurnOnly) append(" this turn")
+            append(". If you cast a spell this way, pay life equal to its mana value rather than pay its mana cost.")
+            return@buildString
+        }
         if (duringYourTurnOnly) append("During your turn, y") else append("Y")
         if (oncePerTurn) append("ou may cast a ${filter.description} ")
         else append("ou may cast ${filter.description} ")

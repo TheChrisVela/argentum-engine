@@ -356,11 +356,15 @@ sealed interface WardCost {
         }
     }
 
-    /** Ward with a sacrifice cost — e.g. Ward—Sacrifice a Food. */
+    /**
+     * Ward with a sacrifice cost — e.g. Ward—Sacrifice a Food, or
+     * Ward—Sacrifice three nonland permanents (Valgavoth, Terror Eater) via [count].
+     */
     @SerialName("WardCost.Sacrifice")
     @Serializable
-    data class Sacrifice(val filter: GameObjectFilter) : WardCost {
-        override val description: String = "a ${filter.description}"
+    data class Sacrifice(val filter: GameObjectFilter, val count: Int = 1) : WardCost {
+        override val description: String =
+            if (count == 1) "a ${filter.description}" else "$count ${filter.description}s"
     }
 
     /**

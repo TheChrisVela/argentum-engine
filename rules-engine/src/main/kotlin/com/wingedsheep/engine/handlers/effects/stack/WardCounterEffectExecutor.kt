@@ -132,7 +132,7 @@ class WardCounterEffectExecutor(
                 )
                 is WardCost.Sacrifice -> handleSacrificeCost(
                     state, cardRegistry, spellEntityId, container, payingPlayerId,
-                    cost.filter, remainingParts, wardSourceId, controllerId
+                    cost.filter, cost.count, remainingParts, wardSourceId, controllerId
                 )
                 is WardCost.Composite -> {
                     require(cost.parts.isNotEmpty()) { "WardCost.Composite must have at least one part" }
@@ -160,11 +160,11 @@ class WardCounterEffectExecutor(
             container: ComponentContainer,
             payingPlayerId: EntityId,
             filter: GameObjectFilter,
+            count: Int,
             remainingParts: List<WardCost>,
             wardSourceId: EntityId?,
             controllerId: EntityId?
         ): EffectResult {
-            val count = 1
             val validPermanents = BattlefieldFilterUtils.findMatchingOnBattlefield(
                 state, filter.youControl(), PredicateContext(controllerId = payingPlayerId)
             )
@@ -175,7 +175,11 @@ class WardCounterEffectExecutor(
             }
 
             val fodderLabel = filter.description
-            val prompt = "Sacrifice ${if (count == 1) "a" else "$count"} $fodderLabel or your spell will be countered"
+            val prompt = if (count == 1) {
+                "Sacrifice a $fodderLabel or your spell will be countered"
+            } else {
+                "Sacrifice $count ${fodderLabel}s or your spell will be countered"
+            }
 
             val decisionResult = DecisionHandler().createCardSelectionDecision(
                 state = state,

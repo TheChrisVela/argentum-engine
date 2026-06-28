@@ -223,6 +223,9 @@ export interface GameHistoryEntry {
   readonly colors: string | null
   readonly opponents: string | null
   readonly won: boolean
+  readonly gameId: string
+  /** True when a compact replay was stored for this game and can be watched/shared. */
+  readonly hasReplay: boolean
 }
 
 export interface CardStat {
@@ -247,6 +250,32 @@ async function getStats<T>(path: string): Promise<T> {
   return (await res.json()) as T
 }
 
+/** The three ranked queues, mirroring the server's RankedMode. */
+export type RankedModeName = 'LIMITED' | 'CONSTRUCTED' | 'COMMANDER'
+
+/** Current ELO standing in one ranked queue. */
+export interface RatingEntry {
+  readonly mode: RankedModeName
+  readonly rating: number
+  /** Display tier derived from the rating (or "Provisional" during placement). */
+  readonly tier: string
+  readonly provisional: boolean
+  readonly gamesPlayed: number
+  readonly wins: number
+  readonly losses: number
+  readonly draws: number
+  readonly peakRating: number
+}
+
+/** One point on the rating-over-time chart. */
+export interface RatingPoint {
+  readonly mode: RankedModeName
+  readonly endedAt: string
+  readonly ratingAfter: number
+  readonly delta: number
+  readonly result: string
+}
+
 export const fetchStats = () => getStats<AccountStats>('/me')
 export const fetchColorStats = () => getStats<StatBucket[]>('/me/colors')
 export const fetchSetStats = () => getStats<StatBucket[]>('/me/sets')
@@ -256,3 +285,5 @@ export const fetchHistory = (limit = 25) => getStats<GameHistoryEntry[]>(`/me/hi
 export const fetchTopCards = (limit = 30) => getStats<CardStat[]>(`/me/cards?limit=${limit}`)
 export const fetchTournamentHistory = (limit = 25) =>
   getStats<UserTournamentEntry[]>(`/me/tournaments?limit=${limit}`)
+export const fetchRatings = () => getStats<RatingEntry[]>('/me/ratings')
+export const fetchRatingsHistory = () => getStats<RatingPoint[]>('/me/ratings/history')

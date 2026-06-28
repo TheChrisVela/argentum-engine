@@ -101,14 +101,59 @@ Flyway migration `V2__match_stats.sql` extends the stats schema:
 Flyway migration `V3__admin_role.sql` adds `users.is_admin` (boolean, default false) — the per-account
 admin flag (see **Admin access** below).
 
-Flyway migration `V4__user_uuid.sql` switches the account primary key from a `BIGINT` identity to a
-**UUID** (`gen_random_uuid()` default). It backfills every existing row and re-points each foreign key
-(`login_tokens`, `decks`, `match_participants`, `tournament_participants`) — a data-preserving in-place
-migration, not a recreate. The id is now the shareable friend code. (Game/replay ids were already UUIDs
-— `GameSession.sessionId` — so only the account id changed; the other surrogate keys like `decks.id`
-stay `BIGINT` since they're internal and never shared.)
+Flyway migration `V4__ranked_ratings.sql` adds ranked ELO (see **Ranked play (ELO)** below):
 
-Flyway migration `V5__friends.sql` adds `users.hide_presence` (boolean, default false) and the
+| Table / columns | Purpose |
+|-----------------|---------|
+| `match_results.ranked` | flags games that adjusted ELO |
+| `user_ratings` | current rating per `(user_id, mode)`: `rating`, `games_played`, `wins/losses/draws`, `peak_rating`. Lazily created on first ranked game in a mode; absence = unrated (treated as the starting rating) |
+| `rating_history` | one row per ranked game per player: `rating_before/after`, `delta`, `result`, `opponent_user_id`, `opponent_rating`, `game_id` — backs the dashboard's rating-over-time chart |
+
+## Ranked play (ELO)
+
+Signed-in players carry a separate ELO rating in three queues — **Limited**, **Constructed**,
+**Commander** (`RankedMode`) — much like MTG Arena splits ranked by format. A game counts as ranked only
+when it is **1v1 between two signed-in accounts** (no guests, no AI):
+
+- **Quick games:** a host toggles **Ranked** in the lobby (offered only for a standard 1v1 human-vs-human
+  lobby — not AI or Two-Headed Giant). Casual by default.
+- **Tournaments:** **ranked by default** for a `TOURNAMENT`-mode bracket (its matches are 1v1); the host
+  can uncheck it. Free-for-All / team modes are never ranked.
+
+If a lobby is flagged ranked but a seat isn't a signed-in human at start time, the game still runs — it
+just plays **unranked** (the flag is dropped, not blocked). The ranked flag + the queue (`RankedMode`,
+derived from the lobby format) are stamped on the `GameSession` at creation, and `GamePlayHandler`
+applies the rating change at game-over via `RankedResultSink` — per game, so each game of a best-of-N
+match counts.
+
+The math (`ranking/Elo.kt`, pure and unit-tested) is standard ELO calibrated to chess.com-style numbers:
+new ratings start at **1200**, an even game between established players shifts about **±10**
+(`K = 20`), and a faster **placement** window (`K = 40` for the first 10 games in a mode) lets a new
+rating settle quickly. Ratings are uncapped. A display **tier** is derived purely from the rating once
+placement is done — Bronze `<1000`, Silver `1000–1199`, Gold `1200–1399`, Platinum `1400–1599`, Diamond
+`1600–1999`, **Mythic** `≥2000` (open-ended) — and is shown as **Provisional** during placement. The
+profile page shows a card per queue (rating + tier + record) and a rating-over-time line chart.
+
+Flyway migration `V5__game_replays.sql` adds durable replays:
+
+| Table | Purpose |
+|-------|---------|
+| `game_replays` | one row per finished game keyed by `game_id`: a gzip+base64 `CompactReplay` (RNG seed + decks + ordered action stream) in `data`, plus summary columns. A few KB each — the engine is deterministic, so the whole game is reconstructed from its inputs rather than stored frame-by-frame (see [data-contracts.md](data-contracts.md) → *Compact replays*). |
+
+A signed-in player's history (`/api/stats/me/history`) `LEFT JOIN`s `game_replays` on `game_id` to
+flag which past games can be watched/shared (`hasReplay`). Stored replays survive server restarts and
+the 100-game in-memory cache; the unguessable `game_id` doubles as the share token via the public
+`/replay/{gameId}` page.
+
+Flyway migration `V6__user_uuid.sql` switches the account primary key from a `BIGINT` identity to a
+**UUID** (`gen_random_uuid()` default). It backfills every existing row and re-points each foreign key
+(`login_tokens`, `decks`, `match_participants`, `tournament_participants`, `user_ratings`,
+`rating_history`) — a data-preserving in-place migration, not a recreate. The id is now the shareable
+friend code. (Game/replay ids were already UUIDs — `GameSession.sessionId` — so only the account id
+changed; the other surrogate keys like `decks.id` stay `BIGINT` since they're internal and never
+shared.)
+
+Flyway migration `V7__friends.sql` adds `users.hide_presence` (boolean, default false) and the
 `friendships` table:
 
 | Table / columns | Purpose |
@@ -178,6 +223,8 @@ Per-user endpoints take `Authorization: Bearer …`; admin endpoints take either
 | GET | `/api/stats/me/history?limit&offset` | recent games |
 | GET | `/api/stats/me/cards?limit` | most-played cards |
 | GET | `/api/stats/me/tournaments?limit` | tournament finishes with placement |
+| GET | `/api/stats/me/ratings` | per-mode ELO `[{ mode, rating, tier, provisional, gamesPlayed, wins, losses, draws, peakRating }]` (all three modes; unrated ones at the starting rating) |
+| GET | `/api/stats/me/ratings/history?mode` | rating-over-time points `[{ mode, endedAt, ratingAfter, delta, result }]` (all modes, or one) |
 | GET | `/api/stats/admin/overview` | global totals |
 | GET | `/api/stats/admin/games-per-day?days` | daily game counts |
 | GET | `/api/stats/admin/modes` · `/colors` | global distributions |
@@ -242,8 +289,10 @@ accept/unfriend.
 - **Display name:** editable on the profile page (`PUT /api/auth/me`); the email stays the identity.
 - Profile page at `/profile` shows the win/loss summary plus colors played (a Recharts bar chart),
   sets, game modes, head-to-head, most-played cards, tournament finishes, and a recent-games list — all
-  from `/api/stats/me/*` via `api/account.ts`. It also has a small **Manage my decks** launcher that
-  opens the deckbuilder's deck browser (`/deckbuilder?decks=open`).
+  from `/api/stats/me/*` via `api/account.ts`. Each recent game with a stored replay (`hasReplay`)
+  gets **Watch** (opens the public `/replay/{gameId}` viewer) and **Share** (copies that link)
+  buttons, so a signed-in player can rewatch and share their own past games. It also has a small
+  **Manage my decks** launcher that opens the deckbuilder's deck browser (`/deckbuilder?decks=open`).
 - Admin page at `/admin` is a **hub** (`AdminPage` → `AdminHub`) that routes to three areas, each its
   own self-scrolling screen (`AdminScreen` in `adminUi.tsx` — the whole app runs in
   `#root { overflow: hidden }`, so admin screens scroll themselves rather than the document):

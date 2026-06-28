@@ -430,6 +430,7 @@ export {
   createSetQuickGameLobbyReadyMessage,
   createSetQuickGameLobbySetCodeMessage,
   createSetQuickGameLobbyPublicMessage,
+  createSetQuickGameLobbyRankedMessage,
   createSetQuickGameLobbyFormatMessage,
   isQuickGameLobbyStateMessage,
   isQuickGameLobbyClosedMessage,

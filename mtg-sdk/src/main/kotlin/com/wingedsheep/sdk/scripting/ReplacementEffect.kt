@@ -223,12 +223,19 @@ data class ModifyCounterPlacement(
 /**
  * Redirect a zone change to a different destination.
  * Example: Rest in Peace (graveyard → exile), Leyline of the Void
+ *
+ * When [linkToSource] is true and [newDestination] is [Zone.EXILE], the redirected card is
+ * linked to the replacement's source permanent via its `LinkedExileComponent`, so the source
+ * can later reference the cards it exiled — e.g. Valgavoth, Terror Eater ("If a card you didn't
+ * control would be put into an opponent's graveyard from anywhere, exile it instead." + "you may
+ * play cards exiled with Valgavoth"). Ignored for non-exile destinations.
  */
 @SerialName("RedirectZoneChange")
 @Serializable
 data class RedirectZoneChange(
     val newDestination: Zone,
-    override val appliesTo: EventPattern
+    override val appliesTo: EventPattern,
+    val linkToSource: Boolean = false
 ) : ReplacementEffect {
     override val description: String =
         "If ${appliesTo.description}, put it into ${newDestination.displayName} instead"

@@ -85,6 +85,16 @@ export function AuthWidget() {
               </span>
             )}
           </button>
+          {user.isAdmin && (
+            <button
+              type="button"
+              className={styles.admin}
+              onClick={() => navigate('/admin')}
+              title="Open the admin dashboard"
+            >
+              Admin
+            </button>
+          )}
           <button type="button" className={styles.logout} onClick={signOut} title="Sign out">
             Log out
           </button>

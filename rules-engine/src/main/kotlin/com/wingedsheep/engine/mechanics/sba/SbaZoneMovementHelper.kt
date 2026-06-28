@@ -126,6 +126,12 @@ object SbaZoneMovementHelper {
             }
         }
 
+        // Link the exiled card to a RedirectZoneChange(linkToSource) source (Valgavoth) — the
+        // move above ran with skipZoneChangeRedirect=true, so the link is applied here.
+        if (!exileInstead && destinationZone == Zone.EXILE && redirectResult.linkSourceId != null) {
+            newState = ZoneMovementUtils.linkExiledToSource(newState, entityId, redirectResult.linkSourceId)
+        }
+
         // Apply additional replacement effect (e.g., Ugin's Nexus extra turn, Darigaaz egg counters)
         if (redirectResult.additionalEffect != null) {
             newState = ZoneMovementUtils.applyReplacementAdditionalEffect(

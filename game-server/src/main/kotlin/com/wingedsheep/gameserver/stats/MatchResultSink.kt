@@ -17,6 +17,8 @@ data class RecordedMatch(
     val tournamentName: String?,
     /** Matchmaking context: a LobbyGameMode name, or QUICK_GAME / CASUAL for non-lobby games. */
     val gameMode: String?,
+    /** True for a ranked (ELO-adjusting) game. */
+    val ranked: Boolean = false,
     /** Replay frame count at game-over — the activity measure behind the recording gate. */
     val frameCount: Int,
     /** GameState.turnNumber at game-over. */
@@ -78,6 +80,7 @@ class JdbcMatchResultSink(private val matchResults: MatchResultRepository) : Mat
                 format = match.format,
                 tournamentName = match.tournamentName,
                 gameMode = match.gameMode,
+                ranked = match.ranked,
                 frameCount = match.frameCount,
                 turnCount = match.turnCount,
                 startedAt = match.startedAt,

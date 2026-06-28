@@ -92,9 +92,13 @@ class PlayLandHandler(
         val inHand = action.cardId in state.getZone(handZone)
         val onTopOfLibrary = !inHand && isOnTopOfLibraryWithPermission(state, action.playerId, action.cardId)
         val mayPlayFromExile = !inHand && !onTopOfLibrary && isInExileWithPlayPermission(state, action.playerId, action.cardId)
-        val mayPlayFromGraveyard = !inHand && !onTopOfLibrary && !mayPlayFromExile &&
+        // Lands exiled with a permanent granting "you may play cards exiled with this" (Valgavoth).
+        val mayPlayFromLinkedExile = !inHand && !onTopOfLibrary && !mayPlayFromExile &&
+            com.wingedsheep.engine.handlers.effects.linkedexile.LinkedExilePlayUtils
+                .canPlayLand(state, action.playerId, action.cardId, cardRegistry)
+        val mayPlayFromGraveyard = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayPlayFromLinkedExile &&
             isInGraveyardWithPlayPermission(state, action.playerId, action.cardId)
-        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayPlayFromGraveyard) {
+        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayPlayFromLinkedExile && !mayPlayFromGraveyard) {
             return "Land is not in your hand"
         }
 
@@ -186,6 +190,11 @@ class PlayLandHandler(
         // card if it later returned to exile.
         if (fromZone == Zone.EXILE) {
             newState = newState.removeMayPlayPermissionsForCard(action.cardId)
+            // Drop the card from any linked-exile granter (Valgavoth) now that it has left exile,
+            // so the granter no longer lists it. (Lands bypass ZoneTransitionService, which would
+            // otherwise unlink on the way out.)
+            newState = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+                .unlinkFromAllLinkedExiles(newState, action.cardId)
         }
 
         val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)

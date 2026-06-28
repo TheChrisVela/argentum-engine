@@ -1521,6 +1521,14 @@ class CastSpellHandler(
                         return "$name is not a valid choice for: ${additionalCost.description}"
                     }
                 }
+                is AdditionalCost.PayLifeEqualToManaValueOfSpell -> {
+                    val required = state.getEntity(action.cardId)?.get<CardComponent>()?.manaCost?.cmc ?: 0
+                    val currentLife = state.lifeTotal(action.playerId) // CR 810.9a — team's shared total
+                    // CR 119.4 — you can't pay life unless you have at least that much
+                    if (currentLife < required) {
+                        return "Not enough life to pay $required life (its mana value)"
+                    }
+                }
                 else -> {}
             }
         }
@@ -1850,6 +1858,8 @@ class CastSpellHandler(
                 atom is CostAtom.PayLife -> atom.amount
                 additionalCost is AdditionalCost.PayLifePerTarget -> additionalCost.amountPerTarget * action.targets.size
                 additionalCost is AdditionalCost.PayXLife -> action.additionalCostPayment?.payXLifeAmount ?: 0
+                additionalCost is AdditionalCost.PayLifeEqualToManaValueOfSpell ->
+                    currentState.getEntity(action.cardId)?.get<CardComponent>()?.manaCost?.cmc ?: 0
                 else -> continue
             }
             if (lifeToPay == 0) continue
