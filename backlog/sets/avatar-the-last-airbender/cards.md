@@ -145,7 +145,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [x] Energybending
 - [x] Enter the Avatar State
 - [x] Epic Downfall
-- [ ] Fancy Footwork
+- [x] Fancy Footwork
 - [x] Fatal Fissure
 - [ ] Fated Firepower
 - [ ] Fire Lord Azula

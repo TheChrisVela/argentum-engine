@@ -3330,6 +3330,68 @@
     ]
 }
 
+// Fancy Footwork
+{
+    "name": "Fancy Footwork",
+    "manaCost": "{2}{W}",
+    "typeLine": "Instant — Lesson",
+    "oracleText": "Untap one or two target creatures. They each get +2/+2 until end of turn.",
+    "script": {
+        "spellEffect": {
+            "type": "ForEach",
+            "space": "IterationSpace.Targets",
+            "body": {
+                "type": "Composite",
+                "effects": [
+                    {
+                        "type": "TapUntap",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "tap": false
+                    },
+                    {
+                        "type": "ModifyStats",
+                        "powerModifier": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "toughnessModifier": {
+                            "type": "Fixed",
+                            "amount": 2
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    }
+                ]
+            }
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "count": 2,
+                "minCount": 1,
+                "filter": {
+                    "baseFilter": "creature"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "19",
+        "rarity": "UNCOMMON",
+        "artist": "Mizutametori",
+        "flavorText": "\"Dancing isn't something you think about. It's a form of self-expression that no one can ever take away from you.\"\n—Aang",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9c59f8c5-4063-4e5a-b684-fde175c4a981.jpg?1764120000"
+    },
+    "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
 // Fatal Fissure
 {
     "name": "Fatal Fissure",
