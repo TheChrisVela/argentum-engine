@@ -80,7 +80,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [ ] Airbender's Reversal
 - [ ] Airbending Lesson
 - [x] Airship Engine Room
-- [ ] Allies at Last
+- [x] Allies at Last
 - [ ] Appa, Loyal Sky Bison
 - [ ] Appa, Steadfast Guardian
 - [ ] Avatar Aang

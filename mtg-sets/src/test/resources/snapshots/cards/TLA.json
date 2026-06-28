@@ -645,6 +645,92 @@
     ]
 }
 
+// Allies at Last
+{
+    "name": "Allies at Last",
+    "manaCost": "{2}{G}",
+    "typeLine": "Instant",
+    "oracleText": "Affinity for Allies (This spell costs {1} less to cast for each Ally you control.)\nUp to two target creatures you control each deal damage equal to their power to target creature an opponent controls.",
+    "keywords": [
+        "AFFINITY"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "AffinityForSubtype",
+            "forSubtype": "Ally"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": "ChosenTargets",
+                    "storeAs": "allTargets"
+                },
+                {
+                    "type": "FilterCollection",
+                    "from": "allTargets",
+                    "filter": {
+                        "type": "MatchesFilter",
+                        "filter": "creature ctrl:you"
+                    },
+                    "storeMatching": "allies"
+                },
+                {
+                    "type": "ForEach",
+                    "space": {
+                        "type": "IterationSpace.Collection",
+                        "collection": "allies"
+                    },
+                    "body": {
+                        "type": "DealDamage",
+                        "amount": {
+                            "type": "EntityProperty",
+                            "entity": "IterationEntity",
+                            "numericProperty": "Power"
+                        },
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        },
+                        "damageSource": "Self"
+                    }
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "creature ctrl:opponent"
+                },
+                "id": "creature an opponent controls"
+            },
+            {
+                "type": "TargetObject",
+                "count": 2,
+                "minCount": 0,
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "id": "up to two creatures you control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "164",
+        "rarity": "UNCOMMON",
+        "artist": "Evan Shipard",
+        "flavorText": "Opposing elements working together in harmony.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/1/11a77897-2aba-4a9b-bbe6-1768ca9f12cb.jpg?1764121122"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Avatar Enthusiasts
 {
     "name": "Avatar Enthusiasts",
