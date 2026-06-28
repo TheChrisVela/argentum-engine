@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.MappedCollection
 import org.springframework.data.relational.core.mapping.Table
 import java.time.Instant
+import java.util.UUID
 
 /**
  * Spring Data JDBC aggregate roots and entities backing the accounts subsystem.
@@ -15,18 +16,25 @@ import java.time.Instant
  */
 @Table("users")
 data class UserRow(
-    @Id val id: Long? = null,
+    /**
+     * UUID primary key (DB default `gen_random_uuid()`): null means "new" (Spring Data JDBC inserts
+     * and reads back the generated value). The id is also the account's shareable, non-guessable
+     * "friend code" — you invite a friend by handing them this id, never your email.
+     */
+    @Id val id: UUID? = null,
     val email: String,
     val displayName: String,
     /** Grants access to the admin dashboard via this account's normal auth token (set from the dashboard). */
     val isAdmin: Boolean = false,
+    /** When true the account appears offline to its friends even while connected (presence opt-out). */
+    val hidePresence: Boolean = false,
     val createdAt: Instant = Instant.now(),
 )
 
 @Table("login_tokens")
 data class LoginTokenRow(
     @Id val id: Long? = null,
-    val userId: Long,
+    val userId: UUID,
     val tokenHash: String,
     val expiresAt: Instant,
     val consumedAt: Instant? = null,
@@ -36,7 +44,7 @@ data class LoginTokenRow(
 @Table("decks")
 data class DeckRow(
     @Id val id: Long? = null,
-    val userId: Long,
+    val userId: UUID,
     val name: String,
     val format: String? = null,
     /** Full deck JSON (the client's SharedDeck shape). */
@@ -69,7 +77,7 @@ data class MatchResultRow(
 data class MatchParticipantRow(
     @Id val id: Long? = null,
     /** Null for guests and AI seats. */
-    val userId: Long? = null,
+    val userId: UUID? = null,
     val playerName: String,
     val won: Boolean,
     /** Deck color identity, canonical WUBRG order (e.g. "WU"); empty = colorless. Null if unknown. */
@@ -140,7 +148,7 @@ data class TournamentRow(
 data class TournamentParticipantRow(
     @Id val id: Long? = null,
     /** Null for guests and AI seats. */
-    val userId: Long? = null,
+    val userId: UUID? = null,
     val playerName: String,
     val isAi: Boolean = false,
     /** Final placement (1 = winner). */
@@ -151,6 +159,25 @@ data class TournamentParticipantRow(
 )
 
 /**
+ * A friend relationship between two accounts. A single directed row carries both phases:
+ *  - [status] == "PENDING": an outstanding request from [requesterId] to [addresseeId].
+ *  - [status] == "ACCEPTED": a symmetric friendship (queried in both directions).
+ *
+ * Declining, cancelling, and unfriending all delete the row.
+ */
+@Table("friendships")
+data class FriendshipRow(
+    @Id val id: UUID? = null,
+    val requesterId: UUID,
+    val addresseeId: UUID,
+    val status: String = FriendshipStatus.PENDING.name,
+    val createdAt: Instant = Instant.now(),
+    val respondedAt: Instant? = null,
+)
+
+enum class FriendshipStatus { PENDING, ACCEPTED }
+
+/**
  * A signed-in account's current ELO rating in one ranked [mode] (RankedMode name). Created lazily on
  * the account's first ranked game in that mode; absence means "unrated" (treated as the starting
  * rating). [gamesPlayed] drives the provisional placement window and the displayed tier.
@@ -158,7 +185,7 @@ data class TournamentParticipantRow(
 @Table("user_ratings")
 data class UserRatingRow(
     @Id val id: Long? = null,
-    val userId: Long,
+    val userId: UUID,
     val mode: String,
     val rating: Double = 1200.0,
     val gamesPlayed: Int = 0,
@@ -173,7 +200,7 @@ data class UserRatingRow(
 @Table("rating_history")
 data class RatingHistoryRow(
     @Id val id: Long? = null,
-    val userId: Long,
+    val userId: UUID,
     val mode: String,
     val ratingBefore: Double,
     val ratingAfter: Double,
@@ -181,7 +208,7 @@ data class RatingHistoryRow(
     /** WIN / LOSS / DRAW. */
     val result: String,
     /** Null if the opponent was later deleted. */
-    val opponentUserId: Long? = null,
+    val opponentUserId: UUID? = null,
     val opponentRating: Double? = null,
     val gameId: String? = null,
     val createdAt: Instant = Instant.now(),

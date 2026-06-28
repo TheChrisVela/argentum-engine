@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
+import java.util.UUID
 import kotlin.math.max
 
 /**
@@ -20,9 +21,9 @@ import kotlin.math.max
 data class RankedGameResult(
     val gameId: String,
     val mode: RankedMode,
-    val playerOneUserId: Long,
-    val playerTwoUserId: Long,
-    val winnerUserId: Long?,
+    val playerOneUserId: UUID,
+    val playerTwoUserId: UUID,
+    val winnerUserId: UUID?,
 )
 
 /**
@@ -91,7 +92,7 @@ class JdbcRankedResultSink(
         newRating: Double,
         score: Double,
         opponentRating: Double,
-        opponentUserId: Long,
+        opponentUserId: UUID,
         gameId: String,
         now: Instant,
     ) {

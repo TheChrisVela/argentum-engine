@@ -3,6 +3,7 @@ package com.wingedsheep.gameserver.stats
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
+import java.util.UUID
 
 /** A `(label, count)` bucket for a stats breakdown. */
 data class StatBucket(val label: String, val count: Long)
@@ -10,7 +11,7 @@ data class StatBucket(val label: String, val count: Long)
 /** One opponent in a head-to-head record. */
 data class HeadToHead(
     val opponent: String,
-    val opponentUserId: Long?,
+    val opponentUserId: UUID?,
     val isAi: Boolean,
     val wins: Long,
     val losses: Long,
@@ -64,7 +65,7 @@ data class UserTournamentEntry(
 
 /** A registered account plus its lifetime game counts, for the admin Players list. */
 data class AdminUserStat(
-    val id: Long,
+    val id: UUID,
     val email: String,
     val displayName: String,
     val isAdmin: Boolean,
@@ -97,7 +98,7 @@ class StatsQueryService(private val jdbc: JdbcTemplate) {
     // ---- Per-user ----------------------------------------------------------------------------
 
     /** How often the user has played each color identity (e.g. "WU"), most-played first. */
-    fun colorBreakdown(userId: Long): List<StatBucket> = jdbc.query(
+    fun colorBreakdown(userId: UUID): List<StatBucket> = jdbc.query(
         """
         SELECT COALESCE(colors, '') AS label, count(*) AS n
         FROM match_participants
@@ -110,7 +111,7 @@ class StatsQueryService(private val jdbc: JdbcTemplate) {
     )
 
     /** How often the user has played each set, most-played first. Splits the comma-separated codes. */
-    fun setBreakdown(userId: Long): List<StatBucket> = jdbc.query(
+    fun setBreakdown(userId: UUID): List<StatBucket> = jdbc.query(
         """
         SELECT trim(s) AS label, count(*) AS n
         FROM match_participants p
@@ -124,7 +125,7 @@ class StatsQueryService(private val jdbc: JdbcTemplate) {
     )
 
     /** How often the user has played each game mode, most-played first. */
-    fun modeBreakdown(userId: Long): List<StatBucket> = jdbc.query(
+    fun modeBreakdown(userId: UUID): List<StatBucket> = jdbc.query(
         """
         SELECT COALESCE(r.game_mode, 'UNKNOWN') AS label, count(*) AS n
         FROM match_participants p
@@ -138,7 +139,7 @@ class StatsQueryService(private val jdbc: JdbcTemplate) {
     )
 
     /** Win/loss against each opponent the user has faced, most-played first. */
-    fun headToHead(userId: Long): List<HeadToHead> = jdbc.query(
+    fun headToHead(userId: UUID): List<HeadToHead> = jdbc.query(
         """
         SELECT COALESCE(u.display_name, opp.player_name) AS opponent,
                opp.user_id AS opponent_user_id,
@@ -155,7 +156,7 @@ class StatsQueryService(private val jdbc: JdbcTemplate) {
         { rs, _ ->
             HeadToHead(
                 opponent = rs.getString("opponent"),
-                opponentUserId = rs.getObject("opponent_user_id") as? Long,
+                opponentUserId = rs.getObject("opponent_user_id", UUID::class.java),
                 isAi = rs.getBoolean("is_ai"),
                 wins = rs.getLong("wins"),
                 losses = rs.getLong("losses"),
@@ -165,7 +166,7 @@ class StatsQueryService(private val jdbc: JdbcTemplate) {
     )
 
     /** Most-recent games the user played, newest first. */
-    fun recentGames(userId: Long, limit: Int, offset: Int): List<GameHistoryEntry> = jdbc.query(
+    fun recentGames(userId: UUID, limit: Int, offset: Int): List<GameHistoryEntry> = jdbc.query(
         """
         SELECT r.ended_at AS ended_at, r.game_mode AS game_mode, r.format AS format,
                me.won AS won, me.colors AS colors, r.game_id AS game_id,
@@ -197,7 +198,7 @@ class StatsQueryService(private val jdbc: JdbcTemplate) {
     )
 
     /** The user's most-played cards across all their recorded decks. */
-    fun topCardsForUser(userId: Long, limit: Int): List<CardStat> = jdbc.query(
+    fun topCardsForUser(userId: UUID, limit: Int): List<CardStat> = jdbc.query(
         """
         SELECT c.card_name AS card_name, sum(c.copies) AS copies, count(*) AS decks
         FROM match_participant_cards c
@@ -212,7 +213,7 @@ class StatsQueryService(private val jdbc: JdbcTemplate) {
     )
 
     /** The user's tournament finishes, newest first. */
-    fun tournamentHistory(userId: Long, limit: Int): List<UserTournamentEntry> = jdbc.query(
+    fun tournamentHistory(userId: UUID, limit: Int): List<UserTournamentEntry> = jdbc.query(
         """
         SELECT t.ended_at AS ended_at, t.name AS name, t.format AS format, t.game_mode AS game_mode,
                tp.placement AS placement, t.player_count AS player_count
@@ -257,7 +258,7 @@ class StatsQueryService(private val jdbc: JdbcTemplate) {
         """.trimIndent(),
     ) { rs, _ ->
         AdminUserStat(
-            id = rs.getLong("id"),
+            id = rs.getObject("id", UUID::class.java),
             email = rs.getString("email"),
             displayName = rs.getString("display_name"),
             isAdmin = rs.getBoolean("is_admin"),

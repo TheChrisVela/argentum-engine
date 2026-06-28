@@ -586,7 +586,7 @@ class QuickGameLobbyHandler(
     }
 
     /** The signed-in account id behind a lobby seat, or null for a guest. */
-    private fun userIdOf(playerId: com.wingedsheep.sdk.model.EntityId): Long? =
+    private fun userIdOf(playerId: com.wingedsheep.sdk.model.EntityId): java.util.UUID? =
         sessionRegistry.getAllIdentities().firstOrNull { it.playerId == playerId }?.userId
 
     private fun resolveDeck(player: QuickGameLobbyPlayer, randomFallbackSet: String): Map<String, Int> {
