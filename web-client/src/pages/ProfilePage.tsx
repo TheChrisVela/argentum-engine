@@ -6,19 +6,35 @@
 import { useEffect, useState } from 'react'
 import type React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import {
   type AccountStats,
   type CardStat,
   type DeckSummary,
   type GameHistoryEntry,
   type HeadToHead,
+  type RankedModeName,
+  type RatingEntry,
+  type RatingPoint,
   type StatBucket,
   type UserTournamentEntry,
   fetchColorStats,
   fetchHistory,
   fetchModeStats,
   fetchOpponents,
+  fetchRatings,
+  fetchRatingsHistory,
   fetchSetStats,
   fetchStats,
   fetchTopCards,
@@ -47,6 +63,8 @@ export function ProfilePage() {
   const [history, setHistory] = useState<GameHistoryEntry[]>([])
   const [topCards, setTopCards] = useState<CardStat[]>([])
   const [tournaments, setTournaments] = useState<UserTournamentEntry[]>([])
+  const [ratings, setRatings] = useState<RatingEntry[]>([])
+  const [ratingHistory, setRatingHistory] = useState<RatingPoint[]>([])
   const [loginOpen, setLoginOpen] = useState(false)
 
   const [editingName, setEditingName] = useState(false)
@@ -69,6 +87,8 @@ export function ProfilePage() {
     void fetchHistory(25).then(setHistory).catch(() => setHistory([]))
     void fetchTopCards(20).then(setTopCards).catch(() => setTopCards([]))
     void fetchTournamentHistory(15).then(setTournaments).catch(() => setTournaments([]))
+    void fetchRatings().then(setRatings).catch(() => setRatings([]))
+    void fetchRatingsHistory().then(setRatingHistory).catch(() => setRatingHistory([]))
   }, [status])
 
   const startEditName = () => {
@@ -152,6 +172,17 @@ export function ProfilePage() {
             <Stat label="Losses" value={stats?.losses ?? 0} />
             <Stat label="Win rate" value={stats ? `${Math.round(stats.winRate * 100)}%` : '—'} />
           </div>
+
+          {ratings.length > 0 && (
+            <Section title="Ranked rating">
+              <div style={styles.ratingRow}>
+                {ratings.map((r) => (
+                  <RatingCard key={r.mode} rating={r} />
+                ))}
+              </div>
+              <RatingChart points={ratingHistory} />
+            </Section>
+          )}
 
           <h2 style={styles.section}>Decks</h2>
           {/* Small launcher into the deckbuilder's saved-deck browser (the polished overlay that lists
@@ -292,6 +323,100 @@ function Stat({ label, value }: { label: string; value: number | string }) {
     <div style={styles.stat}>
       <div style={styles.statValue}>{value}</div>
       <div style={styles.statLabel}>{label}</div>
+    </div>
+  )
+}
+
+const MODE_LABELS: Record<RankedModeName, string> = {
+  LIMITED: 'Limited',
+  CONSTRUCTED: 'Constructed',
+  COMMANDER: 'Commander',
+}
+const MODE_COLORS: Record<RankedModeName, string> = {
+  LIMITED: '#5bd1a0',
+  CONSTRUCTED: '#5b6ee1',
+  COMMANDER: '#d18b5b',
+}
+
+/** Tier badge colour — bands climb from bronze through mythic; Provisional is muted. */
+function tierColor(tier: string): string {
+  switch (tier) {
+    case 'Mythic':
+      return '#e15bd1'
+    case 'Diamond':
+      return '#5bd1d1'
+    case 'Platinum':
+      return '#9ad1e1'
+    case 'Gold':
+      return '#e1c45b'
+    case 'Silver':
+      return '#c0c4cc'
+    case 'Bronze':
+      return '#c08a5b'
+    default:
+      return '#888'
+  }
+}
+
+function RatingCard({ rating }: { rating: RatingEntry }) {
+  const games = rating.gamesPlayed
+  const record =
+    games === 0
+      ? 'Unrated'
+      : rating.provisional
+        ? `${games}/10 placement`
+        : `${rating.wins}–${rating.losses}${rating.draws ? `–${rating.draws}` : ''}`
+  return (
+    <div style={{ ...styles.ratingCard, borderColor: `${MODE_COLORS[rating.mode]}55` }}>
+      <div style={styles.ratingMode}>{MODE_LABELS[rating.mode]}</div>
+      <div style={styles.ratingValue}>{rating.rating}</div>
+      <div style={{ ...styles.ratingTier, color: tierColor(rating.tier) }}>{rating.tier}</div>
+      <div style={styles.ratingRecord}>{record}</div>
+    </div>
+  )
+}
+
+/** Rating over time, one line per mode (each connected across its own games). */
+function RatingChart({ points }: { points: RatingPoint[] }) {
+  if (points.length === 0) {
+    return <p style={styles.muted}>Play ranked games to see your rating over time.</p>
+  }
+  const sorted = [...points].sort((a, b) => a.endedAt.localeCompare(b.endedAt))
+  const data = sorted.map((p, i) => ({
+    idx: i,
+    label: p.endedAt.slice(0, 10),
+    [p.mode]: p.ratingAfter,
+  }))
+  const modes = Array.from(new Set(points.map((p) => p.mode)))
+  return (
+    <div style={{ marginTop: 14 }}>
+      <ResponsiveContainer width="100%" height={240}>
+        <LineChart data={data} margin={{ top: 8, right: 16, bottom: 4, left: -8 }}>
+          <CartesianGrid stroke="#1f1f2e" />
+          <XAxis dataKey="label" stroke="#666" fontSize={11} minTickGap={32} />
+          <YAxis
+            stroke="#666"
+            fontSize={11}
+            domain={['dataMin - 30', 'dataMax + 30']}
+            allowDecimals={false}
+            width={44}
+          />
+          <Tooltip contentStyle={tooltipStyle} />
+          <Legend wrapperStyle={{ fontSize: 12 }} />
+          {modes.map((m) => (
+            <Line
+              key={m}
+              type="monotone"
+              dataKey={m}
+              name={MODE_LABELS[m]}
+              stroke={MODE_COLORS[m]}
+              strokeWidth={2}
+              dot={false}
+              connectNulls
+            />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   )
 }
@@ -454,6 +579,19 @@ const styles: Record<string, React.CSSProperties> = {
   },
   statValue: { color: '#fff', fontSize: 26, fontWeight: 700 },
   statLabel: { color: '#888', fontSize: 12, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+  ratingRow: { display: 'flex', gap: 12, flexWrap: 'wrap' },
+  ratingCard: {
+    flex: '1 1 140px',
+    backgroundColor: '#1a1a28',
+    border: '1px solid #2a2a3e',
+    borderRadius: 12,
+    padding: '14px 12px',
+    textAlign: 'center',
+  },
+  ratingMode: { color: '#9aa', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  ratingValue: { color: '#fff', fontSize: 30, fontWeight: 800, lineHeight: 1.1, marginTop: 4 },
+  ratingTier: { fontSize: 14, fontWeight: 700, marginTop: 2 },
+  ratingRecord: { color: '#888', fontSize: 12, marginTop: 4 },
   deckManager: {
     display: 'flex',
     alignItems: 'center',

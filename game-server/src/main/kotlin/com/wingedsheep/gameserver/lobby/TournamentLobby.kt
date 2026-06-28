@@ -323,7 +323,16 @@ class TournamentLobby(
      * hand via [teamAssignments]. Ignored outside a team [gameMode] (see [isTeamGame]).
      */
     var randomTeams: Boolean = true,
+    /**
+     * Ranked toggle. A ranked tournament's individual 1v1 matches each adjust both players' ELO, so
+     * it is only allowed in [LobbyGameMode.TOURNAMENT] (whose matches are two-player) with every seat
+     * a logged-in human (no AI). Re-validated at start. Ignored for FFA / team modes.
+     */
+    var ranked: Boolean = false,
 ) {
+
+    /** Whether this lobby may be ranked at all: only a TOURNAMENT-mode bracket has 1v1 matches. */
+    val rankedEligible: Boolean get() = gameMode == LobbyGameMode.TOURNAMENT
 
     /**
      * True for a single-pod multiplayer game — Free-for-All *or* Two-Headed Giant. Both seat every
@@ -1589,6 +1598,8 @@ class TournamentLobby(
                 attackMode = attackMode.name,
                 randomTeams = randomTeams,
                 teamAssignments = teamAssignments.mapKeys { it.key.value },
+                ranked = ranked,
+                rankedEligible = rankedEligible,
             ),
             isHost = isHost(forPlayerId)
         )

@@ -158,6 +158,20 @@ class GameSession(
     @Volatile
     var teams: List<List<Int>>? = null
 
+    /**
+     * True when this is a ranked 1v1 game between two signed-in accounts — its result adjusts both
+     * players' ELO for [rankedMode]. Set by the quick-game / tournament handler before [startGame],
+     * only after eligibility is confirmed (1v1, every seat a logged-in human). False — the default —
+     * for every casual, guest, AI, or multiplayer game. Stored on the session for the same reasons as
+     * [engineFormat]: the originating lobby may be gone by the time the game ends.
+     */
+    @Volatile
+    var ranked: Boolean = false
+
+    /** Which ranked queue this game counts toward when [ranked]; null otherwise. */
+    @Volatile
+    var rankedMode: com.wingedsheep.gameserver.ranking.RankedMode? = null
+
     /** Player info for persistence (playerId -> (playerName, token)) */
     private val playerPersistenceInfo = mutableMapOf<EntityId, PlayerPersistenceInfo>()
 

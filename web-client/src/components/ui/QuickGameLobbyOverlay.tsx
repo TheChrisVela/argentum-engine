@@ -40,6 +40,7 @@ export function QuickGameLobbyOverlay() {
   const setReady = useGameStore((s) => s.setQuickGameLobbyReady)
   const setSetCode = useGameStore((s) => s.setQuickGameLobbySetCode)
   const setPublic = useGameStore((s) => s.setQuickGameLobbyPublic)
+  const setRanked = useGameStore((s) => s.setQuickGameLobbyRanked)
   const setFormat = useGameStore((s) => s.setQuickGameLobbyFormat)
   const leave = useGameStore((s) => s.leaveQuickGameLobby)
 
@@ -195,6 +196,31 @@ export function QuickGameLobbyOverlay() {
                 </button>
               </div>
             </div>
+            {lobby.rankedEligible && (
+              <div className={styles.settingsRow}>
+                <span className={styles.settingsLabel}>Ranked</span>
+                <div className={styles.settingsButtons}>
+                  <button
+                    type="button"
+                    onClick={() => isHost && setRanked(false)}
+                    disabled={!isHost}
+                    className={`${styles.settingsButton} ${!lobby.ranked ? styles.settingsButtonActive : ''}`}
+                    title={isHost ? '' : 'Only the host can change ranked'}
+                  >
+                    Casual
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => isHost && setRanked(true)}
+                    disabled={!isHost}
+                    className={`${styles.settingsButton} ${lobby.ranked ? styles.settingsButtonActive : ''}`}
+                    title={isHost ? 'Adjusts ELO — both players must be signed in' : 'Only the host can change ranked'}
+                  >
+                    Ranked
+                  </button>
+                </div>
+              </div>
+            )}
             <FormatSelector isMomir={isMomir} format={lobby.format ?? null} isHost={isHost} onChange={setFormat} />
           </div>
         )}

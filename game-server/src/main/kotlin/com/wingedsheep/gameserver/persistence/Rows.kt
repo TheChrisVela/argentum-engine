@@ -53,6 +53,8 @@ data class MatchResultRow(
     val tournamentName: String? = null,
     /** Matchmaking context: a [LobbyGameMode] name, or QUICK_GAME / CASUAL / HOTSEAT for non-lobby games. */
     val gameMode: String? = null,
+    /** True for a ranked (ELO-adjusting) game. */
+    val ranked: Boolean = false,
     /** Replay frame count at game-over — the activity measure behind the recording gate. */
     val frameCount: Int = 0,
     /** GameState.turnNumber at game-over. */
@@ -122,4 +124,41 @@ data class TournamentParticipantRow(
     val wins: Int = 0,
     val losses: Int = 0,
     val draws: Int = 0,
+)
+
+/**
+ * A signed-in account's current ELO rating in one ranked [mode] (RankedMode name). Created lazily on
+ * the account's first ranked game in that mode; absence means "unrated" (treated as the starting
+ * rating). [gamesPlayed] drives the provisional placement window and the displayed tier.
+ */
+@Table("user_ratings")
+data class UserRatingRow(
+    @Id val id: Long? = null,
+    val userId: Long,
+    val mode: String,
+    val rating: Double = 1200.0,
+    val gamesPlayed: Int = 0,
+    val wins: Int = 0,
+    val losses: Int = 0,
+    val draws: Int = 0,
+    val peakRating: Double = 1200.0,
+    val updatedAt: Instant = Instant.now(),
+)
+
+/** One ranked game's rating change for one player — the data behind the "rating over time" chart. */
+@Table("rating_history")
+data class RatingHistoryRow(
+    @Id val id: Long? = null,
+    val userId: Long,
+    val mode: String,
+    val ratingBefore: Double,
+    val ratingAfter: Double,
+    val delta: Double,
+    /** WIN / LOSS / DRAW. */
+    val result: String,
+    /** Null if the opponent was later deleted. */
+    val opponentUserId: Long? = null,
+    val opponentRating: Double? = null,
+    val gameId: String? = null,
+    val createdAt: Instant = Instant.now(),
 )

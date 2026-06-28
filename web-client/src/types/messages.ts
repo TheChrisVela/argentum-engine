@@ -1238,6 +1238,10 @@ export interface LobbySettings {
   readonly randomTeams: boolean
   /** Two-Headed Giant manual team assignment: playerId -> team index (0/1). Empty = unset. */
   readonly teamAssignments: Readonly<Record<string, number>>
+  /** Ranked toggle (host-controlled); only meaningful when [rankedEligible]. */
+  readonly ranked?: boolean
+  /** Whether ranked may be enabled: a TOURNAMENT-mode bracket (1v1 matches). */
+  readonly rankedEligible?: boolean
 }
 
 export type LobbyGameMode = 'TOURNAMENT' | 'FREE_FOR_ALL' | 'TWO_HEADED_GIANT' | 'TEAM_VS_TEAM'
@@ -1788,6 +1792,7 @@ export type ClientMessage =
   | SetQuickGameLobbyReadyMessage
   | SetQuickGameLobbySetCodeMessage
   | SetQuickGameLobbyPublicMessage
+  | SetQuickGameLobbyRankedMessage
   | SetQuickGameLobbyFormatMessage
 
 /**
@@ -2206,6 +2211,8 @@ export interface UpdateLobbySettingsMessage {
   readonly randomTeams?: boolean
   /** Two-Headed Giant team assignment: playerId -> team index (0/1). Full map; omit to leave unchanged. */
   readonly teamAssignments?: Readonly<Record<string, number>>
+  /** Toggle ranked play (TOURNAMENT mode only). Omit to leave unchanged. */
+  readonly ranked?: boolean
 }
 
 // Tournament Client Messages
@@ -2437,6 +2444,7 @@ export function createUpdateLobbySettingsMessage(
     attackMode?: AttackMode
     randomTeams?: boolean
     teamAssignments?: Readonly<Record<string, number>>
+    ranked?: boolean
   }
 ): UpdateLobbySettingsMessage {
   return { type: 'updateLobbySettings', ...settings }
@@ -2654,6 +2662,10 @@ export interface QuickGameLobbyStateMessage {
   readonly format?: DeckFormat | null
   /** True for a Momir Basic lobby: no deckbuilding, set scopes the creature pool. */
   readonly momirBasic?: boolean
+  /** Ranked toggle (host-controlled); only meaningful when [rankedEligible]. */
+  readonly ranked?: boolean
+  /** Whether ranked is offered for this lobby: a standard 1v1 human-vs-human lobby. */
+  readonly rankedEligible?: boolean
 }
 
 export interface QuickGameLobbyClosedMessage {
@@ -2691,6 +2703,8 @@ export interface CreateQuickGameLobbyMessage {
   readonly format?: DeckFormat
   /** Create a Momir Basic lobby: fixed 60-basic decks, avatar in the command zone, set scopes the creature pool. */
   readonly momirBasic?: boolean
+  /** Request a ranked lobby (honored only for a standard 1v1 human-vs-human lobby). */
+  readonly ranked?: boolean
 }
 
 export interface JoinQuickGameLobbyMessage {
@@ -2735,12 +2749,18 @@ export interface SetQuickGameLobbyFormatMessage {
   readonly momirBasic?: boolean
 }
 
+export interface SetQuickGameLobbyRankedMessage {
+  readonly type: 'setQuickGameLobbyRanked'
+  readonly ranked: boolean
+}
+
 export function createCreateQuickGameLobbyMessage(
   vsAi?: boolean,
   setCode?: string,
   isPublic?: boolean,
   format?: DeckFormat,
   momirBasic?: boolean,
+  ranked?: boolean,
 ): CreateQuickGameLobbyMessage {
   return {
     type: 'createQuickGameLobby',
@@ -2749,6 +2769,7 @@ export function createCreateQuickGameLobbyMessage(
     ...(isPublic ? { isPublic } : {}),
     ...(format ? { format } : {}),
     ...(momirBasic ? { momirBasic } : {}),
+    ...(ranked ? { ranked } : {}),
   }
 }
 export function createJoinQuickGameLobbyMessage(lobbyId: string): JoinQuickGameLobbyMessage {
@@ -2779,6 +2800,9 @@ export function createSetQuickGameLobbySetCodeMessage(setCode: string | null): S
 }
 export function createSetQuickGameLobbyPublicMessage(isPublic: boolean): SetQuickGameLobbyPublicMessage {
   return { type: 'setQuickGameLobbyPublic', isPublic }
+}
+export function createSetQuickGameLobbyRankedMessage(ranked: boolean): SetQuickGameLobbyRankedMessage {
+  return { type: 'setQuickGameLobbyRanked', ranked }
 }
 export function createSetQuickGameLobbyFormatMessage(
   format: DeckFormat | null,

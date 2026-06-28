@@ -474,6 +474,14 @@ class TournamentMatchHandler(
                 com.wingedsheep.sdk.core.Format.Commander()
             }
         }
+        // Ranked tournaments adjust both players' ELO per 1v1 match. Only TOURNAMENT-mode lobbies are
+        // ranked-eligible and the start gate rejects AI/guest seats, so a ranked match here is always
+        // two signed-in humans; the game-over path re-checks before applying any rating change.
+        if (lobby.ranked) {
+            gameSession.ranked = true
+            gameSession.rankedMode = com.wingedsheep.gameserver.ranking.Ranked
+                .modeForTournament(lobby.format, lobby.deckFormat)
+        }
         val ps1 = player1State.identity.toPlayerSession()
         val ps2 = player2State.identity.toPlayerSession()
 

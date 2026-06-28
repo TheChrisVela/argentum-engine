@@ -32,3 +32,12 @@ interface MatchResultRepository : CrudRepository<MatchResultRow, Long> {
 }
 
 interface TournamentRepository : CrudRepository<TournamentRow, Long>
+
+interface UserRatingRepository : CrudRepository<UserRatingRow, Long> {
+    fun findByUserIdAndMode(userId: Long, mode: String): UserRatingRow?
+    fun findByUserId(userId: Long): List<UserRatingRow>
+}
+
+interface RatingHistoryRepository : CrudRepository<RatingHistoryRow, Long> {
+    fun findByUserIdAndModeOrderByCreatedAtAsc(userId: Long, mode: String): List<RatingHistoryRow>
+}

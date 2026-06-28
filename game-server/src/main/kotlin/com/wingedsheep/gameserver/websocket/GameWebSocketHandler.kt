@@ -138,6 +138,7 @@ class GameWebSocketHandler(
                 is ClientMessage.SetQuickGameLobbyReady,
                 is ClientMessage.SetQuickGameLobbySetCode,
                 is ClientMessage.SetQuickGameLobbyPublic,
+                is ClientMessage.SetQuickGameLobbyRanked,
                 is ClientMessage.SetQuickGameLobbyFormat -> quickGameLobbyHandler.handle(session, clientMessage)
             }
         } catch (e: Exception) {

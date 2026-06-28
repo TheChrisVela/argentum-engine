@@ -42,6 +42,7 @@ class GamePlayHandler(
     private val gameHistoryRepository: GameHistoryRepository,
     private val aiGameManager: AiGameManager,
     private val matchResultSink: com.wingedsheep.gameserver.stats.MatchResultSink,
+    private val rankedResultSink: com.wingedsheep.gameserver.ranking.RankedResultSink,
     private val deckProfiler: com.wingedsheep.gameserver.stats.DeckProfiler
 ) {
     private val logger = LoggerFactory.getLogger(GamePlayHandler::class.java)
@@ -691,6 +692,7 @@ class GamePlayHandler(
                             .replaceFirstChar { c -> c.uppercase() }
                     },
                     gameMode = gameMode,
+                    ranked = gameSession.ranked,
                     frameCount = frameCount,
                     turnCount = gameSession.getStateForTesting()?.turnNumber ?: 0,
                     startedAt = gameSession.replayStartedAt,
@@ -717,6 +719,38 @@ class GamePlayHandler(
                     },
                 )
             )
+
+            // Ranked games adjust both players' ELO for the game's mode. Only fire for a game flagged
+            // ranked at creation that ended with exactly two signed-in human seats (defensive: AI or
+            // guest seats can never have been flagged ranked, but re-check rather than trust it). The
+            // winner earns rating from the loser; a winner-less game (mutual loss / no contest) is a
+            // draw. Per-game, so each game of a best-of-N tournament match counts.
+            val rankedMode = gameSession.rankedMode
+            if (gameSession.ranked && rankedMode != null) {
+                val accounts = gameSession.getPlayers().mapNotNull { player ->
+                    val identity = sessionRegistry.getIdentityByWsId(player.webSocketSession.id)
+                    val isAi = persistenceInfo[player.playerId]?.isAi == true
+                    val userId = identity?.userId
+                    if (isAi || userId == null) null else player.playerId to userId
+                }
+                if (accounts.size == 2) {
+                    val (p1, u1) = accounts[0]
+                    val (p2, u2) = accounts[1]
+                    rankedResultSink.record(
+                        com.wingedsheep.gameserver.ranking.RankedGameResult(
+                            gameId = gameSessionId,
+                            mode = rankedMode,
+                            playerOneUserId = u1,
+                            playerTwoUserId = u2,
+                            winnerUserId = when (winnerId) {
+                                p1 -> u1
+                                p2 -> u2
+                                else -> null
+                            },
+                        )
+                    )
+                }
+            }
         }
 
         // Notify the dev LLM-tournament orchestrator (no-op for games it doesn't own).

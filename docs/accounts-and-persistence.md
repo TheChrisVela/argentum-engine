@@ -97,6 +97,39 @@ Flyway migration `V2__match_stats.sql` extends the stats schema:
 Flyway migration `V3__admin_role.sql` adds `users.is_admin` (boolean, default false) — the per-account
 admin flag (see **Admin access** below).
 
+Flyway migration `V4__ranked_ratings.sql` adds ranked ELO (see **Ranked play (ELO)** below):
+
+| Table / columns | Purpose |
+|-----------------|---------|
+| `match_results.ranked` | flags games that adjusted ELO |
+| `user_ratings` | current rating per `(user_id, mode)`: `rating`, `games_played`, `wins/losses/draws`, `peak_rating`. Lazily created on first ranked game in a mode; absence = unrated (treated as the starting rating) |
+| `rating_history` | one row per ranked game per player: `rating_before/after`, `delta`, `result`, `opponent_user_id`, `opponent_rating`, `game_id` — backs the dashboard's rating-over-time chart |
+
+## Ranked play (ELO)
+
+Signed-in players carry a separate ELO rating in three queues — **Limited**, **Constructed**,
+**Commander** (`RankedMode`) — much like MTG Arena splits ranked by format. A game counts as ranked only
+when it is **1v1 between two signed-in accounts** (no guests, no AI):
+
+- **Quick games:** a host toggles **Ranked** in the lobby (offered only for a standard 1v1 human-vs-human
+  lobby — not AI or Two-Headed Giant). Casual by default.
+- **Tournaments:** **ranked by default** for a `TOURNAMENT`-mode bracket (its matches are 1v1); the host
+  can uncheck it. Free-for-All / team modes are never ranked.
+
+If a lobby is flagged ranked but a seat isn't a signed-in human at start time, the game still runs — it
+just plays **unranked** (the flag is dropped, not blocked). The ranked flag + the queue (`RankedMode`,
+derived from the lobby format) are stamped on the `GameSession` at creation, and `GamePlayHandler`
+applies the rating change at game-over via `RankedResultSink` — per game, so each game of a best-of-N
+match counts.
+
+The math (`ranking/Elo.kt`, pure and unit-tested) is standard ELO calibrated to chess.com-style numbers:
+new ratings start at **1200**, an even game between established players shifts about **±10**
+(`K = 20`), and a faster **placement** window (`K = 40` for the first 10 games in a mode) lets a new
+rating settle quickly. Ratings are uncapped. A display **tier** is derived purely from the rating once
+placement is done — Bronze `<1000`, Silver `1000–1199`, Gold `1200–1399`, Platinum `1400–1599`, Diamond
+`1600–1999`, **Mythic** `≥2000` (open-ended) — and is shown as **Provisional** during placement. The
+profile page shows a card per queue (rating + tier + record) and a rating-over-time line chart.
+
 ## Auth flow (magic link)
 
 1. `POST /api/auth/request-login { email }` → upsert account, email a single-use link (logged to
@@ -159,6 +192,8 @@ Per-user endpoints take `Authorization: Bearer …`; admin endpoints take either
 | GET | `/api/stats/me/history?limit&offset` | recent games |
 | GET | `/api/stats/me/cards?limit` | most-played cards |
 | GET | `/api/stats/me/tournaments?limit` | tournament finishes with placement |
+| GET | `/api/stats/me/ratings` | per-mode ELO `[{ mode, rating, tier, provisional, gamesPlayed, wins, losses, draws, peakRating }]` (all three modes; unrated ones at the starting rating) |
+| GET | `/api/stats/me/ratings/history?mode` | rating-over-time points `[{ mode, endedAt, ratingAfter, delta, result }]` (all modes, or one) |
 | GET | `/api/stats/admin/overview` | global totals |
 | GET | `/api/stats/admin/games-per-day?days` | daily game counts |
 | GET | `/api/stats/admin/modes` · `/colors` | global distributions |
