@@ -3481,8 +3481,36 @@ object Effects {
      * Folding into a single grant keeps the FE active-effects badges quiet —
      * one "Granted Ability" tile while the land is earthbended, not two.
      */
-    fun Earthbend(amount: Int, target: EffectTarget): Effect {
-        val returnTapped = TriggeredAbility.create(
+    fun Earthbend(amount: Int, target: EffectTarget): Effect =
+        CompositeEffect(listOf(
+            AnimateLandEffect(target, 0, 0, Duration.Permanent),
+            GrantKeywordEffect(Keyword.HASTE, target, Duration.Permanent),
+            AddCountersEffect(Counters.PLUS_ONE_PLUS_ONE, amount, target),
+            GrantTriggeredAbilityEffect(earthbendReturnTapped(), target, Duration.Permanent),
+        ))
+
+    /**
+     * Earthbend with a dynamic counter count — "Earthbend X, where X is …"
+     * (Rockalanche: X = the number of Forests you control). Identical in shape to the
+     * fixed [Earthbend], but X is resolved at resolution time from [amount] via
+     * [AddDynamicCountersEffect].
+     */
+    fun Earthbend(amount: DynamicAmount, target: EffectTarget): Effect =
+        CompositeEffect(listOf(
+            AnimateLandEffect(target, 0, 0, Duration.Permanent),
+            GrantKeywordEffect(Keyword.HASTE, target, Duration.Permanent),
+            AddDynamicCountersEffect(Counters.PLUS_ONE_PLUS_ONE, amount, target),
+            GrantTriggeredAbilityEffect(earthbendReturnTapped(), target, Duration.Permanent),
+        ))
+
+    /**
+     * The shared "When this dies or is exiled, return it to the battlefield tapped"
+     * self-trigger granted by every earthbend. Single grant on any battlefield-leave,
+     * gated to the graveyard then exile zones so non-grave/exile leaves resolve as a
+     * no-op (matching the printed "When it dies or is exiled" reading).
+     */
+    private fun earthbendReturnTapped(): TriggeredAbility =
+        TriggeredAbility.create(
             trigger = EventPattern.ZoneChangeEvent(from = Zone.BATTLEFIELD, to = null),
             binding = TriggerBinding.SELF,
             effect = CompositeEffect(listOf(
@@ -3501,13 +3529,6 @@ object Effects {
             )),
             descriptionOverride = "When this dies or is exiled, return it to the battlefield tapped."
         )
-        return CompositeEffect(listOf(
-            AnimateLandEffect(target, 0, 0, Duration.Permanent),
-            GrantKeywordEffect(Keyword.HASTE, target, Duration.Permanent),
-            AddCountersEffect(Counters.PLUS_ONE_PLUS_ONE, amount, target),
-            GrantTriggeredAbilityEffect(returnTapped, target, Duration.Permanent),
-        ))
-    }
 
     /**
      * Endure N (Tarkir: Dragonstorm keyword action) — the enduring permanent's

@@ -7921,6 +7921,115 @@
     ]
 }
 
+// Rockalanche
+{
+    "name": "Rockalanche",
+    "manaCost": "{2}{G}",
+    "typeLine": "Sorcery — Lesson",
+    "oracleText": "Earthbend X, where X is the number of Forests you control. (Target land you control becomes a 0/0 creature with haste that's still a land. Put X +1/+1 counters on it. When it dies or is exiled, return it to the battlefield tapped.)\nFlashback {5}{G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+    "keywords": [
+        "FLASHBACK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Flashback",
+            "cost": "{5}{G}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "AnimateLand",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target land you control"
+                    },
+                    "power": 0,
+                    "toughness": 0,
+                    "duration": "Permanent"
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "HASTE",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target land you control"
+                    },
+                    "duration": "Permanent"
+                },
+                {
+                    "type": "AddDynamicCounters",
+                    "counterType": "+1/+1",
+                    "amount": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "land Forest"
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target land you control"
+                    }
+                },
+                {
+                    "type": "GrantTriggeredAbility",
+                    "ability": {
+                        "id": "ability_1",
+                        "trigger": {
+                            "type": "ZoneChangeEvent",
+                            "from": "Battlefield"
+                        },
+                        "effect": {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "MoveToZone",
+                                    "target": "Self",
+                                    "destination": "Battlefield",
+                                    "placement": "Tapped",
+                                    "fromZone": "Graveyard"
+                                },
+                                {
+                                    "type": "MoveToZone",
+                                    "target": "Self",
+                                    "destination": "Battlefield",
+                                    "placement": "Tapped",
+                                    "fromZone": "Exile"
+                                }
+                            ]
+                        },
+                        "descriptionOverride": "When this dies or is exiled, return it to the battlefield tapped."
+                    },
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "target land you control"
+                    },
+                    "duration": "Permanent"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "land ctrl:you"
+                },
+                "id": "target land you control"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "192",
+        "rarity": "UNCOMMON",
+        "artist": "Yuu Fujiki",
+        "imageUri": "https://cards.scryfall.io/normal/front/5/2/52b213d3-6f68-43e6-91e9-435d8fe1f34c.jpg?1764121307"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Rocky Rebuke
 {
     "name": "Rocky Rebuke",

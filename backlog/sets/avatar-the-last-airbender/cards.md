@@ -260,7 +260,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [x] Realm of Koh
 - [ ] Rebellious Captives
 - [x] Redirect Lightning
-- [ ] Rockalanche
+- [x] Rockalanche
 - [x] Rocky Rebuke
 - [ ] Rough Rhino Cavalry
 - [ ] Rowdy Snowballers
