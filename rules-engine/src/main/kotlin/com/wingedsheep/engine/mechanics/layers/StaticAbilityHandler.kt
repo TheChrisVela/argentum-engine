@@ -42,6 +42,7 @@ import com.wingedsheep.sdk.scripting.SetEnchantedLandTypeFromChosen
 import com.wingedsheep.sdk.scripting.GrantKeywordByCounter
 import com.wingedsheep.sdk.scripting.GrantProtection
 import com.wingedsheep.sdk.scripting.GrantSubtype
+import com.wingedsheep.sdk.scripting.GrantChosenSubtype
 import com.wingedsheep.sdk.scripting.IsAllCreatureTypes
 import com.wingedsheep.sdk.scripting.GrantCardType
 import com.wingedsheep.sdk.scripting.RemoveCardType
@@ -594,6 +595,15 @@ class StaticAbilityHandler(
             is GrantSubtype -> {
                 ContinuousEffectData(
                     modification = Modification.AddSubtype(ability.subtype),
+                    affectsFilter = convertGroupFilter(ability.filter)
+                )
+            }
+            is GrantChosenSubtype -> {
+                ContinuousEffectData(
+                    modification = Modification.AddChosenSubtype(
+                        includeControlledSpells = ability.includeControlledSpells,
+                        includeOwnedCardsOutsideBattlefield = ability.includeOwnedCardsOutsideBattlefield
+                    ),
                     affectsFilter = convertGroupFilter(ability.filter)
                 )
             }

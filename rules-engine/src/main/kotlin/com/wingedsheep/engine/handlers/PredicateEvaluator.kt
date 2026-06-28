@@ -5,6 +5,7 @@ import com.wingedsheep.engine.state.components.battlefield.chosenColor
 import com.wingedsheep.engine.state.components.battlefield.CastChoicesComponent
 import com.wingedsheep.engine.state.components.battlefield.ChoiceValue
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
+import com.wingedsheep.engine.mechanics.layers.ProjectedValues
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
@@ -121,6 +122,47 @@ class PredicateEvaluator {
     }
 
     /**
+     * Whether an object with **no battlefield projection entry** (a spell on the stack, a card in
+     * hand/library/graveyard/exile) effectively has [subtype]. Honors its printed subtypes,
+     * Changeling (all creature types in all zones, Rule 702.73), and cross-zone "is the chosen
+     * type" grants (Conspiracy / Leyline of Transformation — see
+     * [ProjectedState.crossZoneGrantedSubtypes]). Battlefield permanents never reach this helper;
+     * their subtypes come from the projected `subtypes` set.
+     */
+    private fun matchesBaseSubtype(
+        state: GameState,
+        projected: ProjectedState,
+        entityId: EntityId,
+        card: CardComponent,
+        subtype: Subtype
+    ): Boolean =
+        card.typeLine.hasSubtype(subtype) ||
+            (Keyword.CHANGELING in card.baseKeywords && subtype.value in Subtype.ALL_CREATURE_TYPES) ||
+            projected.crossZoneGrantedSubtypes(state, entityId).any { it.equals(subtype.value, ignoreCase = true) }
+
+    /**
+     * The creature/other subtypes an object effectively has for "shares a type with" / chosen-type
+     * comparisons. Battlefield permanents use their projected subtype set (empty if face down,
+     * Rule 708.2); non-battlefield objects use their printed subtypes plus any cross-zone "is the
+     * chosen type" grants ([ProjectedState.crossZoneGrantedSubtypes]). Changeling is intentionally
+     * *not* folded in here (callers that honor Changeling check it separately), preserving the
+     * pre-existing semantics of the share/chosen predicates.
+     */
+    private fun effectiveSubtypes(
+        state: GameState,
+        projected: ProjectedState,
+        entityId: EntityId,
+        card: CardComponent,
+        projectedValues: ProjectedValues?
+    ): Set<String> {
+        if (projectedValues != null) {
+            return if (projectedValues.isFaceDown) emptySet() else projectedValues.subtypes
+        }
+        return card.typeLine.subtypes.map { it.value }.toSet() +
+            projected.crossZoneGrantedSubtypes(state, entityId)
+    }
+
+    /**
      * Evaluate a CardPredicate against an entity using projected state.
      */
     fun matchesCardPredicate(
@@ -228,10 +270,7 @@ class PredicateEvaluator {
                     false
                 } else {
                     projectedValues?.subtypes?.any { it.equals(predicate.subtype.value, ignoreCase = true) }
-                        ?: (card.typeLine.hasSubtype(predicate.subtype) ||
-                            // Changeling: has all creature types in all zones
-                            (Keyword.CHANGELING in card.baseKeywords &&
-                                predicate.subtype.value in Subtype.ALL_CREATURE_TYPES))
+                        ?: matchesBaseSubtype(state, projected, entityId, card, predicate.subtype)
                 }
             }
             is CardPredicate.NotSubtype -> {
@@ -239,10 +278,7 @@ class PredicateEvaluator {
                     true  // Face-down has no subtypes
                 } else {
                     val hasSubtype = projectedValues?.subtypes?.any { it.equals(predicate.subtype.value, ignoreCase = true) }
-                        ?: (card.typeLine.hasSubtype(predicate.subtype) ||
-                            // Changeling: has all creature types in all zones
-                            (Keyword.CHANGELING in card.baseKeywords &&
-                                predicate.subtype.value in Subtype.ALL_CREATURE_TYPES))
+                        ?: matchesBaseSubtype(state, projected, entityId, card, predicate.subtype)
                     !hasSubtype
                 }
             }
@@ -252,9 +288,7 @@ class PredicateEvaluator {
                 } else {
                     predicate.subtypes.any { subtype ->
                         projectedValues?.subtypes?.any { it.equals(subtype.value, ignoreCase = true) }
-                            ?: (card.typeLine.hasSubtype(subtype) ||
-                                (Keyword.CHANGELING in card.baseKeywords &&
-                                    subtype.value in Subtype.ALL_CREATURE_TYPES))
+                            ?: matchesBaseSubtype(state, projected, entityId, card, subtype)
                     }
                 }
             }
@@ -470,7 +504,8 @@ class PredicateEvaluator {
                     ?.chosenCreatureType()
                     ?: return true
                 val hasSubtype = projectedValues?.subtypes?.any { it.equals(chosenType, ignoreCase = true) }
-                    ?: card.typeLine.hasSubtype(Subtype(chosenType))
+                    ?: (card.typeLine.hasSubtype(Subtype(chosenType)) ||
+                        projected.crossZoneGrantedSubtypes(state, entityId).any { it.equals(chosenType, ignoreCase = true) })
                 !hasSubtype
             }
 
@@ -483,7 +518,7 @@ class PredicateEvaluator {
                         ?: emptySet()
                 }
                 if (sourceSubtypes.isEmpty()) return false
-                val entitySubtypes = projectedValues?.subtypes ?: card.typeLine.subtypes.map { it.value }.toSet()
+                val entitySubtypes = effectiveSubtypes(state, projected, entityId, card, projectedValues)
                 entitySubtypes.any { entitySubtype ->
                     sourceSubtypes.any { it.equals(entitySubtype, ignoreCase = true) }
                 }
@@ -497,7 +532,7 @@ class PredicateEvaluator {
                         ?: emptySet()
                 }
                 if (triggeringSubtypes.isEmpty()) return false
-                val entitySubtypes = projectedValues?.subtypes ?: card.typeLine.subtypes.map { it.value }.toSet()
+                val entitySubtypes = effectiveSubtypes(state, projected, entityId, card, projectedValues)
                 entitySubtypes.any { entitySubtype ->
                     triggeringSubtypes.any { it.equals(entitySubtype, ignoreCase = true) }
                 }
@@ -508,7 +543,7 @@ class PredicateEvaluator {
                 val chosenType = state.getEntity(sourceId)
                     ?.chosenCreatureType()
                     ?: return false
-                val entitySubtypes = projectedValues?.subtypes ?: card.typeLine.subtypes.map { it.value }.toSet()
+                val entitySubtypes = effectiveSubtypes(state, projected, entityId, card, projectedValues)
                 entitySubtypes.any { it.equals(chosenType, ignoreCase = true) } ||
                     // Changeling: has all creature types in all zones
                     (Keyword.CHANGELING in card.baseKeywords &&
@@ -522,7 +557,7 @@ class PredicateEvaluator {
                         ?: emptySet()
                 }
                 if (referenceSubtypes.isEmpty()) return false
-                val entitySubtypes = projectedValues?.subtypes ?: card.typeLine.subtypes.map { it.value }.toSet()
+                val entitySubtypes = effectiveSubtypes(state, projected, entityId, card, projectedValues)
                 entitySubtypes.any { entitySubtype ->
                     referenceSubtypes.any { it.equals(entitySubtype, ignoreCase = true) }
                 }

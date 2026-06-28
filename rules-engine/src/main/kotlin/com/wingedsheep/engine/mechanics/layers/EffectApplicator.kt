@@ -2,6 +2,7 @@ package com.wingedsheep.engine.mechanics.layers
 
 import com.wingedsheep.engine.state.components.battlefield.chosenLandType
 import com.wingedsheep.engine.state.components.battlefield.chosenColor
+import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
 import com.wingedsheep.engine.handlers.ConditionEvaluationContext
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
@@ -140,6 +141,17 @@ internal class EffectApplicator(
                 is Modification.AddSubtype -> {
                     values.types.add(mod.subtype)
                     values.subtypes.add(mod.subtype)
+                }
+                is Modification.AddChosenSubtype -> {
+                    // The cross-zone flags on the modification are read by StateProjector to build
+                    // ProjectedState.crossZoneSubtypeGrants; Layer 4 projection here only ever
+                    // touches battlefield permanents, so they're irrelevant to this branch.
+                    val chosenType = state.getEntity(effect.sourceId)
+                        ?.chosenCreatureType()
+                    if (chosenType != null) {
+                        values.types.add(chosenType)
+                        values.subtypes.add(chosenType)
+                    }
                 }
                 is Modification.AddAllCreatureTypes -> {
                     values.subtypes.addAll(com.wingedsheep.sdk.core.Subtype.ALL_CREATURE_TYPES)

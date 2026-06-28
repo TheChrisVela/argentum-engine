@@ -10334,6 +10334,42 @@
     ]
 }
 
+// Leyline of Transformation
+{
+    "name": "Leyline of Transformation",
+    "manaCost": "{2}{U}{U}",
+    "typeLine": "Enchantment",
+    "oracleText": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nAs this enchantment enters, choose a creature type.\nCreatures you control are the chosen type in addition to their other types. The same is true for creature spells you control and creature cards you own that aren't on the battlefield.",
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "GrantChosenSubtype",
+                "filter": {
+                    "baseFilter": "creature ctrl:you"
+                },
+                "includeControlledSpells": true,
+                "includeOwnedCardsOutsideBattlefield": true
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithChoice",
+                "choiceType": "CREATURE_TYPE"
+            }
+        ],
+        "mayStartOnBattlefield": true
+    },
+    "metadata": {
+        "collectorNumber": "63",
+        "rarity": "RARE",
+        "artist": "Sergey Glushakov",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/b/4bd941ca-f3d2-44c1-8df3-851362f6b848.jpg?1726286087"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Lionheart Glimmer
 {
     "name": "Lionheart Glimmer",

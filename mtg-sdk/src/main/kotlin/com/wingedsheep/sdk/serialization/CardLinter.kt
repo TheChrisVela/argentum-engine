@@ -305,6 +305,7 @@ object CardLinter {
         "HasChosenColor" to "COLOR",
         "SharesChosenColorWithSource" to "COLOR",
         "GrantChosenColor" to "COLOR",
+        "GrantChosenSubtype" to "CREATURE_TYPE",
         "GrantProtectionFromChosenColorToGroup" to "COLOR",
         "GrantLandwalkOfChosenType" to "LAND_TYPE",
         "NotOfSourceChosenType" to "CREATURE_TYPE",

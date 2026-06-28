@@ -83,7 +83,11 @@ class SelectFromCollectionExecutor(
                 eligibleCards = eligibleCards.filter { cardId ->
                     val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return@filter false
                     Keyword.CHANGELING in cardComponent.baseKeywords ||
-                        cardComponent.typeLine.hasSubtype(Subtype(chosenType))
+                        cardComponent.typeLine.hasSubtype(Subtype(chosenType)) ||
+                        // Cross-zone "is the chosen type" grants (Conspiracy / Leyline of
+                        // Transformation) make non-battlefield creature cards count as the type.
+                        state.projectedState.crossZoneGrantedSubtypes(state, cardId)
+                            .any { it.equals(chosenType, ignoreCase = true) }
                 }
             }
         }

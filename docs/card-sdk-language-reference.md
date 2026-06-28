@@ -3155,6 +3155,22 @@ staticAbility {
 - `GrantCardType(cardType, filter)` / `RemoveCardType(cardType, filter)` — Layer 4 type-changing statics that add or
   remove a card type (e.g. `"CREATURE"`). `RemoveCardType` backs Impending's "isn't a creature while it has a time
   counter" (wrapped in a `ConditionalStaticAbility`); reuse it for any "it's no longer a [type]" effect.
+- `GrantSubtype(subtype, filter)` — Layer 4 type-changing static that adds a **fixed** creature subtype to the group,
+  in addition to their other types ("is a Knight in addition to its other types"). (Dub)
+- `GrantChosenSubtype(filter, includeControlledSpells = false, includeOwnedCardsOutsideBattlefield = false)` — Layer 4
+  type-changing static that adds the creature type **chosen as the source entered** (read from the source's
+  `CastChoicesComponent`) to the group, in addition to their other types. Chosen-value counterpart to `GrantSubtype`,
+  mirroring `GrantChosenColor`/`GrantColor`; pair with `EntersWithChoice(ChoiceType.CREATURE_TYPE)`. This is the
+  Conspiracy / Xenograft mechanic. The `filter` half is normal Layer 4 battlefield projection ("Creatures you control
+  are the chosen type"). The two cross-zone flags extend the grant beyond the battlefield (the Conspiracy / Leyline-of-
+  Transformation clause "the same is true for creature spells you control and creature cards you own that aren't on the
+  battlefield"): `includeControlledSpells` reaches creature spells the controller controls on the stack, and
+  `includeOwnedCardsOutsideBattlefield` reaches creature cards the controller owns in hand/library/graveyard/exile/
+  command. Because Layer 4 projection only touches the battlefield, those flags are honored by a separate overlay —
+  `ProjectedState.crossZoneGrantedSubtypes`, consulted by every non-battlefield subtype read-site in `PredicateEvaluator`
+  and `SelectFromCollectionExecutor` — so a granted type drives type-matters checks everywhere ("target Zombie spell",
+  "return target Zombie card from your graveyard", search filters). Leave both flags `false` for battlefield-only effects
+  like Xenograft. (Leyline of Transformation)
 - `TransformPermanent(setCardTypes, setSubtypes, setColors?, clearSubtypes, filter)` — Layer 4/5 "becomes a whole new
   identity" (Sugar Coat, Darksteel Mutation). A non-empty `setSubtypes` replaces all subtypes; an empty `setSubtypes`
   leaves subtypes alone **unless** `clearSubtypes = true`, which replaces them with none ("has no subtypes" — the

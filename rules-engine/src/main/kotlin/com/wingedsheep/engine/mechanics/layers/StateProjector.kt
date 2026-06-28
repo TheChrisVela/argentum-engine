@@ -7,6 +7,7 @@ import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantCantBeBlockedToSmallCreaturesComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.battlefield.chosenCreatureType
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.HexproofFromColorComponent
@@ -316,7 +317,26 @@ class StateProjector(
             )
         }
 
-        return ProjectedState(state, finalValues)
+        // Collect cross-zone "is the chosen type" grants (Conspiracy / Leyline of Transformation).
+        // A GrantChosenSubtype with cross-zone flags lowers to a Modification.AddChosenSubtype whose
+        // Layer 4 application above only touched battlefield permanents; here we additionally record
+        // an overlay entry so the non-battlefield subtype read-sites (spells on the stack, cards in
+        // hand/library/graveyard/exile) can honor it. Reads the source's *projected* controller (so
+        // it follows control changes) and the creature type it was made with.
+        val crossZoneGrants = sortedEffects.mapNotNull { effect ->
+            val mod = effect.modification as? Modification.AddChosenSubtype ?: return@mapNotNull null
+            if (!mod.includeControlledSpells && !mod.includeOwnedCardsOutsideBattlefield) return@mapNotNull null
+            val controllerId = projectedValues[effect.sourceId]?.controllerId ?: return@mapNotNull null
+            val chosenType = state.getEntity(effect.sourceId)?.chosenCreatureType() ?: return@mapNotNull null
+            CrossZoneSubtypeGrant(
+                controllerId = controllerId,
+                chosenType = chosenType,
+                includeControlledSpells = mod.includeControlledSpells,
+                includeOwnedCardsOutsideBattlefield = mod.includeOwnedCardsOutsideBattlefield
+            )
+        }
+
+        return ProjectedState(state, finalValues, crossZoneGrants)
     }
 
     fun getProjectedPower(state: GameState, entityId: EntityId): Int {

@@ -4,6 +4,34 @@ import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
+
+/**
+ * An active "this object is also the chosen creature type" grant that reaches **beyond** the
+ * battlefield (the Conspiracy / Leyline of Transformation clause "The same is true for creature
+ * spells you control and creature cards you own that aren't on the battlefield").
+ *
+ * Built by [StateProjector] from each battlefield `GrantChosenSubtype` whose cross-zone flags are
+ * set, then consulted by every subtype read-site for objects that have no battlefield projection
+ * entry (spells on the stack, cards in hand/library/graveyard/exile/command) via
+ * [ProjectedState.crossZoneGrantedSubtypes]. Battlefield permanents are unaffected — they get the
+ * type through normal Layer 4 projection.
+ *
+ * @property controllerId The granting permanent's controller — the player who "controls" the
+ *   affected spells and "owns" the affected cards (the asymmetry is in the card text).
+ * @property chosenType The creature type chosen as the granting permanent entered.
+ * @property includeControlledSpells Grant reaches creature spells [controllerId] controls (stack).
+ * @property includeOwnedCardsOutsideBattlefield Grant reaches creature cards [controllerId] owns in
+ *   any non-battlefield, non-stack zone.
+ */
+data class CrossZoneSubtypeGrant(
+    val controllerId: EntityId,
+    val chosenType: String,
+    val includeControlledSpells: Boolean,
+    val includeOwnedCardsOutsideBattlefield: Boolean
+)
 
 /**
  * Projected values for an entity after all effects are applied.
@@ -34,9 +62,50 @@ data class ProjectedValues(
  */
 class ProjectedState(
     private val baseState: GameState,
-    private val projectedValues: Map<EntityId, ProjectedValues>
+    private val projectedValues: Map<EntityId, ProjectedValues>,
+    /**
+     * Active cross-zone "is the chosen type" grants (Conspiracy / Leyline of Transformation).
+     * Empty for virtually every game state, so [crossZoneGrantedSubtypes] short-circuits to no-op.
+     */
+    val crossZoneSubtypeGrants: List<CrossZoneSubtypeGrant> = emptyList()
 ) {
     fun getBaseState(): GameState = baseState
+
+    /**
+     * The chosen creature types granted to a **non-battlefield** object (a creature spell on the
+     * stack, or a creature card in hand/library/graveyard/exile/command) by cross-zone
+     * [CrossZoneSubtypeGrant]s. Battlefield permanents return empty here — they get the type via
+     * normal Layer 4 projection ([getSubtypes]). Returns empty (fast path) when no such grant is
+     * active, which is the common case.
+     *
+     * Read by the subtype predicates in `PredicateEvaluator` and by `SelectFromCollectionExecutor`
+     * for objects with no projection entry, so a Leyline-granted type drives type-matters checks
+     * (targeting "a Zombie spell" / "a Zombie card in your graveyard", search filters, …).
+     */
+    fun crossZoneGrantedSubtypes(state: GameState, entityId: EntityId): Set<String> {
+        if (crossZoneSubtypeGrants.isEmpty()) return emptySet()
+        val container = state.getEntity(entityId) ?: return emptySet()
+        val card = container.get<CardComponent>() ?: return emptySet()
+        // Only creature spells / creature cards gain the type ("creature spells ... creature cards ...").
+        if (!card.typeLine.isCreature) return emptySet()
+
+        return if (state.isSpellOnStack(entityId)) {
+            // A spell's controller is its ControllerComponent if present, else its caster.
+            val controller = container.get<ControllerComponent>()?.playerId
+                ?: container.get<SpellOnStackComponent>()?.casterId
+                ?: return emptySet()
+            crossZoneSubtypeGrants
+                .filter { it.includeControlledSpells && it.controllerId == controller }
+                .mapTo(mutableSetOf()) { it.chosenType }
+        } else {
+            // Battlefield permanents are covered by Layer 4 projection, not this overlay.
+            if (entityId in state.getBattlefield()) return emptySet()
+            val owner = card.ownerId ?: return emptySet()
+            crossZoneSubtypeGrants
+                .filter { it.includeOwnedCardsOutsideBattlefield && it.controllerId == owner }
+                .mapTo(mutableSetOf()) { it.chosenType }
+        }
+    }
 
     fun getPower(entityId: EntityId): Int? = projectedValues[entityId]?.power
 

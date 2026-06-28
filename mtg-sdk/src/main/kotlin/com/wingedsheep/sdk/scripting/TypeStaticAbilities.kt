@@ -29,6 +29,56 @@ data class GrantSubtype(
 }
 
 /**
+ * Grants the creature type chosen as the source entered (resolved from the source's
+ * `CastChoicesComponent`) to a group, in addition to their other types. The chosen-value
+ * counterpart to [GrantSubtype], mirroring [GrantChosenColor]'s relationship to [GrantColor].
+ * Used by Leyline of Transformation / Conspiracy / Xenograft: "Creatures you control are the
+ * chosen type in addition to their other types."
+ *
+ * This is a Layer 4 (type-changing) continuous effect. If the source has no chosen creature
+ * type, no subtype is added.
+ *
+ * The [filter] half is the standard battlefield projection (Layer 4). The two cross-zone flags
+ * extend the grant beyond the battlefield, modeling the Conspiracy / Leyline-of-Transformation
+ * clause "The same is true for creature spells you control and creature cards you own that aren't
+ * on the battlefield":
+ *  - [includeControlledSpells] — creature **spells the source's controller controls** (on the
+ *    stack) are also the chosen type.
+ *  - [includeOwnedCardsOutsideBattlefield] — creature **cards the source's controller owns** in
+ *    any non-battlefield, non-stack zone (hand, library, graveyard, exile, command) are also the
+ *    chosen type.
+ *
+ * Type-changing statics are projected through the layer system, which iterates only the
+ * battlefield, so the cross-zone flags are honored by a separate overlay (`ProjectedState`'s
+ * cross-zone grant list, consulted by every subtype read-site for non-battlefield objects)
+ * rather than by Layer 4 projection. Leave both flags `false` for battlefield-only effects
+ * like Xenograft.
+ *
+ * @property filter Which battlefield permanents are affected (typically `AllCreaturesYouControl`).
+ * @property includeControlledSpells Whether creature spells the controller controls are also the type.
+ * @property includeOwnedCardsOutsideBattlefield Whether creature cards the controller owns outside
+ *   the battlefield are also the type.
+ */
+@SerialName("GrantChosenSubtype")
+@Serializable
+data class GrantChosenSubtype(
+    val filter: GroupFilter = GroupFilter.source(),
+    val includeControlledSpells: Boolean = false,
+    val includeOwnedCardsOutsideBattlefield: Boolean = false
+) : StaticAbility {
+    override val description: String = buildString {
+        append("${filter.description} are the chosen type in addition to their other types")
+        if (includeControlledSpells || includeOwnedCardsOutsideBattlefield) {
+            append("; so are your creature spells and creature cards outside the battlefield")
+        }
+    }
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
+    }
+}
+
+/**
  * Grants every creature type to the target, in addition to its existing types,
  * without granting the Changeling keyword. Used for cards like Stalactite Dagger:
  * "Equipped creature ... is all creature types." The card text doesn't say
