@@ -3808,6 +3808,79 @@
     "colorIdentityOverride": []
 }
 
+// Seismic Sense
+{
+    "name": "Seismic Sense",
+    "manaCost": "{G}",
+    "typeLine": "Sorcery — Lesson",
+    "oracleText": "Look at the top X cards of your library, where X is the number of lands you control. You may reveal a creature or land card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "GatherCards",
+                    "source": {
+                        "type": "TopOfLibrary",
+                        "count": {
+                            "type": "Count",
+                            "player": "You",
+                            "zone": "Battlefield",
+                            "filter": "land"
+                        }
+                    },
+                    "storeAs": "looked"
+                },
+                {
+                    "type": "SelectFromCollection",
+                    "from": "looked",
+                    "selection": {
+                        "type": "ChooseUpTo",
+                        "count": {
+                            "type": "Fixed",
+                            "amount": 1
+                        }
+                    },
+                    "filter": "creature|land",
+                    "storeSelected": "kept",
+                    "storeRemainder": "rest",
+                    "selectedLabel": "Put in hand",
+                    "remainderLabel": "Put on bottom"
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "kept",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Hand"
+                    },
+                    "revealed": true
+                },
+                {
+                    "type": "MoveCollection",
+                    "from": "rest",
+                    "destination": {
+                        "type": "ToZone",
+                        "zone": "Library",
+                        "placement": "Bottom"
+                    },
+                    "order": "Random"
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "195",
+        "rarity": "UNCOMMON",
+        "artist": "Jo Cordisco",
+        "flavorText": "\"Even though I was born blind, I've never had a problem seeing ... I feel the vibrations in the earth, and I can 'see' where everything is.\"",
+        "imageUri": "https://cards.scryfall.io/normal/front/a/7/a7b93c2a-c478-4734-8aca-03f3e9c11b20.jpg?1764121326"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // Serpent's Pass
 {
     "name": "Serpent's Pass",

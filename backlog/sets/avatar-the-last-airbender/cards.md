@@ -271,7 +271,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [ ] Sandbenders' Storm
 - [ ] Secret Tunnel
 - [ ] Secret of Bloodbending
-- [ ] Seismic Sense
+- [x] Seismic Sense
 - [ ] Serpent of the Pass
 - [x] Serpent's Pass
 - [x] Shared Roots
