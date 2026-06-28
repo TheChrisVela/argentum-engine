@@ -1381,7 +1381,7 @@ one-off pipeline belongs inline in the card file via `Effects.Pipeline { }` (§5
   per CR 400.11, but a pseudo-zone lets the wish reuse the ordinary pipeline). The recipe composes
   `GatherCards(FromZone(SIDEBOARD, You, filter)) → SelectFromCollection(ChooseUpTo(count)) →
   MoveCollection(→ destination, revealed = revealed)` — **no shuffle** (the sideboard is unordered).
-  `revealed` defaults on per the cycle's "reveal that card" clause (CR 701.19j); pass
+  `revealed` defaults on per the cycle's "reveal that card" clause (CR 701.20, Reveal); pass
   `revealed = false` for cards that merely "put a card you own from outside the game into your hand"
   with no reveal (**North Wind Avatar**: `Patterns.Sideboard.wish(GameObjectFilter.Any, revealed = false)`).
   The "may" and "a card" are both the `ChooseUpTo(count)`: declining or having no

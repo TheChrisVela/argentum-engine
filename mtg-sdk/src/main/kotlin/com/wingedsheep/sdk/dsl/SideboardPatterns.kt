@@ -42,7 +42,7 @@ object SideboardPatterns {
      * (default 1) matching cards, reveals the choice, and moves it to [destination] (default hand).
      *
      * No shuffle — the sideboard is not a library. [revealed] defaults on, per the wish cycle's
-     * "reveal that card" clause and CR 701.19j; pass `revealed = false` for the cards that simply
+     * "reveal that card" clause and CR 701.20 (Reveal); pass `revealed = false` for the cards that simply
      * "put a card you own from outside the game into your hand" with no reveal (North Wind Avatar).
      */
     fun wish(

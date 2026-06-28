@@ -99,6 +99,62 @@ class TurtlesForeverScenarioTest : ScenarioTestBase() {
                     game.isInSideboard(1, "Raphael, Tough Turtle") shouldBe true
                 }
             }
+
+            // "exactly four" is a ceiling, not a requirement: search finds as many as exist. With
+            // only three different-named legends across both zones, ChooseExactly(4) + OnePerCardName
+            // clamps to three (the opponent then splits two into hand, one back into the library).
+            test("fewer than four eligible legends clamps the search down to what exists") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardInHand(1, "Turtles Forever")
+                    .withLandsOnBattlefield(1, "Island", 3)
+                    .withLandsOnBattlefield(1, "Plains", 1)
+                    .withCardInLibrary(1, "Splinter, Hamato Yoshi")
+                    .withCardInLibrary(1, "Leonardo, Big Brother")
+                    .withCardInSideboard(1, "Michelangelo, Game Master")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val cast = game.castSpell(1, "Turtles Forever")
+                withClue("Turtles Forever should be castable: ${cast.error}") { cast.error shouldBe null }
+                game.resolveStack()
+
+                // Decision 1: only three legends exist, so the "exactly four" search clamps to three.
+                val search = game.getPendingDecision()
+                (search is SelectCardsDecision) shouldBe true
+                val searchable = (search as SelectCardsDecision).cardInfo!!
+                withClue("All three available legends are offered — the count clamps below four") {
+                    searchable.size shouldBe 3
+                }
+                fun searchId(name: String) = searchable.entries.first { it.value.name == name }.key
+                game.selectCards(
+                    listOf("Splinter, Hamato Yoshi", "Leonardo, Big Brother", "Michelangelo, Game Master")
+                        .map { searchId(it) }
+                )
+
+                // Decision 2: the opponent splits the three found cards — two to hand, one to library.
+                val split = game.getPendingDecision()
+                (split is SelectCardsDecision) shouldBe true
+                val pile = (split as SelectCardsDecision).cardInfo!!
+                pile.size shouldBe 3
+                fun splitId(name: String) = pile.entries.first { it.value.name == name }.key
+                game.selectCards(listOf(splitId("Splinter, Hamato Yoshi"), splitId("Leonardo, Big Brother")))
+                game.resolveStack()
+
+                withClue("The two chosen go to hand") {
+                    game.isInHand(1, "Splinter, Hamato Yoshi") shouldBe true
+                    game.isInHand(1, "Leonardo, Big Brother") shouldBe true
+                }
+                val libraryNames = game.state.getLibrary(game.player1Id).mapNotNull {
+                    game.state.getEntity(it)?.get<CardComponent>()?.name
+                }
+                withClue("The lone remainder (a sideboard pull) is shuffled into the library") {
+                    game.isInHand(1, "Michelangelo, Game Master") shouldBe false
+                    game.isInSideboard(1, "Michelangelo, Game Master") shouldBe false
+                    libraryNames.contains("Michelangelo, Game Master") shouldBe true
+                }
+            }
         }
     }
 }
