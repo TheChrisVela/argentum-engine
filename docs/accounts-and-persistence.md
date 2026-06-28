@@ -12,8 +12,18 @@ the rules engine is untouched.
 
 - **Accounts** keyed by email; no passwords (magic link).
 - **Saved decks** stored per account (the deckbuilder's `SharedDeck` JSON), reachable from any device.
-- **Stats** — one row per finished game; win/loss computed on demand.
-- **Guest play still works** — login is optional and only unlocks the above.
+- **Stats** — one row per finished game; per-account win/loss, preferred colors/sets, game modes
+  played, head-to-head vs specific opponents, and a game history, all computed on demand.
+- **Deck contents** of every recorded game are stored card-by-card, so we can compute the most-played
+  cards and per-card win rates.
+- **Tournaments** are recorded on completion (settings + final standings).
+- **Admin dashboard** — global totals, games-per-day, mode/color distributions, top cards, recorded
+  tournaments, and an IP-based geolocation estimate of where players connect from.
+- **Guest play still works** — login is optional. Per-account stats need an account, but guest games
+  (not AI) still count toward the global admin stats and geolocation.
+
+A game is only recorded if it reached a winner **or** had more than a trivial number of actions
+(`frameCount >= 10`), and only if at least one seat is a human (AI-only games are skipped).
 
 Redis stays responsible for hot/ephemeral game/lobby/tournament state. Postgres only holds durable,
 user-owned data. Different lifecycles, deliberately not merged.
@@ -74,6 +84,16 @@ Flyway migration `V1__init.sql`:
 | `match_results` | one row per finished game |
 | `match_participants` | a seat in a game (user_id null for guests/AI), won flag |
 
+Flyway migration `V2__match_stats.sql` extends the stats schema:
+
+| Table / columns | Purpose |
+|-----------------|---------|
+| `match_results.game_mode / frame_count / turn_count` | matchmaking mode + activity measures (the recording gate, games-per-day, mode distribution) |
+| `match_participants.colors / set_codes / is_ai / client_ip` | per-seat deck color identity + sets, AI flag (distinguishes AI from guests), and raw client IP (**admin-only**, never sent to clients) |
+| `match_participant_cards` | each seat's deck card-by-card (`card_name`, `copies`) — backs most-played-cards + per-card win rate |
+| `tournaments` | finished tournaments + settings (format, mode, set codes, player count, rounds, winner) |
+| `tournament_participants` | a seat in a tournament with final placement + W/L/D |
+
 ## Auth flow (magic link)
 
 1. `POST /api/auth/request-login { email }` → upsert account, email a single-use link (logged to
@@ -101,10 +121,33 @@ the account's stats.
 | POST | `/api/account/decks` | body = `SharedDeck` JSON → created deck |
 | PUT | `/api/account/decks/{id}` | replace |
 | DELETE | `/api/account/decks/{id}` | |
-| GET | `/api/account/stats/me` | `{ games, wins, losses, winRate }` |
 
 > `/api/account/decks` is intentionally separate from the existing stateless `/api/decks`
 > (validation, formats, examples).
+
+### Stats (all under `/api/stats`)
+
+Per-user endpoints take `Authorization: Bearer …`; admin endpoints take `X-Admin-Password` (the same
+header as the replay browser). Both groups are only mounted when accounts are enabled.
+
+| Method | Path | Notes |
+|--------|------|-------|
+| GET | `/api/stats/me` | `{ games, wins, losses, winRate }` |
+| GET | `/api/stats/me/colors` · `/sets` · `/modes` | `[{ label, count }]` breakdowns |
+| GET | `/api/stats/me/opponents` | head-to-head `[{ opponent, isAi, wins, losses }]` |
+| GET | `/api/stats/me/history?limit&offset` | recent games |
+| GET | `/api/stats/me/cards?limit` | most-played cards |
+| GET | `/api/stats/me/tournaments?limit` | tournament finishes with placement |
+| GET | `/api/stats/admin/overview` | global totals |
+| GET | `/api/stats/admin/games-per-day?days` | daily game counts |
+| GET | `/api/stats/admin/modes` · `/colors` | global distributions |
+| GET | `/api/stats/admin/cards` · `/cards/win-rates?minDecks` | most-played + per-card win rate |
+| GET | `/api/stats/admin/tournaments?limit` | recorded tournaments |
+| GET | `/api/stats/admin/geo` | IP → coarse location, aggregated by location (raw IPs never returned) |
+
+Aggregate queries live in `StatsQueryService` (plain SQL via `JdbcTemplate`). Geolocation
+(`GeoIpService`) resolves IPs via the free ip-api.com batch endpoint, cached in-process; it's only
+called from the admin `geo` endpoint, never the hot recording path.
 
 ## Frontend
 
@@ -120,8 +163,13 @@ the account's stats.
   which shows an **Online / Browser** badge per deck and routes load/rename/delete to the right store,
   and (b) the lobby deck picker's "My Decks" tab, so signed-in users can pick their cloud decks to play.
 - **Display name:** editable on the profile page (`PUT /api/auth/me`); the email stays the identity.
-- Profile page at `/profile` shows stats + a small **Manage my decks** launcher that opens the
-  deckbuilder's deck browser (`/deckbuilder?decks=open`) — one polished list instead of a second copy.
+- Profile page at `/profile` shows the win/loss summary plus colors played (a Recharts bar chart),
+  sets, game modes, head-to-head, most-played cards, tournament finishes, and a recent-games list — all
+  from `/api/stats/me/*` via `api/account.ts`. It also has a small **Manage my decks** launcher that
+  opens the deckbuilder's deck browser (`/deckbuilder?decks=open`).
+- Admin page at `/admin` has a **Dashboard** tab (`AdminDashboard`, fed by `api/adminStats.ts`)
+  alongside the replay browser: headline totals, a games-per-day line chart, mode/color distributions,
+  most-played + highest-win-rate cards, recorded tournaments, and a geolocation table.
 - On sign-in, a landing-page prompt (`DeckMigrationPrompt`) offers to copy browser-only decks to the
   account.
 
@@ -129,5 +177,10 @@ the account's stats.
 
 - `AuthTokenServiceTest` — token sign/verify/expiry/tamper (pure unit).
 - `MagicLinkServiceTest` — login/verify orchestration with mocked repositories.
-- `FlywayMigrationTest` — applies `V1` against a real Postgres via Testcontainers and exercises the
-  account/deck/stats round-trip. Self-skips when Docker is unavailable.
+- `FlywayMigrationTest` — applies `V1` + `V2` against a real Postgres via Testcontainers and exercises
+  the account/deck/stats round-trip plus the V2 stats schema and its Postgres-specific aggregate SQL
+  (set-code unnest, card win-rate `FILTER`, games-per-day interval, tournament round-trip, cascade
+  deletes). Self-skips when Docker is unavailable.
+- `DeckProfilerTest` — deck color-identity (WUBRG order) + set derivation, colorless/fallback/pin cases.
+- `MatchResultSinkTest` — the recording guard: AI-only games skipped, human/guest games recorded with
+  their deck cards; same for the tournament sink.

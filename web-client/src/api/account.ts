@@ -197,9 +197,57 @@ export interface AccountStats {
   readonly winRate: number
 }
 
-export async function fetchStats(): Promise<AccountStats> {
-  const res = await fetch('/api/account/stats/me', { headers: authHeaders() })
+/** A `(label, count)` bucket — used for color / set / mode breakdowns. */
+export interface StatBucket {
+  readonly label: string
+  readonly count: number
+}
+
+export interface HeadToHead {
+  readonly opponent: string
+  readonly opponentUserId: number | null
+  readonly isAi: boolean
+  readonly wins: number
+  readonly losses: number
+}
+
+export interface GameHistoryEntry {
+  readonly endedAt: string
+  readonly gameMode: string | null
+  readonly format: string | null
+  readonly colors: string | null
+  readonly opponents: string | null
+  readonly won: boolean
+}
+
+export interface CardStat {
+  readonly cardName: string
+  readonly copies: number
+  readonly decks: number
+}
+
+export interface UserTournamentEntry {
+  readonly endedAt: string
+  readonly name: string | null
+  readonly format: string | null
+  readonly gameMode: string | null
+  readonly placement: number
+  readonly playerCount: number
+}
+
+async function getStats<T>(path: string): Promise<T> {
+  const res = await fetch(`/api/stats${path}`, { headers: authHeaders() })
   if (res.status === 401) throw new UnauthorizedError()
   if (!res.ok) throw new Error(`Failed to load stats (${res.status})`)
-  return (await res.json()) as AccountStats
+  return (await res.json()) as T
 }
+
+export const fetchStats = () => getStats<AccountStats>('/me')
+export const fetchColorStats = () => getStats<StatBucket[]>('/me/colors')
+export const fetchSetStats = () => getStats<StatBucket[]>('/me/sets')
+export const fetchModeStats = () => getStats<StatBucket[]>('/me/modes')
+export const fetchOpponents = () => getStats<HeadToHead[]>('/me/opponents')
+export const fetchHistory = (limit = 25) => getStats<GameHistoryEntry[]>(`/me/history?limit=${limit}`)
+export const fetchTopCards = (limit = 30) => getStats<CardStat[]>(`/me/cards?limit=${limit}`)
+export const fetchTournamentHistory = (limit = 25) =>
+  getStats<UserTournamentEntry[]>(`/me/tournaments?limit=${limit}`)

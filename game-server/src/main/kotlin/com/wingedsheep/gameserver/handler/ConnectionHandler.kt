@@ -38,6 +38,10 @@ class ConnectionHandler(
     private fun resolveAccountUserId(authToken: String?): Long? =
         authToken?.let { authSupport.ifAvailable?.userOrNull(it)?.uid }
 
+    /** Client IP captured by [RemoteIpHandshakeInterceptor] into the handshake session attributes. */
+    private fun clientIpOf(session: WebSocketSession): String? =
+        session.attributes[com.wingedsheep.gameserver.websocket.RemoteIpHandshakeInterceptor.CLIENT_IP_ATTR] as? String
+
     private fun buildAvailableSetsList() = boosterGenerator.availableSets.values.map { config ->
         ServerMessage.AvailableSet(
             code = config.setCode,
@@ -63,6 +67,8 @@ class ConnectionHandler(
             if (existingIdentity != null) {
                 // Re-link the account in case the player signed in since their last connect.
                 resolveAccountUserId(message.authToken)?.let { existingIdentity.userId = it }
+                // Refresh the IP — the player may be reconnecting from a different network.
+                clientIpOf(session)?.let { existingIdentity.clientIp = it }
                 handleReconnect(session, existingIdentity)
                 return
             }
@@ -72,7 +78,10 @@ class ConnectionHandler(
         val identity = PlayerIdentity(
             playerId = playerId,
             playerName = message.playerName
-        ).apply { userId = resolveAccountUserId(message.authToken) }
+        ).apply {
+            userId = resolveAccountUserId(message.authToken)
+            clientIp = clientIpOf(session)
+        }
 
         val playerSession = PlayerSession(
             webSocketSession = session,

@@ -1,6 +1,7 @@
 package com.wingedsheep.gameserver.config
 
 import com.wingedsheep.gameserver.websocket.GameWebSocketHandler
+import com.wingedsheep.gameserver.websocket.RemoteIpHandshakeInterceptor
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.socket.config.annotation.EnableWebSocket
@@ -11,11 +12,13 @@ import org.springframework.web.socket.server.standard.ServletServerContainerFact
 @Configuration
 @EnableWebSocket
 class WebSocketConfig(
-    private val gameWebSocketHandler: GameWebSocketHandler
+    private val gameWebSocketHandler: GameWebSocketHandler,
+    private val remoteIpHandshakeInterceptor: RemoteIpHandshakeInterceptor,
 ) : WebSocketConfigurer {
 
     override fun registerWebSocketHandlers(registry: WebSocketHandlerRegistry) {
         registry.addHandler(gameWebSocketHandler, "/game")
+            .addInterceptors(remoteIpHandshakeInterceptor)
             .setAllowedOrigins("*")
     }
 

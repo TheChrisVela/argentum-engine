@@ -23,6 +23,13 @@ class PlayerIdentity(
     @Volatile
     var userId: Long? = null
 
+    /**
+     * Connecting client's IP, captured at handshake. Admin-only (used for a geolocation estimate);
+     * never sent to clients. Null for AI and when unavailable.
+     */
+    @Volatile
+    var clientIp: String? = null
+
     /** Current WebSocket session — swapped on reconnect */
     @Volatile
     var webSocketSession: WebSocketSession? = null

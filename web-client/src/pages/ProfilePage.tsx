@@ -6,8 +6,27 @@
 import { useEffect, useState } from 'react'
 import type React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { type AccountStats, type DeckSummary, fetchStats, listDecks } from '@/api/account'
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import {
+  type AccountStats,
+  type CardStat,
+  type DeckSummary,
+  type GameHistoryEntry,
+  type HeadToHead,
+  type StatBucket,
+  type UserTournamentEntry,
+  fetchColorStats,
+  fetchHistory,
+  fetchModeStats,
+  fetchOpponents,
+  fetchSetStats,
+  fetchStats,
+  fetchTopCards,
+  fetchTournamentHistory,
+  listDecks,
+} from '@/api/account'
 import { LoginModal } from '@/components/auth/LoginModal'
+import { colorLabel } from '@/components/admin/statFormat'
 import { useAuthStore } from '@/store/authStore'
 
 export function ProfilePage() {
@@ -21,6 +40,13 @@ export function ProfilePage() {
 
   const [stats, setStats] = useState<AccountStats | null>(null)
   const [decks, setDecks] = useState<DeckSummary[]>([])
+  const [colors, setColors] = useState<StatBucket[]>([])
+  const [sets, setSets] = useState<StatBucket[]>([])
+  const [modes, setModes] = useState<StatBucket[]>([])
+  const [opponents, setOpponents] = useState<HeadToHead[]>([])
+  const [history, setHistory] = useState<GameHistoryEntry[]>([])
+  const [topCards, setTopCards] = useState<CardStat[]>([])
+  const [tournaments, setTournaments] = useState<UserTournamentEntry[]>([])
   const [loginOpen, setLoginOpen] = useState(false)
 
   const [editingName, setEditingName] = useState(false)
@@ -36,6 +62,13 @@ export function ProfilePage() {
     if (status !== 'authenticated') return
     void fetchStats().then(setStats).catch(() => setStats(null))
     void listDecks().then(setDecks).catch(() => setDecks([]))
+    void fetchColorStats().then(setColors).catch(() => setColors([]))
+    void fetchSetStats().then(setSets).catch(() => setSets([]))
+    void fetchModeStats().then(setModes).catch(() => setModes([]))
+    void fetchOpponents().then(setOpponents).catch(() => setOpponents([]))
+    void fetchHistory(25).then(setHistory).catch(() => setHistory([]))
+    void fetchTopCards(20).then(setTopCards).catch(() => setTopCards([]))
+    void fetchTournamentHistory(15).then(setTournaments).catch(() => setTournaments([]))
   }, [status])
 
   const startEditName = () => {
@@ -126,6 +159,92 @@ export function ProfilePage() {
             </span>
             <span style={styles.deckManagerArrow}>Open deck browser →</span>
           </button>
+
+          {colors.length > 0 && (
+            <Section title="Colors you play">
+              <ResponsiveContainer width="100%" height={Math.max(120, colors.length * 30)}>
+                <BarChart
+                  data={colors.map((c) => ({ label: colorLabel(c.label), count: c.count }))}
+                  layout="vertical"
+                  margin={{ top: 4, right: 16, bottom: 4, left: 8 }}
+                >
+                  <XAxis type="number" stroke="#666" fontSize={11} allowDecimals={false} />
+                  <YAxis type="category" dataKey="label" stroke="#999" fontSize={11} width={90} />
+                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#ffffff10' }} />
+                  <Bar dataKey="count" fill="#5b6ee1" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Section>
+          )}
+
+          {sets.length > 0 && (
+            <Section title="Sets you play">
+              <ChipList items={sets.map((sb) => `${sb.label} · ${sb.count}`)} />
+            </Section>
+          )}
+
+          {modes.length > 0 && (
+            <Section title="Game modes">
+              <ChipList items={modes.map((m) => `${prettyMode(m.label)} · ${m.count}`)} />
+            </Section>
+          )}
+
+          {opponents.length > 0 && (
+            <Section title="Head to head">
+              <SimpleTable head={['Opponent', 'W', 'L']}>
+                {opponents.map((o, i) => (
+                  <tr key={`${o.opponent}-${i}`}>
+                    <td style={styles.td}>
+                      {o.opponent}
+                      {o.isAi ? <span style={styles.aiTag}> AI</span> : null}
+                    </td>
+                    <td style={styles.tdNum}>{o.wins}</td>
+                    <td style={styles.tdNum}>{o.losses}</td>
+                  </tr>
+                ))}
+              </SimpleTable>
+            </Section>
+          )}
+
+          {topCards.length > 0 && (
+            <Section title="Most-played cards">
+              <ChipList items={topCards.map((c) => `${c.cardName} · ${c.copies}`)} />
+            </Section>
+          )}
+
+          {tournaments.length > 0 && (
+            <Section title="Tournaments">
+              <SimpleTable head={['Date', 'Tournament', 'Place']}>
+                {tournaments.map((t, i) => (
+                  <tr key={`${t.endedAt}-${i}`}>
+                    <td style={styles.td}>{t.endedAt.slice(0, 10)}</td>
+                    <td style={styles.td}>{t.name ?? '—'}</td>
+                    <td style={styles.tdNum}>
+                      {t.placement}/{t.playerCount}
+                    </td>
+                  </tr>
+                ))}
+              </SimpleTable>
+            </Section>
+          )}
+
+          {history.length > 0 && (
+            <Section title="Recent games">
+              <SimpleTable head={['Date', 'Mode', 'Colors', 'Opponent', 'Result']}>
+                {history.map((g, i) => (
+                  <tr key={`${g.endedAt}-${i}`}>
+                    <td style={styles.td}>{g.endedAt.slice(0, 10)}</td>
+                    <td style={styles.td}>{prettyMode(g.gameMode)}</td>
+                    <td style={styles.td}>{g.colors ? colorLabel(g.colors) : '—'}</td>
+                    <td style={styles.td}>{g.opponents ?? '—'}</td>
+                    <td style={{ ...styles.tdNum, color: g.won ? '#5bd16e' : '#e15b6e' }}>
+                      {g.won ? 'Win' : 'Loss'}
+                    </td>
+                  </tr>
+                ))}
+              </SimpleTable>
+            </Section>
+          )}
         </div>
       </div>
     )
@@ -169,6 +288,64 @@ function Stat({ label, value }: { label: string; value: number | string }) {
   )
 }
 
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={styles.sectionBlock}>
+      <h2 style={styles.section}>{title}</h2>
+      {children}
+    </div>
+  )
+}
+
+function ChipList({ items }: { items: string[] }) {
+  return (
+    <div style={styles.chipRow}>
+      {items.map((it) => (
+        <span key={it} style={styles.chip}>
+          {it}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function SimpleTable({ head, children }: { head: string[]; children: React.ReactNode }) {
+  return (
+    <div style={styles.tableWrap}>
+      <table style={styles.table}>
+        <thead>
+          <tr>
+            {head.map((h, i) => (
+              <th key={h} style={i === 0 ? styles.th : styles.thNum}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>{children}</tbody>
+      </table>
+    </div>
+  )
+}
+
+/** Turn a raw game-mode token (TOURNAMENT / QUICK_GAME / ...) into a readable label. */
+function prettyMode(mode: string | null): string {
+  if (!mode) return '—'
+  return mode
+    .toLowerCase()
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+}
+
+const tooltipStyle: React.CSSProperties = {
+  backgroundColor: '#12121e',
+  border: '1px solid #2a2a3e',
+  borderRadius: 6,
+  color: '#ddd',
+  fontSize: 12,
+}
+
 const styles: Record<string, React.CSSProperties> = {
   wrap: { minHeight: '100vh', backgroundColor: '#0a0a15', padding: '32px 16px' },
   container: { maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 },
@@ -209,7 +386,30 @@ const styles: Record<string, React.CSSProperties> = {
   },
   error: { margin: 0, color: '#ff6b6b', fontSize: 13 },
   muted: { margin: 0, color: '#888', fontSize: 14 },
-  section: { margin: '20px 0 4px', color: '#fff', fontSize: 18 },
+  section: { margin: '0 0 10px', color: '#fff', fontSize: 18 },
+  sectionBlock: {
+    marginTop: 8,
+    backgroundColor: '#14141f',
+    border: '1px solid #2a2a3e',
+    borderRadius: 12,
+    padding: '16px 18px',
+  },
+  chipRow: { display: 'flex', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    backgroundColor: '#1d1d2e',
+    border: '1px solid #2a2a3e',
+    borderRadius: 999,
+    padding: '4px 12px',
+    color: '#cdd',
+    fontSize: 13,
+  },
+  tableWrap: { overflowX: 'auto' },
+  table: { width: '100%', borderCollapse: 'collapse', fontSize: 13 },
+  th: { textAlign: 'left', color: '#888', fontWeight: 600, padding: '6px 8px', borderBottom: '1px solid #2a2a3e' },
+  thNum: { textAlign: 'right', color: '#888', fontWeight: 600, padding: '6px 8px', borderBottom: '1px solid #2a2a3e' },
+  td: { textAlign: 'left', color: '#ccc', padding: '6px 8px', borderBottom: '1px solid #1f1f2e' },
+  tdNum: { textAlign: 'right', color: '#ccc', padding: '6px 8px', borderBottom: '1px solid #1f1f2e' },
+  aiTag: { color: '#888', fontSize: 11 },
   statsRow: { display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' },
   stat: {
     flex: '1 1 120px',

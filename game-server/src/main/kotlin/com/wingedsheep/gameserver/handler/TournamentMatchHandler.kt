@@ -29,7 +29,8 @@ class TournamentMatchHandler(
     private val gamePlayHandler: GamePlayHandler,
     private val gameProperties: GameProperties,
     private val gameRepository: GameRepository,
-    private val aiGameManager: AiGameManager
+    private val aiGameManager: AiGameManager,
+    private val tournamentResultSink: com.wingedsheep.gameserver.stats.TournamentResultSink
 ) {
     private val logger = LoggerFactory.getLogger(TournamentMatchHandler::class.java)
 
@@ -894,6 +895,41 @@ class TournamentMatchHandler(
             if (ws != null && ws.isOpen) {
                 ctx.sender.send(ws, message)
             }
+        }
+
+        // Record the finished tournament for durable stats. No-op unless accounts are enabled, and
+        // only when at least one seat is a human (AI-only / LLM tournaments use a separate path).
+        run {
+            val standings = tournament.getRankedStandings()
+            val name = lobby.setNames.joinToString(" / ") + " " +
+                lobby.format.name.lowercase().replaceFirstChar { it.uppercase() }
+            tournamentResultSink.record(
+                com.wingedsheep.gameserver.stats.RecordedTournament(
+                    lobbyId = lobbyId,
+                    name = name,
+                    format = lobby.format.name,
+                    gameMode = lobby.gameMode.name,
+                    setCodes = lobby.setCodes.joinToString(","),
+                    playerCount = lobby.playerCount,
+                    rounds = tournament.getRoundsForPersistence().size,
+                    gamesPerMatch = lobby.gamesPerMatch,
+                    winnerName = standings.firstOrNull { it.rank == 1 }?.standing?.playerName,
+                    startedAt = null,
+                    endedAt = java.time.Instant.now(),
+                    participants = standings.map { rs ->
+                        val identity = lobby.players[rs.standing.playerId]?.identity
+                        com.wingedsheep.gameserver.stats.RecordedTournamentParticipant(
+                            userId = identity?.userId,
+                            playerName = rs.standing.playerName,
+                            isAi = identity?.isAi == true,
+                            placement = rs.rank,
+                            wins = rs.standing.wins,
+                            losses = rs.standing.losses,
+                            draws = rs.standing.draws,
+                        )
+                    },
+                )
+            )
         }
     }
 

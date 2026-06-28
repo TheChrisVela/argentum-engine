@@ -1,0 +1,108 @@
+package com.wingedsheep.gameserver.controller
+
+import com.wingedsheep.gameserver.config.GameProperties
+import com.wingedsheep.gameserver.stats.GeoIpService
+import com.wingedsheep.gameserver.stats.StatsQueryService
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestHeader
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
+
+/**
+ * Admin-only global stats for the dashboard: totals, games-per-day, mode/color distributions, and an
+ * IP-based geolocation estimate. Auth reuses the same `X-Admin-Password` header as [AdminController].
+ * Mounted only when accounts are enabled (the stats live in Postgres); the geolocation endpoint
+ * resolves raw IPs server-side and returns only aggregated locations — raw IPs never reach the client.
+ */
+@RestController
+@RequestMapping("/api/stats/admin")
+@ConditionalOnProperty(name = ["accounts.enabled"], havingValue = "true")
+class AdminStatsController(
+    private val statsQuery: StatsQueryService,
+    private val geoIp: GeoIpService,
+    private val gameProperties: GameProperties,
+) {
+    /** One resolved location and how many games connected from it. */
+    data class GeoBucket(
+        val country: String?,
+        val countryCode: String?,
+        val region: String?,
+        val city: String?,
+        val games: Long,
+    )
+
+    @GetMapping("/overview")
+    fun overview(@RequestHeader("X-Admin-Password", required = false) password: String?): ResponseEntity<Any> =
+        guard(password) { ResponseEntity.ok(statsQuery.overview()) }
+
+    @GetMapping("/games-per-day")
+    fun gamesPerDay(
+        @RequestHeader("X-Admin-Password", required = false) password: String?,
+        @RequestParam(defaultValue = "30") days: Int,
+    ): ResponseEntity<Any> = guard(password) {
+        ResponseEntity.ok(statsQuery.gamesPerDay(days.coerceIn(1, 365)))
+    }
+
+    @GetMapping("/modes")
+    fun modes(@RequestHeader("X-Admin-Password", required = false) password: String?): ResponseEntity<Any> =
+        guard(password) { ResponseEntity.ok(statsQuery.modeDistribution()) }
+
+    @GetMapping("/colors")
+    fun colors(@RequestHeader("X-Admin-Password", required = false) password: String?): ResponseEntity<Any> =
+        guard(password) { ResponseEntity.ok(statsQuery.colorDistribution()) }
+
+    @GetMapping("/cards")
+    fun cards(
+        @RequestHeader("X-Admin-Password", required = false) password: String?,
+        @RequestParam(defaultValue = "50") limit: Int,
+    ): ResponseEntity<Any> = guard(password) { ResponseEntity.ok(statsQuery.topCards(limit.coerceIn(1, 500))) }
+
+    @GetMapping("/cards/win-rates")
+    fun cardWinRates(
+        @RequestHeader("X-Admin-Password", required = false) password: String?,
+        @RequestParam(defaultValue = "10") minDecks: Int,
+        @RequestParam(defaultValue = "50") limit: Int,
+    ): ResponseEntity<Any> = guard(password) {
+        ResponseEntity.ok(statsQuery.cardWinRates(minDecks.coerceAtLeast(1), limit.coerceIn(1, 500)))
+    }
+
+    @GetMapping("/tournaments")
+    fun tournaments(
+        @RequestHeader("X-Admin-Password", required = false) password: String?,
+        @RequestParam(defaultValue = "50") limit: Int,
+    ): ResponseEntity<Any> = guard(password) { ResponseEntity.ok(statsQuery.recentTournaments(limit.coerceIn(1, 200))) }
+
+    @GetMapping("/geo")
+    fun geo(@RequestHeader("X-Admin-Password", required = false) password: String?): ResponseEntity<Any> =
+        guard(password) {
+            val ipCounts = statsQuery.ipBreakdown()
+            val locations = geoIp.resolve(ipCounts.map { it.ip })
+            // Aggregate game counts by resolved location (raw IPs are dropped here).
+            val byLocation = ipCounts.groupBy { locations[it.ip] }
+                .map { (loc, rows) ->
+                    GeoBucket(
+                        country = loc?.country,
+                        countryCode = loc?.countryCode,
+                        region = loc?.region,
+                        city = loc?.city,
+                        games = rows.sumOf { it.count },
+                    )
+                }
+                .sortedByDescending { it.games }
+            ResponseEntity.ok(byLocation)
+        }
+
+    private fun guard(password: String?, block: () -> ResponseEntity<Any>): ResponseEntity<Any> {
+        val configured = gameProperties.admin.password
+        if (configured.isBlank()) {
+            return ResponseEntity.status(401).body(mapOf("error" to "Admin feature is not configured"))
+        }
+        if (password != configured) {
+            return ResponseEntity.status(401).body(mapOf("error" to "Invalid admin password"))
+        }
+        return block()
+    }
+}

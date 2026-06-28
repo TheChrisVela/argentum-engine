@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ReplayViewer, type GameSummary } from './ReplayViewer'
+import { AdminDashboard } from './AdminDashboard'
 import type { ReplayData } from '@/replay/reconstructSnapshots.ts'
 
 // ============================================================================
 // AdminPage
 // ============================================================================
 
-type View = 'login' | 'replays'
+type View = 'login' | 'replays' | 'dashboard'
 
 export function AdminPage() {
   const [view, setView] = useState<View>('login')
@@ -77,16 +78,54 @@ export function AdminPage() {
     return <LoginView password={password} setPassword={setPassword} onLogin={handleLogin} error={error} loading={loading} />
   }
 
+  if (view === 'dashboard') {
+    return <AdminDashboard password={password} onBack={() => setView('replays')} />
+  }
+
   return (
-    <ReplayViewer
-      fetchGames={fetchGames}
-      fetchReplay={fetchReplay}
-      onBack={() => {
-        sessionStorage.removeItem('adminPassword')
-        setView('login')
-      }}
-    />
+    <>
+      <div style={navStyles.bar}>
+        <span style={navStyles.tabActive}>Replays</span>
+        <button type="button" style={navStyles.tab} onClick={() => setView('dashboard')}>
+          Dashboard
+        </button>
+      </div>
+      <ReplayViewer
+        fetchGames={fetchGames}
+        fetchReplay={fetchReplay}
+        onBack={() => {
+          sessionStorage.removeItem('adminPassword')
+          setView('login')
+        }}
+      />
+    </>
   )
+}
+
+const navStyles: Record<string, React.CSSProperties> = {
+  bar: {
+    display: 'flex',
+    gap: 8,
+    padding: '8px 16px',
+    backgroundColor: '#0a0a12',
+    borderBottom: '1px solid #1a1a2e',
+  },
+  tabActive: {
+    padding: '6px 12px',
+    borderRadius: 6,
+    backgroundColor: '#1a1a2e',
+    color: '#fff',
+    fontSize: 13,
+  },
+  tab: {
+    padding: '6px 12px',
+    borderRadius: 6,
+    backgroundColor: 'transparent',
+    color: '#8b9bff',
+    border: '1px solid #2a2a3e',
+    cursor: 'pointer',
+    fontSize: 13,
+  },
 }
 
 // ============================================================================

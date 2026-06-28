@@ -30,3 +30,5 @@ interface MatchResultRepository : CrudRepository<MatchResultRow, Long> {
     @Query("SELECT count(*) FROM match_participants WHERE user_id = :userId AND won = true")
     fun countWinsForUser(@Param("userId") userId: Long): Long
 }
+
+interface TournamentRepository : CrudRepository<TournamentRow, Long>
