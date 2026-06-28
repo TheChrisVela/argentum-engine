@@ -209,7 +209,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [ ] Katara, the Fearless
 - [x] Knowledge Seeker
 - [ ] Koh, the Face Stealer
-- [ ] Kyoshi Battle Fan
+- [x] Kyoshi Battle Fan
 - [ ] Kyoshi Island Plaza
 - [x] Kyoshi Village
 - [x] Kyoshi Warriors
