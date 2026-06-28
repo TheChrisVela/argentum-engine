@@ -154,6 +154,7 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
         name: 'Elves',
         colors: ['G', 'W'],
         creatureTypes: ['Elf'],
+        keyCard: 'Wirewood Channeler',
         description: 'Elf lords that tap to pump make every Elf a threat. Amplify and provoke create an engine of growth that overwhelms with sheer numbers.',
       },
     ],
@@ -192,6 +193,7 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
       {
         name: 'Ramp',
         colors: ['U', 'G'],
+        keyCard: 'Root Elemental',
         description: 'Ramp into large green creatures, then leverage their high mana cost for powerful draw spells. Bury opponents in card advantage.',
       },
     ],
@@ -282,28 +284,33 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
       {
         name: 'Abzan',
         colors: ['W', 'B', 'G'],
+        keyCard: 'Felothar, Dawn of the Abzan',
         description: 'Endure pads your board with +1/+1 counters or Spirit tokens. A resilient counters-matter midrange that grows wider and taller every turn and refuses to stay down.',
       },
       {
         name: 'Jeskai',
         colors: ['U', 'R', 'W'],
+        keyCard: 'Narset, Jeskai Waymaster',
         description: 'Cast your second spell each turn to trigger flurry, turning a steady stream of cheap instants and sorceries into damage, tokens, and card advantage. A snowballing tempo deck.',
       },
       {
         name: 'Sultai',
         colors: ['B', 'G', 'U'],
+        keyCard: 'Kotis, the Fangkeeper',
         description: 'Fill your graveyard, then renew creatures from it to deal out +1/+1 counters and refill your hand. A grindy graveyard-value midrange that wins the long game.',
       },
       {
         name: 'Mardu',
         colors: ['R', 'W', 'B'],
         creatureTypes: ['Warrior'],
+        keyCard: "Zurgo, Thunder's Decree",
         description: 'Mobilize creates temporary Warrior tokens every time you attack. Go wide, swing hard, and back the assault with removal to push through the last points of damage.',
       },
       {
         name: 'Temur',
         colors: ['G', 'U', 'R'],
         creatureTypes: ['Dragon'],
+        keyCard: 'Eshki Dragonclaw',
         description: "Behold a Dragon to unlock discounts and bonuses, then ramp into the format's biggest fliers. A ferocious ramp-and-Dragons strategy.",
       },
     ],
@@ -337,6 +344,7 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
         name: 'Lizards',
         colors: ['B', 'R'],
         creatureTypes: ['Lizard'],
+        keyCard: 'Gev, Scaled Scorch',
         description: 'Aggressive deck that rewards dealing damage to opponents and forcing life loss. Creatures gain bonuses when opponents lose life, combining relentless pressure with black removal.',
       },
       {
@@ -350,6 +358,7 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
         name: 'Rabbits',
         colors: ['G', 'W'],
         creatureTypes: ['Rabbit'],
+        keyCard: 'Finneas, Ace Archer',
         description: 'Flood the board with Rabbit tokens, then use mass pump and anthem effects to swing for lethal all at once. One of the most popular and powerful archetypes in the format.',
       },
     ],
@@ -403,32 +412,38 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
       {
         name: 'Second Spell',
         colors: ['W', 'U'],
+        keyCard: 'Space-Time Anomaly',
         description: 'Cast two spells in a single turn to fire off a stream of payoffs. Cheap interaction and artifacts keep the spells flowing while flyers and tokens reward every double-spell turn. A consistent tempo-value deck.',
       },
       {
         name: 'Sacrifice',
         colors: ['W', 'B'],
+        keyCard: 'Syr Vondam, Sunstar Exemplar',
         description: 'Field a wide board of efficient creatures and feed them to sacrifice payoffs. Warp lets your threats land early and return later, fueling drain, removal, and relentless pressure.',
       },
       {
         name: 'Spacecraft',
         colors: ['W', 'R'],
         creatureTypes: ['Spacecraft'],
+        keyCard: 'Sami, Wildcat Captain',
         description: 'Tap your creatures to station up Spacecraft into enormous artifact threats, then back the assault with aggressive bodies. Go fast on the ground while your ships charge toward liftoff.',
       },
       {
         name: 'Lander Ramp',
         colors: ['U', 'G'],
+        keyCard: 'Genemorph Imago',
         description: "Crack Lander tokens for mana and fixing, ramping into the format's biggest threats. The premier two-for-one ramp deck that out-resources the table and splashes bombs.",
       },
       {
         name: 'Void',
         colors: ['B', 'R'],
+        keyCard: 'Mutinous Massacre',
         description: 'Sacrifice your own creatures to switch on void payoffs, turning every permanent that dies into value. A grindy sacrifice-aggro deck that controls the board while bleeding the opponent.',
       },
       {
         name: 'Counters',
         colors: ['G', 'W'],
+        keyCard: 'Dyadrine, Synthesis Amalgam',
         description: "Take the board early with cheap creatures and pile on +1/+1 counters. Station synergies and counter payoffs build a sticky, go-tall-and-wide deck that's hard to climb back against.",
       },
     ],
@@ -440,6 +455,7 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
       {
         name: 'Flash Plot',
         colors: ['W', 'U'],
+        keyCard: 'Jem Lightfoote, Sky Explorer',
         description: "Plot cards on your turn, then deploy flash creatures and tricks on the opponent's. A tempo deck that always keeps mana up and threatens free spells from exile.",
       },
       {
@@ -458,6 +474,7 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
         name: 'Mercenaries',
         colors: ['R', 'W'],
         creatureTypes: ['Mercenary'],
+        keyCard: 'Taii Wakeen, Perfect Shot',
         description: 'Go wide with Mercenary tokens and aggressive bodies, then convert the swarm to damage with go-wide payoffs and mass pump. A fast, token-fueled aggro deck.',
       },
       {
@@ -470,6 +487,7 @@ const SET_SYNERGIES: Record<string, SetSynergies> = {
         name: 'Mounts',
         colors: ['G', 'W'],
         creatureTypes: ['Mount'],
+        keyCard: 'Miriam, Herd Whisperer',
         description: 'Saddle your Mounts to unlock powerful attack triggers, backed by removal like Throw from the Saddle. The format\'s premier midrange deck, going wide and tall at once.',
       },
     ],
@@ -976,7 +994,7 @@ function ArchetypeCard({
         position: 'relative',
         borderRadius: 10,
         overflow: 'hidden',
-        minHeight: 120,
+        minHeight: 148,
         border: `1px solid ${hovered && clickable ? 'rgba(124, 58, 237, 0.65)' : borderColor}`,
         boxShadow: hovered
           ? '0 12px 28px rgba(0, 0, 0, 0.55)'
@@ -1037,7 +1055,7 @@ function ArchetypeCard({
         style={{
           position: 'relative',
           zIndex: 2,
-          minHeight: 120,
+          minHeight: 148,
           boxSizing: 'border-box',
           padding: '13px 16px',
           display: 'flex',
