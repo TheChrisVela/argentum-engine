@@ -1,5 +1,6 @@
 package com.wingedsheep.gameserver.controller
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.wingedsheep.gameserver.auth.AdminAuthService
 import com.wingedsheep.gameserver.auth.UserAdminService
 import com.wingedsheep.gameserver.persistence.MatchResultRepository
@@ -53,7 +54,12 @@ class AdminUsersController(
         val recentGames: List<GameHistoryEntry>,
     )
 
-    data class SetAdminBody(val isAdmin: Boolean)
+    /**
+     * `@JsonProperty` pins the wire name to `isAdmin`. Without it, Jackson treats the `is`-prefixed
+     * Kotlin property as the getter for a property named `admin`, so the JSON key `isAdmin` the client
+     * sends no longer maps to the constructor parameter and deserialization fails with 400.
+     */
+    data class SetAdminBody(@JsonProperty("isAdmin") val isAdmin: Boolean)
 
     @GetMapping
     fun list(
