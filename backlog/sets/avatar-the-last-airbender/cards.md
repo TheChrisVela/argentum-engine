@@ -233,7 +233,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [x] Mountain
 - [x] North Pole Gates
 - [ ] North Pole Patrol
-- [ ] Northern Air Temple
+- [x] Northern Air Temple
 - [ ] Obsessive Pursuit
 - [x] Octopus Form
 - [x] Omashu City
