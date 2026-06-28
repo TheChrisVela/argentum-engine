@@ -282,7 +282,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [x] Sold Out
 - [x] Solstice Revelations
 - [x] South Pole Voyager
-- [ ] Southern Air Temple
+- [x] Southern Air Temple
 - [ ] Sozin's Comet
 - [x] Sparring Dummy
 - [ ] Spirit Water Revival
