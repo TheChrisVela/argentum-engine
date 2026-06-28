@@ -196,7 +196,14 @@ data class ManaSolution(
      * when the cost has no X restriction. The cast/ability payment path adds this to the
      * mana-spent-on-X accumulator that backs `DynamicAmount.ManaSpentOnX`.
      */
-    val xRestrictedManaSpent: Map<Color, Int> = emptyMap()
+    val xRestrictedManaSpent: Map<Color, Int> = emptyMap(),
+    /**
+     * Per-color count of genuinely-extra aura bonus mana (Shimmerwilds Growth, Fertile Ground, …)
+     * the solver consumed to pay colored/hybrid pips or generic. This mana is NOT in [manaProduced]
+     * (which only tracks the printed mana of tapped sources), so the cast/ability payment path must
+     * add it to the per-color mana-spent tally that backs `Conditions.ManaSpentToCastIncludes`.
+     */
+    val bonusManaSpentByColor: Map<Color, Int> = emptyMap()
 )
 
 /**
@@ -220,6 +227,15 @@ data class BonusManaEntry(
      * a colored pip; [color] is an unused placeholder and the entry floats back as colorless.
      */
     val colorless: Boolean = false,
+    /**
+     * True when this entry is genuinely-extra mana from an aura tap-bonus (Shimmerwilds Growth,
+     * Fertile Ground, Wild Growth, …) that is NOT already reflected in [ManaSolution.manaProduced].
+     * Consuming such an entry to pay a pip therefore contributes its color to the mana-spent tally
+     * (so "if {B}{B} was spent" gates like Deceit's see the bonus black mana). It is false for
+     * multi-mana excess (e.g. a 3-green source), whose full amount the solver already records in
+     * [manaProduced] — counting that again would double the spend.
+     */
+    val countsTowardSpent: Boolean = false,
 )
 
 /**
@@ -342,6 +358,11 @@ class ManaSolver(
         // mana retains its restriction when it lands in the player's pool.
         val bonusManaPool = mutableListOf<BonusManaEntry>()
 
+        // Per-color tally of aura bonus mana (entries flagged [BonusManaEntry.countsTowardSpent])
+        // actually spent on the cost. Reported via [ManaSolution.bonusManaSpentByColor] so callers
+        // fold it into the mana-spent-to-cast tally — see [BonusManaEntry.countsTowardSpent].
+        val bonusManaSpentByColor = mutableMapOf<Color, Int>()
+
         // Helper to update available counts when a source is used
         fun useSource(source: ManaSource, colorUsed: Color?) {
             usedSources.add(source)
@@ -376,6 +397,8 @@ class ManaSolver(
                         amount = source.bonusManaPerTap,
                         restriction = null,
                         anyColor = source.bonusManaIsAnyColor,
+                        // Genuinely-extra mana, not in `manaProduced` — count it when spent.
+                        countsTowardSpent = true,
                     )
                 )
             }
@@ -397,6 +420,12 @@ class ManaSolver(
             if (idx < 0) return false
             val entry = bonusManaPool[idx]
             bonusManaPool[idx] = entry.copy(amount = entry.amount - 1)
+            // A colored pip paid from genuinely-extra aura bonus mana contributes its color to the
+            // mana-spent tally. The mana produced is exactly `color` (a fixed-color entry matches it;
+            // an any-color entry produces the demanded color).
+            if (entry.countsTowardSpent) {
+                bonusManaSpentByColor[color] = (bonusManaSpentByColor[color] ?: 0) + 1
+            }
             return true
         }
 
@@ -407,6 +436,12 @@ class ManaSolver(
             if (idx < 0) return false
             val entry = bonusManaPool[idx]
             bonusManaPool[idx] = entry.copy(amount = entry.amount - 1)
+            // Generic paid from extra aura bonus mana counts its fixed color (mirroring
+            // ManaPool.payPartial, where colored mana spent on generic still tracks as that color).
+            // An any-color bonus has no color committed at solve time, so it stays uncounted here.
+            if (entry.countsTowardSpent && !entry.anyColor && !entry.colorless) {
+                bonusManaSpentByColor[entry.color] = (bonusManaSpentByColor[entry.color] ?: 0) + 1
+            }
             return true
         }
 
@@ -454,6 +489,8 @@ class ManaSolver(
                     amount = source.bonusManaPerTap,
                     restriction = null,
                     anyColor = source.bonusManaIsAnyColor,
+                    // Genuinely-extra mana, not in `manaProduced` — count it when spent.
+                    countsTowardSpent = true,
                 )
             )
             return spendBonusMana(color)
@@ -687,7 +724,8 @@ class ManaSolver(
             manaProduced,
             bonusManaPool.filter { it.amount > 0 },
             consumedRiders,
-            xRestrictedManaSpent = xRestrictedSpent
+            xRestrictedManaSpent = xRestrictedSpent,
+            bonusManaSpentByColor = bonusManaSpentByColor
         )
     }
 

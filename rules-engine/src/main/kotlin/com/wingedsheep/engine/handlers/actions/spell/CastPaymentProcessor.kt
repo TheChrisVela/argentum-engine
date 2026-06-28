@@ -374,6 +374,19 @@ class CastPaymentProcessor(
                 }
             }
 
+            // Aura bonus mana (Shimmerwilds Growth, Fertile Ground, …) spent on the cost is not in
+            // `manaProduced`; fold it in so "if {B}{B} was spent" gates (Deceit) see it. See
+            // [ManaSolution.bonusManaSpentByColor].
+            for ((color, amount) in solution.bonusManaSpentByColor) {
+                when (color) {
+                    Color.WHITE -> whiteSpent += amount
+                    Color.BLUE -> blueSpent += amount
+                    Color.BLACK -> blackSpent += amount
+                    Color.RED -> redSpent += amount
+                    Color.GREEN -> greenSpent += amount
+                }
+            }
+
             // Add only the bonus mana that wasn't consumed by the solver to the floating pool.
             // Bonus mana from a restricted ability keeps its restriction so the player can't
             // launder e.g. Steelswarm Operator's artifact-only mana into unrestricted blue.
