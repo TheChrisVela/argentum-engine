@@ -3135,6 +3135,42 @@
     ]
 }
 
+// Forecasting Fortune Teller
+{
+    "name": "Forecasting Fortune Teller",
+    "manaCost": "{1}{U}",
+    "typeLine": "Creature — Human Advisor Ally",
+    "oracleText": "When this creature enters, create a Clue token. (It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "creatureStats": {
+        "power": 1,
+        "toughness": 3
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "ZoneChangeEvent",
+                    "to": "Battlefield"
+                },
+                "effect": {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "51",
+        "artist": "Hisashi Momose",
+        "flavorText": "Many believe that clouds tell the future, but they do not shape it.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/2/023e7ad4-6af0-4f29-a716-27a313974227.jpg?1764120239"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Geyser Leaper
 {
     "name": "Geyser Leaper",

@@ -169,7 +169,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [ ] Foggy Swamp Spirit Keeper
 - [ ] Foggy Swamp Vinebender
 - [ ] Foggy Swamp Visions
-- [ ] Forecasting Fortune Teller
+- [x] Forecasting Fortune Teller
 - [x] Forest
 - [ ] Gather the White Lotus
 - [x] Geyser Leaper
