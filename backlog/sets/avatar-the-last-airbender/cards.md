@@ -94,7 +94,7 @@ up by Airbend, not Firebending).
 - [x] Airbending Lesson
 - [x] Airship Engine Room
 - [x] Allies at Last
-- [ ] Appa, Loyal Sky Bison
+- [x] Appa, Loyal Sky Bison
 - [ ] Appa, Steadfast Guardian
 - [ ] Avatar Aang
 - [x] Avatar Destiny
