@@ -5177,6 +5177,66 @@
     ]
 }
 
+// Fire Nation Attacks
+{
+    "name": "Fire Nation Attacks",
+    "manaCost": "{4}{R}",
+    "typeLine": "Instant",
+    "oracleText": "Create two 2/2 red Soldier creature tokens with firebending 1. (Whenever a creature with firebending 1 attacks, add {R}. This mana lasts until end of combat.)\nFlashback {8}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+    "keywords": [
+        "FLASHBACK"
+    ],
+    "keywordAbilities": [
+        {
+            "type": "Flashback",
+            "cost": "{8}{R}"
+        }
+    ],
+    "script": {
+        "spellEffect": {
+            "type": "CreateToken",
+            "count": {
+                "type": "Fixed",
+                "amount": 2
+            },
+            "power": 2,
+            "toughness": 2,
+            "colors": [
+                "RED"
+            ],
+            "creatureTypes": [
+                "Soldier"
+            ],
+            "keywords": [
+                "FIREBENDING"
+            ],
+            "imageUri": "https://cards.scryfall.io/normal/front/2/d/2de43b03-9ac5-4292-ab29-2dc6210ef3d9.jpg?1777982247",
+            "triggeredAbilities": [
+                {
+                    "id": "ability_1",
+                    "trigger": "AttackEvent",
+                    "effect": {
+                        "type": "AddMana",
+                        "color": "RED",
+                        "expiry": "END_OF_COMBAT"
+                    },
+                    "descriptionOverride": "Whenever this creature attacks, add {R}. Until end of combat, you don't lose this mana as steps and phases end."
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "133",
+        "rarity": "UNCOMMON",
+        "artist": "Claudiu-Antoniu Magherusan",
+        "flavorText": "Everything changed.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/c/9cc10845-8989-46ca-a57a-fd728fca0729.jpg?1764120914"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Fire Nation Engineer
 {
     "name": "Fire Nation Engineer",

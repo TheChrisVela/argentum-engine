@@ -150,7 +150,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [ ] Fated Firepower
 - [x] Fire Lord Azula
 - [x] Fire Lord Zuko
-- [ ] Fire Nation Attacks
+- [x] Fire Nation Attacks
 - [ ] Fire Nation Cadets
 - [x] Fire Nation Engineer
 - [ ] Fire Nation Palace
