@@ -15320,6 +15320,55 @@
     ]
 }
 
+// Zuko's Exile
+{
+    "name": "Zuko's Exile",
+    "manaCost": "{5}",
+    "typeLine": "Instant — Lesson",
+    "oracleText": "Exile target artifact, creature, or enchantment. Its controller creates a Clue token. (It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "SelectTarget",
+                    "requirement": {
+                        "type": "TargetObject",
+                        "filter": {
+                            "baseFilter": "artifact|creature|enchantment"
+                        },
+                        "id": "target artifact, creature, or enchantment"
+                    },
+                    "storeAs": "exileTarget"
+                },
+                {
+                    "type": "MoveToZone",
+                    "target": {
+                        "type": "PipelineTarget",
+                        "collectionName": "exileTarget"
+                    },
+                    "destination": "Exile"
+                },
+                {
+                    "type": "CreatePredefinedToken",
+                    "tokenType": "Clue",
+                    "controller": {
+                        "type": "ControllerOfPipelineTarget",
+                        "collectionName": "exileTarget"
+                    }
+                }
+            ]
+        }
+    },
+    "metadata": {
+        "collectorNumber": "3",
+        "artist": "Eiji Kaneda",
+        "flavorText": "As punishment for his disobedience, Zuko was banished and sent to capture the Avatar. Only then could he return home with his honor.",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/0/9090b055-3406-4fed-a8c6-3f6353a9600e.jpg?1778833154"
+    },
+    "colorIdentityOverride": []
+}
+
 // Zuko, Conflicted
 {
     "name": "Zuko, Conflicted",
