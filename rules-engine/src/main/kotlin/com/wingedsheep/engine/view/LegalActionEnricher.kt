@@ -57,6 +57,7 @@ class LegalActionEnricher(
             validConvokeCreatures = action.convokeCreatures?.map { it.toDto() },
             hasWaterbend = action.hasWaterbend,
             validWaterbendPermanents = action.waterbendPermanents?.map { it.toDto() },
+            waterbendAmount = action.waterbendAmount,
             hasDelve = action.hasDelve,
             validDelveCards = action.delveCards?.map { it.toDto() },
             minDelveNeeded = action.minDelveNeeded,

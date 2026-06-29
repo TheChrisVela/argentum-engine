@@ -620,12 +620,24 @@ export function enterPhase(
     }
 
     case 'waterbend': {
+      // Fold {X} -> the chosen X so the HUD shows the real generic the taps reduce. xValue is
+      // set by the preceding xSelection phase (0 if none). "waterbend {X}" spells carry an {X}.
+      const xValue = action.type === 'CastSpell' ? action.xValue ?? 0 : 0
+      const manaCost = (actionInfo.manaCostString ?? '').replace(/\{X\}/g, `{${xValue}}`)
+      // Tap cap N (one per generic in the waterbend {N}): an explicit spell-level amount; else
+      // the chosen X for "waterbend {X}"; else (ability waterbend) the generic mana in the cost.
+      let genericInCost = 0
+      const genericRe = /\{(\d+)\}/g
+      let gm: RegExpExecArray | null
+      while ((gm = genericRe.exec(manaCost)) !== null) genericInCost += parseInt(gm[1]!, 10)
+      const maxTaps = actionInfo.waterbendAmount ?? (actionInfo.hasXCost ? xValue : genericInCost)
       store.startWaterbendSelection({
         actionInfo,
         cardName: actionInfo.description.replace('Cast ', '').replace('Activate ', ''),
-        manaCost: actionInfo.manaCostString ?? '',
+        manaCost,
         selectedPermanents: [],
         validPermanents: actionInfo.validWaterbendPermanents!,
+        maxTaps,
       })
       break
     }

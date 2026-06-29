@@ -827,6 +827,12 @@ export interface LegalActionInfo {
   readonly hasWaterbend?: boolean
   /** Artifacts/creatures that can be tapped to help pay a Waterbend cost (each pays {1} generic) */
   readonly validWaterbendPermanents?: readonly WaterbendPermanentInfo[]
+  /**
+   * Tap cap for a spell-level waterbend cost — at most this many permanents may be tapped (one
+   * per generic in the waterbend {N}). Absent for an ability waterbend (cap = the cost's generic)
+   * and for the "waterbend {X}" shape (cap = the chosen xValue).
+   */
+  readonly waterbendAmount?: number
   /** Whether this spell has Delve */
   readonly hasDelve?: boolean
   /** Cards in graveyard that can be exiled for Delve */

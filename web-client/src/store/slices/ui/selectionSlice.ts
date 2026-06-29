@@ -291,8 +291,12 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
   toggleWaterbendPermanent: (entityId) => {
     set((state) => {
       if (!state.waterbendSelectionState) return state
-      const { selectedPermanents } = state.waterbendSelectionState
-      const newSelected = selectedPermanents.includes(entityId)
+      const { selectedPermanents, maxTaps } = state.waterbendSelectionState
+      const alreadySelected = selectedPermanents.includes(entityId)
+      // Can't tap more permanents than the generic mana in the waterbend cost (CR). Ignore an
+      // attempt to select beyond the cap; deselecting is always allowed.
+      if (!alreadySelected && selectedPermanents.length >= maxTaps) return state
+      const newSelected = alreadySelected
         ? selectedPermanents.filter((id) => id !== entityId)
         : [...selectedPermanents, entityId]
       return {

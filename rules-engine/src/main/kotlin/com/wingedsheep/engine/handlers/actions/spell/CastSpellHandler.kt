@@ -606,7 +606,10 @@ class CastSpellHandler(
         // Validate payment. For an X-cost Harmonize cast where a creature is tapped, the
         // creature's power reduces generic mana — and {X} is generic (TDM release notes) —
         // so the leftover reduction beyond any printed generic comes off the X mana paid.
-        val paymentXValue = harmonizePaymentXValue(state, action, cardDef, effectiveCost)
+        // For a "waterbend {X}" spell the X is already materialized as generic in the cost
+        // (and reduced by the waterbend taps), so it must NOT also be charged as {X} mana.
+        val paymentXValue = if (cardDef?.script?.spellWaterbend?.isX == true) 0
+            else harmonizePaymentXValue(state, action, cardDef, effectiveCost)
         val paymentError = validatePayment(state, action, costAfterWaterbend, paymentXValue)
         if (paymentError != null) {
             return paymentError
@@ -2337,7 +2340,11 @@ class CastSpellHandler(
         // computed from the pre-reduction cost so the printed-generic split matches what
         // AlternativePaymentHandler.reduceGeneric does below. action.xValue (the effect's X)
         // is untouched.
-        val paymentXValue = harmonizePaymentXValue(currentState, action, cardDef, effectiveCost)
+        // For a "waterbend {X}" spell the X is materialized as generic in the cost and paid by the
+        // waterbend taps, so it isn't charged again as {X} mana here (action.xValue still feeds the
+        // resolving effect via the stack).
+        val paymentXValue = if (cardDef?.script?.spellWaterbend?.isX == true) 0
+            else harmonizePaymentXValue(currentState, action, cardDef, effectiveCost)
 
         // Apply alternative payment (Delve/Convoke/Harmonize)
         if (action.alternativePayment != null && !action.alternativePayment.isEmpty && cardDef != null) {

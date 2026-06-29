@@ -382,17 +382,22 @@ class CastSpellEnumerator : ActionEnumerator {
                 effectiveCost = effectiveCost + ManaCost.parse(exileOrPayCost.alternativeManaCost)
             }
 
-            // Spell-level waterbend additional cost (Avatar: The Last Airbender). The {X} shape
-            // (Crashing Wave, Foggy Swamp Visions) needs a cast-time X prompt not yet wired here, so
-            // only fixed-amount waterbend is surfaced. A *mandatory* waterbend amount is always part
-            // of the cost; the tap-to-help reduction is reflected in the affordability check below.
-            val spellWaterbend = cardDef.script.spellWaterbend?.takeUnless { it.isX }
+            // Spell-level waterbend additional cost (Avatar: The Last Airbender). A *mandatory*
+            // waterbend amount is always part of the cost: a fixed {N}, or a literal {X} for the
+            // "waterbend {X}" shape (Crashing Wave, Foggy Swamp Visions) — the spell carries no
+            // printed {X}, so the waterbend cost is what makes it X-carrying. The tap-to-help
+            // reduction is reflected in the affordability check below (and capped at N client-side).
+            val spellWaterbend = cardDef.script.spellWaterbend
             val mandatoryWaterbend = spellWaterbend != null && !spellWaterbend.optional
             val waterbendPermanents = if (spellWaterbend != null) {
                 context.costUtils.findWaterbendPermanents(state, playerId)
             } else emptyList()
             if (mandatoryWaterbend) {
-                effectiveCost = effectiveCost + ManaCost.parse("{${spellWaterbend!!.amount}}")
+                effectiveCost = effectiveCost + if (spellWaterbend!!.isX) {
+                    ManaCost.parse("{X}")
+                } else {
+                    ManaCost.parse("{${spellWaterbend.amount}}")
+                }
             }
 
             // Check mana affordability (including Convoke/Delve if available).
@@ -584,16 +589,20 @@ class CastSpellEnumerator : ActionEnumerator {
                 Triple(exileManaCostString, exileAutoTapPreview, exileCostInfo)
             } else null
 
-            // Calculate X cost info if the spell has X in its cost
+            // Calculate X cost info if the spell has X in its cost (printed, or the waterbend {X}
+            // folded in above).
             val hasXCost = effectiveCost.hasX
             val maxAffordableX: Int? = if (hasXCost) {
                 val availableSources = context.manaSolver.getAvailableManaCount(state, playerId, precomputedSources = cachedSources)
                 // Each delve card pays for one generic mana, so it raises the
                 // X ceiling exactly like an additional mana source would.
                 val delveAvailable = if (hasDelve && delveCards != null) delveCards.size else 0
+                // For waterbend {X}, each tappable artifact/creature pays {1} of the X generic, so
+                // it raises the X ceiling like an extra mana source.
+                val waterbendAvailable = if (spellWaterbend?.isX == true) waterbendPermanents.size else 0
                 val fixedCost = effectiveCost.cmc  // X contributes 0 to CMC
                 val xSymbolCount = effectiveCost.xCount.coerceAtLeast(1)
-                ((availableSources + delveAvailable - fixedCost) / xSymbolCount).coerceAtLeast(0)
+                ((availableSources + delveAvailable + waterbendAvailable - fixedCost) / xSymbolCount).coerceAtLeast(0)
             } else null
 
             // Always include mana cost string for cast actions
@@ -1408,8 +1417,10 @@ class CastSpellEnumerator : ActionEnumerator {
      * folded into the action's cost and affordability upstream) just gains the tap metadata and the
      * `wasWaterbendPaid` flag. An *optional* "you may waterbend {N}" keeps its no-waterbend action
      * and gains a second, paid variant costing {N} more — offered only when affordable with mana
-     * plus up to {N} taps. The `{X}` shape (Crashing Wave, Foggy Swamp Visions) needs a cast-time X
-     * prompt and is not surfaced here yet.
+     * plus up to {N} taps. The `{X}` shape (Crashing Wave, Foggy Swamp Visions) is a *mandatory*
+     * cost whose {X} is already folded into the cast action upstream (so it reads as X-carrying);
+     * here it just gains the tap metadata, with [LegalAction.waterbendAmount] left null so the
+     * client caps taps at the chosen X.
      */
     private fun applySpellWaterbendMetadata(
         context: EnumerationContext,
@@ -1421,18 +1432,22 @@ class CastSpellEnumerator : ActionEnumerator {
             val cs = la.action as? CastSpell
             val wb = if (cs != null && la.actionType == "CastSpell") {
                 val name = state.getEntity(cs.cardId)?.get<CardComponent>()?.name
-                name?.let { context.cardRegistry.getCard(it) }?.script?.spellWaterbend?.takeUnless { it.isX }
+                name?.let { context.cardRegistry.getCard(it) }?.script?.spellWaterbend
             } else null
             if (cs == null || wb == null) {
                 out.add(la)
                 continue
             }
             val perms = context.costUtils.findWaterbendPermanents(state, cs.playerId)
+            // The tap cap N the client enforces: a fixed amount, or null for "waterbend {X}"
+            // (the client uses the chosen xValue).
+            val waterbendCap = if (wb.isX) null else wb.amount
             if (!wb.optional) {
-                // Mandatory: {N} is already in la.manaCostString; attach tap metadata + paid flag.
+                // Mandatory: {N}/{X} is already in la.manaCostString; attach tap metadata + paid flag.
                 out.add(la.copy(
                     hasWaterbend = true,
                     waterbendPermanents = perms,
+                    waterbendAmount = waterbendCap,
                     action = cs.copy(wasWaterbendPaid = true)
                 ))
             } else {
@@ -1451,6 +1466,7 @@ class CastSpellEnumerator : ActionEnumerator {
                     manaCostString = paidCost.toString(),
                     hasWaterbend = true,
                     waterbendPermanents = perms,
+                    waterbendAmount = waterbendCap,
                     action = cs.copy(wasWaterbendPaid = true)
                 ))
             }

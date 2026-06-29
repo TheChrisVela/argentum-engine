@@ -91,6 +91,8 @@ data class LegalActionInfo(
     val validConvokeCreatures: List<ConvokeCreatureInfo>? = null,
     val hasWaterbend: Boolean = false,
     val validWaterbendPermanents: List<WaterbendPermanentInfo>? = null,
+    /** Tap cap for a spell-level waterbend cost; null for ability waterbend or the {X} shape. */
+    val waterbendAmount: Int? = null,
     val hasDelve: Boolean = false,
     val validDelveCards: List<DelveCardInfo>? = null,
     val minDelveNeeded: Int? = null,

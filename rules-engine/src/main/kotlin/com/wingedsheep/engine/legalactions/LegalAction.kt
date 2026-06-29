@@ -81,6 +81,13 @@ data class LegalAction(
     // each paying {1} of the generic mana in the cost.
     val hasWaterbend: Boolean = false,
     val waterbendPermanents: List<WaterbendPermanentData>? = null,
+    /**
+     * For a spell-level waterbend cost, the tap cap N — the number of permanents that may be
+     * tapped (one per generic in the waterbend {N}). Null for an activated-ability waterbend
+     * (whose whole cost is the waterbend cost, so the cap is the cost's generic) and for the
+     * "waterbend {X}" shape (the client caps at the chosen xValue).
+     */
+    val waterbendAmount: Int? = null,
 
     // Harmonize (cast from graveyard; optionally tap one creature to reduce the generic
     // cost by its power). The client may pick at most one of [harmonizeCreatures].

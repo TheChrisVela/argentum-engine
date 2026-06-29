@@ -384,6 +384,12 @@ export interface WaterbendSelectionState {
   selectedPermanents: EntityId[]
   /** All valid artifacts/creatures that can be tapped */
   validPermanents: readonly WaterbendPermanentInfo[]
+  /**
+   * Maximum number of permanents that may be tapped — one per generic in the waterbend {N}
+   * (CR). For a spell-level waterbend this is the waterbend amount (the chosen X for the
+   * "waterbend {X}" shape); for an ability waterbend it's the generic in the cost.
+   */
+  maxTaps: number
 }
 
 /**

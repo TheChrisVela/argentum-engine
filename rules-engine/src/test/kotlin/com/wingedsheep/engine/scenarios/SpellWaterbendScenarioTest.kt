@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.engine.view.LegalActionInfo
 import com.wingedsheep.sdk.scripting.AlternativePaymentChoice
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -67,6 +68,20 @@ class SpellWaterbendScenarioTest : ScenarioTestBase() {
             }
         }
         cardRegistry.register(optional)
+
+        // "waterbend {X}" shape — the spell carries no printed {X}; the waterbend cost is what makes
+        // it X-carrying. X feeds the effect via DynamicAmount.XValue.
+        val variable = card("Tidal Surge X") {
+            manaCost = "{U}"
+            colorIdentity = "U"
+            typeLine = "Sorcery"
+            oracleText = "As an additional cost to cast this spell, waterbend {X}. You gain X life."
+            waterbendCost(isX = true)
+            spell {
+                effect = Effects.GainLife(DynamicAmount.XValue)
+            }
+        }
+        cardRegistry.register(variable)
 
         fun castAction(game: TestGame, predicate: (LegalActionInfo) -> Boolean) =
             game.getLegalActions(1).firstOrNull {
@@ -225,6 +240,64 @@ class SpellWaterbendScenarioTest : ScenarioTestBase() {
                 withClue("both an unpaid and a paid cast variant should be offered") {
                     casts.any { !it.hasWaterbend } shouldBe true
                     casts.any { it.hasWaterbend } shouldBe true
+                }
+            }
+        }
+
+        context("Variable waterbend {X} cost") {
+
+            test("offered as an X-carrying waterbend cast with X bounded by mana plus tappable permanents") {
+                val game = scenario()
+                    .withPlayers("P1", "P2")
+                    .withCardInHand(1, "Tidal Surge X")
+                    .withLandsOnBattlefield(1, "Island", 1)   // base {U}, no mana left for X
+                    .withCardOnBattlefield(1, "Glory Seeker")
+                    .withCardOnBattlefield(1, "Glory Seeker")
+                    .withCardOnBattlefield(1, "Glory Seeker") // 3 tappable -> X can be up to 3
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val action = castAction(game) { it.isAffordable && it.hasWaterbend }
+                withClue("the waterbend {X} spell should be offered as an X-carrying waterbend cast") {
+                    action shouldNotBe null
+                    action!!.hasXCost shouldBe true
+                    // 1 Island pays the base {U}; the 3 tappable permanents each pay {1} of the X.
+                    action.maxAffordableX shouldBe 3
+                }
+            }
+
+            test("X is paid by tapping permanents and feeds the effect") {
+                val game = scenario()
+                    .withPlayers("P1", "P2")
+                    .withCardInHand(1, "Tidal Surge X")
+                    .withLandsOnBattlefield(1, "Island", 1)   // base {U}
+                    .withCardOnBattlefield(1, "Glory Seeker")
+                    .withCardOnBattlefield(1, "Glory Seeker")
+                    .withCardOnBattlefield(1, "Glory Seeker") // tap all 3 to pay waterbend {3}
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val before = game.getLifeTotal(1)
+                val creatures = game.findAllPermanents("Glory Seeker")
+                creatures.size shouldBe 3
+                val action = castAction(game) { it.isAffordable && it.hasWaterbend }
+                action shouldNotBe null
+
+                // Player chooses X = 3 and taps the 3 creatures to pay the waterbend {3}; {U} from the Island.
+                val cast = (action!!.action as CastSpell).copy(
+                    xValue = 3,
+                    alternativePayment = AlternativePaymentChoice(waterbendPermanents = creatures.toSet())
+                )
+                val result = game.execute(cast)
+                withClue("casting waterbend {X=3} by tapping 3 creatures should succeed: ${result.error}") {
+                    result.error shouldBe null
+                }
+                game.resolveStack()
+                withClue("effect uses X: gain 3 life") { game.getLifeTotal(1) shouldBe before + 3 }
+                withClue("all 3 creatures tapped to pay the waterbend {3}") {
+                    creatures.all { game.state.getEntity(it)!!.has<TappedComponent>() } shouldBe true
                 }
             }
         }
