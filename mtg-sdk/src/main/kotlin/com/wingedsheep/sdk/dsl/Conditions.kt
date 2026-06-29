@@ -426,6 +426,14 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.TargetIsCreatureCard(targetIndex)
 
     /**
+     * If the chosen target at [targetIndex] is a spell on the stack (rather than a permanent).
+     * Branches a single "target creature or spell" target — see
+     * [com.wingedsheep.sdk.scripting.conditions.TargetIsSpellOnStack] (Aang, Swift Savior). Resolution-only.
+     */
+    fun TargetIsSpellOnStack(targetIndex: Int = 0): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.TargetIsSpellOnStack(targetIndex)
+
+    /**
      * If the context target at [targetIndex] is a player (not a permanent/spell/card).
      * Used for "any target" effects with a player-only follow-up — e.g. Sonic Shrieker's
      * "If a player is dealt damage this way, they discard a card."

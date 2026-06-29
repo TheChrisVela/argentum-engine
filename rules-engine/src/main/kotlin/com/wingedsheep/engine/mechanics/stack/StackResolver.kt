@@ -2349,7 +2349,9 @@ class StackResolver(
         state: GameState,
         spellId: EntityId,
         grantFreeCast: Boolean,
-        controllerId: EntityId
+        controllerId: EntityId,
+        ownerControls: Boolean = false,
+        fixedAlternativeManaCost: com.wingedsheep.sdk.core.ManaCost? = null
     ): ExecutionResult {
         if (spellId !in state.stack) {
             return ExecutionResult.error(state, "Spell not on stack: $spellId")
@@ -2377,22 +2379,33 @@ class StackResolver(
         val exileZone = ZoneKey(ownerId, Zone.EXILE)
         newState = newState.addToZone(exileZone, spellId)
 
-        // Remove stack components and optionally grant free cast
+        // Remove stack components and optionally grant a recast from exile. The grantee is the
+        // spell's owner for "airbend"-style ownerControls (the spell already sits in the owner's
+        // exile above), otherwise the counter's controller (Kheru Spellsnatcher).
+        val grantee = if (ownerControls) ownerId else controllerId
         newState = newState.updateEntity(spellId) { c ->
             var updated = c.without<SpellOnStackComponent>().without<TargetsComponent>()
             if (grantFreeCast) {
                 updated = updated
-                    .with(PlayWithoutPayingCostComponent(controllerId = controllerId, permanent = true))
+                    .with(PlayWithoutPayingCostComponent(controllerId = grantee, permanent = true))
+            }
+            if (fixedAlternativeManaCost != null) {
+                updated = updated.with(
+                    com.wingedsheep.engine.state.components.identity.PlayWithFixedAlternativeManaCostComponent(
+                        controllerId = grantee,
+                        fixedCost = fixedAlternativeManaCost
+                    )
+                )
             }
             updated
         }
-        if (grantFreeCast) {
+        if (grantFreeCast || fixedAlternativeManaCost != null) {
             val (permId, stateWithPerm) = newState.newEntity()
             newState = stateWithPerm.addMayPlayPermission(
                 com.wingedsheep.engine.state.permissions.MayPlayPermission(
                     id = permId,
                     cardIds = setOf(spellId),
-                    controllerId = controllerId,
+                    controllerId = grantee,
                     permanent = true,
                     timestamp = state.timestamp,
                 )

@@ -78,6 +78,26 @@ data class TargetIsCreatureCard(
     override fun applyTextReplacement(replacer: TextReplacer): Condition = this
 }
 
+/**
+ * Condition: the chosen target at [index] is a **spell on the stack** (a `ChosenTarget.Spell`),
+ * as opposed to a permanent on the battlefield.
+ *
+ * The right test to branch a single "target creature **or spell**" target (Aang, Swift Savior —
+ * "airbend up to one other target creature or spell"): a creature *spell* on the stack would still
+ * satisfy a `Creature` `GameObjectFilter`, so [com.wingedsheep.sdk.dsl.Conditions.TargetMatchesFilter]
+ * can't distinguish it — this checks the target's *zone role* instead. Resolution-only.
+ *
+ * @property index Which context target to test (default: the first target).
+ */
+@SerialName("TargetIsSpellOnStack")
+@Serializable
+data class TargetIsSpellOnStack(
+    val index: Int = 0
+) : Condition {
+    override val description: String = "if the target is a spell"
+    override fun applyTextReplacement(replacer: TextReplacer): Condition = this
+}
+
 // =============================================================================
 // Generic Condition Primitives
 // =============================================================================

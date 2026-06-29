@@ -91,9 +91,16 @@ internal fun BridgeBuilder.manaCountersAndState() {
     // a fixed {2} alternative mana cost. Target-agnostic: the card's TargetRequirement supplies the
     // shape ("up to one", "any number of", "another", "you control"). The IR `AirbendPermanent` action
     // renders as a bare `Effects.Airbend()`; the surrounding Targeted envelope declares the target.
-    // (`AirbendSpell` — the "or spell" stack branch, Aang Swift Savior — is intentionally left blocked.)
     composed("AirbendPermanent", "Effects.Airbend: GatherCards(ChosenTargets) + MoveCollection(EXILE) + GrantMayPlayFromExile(ownerControls, fixedAlternativeManaCost {2})",
         composes = listOf("GatherCards", "MoveCollection", "GrantMayPlayFromExile"))
+
+    // Airbend the spell-on-stack form (Aang, Swift Savior — "airbend … target creature or spell"):
+    // counter the spell to its owner's exile and grant the owner the same fixed-{2} recast, via
+    // CounterDestination.Exile(ownerControls, fixedAlternativeManaCost). The full card pairs this with
+    // a cross-zone "creature or spell" target + a TargetIsSpellOnStack branch; the emitter leaves the
+    // combined shape to scaffold, but the capability is supported, so score it coverable.
+    composed("AirbendSpell", "CounterEffect(Exile(ownerControls, fixedAlternativeManaCost {2})) — counter the spell to owner's exile, owner may recast for {2}",
+        composes = listOf("CounterEffect", "GrantMayPlayFromExile"))
 
     effect("RegeneratePermanent", "Regenerate", UNIVERSAL)
     // "<permanent> becomes prepared" (Secrets of Strixhaven — Leech Collector's trigger). Maps to the

@@ -964,7 +964,7 @@ Atomic effect factories. For library/zone manipulation, prefer the pipelines in 
 
 ### Stack manipulation
 
-- `CounterEffect(target, condition?, destination?)` — counter a spell/ability; optionally send elsewhere.
+- `CounterEffect(target, condition?, destination?)` — counter a spell/ability; optionally send elsewhere. `CounterDestination.Exile(grantFreeCast?, ownerControls?, fixedAlternativeManaCost?)`: `grantFreeCast` lets the counter's *controller* recast for free (Kheru Spellsnatcher); `ownerControls = true` grants the recast to the spell's *owner* instead (the countered spell already lands in the owner's exile); `fixedAlternativeManaCost` makes that recast cost a fixed amount instead of the printed cost — the spell-on-stack form of **Airbend** ("its owner may cast it for {2}…", Aang Swift Savior), reusing `PlayWithFixedAlternativeManaCostComponent`.
   - `target = CounterTarget.Spell` / `Ability` / `SpellOrAbility` — `SpellOrAbility` dispatches at resolution by inspecting whether the stack entity has a `SpellOnStackComponent`. Used by Teferi's Response.
   - `condition = CounterCondition.UnlessPaysMana(cost, onPaid?)` / `UnlessPaysDynamic(amount, onPaid?)` — "unless its controller pays …" with an optional `onPaid: Effect` rider that fires **only** when the spell's controller pays (Divert Disaster's "If they do, you create a Lander token"). The rider executes with the counter's controller as `controllerId`, so "you" in the rider resolves to the caster of the counter. The rider does not fire when the spell is countered. Facade: `Effects.CounterUnlessPays(cost, onPaid)` / `Effects.CounterUnlessDynamicPays(amount, exileOnCounter, onPaid)`.
 - `CounterAllOnStackEffect(filter?, destination?)` — counter everything matching.
@@ -4286,6 +4286,11 @@ answer it and would silently return `false`.
   this reads the hidden card itself (CR 708.2) — the correct test for "...if it's a creature card"
   over a face-down permanent. Resolution-only. Used by Hauntwoods Shrieker ("Reveal target face-down
   permanent. If it's a creature card, you may turn it face up.").
+- `TargetIsSpellOnStack(targetIndex = 0)` — the context target is a **spell on the stack** (a
+  `ChosenTarget.Spell`) rather than a permanent. The zone-aware test needed to branch a single "target
+  creature **or spell**" target — a creature *spell* on the stack still satisfies a `Creature`
+  `GameObjectFilter`, so `TargetMatchesFilter` can't distinguish it. Resolution-only. Used by Aang,
+  Swift Savior (the airbend stack branch).
 - `TargetIsTapped(targetIndex = 0)` — the context target resolves to a tapped battlefield permanent.
   Non-permanent targets and permanents no longer on the battlefield return false. Branch on a target's
   tapped state at resolution via `ConditionalEffect` — used by Shackle Slinger ("If it's tapped, put a
@@ -5928,8 +5933,15 @@ Card authors rarely reference these directly; they are created/updated by the ma
   enumerator (`CastFromZoneEnumerator`) and the cast handler (`CastSpellHandler`) read to *replace* the printed mana cost
   entirely (a 6-drop and a 2-drop both become {2}) — unlike `GrantPlayWithCostIncrease`, which adds on top. The component
   is stripped when the card leaves exile (`StackResolver`), so a recast Airbended permanent doesn't carry a stale cost.
-  *(The "airbend target creature **or spell**" stack branch — Aang, Swift Savior — and the "whenever you airbend" action
-  trigger are tracked separately; see the TLA gap analysis.)*
+- **Airbend a spell** (the stack branch — Aang, Swift Savior: "airbend up to one other target creature **or spell**").
+  The single target is a cross-zone union — `TargetFilter.anyOf(TargetFilter.Creature, TargetFilter.SpellOnStack)` (the
+  same union machinery as Sorceress's Schemes). Branch on whether the chosen target is a spell with
+  `Conditions.TargetIsSpellOnStack(0)`: the spell branch is `CounterEffect(targetSource = Chosen, counterDestination =
+  CounterDestination.Exile(ownerControls = true, fixedAlternativeManaCost = {2}))` — `counterSpellToExile` already exiles
+  the countered spell to its *owner's* exile and emits `SpellCounteredEvent`; `ownerControls`+`fixedAlternativeManaCost`
+  make it grant the **owner** the same fixed-{2} may-play (reusing `PlayWithFixedAlternativeManaCostComponent`). The
+  permanent branch is the normal `Effects.Airbend()`. *(The "whenever you airbend" action trigger remains tracked
+  separately; see the TLA gap analysis.)*
 - **Endure N** — `Effects.Endure(amount, target = EffectTarget.Self)` composes a `ModalEffect.chooseOne` of
   AddDynamicCounters (N +1/+1 counters on the enduring permanent) and a single N/N white Spirit `CreateTokenEffect`
   (no fake keyword — endure is always the effect of a triggered/activated ability, resolved at resolution time). `amount`

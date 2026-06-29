@@ -92,6 +92,7 @@ import com.wingedsheep.sdk.scripting.conditions.AnotherPermanentWithSameNameAsTa
 import com.wingedsheep.sdk.scripting.conditions.TargetMarkedDamageExceedsToughness
 import com.wingedsheep.sdk.scripting.conditions.TargetIsPlayer
 import com.wingedsheep.sdk.scripting.conditions.TargetIsCreatureCard
+import com.wingedsheep.sdk.scripting.conditions.TargetIsSpellOnStack
 import com.wingedsheep.sdk.scripting.conditions.TargetIsTapped
 import com.wingedsheep.sdk.scripting.conditions.TargetIsSource
 import com.wingedsheep.sdk.scripting.conditions.TargetSharesMostCommonColor
@@ -447,6 +448,7 @@ class ConditionEvaluator(
             is TriggeringSpellHasSingleTarget -> ifResolution { evaluateTriggeringSpellHasSingleTarget(state, it) }
             is TargetIsPlayer -> ifResolution { evaluateTargetIsPlayer(condition, it) }
             is TargetIsCreatureCard -> ifResolution { evaluateTargetIsCreatureCard(state, condition, it) }
+            is TargetIsSpellOnStack -> ifResolution { evaluateTargetIsSpellOnStack(condition, it) }
             is TargetIsTapped -> ifResolution { evaluateTargetIsTapped(state, condition, it) }
             is TargetIsSource -> ifResolution { evaluateTargetIsSource(condition, it) }
             is TargetMarkedDamageExceedsToughness ->
@@ -1301,6 +1303,13 @@ class ConditionEvaluator(
         }
         return state.getEntity(entityId)?.get<CardComponent>()?.typeLine?.isCreature == true
     }
+
+    private fun evaluateTargetIsSpellOnStack(
+        condition: TargetIsSpellOnStack,
+        context: EffectContext
+    ): Boolean =
+        context.positionalTarget(condition.index) is
+            com.wingedsheep.engine.state.components.stack.ChosenTarget.Spell
 
     private fun evaluateTargetIsTapped(
         state: GameState,

@@ -72,10 +72,22 @@ sealed interface CounterDestination {
      * Spell is exiled instead of going to graveyard.
      * @property grantFreeCast If true, the controller may cast the exiled card
      *   without paying its mana cost for as long as it remains exiled.
+     * @property ownerControls If true, the recast permission is granted to the spell's *owner*
+     *   rather than the counter's controller — for "airbend"-style wording ("its owner may cast
+     *   it…"). Pairs with [fixedAlternativeManaCost].
+     * @property fixedAlternativeManaCost When non-null, the granted recast costs this *fixed* mana
+     *   cost instead of the card's printed cost (the spell-on-stack form of the Airbend keyword:
+     *   "its owner may cast it for {2} rather than its mana cost"). Mutually exclusive with
+     *   [grantFreeCast]; stamps the same `PlayWithFixedAlternativeManaCostComponent` the permanent
+     *   airbend uses.
      */
     @SerialName("CounterDestination.Exile")
     @Serializable
-    data class Exile(val grantFreeCast: Boolean = false) : CounterDestination
+    data class Exile(
+        val grantFreeCast: Boolean = false,
+        val ownerControls: Boolean = false,
+        val fixedAlternativeManaCost: ManaCost? = null
+    ) : CounterDestination
 }
 
 /**

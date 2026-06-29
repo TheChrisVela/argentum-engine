@@ -12,11 +12,19 @@ import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
+import com.wingedsheep.sdk.scripting.effects.CounterDestination
+import com.wingedsheep.sdk.scripting.effects.CounterEffect
+import com.wingedsheep.sdk.scripting.effects.CounterTargetSource
+import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
+import com.wingedsheep.sdk.scripting.targets.TargetObject
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
@@ -51,9 +59,40 @@ class AirbendScenarioTest : FunSpec({
         }
     }
 
+    // {W} instant: "Airbend up to one target creature or spell." Exercises the airbend stack branch
+    // (the combined cross-zone target + the spell-vs-permanent ConditionalEffect dispatch), the same
+    // shape as Aang, Swift Savior's ETB.
+    val airbendOrSpellTester = card("Airbend Or Spell Tester") {
+        manaCost = "{W}"
+        colorIdentity = "W"
+        typeLine = "Instant"
+        oracleText = "Airbend up to one target creature or spell."
+        spell {
+            target(
+                "up to one target creature or spell",
+                TargetObject(
+                    count = 1,
+                    optional = true,
+                    filter = TargetFilter.anyOf(TargetFilter.Creature, TargetFilter.SpellOnStack)
+                )
+            )
+            effect = ConditionalEffect(
+                condition = Conditions.TargetIsSpellOnStack(0),
+                effect = CounterEffect(
+                    targetSource = CounterTargetSource.Chosen,
+                    counterDestination = CounterDestination.Exile(
+                        ownerControls = true,
+                        fixedAlternativeManaCost = ManaCost.parse("{2}")
+                    )
+                ),
+                elseEffect = Effects.Airbend()
+            )
+        }
+    }
+
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
-        driver.registerCards(TestCards.all + listOf(airbendTester))
+        driver.registerCards(TestCards.all + listOf(airbendTester, airbendOrSpellTester))
         return driver
     }
 
@@ -131,5 +170,47 @@ class AirbendScenarioTest : FunSpec({
         // Back on the battlefield; the fixed-cost stamp is cleaned up so a later exile is unaffected.
         driver.state.getZone(ZoneKey(me, Zone.BATTLEFIELD)) shouldContain bears
         driver.state.getEntity(bears)?.get<PlayWithFixedAlternativeManaCostComponent>().shouldBeNull()
+    }
+
+    test("airbending a spell counters and exiles it, and its owner may recast it for {2}") {
+        val driver = createDriver()
+        driver.initMirrorMatch(deck = Deck.of("Plains" to 40), skipMulligans = true, startingLife = 20)
+        val me = driver.activePlayer!!
+        val opp = driver.getOpponent(me)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        // I cast a creature spell (Grizzly Bears, {1}{G}); the opponent responds by airbending it.
+        repeat(2) { driver.putLandOnBattlefield(me, "Plains") }
+        driver.giveMana(me, com.wingedsheep.sdk.core.Color.GREEN, 1)
+        driver.giveColorlessMana(me, 1)
+        val bearsSpell = driver.putCardInHand(me, "Grizzly Bears")
+        driver.putLandOnBattlefield(opp, "Plains") // {W} for the airbend instant
+        val airbend = driver.putCardInHand(opp, "Airbend Or Spell Tester")
+
+        driver.submitSuccess(CastSpell(playerId = me, cardId = bearsSpell, paymentStrategy = PaymentStrategy.AutoPay))
+        driver.passPriority(me) // pass priority to the opponent with the Bears spell on the stack
+        val bearsOnStack = driver.state.stack.first()
+
+        driver.submitSuccess(
+            CastSpell(
+                playerId = opp,
+                cardId = airbend,
+                targets = listOf(com.wingedsheep.engine.state.components.stack.ChosenTarget.Spell(bearsOnStack)),
+                paymentStrategy = PaymentStrategy.AutoPay
+            )
+        )
+        driver.bothPass() // resolve the airbend instant: counter + exile the Bears spell
+        driver.bothPass() // the Bears spell is gone (countered), nothing resolves
+
+        // Countered and exiled to its OWNER's exile (not graveyard); off the stack.
+        driver.state.stack.shouldNotContain(bearsOnStack)
+        driver.state.getZone(ZoneKey(me, Zone.EXILE)) shouldContain bearsOnStack
+        driver.state.getZone(ZoneKey(me, Zone.GRAVEYARD)) shouldNotContain bearsOnStack
+
+        // Only the owner may recast it from exile, for {2}.
+        val ownerAction = castAction(driver, me, bearsOnStack)
+        ownerAction.shouldNotBeNull()
+        ownerAction.manaCostString shouldBe "{2}"
+        castAction(driver, opp, bearsOnStack).shouldBeNull()
     }
 })
