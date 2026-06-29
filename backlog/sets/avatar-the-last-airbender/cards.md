@@ -247,7 +247,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [x] Pillar Launch
 - [x] Pirate Peddlers
 - [x] Plains
-- [ ] Planetarium of Wan Shi Tong
+- [x] Planetarium of Wan Shi Tong
 - [x] Platypus-Bear
 - [x] Pretending Poxbearers
 - [x] Price of Freedom

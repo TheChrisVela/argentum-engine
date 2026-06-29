@@ -9938,6 +9938,77 @@
     ]
 }
 
+// Planetarium of Wan Shi Tong
+{
+    "name": "Planetarium of Wan Shi Tong",
+    "manaCost": "{6}",
+    "typeLine": "Legendary Artifact",
+    "oracleText": "{1}, {T}: Scry 2.\nWhenever you scry or surveil, look at the top card of your library. You may cast that card without paying its mana cost. Do this only once each turn. (Look at the card after you scry or surveil.)",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": "ScriedOrSurveiledEvent",
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "top"
+                        },
+                        {
+                            "type": "Gated",
+                            "gate": "Gate.MayDecide",
+                            "then": {
+                                "type": "CastFromCollectionWithoutPayingCost",
+                                "from": "top"
+                            }
+                        }
+                    ]
+                },
+                "oncePerTurn": true
+            }
+        ],
+        "activatedAbilities": [
+            {
+                "id": "ability_2",
+                "cost": {
+                    "type": "CostComposite",
+                    "costs": [
+                        {
+                            "type": "CostAtomWrapper",
+                            "atom": {
+                                "type": "AtomMana",
+                                "cost": "{1}"
+                            }
+                        },
+                        "CostTap"
+                    ]
+                },
+                "effect": {
+                    "type": "Scry",
+                    "count": 2
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "259",
+        "rarity": "MYTHIC",
+        "artist": "Robin Olausson",
+        "flavorText": "It charts the movements of heavenly bodies, forecasting the fates of nations.",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/e/0ebaf0bf-7aa2-469d-bdbb-0fbf6741eede.jpg?1764121913"
+    }
+}
+
 // Platypus-Bear
 {
     "name": "Platypus-Bear",
