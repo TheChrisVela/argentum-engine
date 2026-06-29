@@ -90,7 +90,7 @@ up by Airbend, not Firebending).
 - [x] Agna Qel'a
 - [x] Air Nomad Legacy
 - [x] Airbender Ascension
-- [ ] Airbender's Reversal
+- [x] Airbender's Reversal
 - [x] Airbending Lesson
 - [x] Airship Engine Room
 - [x] Allies at Last
