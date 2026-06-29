@@ -13945,6 +13945,192 @@
     ]
 }
 
+// The Legend of Kyoshi
+{
+    "name": "The Legend of Kyoshi",
+    "manaCost": "{4}{G}{G}",
+    "typeLine": "Enchantment — Saga",
+    "oracleText": "(As this Saga enters and after your draw step, add a lore counter.)\nI — Draw cards equal to the greatest power among creatures you control.\nII — Earthbend X, where X is the number of cards in your hand. That land becomes an Island in addition to its other types.\nIII — Exile this Saga, then return it to the battlefield transformed under your control.",
+    "script": {
+        "sagaChapters": [
+            {
+                "chapter": 1,
+                "effect": {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "AggregateBattlefield",
+                        "player": "You",
+                        "filter": "creature",
+                        "aggregation": "MAX",
+                        "property": "POWER"
+                    }
+                }
+            },
+            {
+                "chapter": 2,
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "Composite",
+                            "effects": [
+                                {
+                                    "type": "AnimateLand",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target land you control"
+                                    },
+                                    "power": 0,
+                                    "toughness": 0,
+                                    "duration": "Permanent"
+                                },
+                                {
+                                    "type": "GrantKeyword",
+                                    "keyword": "HASTE",
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target land you control"
+                                    },
+                                    "duration": "Permanent"
+                                },
+                                {
+                                    "type": "AddDynamicCounters",
+                                    "counterType": "+1/+1",
+                                    "amount": {
+                                        "type": "Count",
+                                        "player": "You",
+                                        "zone": "Hand"
+                                    },
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target land you control"
+                                    }
+                                },
+                                {
+                                    "type": "GrantTriggeredAbility",
+                                    "ability": {
+                                        "id": "ability_1",
+                                        "trigger": {
+                                            "type": "ZoneChangeEvent",
+                                            "from": "Battlefield"
+                                        },
+                                        "effect": {
+                                            "type": "Composite",
+                                            "effects": [
+                                                {
+                                                    "type": "MoveToZone",
+                                                    "target": "Self",
+                                                    "destination": "Battlefield",
+                                                    "placement": "Tapped",
+                                                    "fromZone": "Graveyard"
+                                                },
+                                                {
+                                                    "type": "MoveToZone",
+                                                    "target": "Self",
+                                                    "destination": "Battlefield",
+                                                    "placement": "Tapped",
+                                                    "fromZone": "Exile"
+                                                }
+                                            ]
+                                        },
+                                        "descriptionOverride": "When this dies or is exiled, return it to the battlefield tapped."
+                                    },
+                                    "target": {
+                                        "type": "BoundVariable",
+                                        "name": "target land you control"
+                                    },
+                                    "duration": "Permanent"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "AddSubtype",
+                            "subtype": "Island",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "target land you control"
+                            },
+                            "duration": "Permanent"
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "filter": {
+                        "baseFilter": "land ctrl:you"
+                    },
+                    "id": "target land you control"
+                }
+            },
+            {
+                "chapter": 3,
+                "effect": "ExileAndReturnTransformed"
+            }
+        ]
+    },
+    "backFace": {
+        "name": "Avatar Kyoshi",
+        "manaCost": "",
+        "typeLine": "Legendary Creature — Avatar",
+        "oracleText": "Lands you control have trample and hexproof.\n{T}: Add X mana of any one color, where X is the greatest power among creatures you control.",
+        "creatureStats": {
+            "power": 5,
+            "toughness": 4
+        },
+        "script": {
+            "activatedAbilities": [
+                {
+                    "id": "ability_2",
+                    "cost": "CostTap",
+                    "effect": {
+                        "type": "AddManaOfChoice",
+                        "amount": {
+                            "type": "AggregateBattlefield",
+                            "player": "You",
+                            "filter": "creature",
+                            "aggregation": "MAX",
+                            "property": "POWER"
+                        }
+                    },
+                    "isManaAbility": true
+                }
+            ],
+            "staticAbilities": [
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "filter": {
+                        "baseFilter": "land ctrl:you"
+                    }
+                },
+                {
+                    "type": "GrantKeyword",
+                    "keyword": "HEXPROOF",
+                    "filter": {
+                        "baseFilter": "land ctrl:you"
+                    }
+                }
+            ]
+        },
+        "metadata": {
+            "collectorNumber": "186",
+            "rarity": "MYTHIC",
+            "artist": "Thanh Tuấn",
+            "imageUri": "https://cards.scryfall.io/normal/back/4/8/4887ce64-7c98-4bd7-95db-0c43ab71cc6e.jpg?1764846544"
+        },
+        "colorIdentityOverride": []
+    },
+    "metadata": {
+        "collectorNumber": "186",
+        "rarity": "MYTHIC",
+        "artist": "Thanh Tuấn",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/8/4887ce64-7c98-4bd7-95db-0c43ab71cc6e.jpg?1764846544"
+    },
+    "colorIdentityOverride": [
+        "GREEN"
+    ]
+}
+
 // The Lion-Turtle
 {
     "name": "The Lion-Turtle",

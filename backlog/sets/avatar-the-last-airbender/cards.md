@@ -300,7 +300,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [x] The Fire Nation Drill
 - [ ] The Last Agni Kai
 - [ ] The Legend of Kuruk
-- [ ] The Legend of Kyoshi
+- [x] The Legend of Kyoshi
 - [ ] The Legend of Roku
 - [ ] The Legend of Yangchen
 - [x] The Lion-Turtle
