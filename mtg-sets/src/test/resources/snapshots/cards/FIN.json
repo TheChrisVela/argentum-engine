@@ -8363,6 +8363,78 @@
     ]
 }
 
+// Lightning, Security Sergeant
+{
+    "name": "Lightning, Security Sergeant",
+    "manaCost": "{2}{R}",
+    "typeLine": "Legendary Creature — Human Soldier",
+    "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)\nWhenever Lightning deals combat damage to a player, exile the top card of your library. You may play that card for as long as you control Lightning.",
+    "creatureStats": {
+        "power": 2,
+        "toughness": 3
+    },
+    "keywords": [
+        "MENACE"
+    ],
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "DealsDamageEvent",
+                    "damageType": "DamageCombat",
+                    "recipient": "AnyPlayer"
+                },
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "exiledCard"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "exiledCard",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "exiledCard",
+                            "expiry": "Permanent",
+                            "condition": {
+                                "type": "Exists",
+                                "player": "You",
+                                "zone": "Battlefield",
+                                "filter": "creature name:Lightning, Security Sergeant"
+                            }
+                        }
+                    ]
+                },
+                "descriptionOverride": "Whenever Lightning deals combat damage to a player, exile the top card of your library. You may play that card for as long as you control Lightning."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "560",
+        "rarity": "RARE",
+        "artist": "Ramza Psyru",
+        "imageUri": "https://cards.scryfall.io/normal/front/4/a/4ad4dce3-6e43-4528-b570-85547d03164e.jpg?1782686124"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Lindblum, Industrial Regency
 {
     "name": "Lindblum, Industrial Regency",
@@ -10275,6 +10347,61 @@
         "imageUri": "https://cards.scryfall.io/normal/front/a/6/a6b5af82-3646-44f9-ac12-1d7fa698f037.jpg?1748706165"
     },
     "colorIdentityOverride": [
+        "BLACK"
+    ]
+}
+
+// Noctis, Prince of Lucis
+{
+    "name": "Noctis, Prince of Lucis",
+    "manaCost": "{1}{W}{U}{B}",
+    "typeLine": "Legendary Creature — Human Noble",
+    "oracleText": "Lifelink\nYou may cast artifact spells from your graveyard by paying 3 life in addition to paying their other costs. If you cast a spell this way, that artifact enters with a finality counter on it.",
+    "creatureStats": {
+        "power": 4,
+        "toughness": 3
+    },
+    "keywords": [
+        "LIFELINK"
+    ],
+    "script": {
+        "staticAbilities": [
+            {
+                "type": "MayCastFromGraveyard",
+                "filter": "artifact",
+                "lifeCost": 3
+            }
+        ],
+        "replacementEffects": [
+            {
+                "type": "EntersWithCounters",
+                "counterType": {
+                    "type": "Named",
+                    "name": "finality"
+                },
+                "count": 1,
+                "condition": {
+                    "type": "WasCastFromZone",
+                    "zone": "Graveyard"
+                },
+                "appliesTo": {
+                    "type": "ZoneChangeEvent",
+                    "filter": "artifact ctrl:you",
+                    "to": "Battlefield"
+                }
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "235",
+        "rarity": "RARE",
+        "artist": "Jeremy Chong",
+        "flavorText": "Many sacrificed all for the King; so must the King sacrifice himself for all.",
+        "imageUri": "https://cards.scryfall.io/normal/front/1/8/1881a66b-956d-4bab-b578-5b2d3407c972.jpg?1782686412"
+    },
+    "colorIdentityOverride": [
+        "WHITE",
+        "BLUE",
         "BLACK"
     ]
 }
@@ -17952,6 +18079,115 @@
     ]
 }
 
+// Triple Triad
+{
+    "name": "Triple Triad",
+    "manaCost": "{3}{R}{R}{R}",
+    "typeLine": "Enchantment",
+    "oracleText": "At the beginning of your upkeep, each player exiles the top card of their library. Until end of turn, you may play the card you own exiled this way and each other card exiled this way with lesser mana value than it without paying their mana costs.",
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "UPKEEP"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                }
+                            },
+                            "storeAs": "mine"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "mine",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 1
+                                },
+                                "player": "EachOpponent"
+                            },
+                            "storeAs": "others"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "others",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Exile"
+                            }
+                        },
+                        {
+                            "type": "FilterCollection",
+                            "from": "others",
+                            "filter": {
+                                "type": "ManaValueAtMost",
+                                "max": {
+                                    "type": "Subtract",
+                                    "left": {
+                                        "type": "StoredCardManaValue",
+                                        "collectionName": "mine"
+                                    },
+                                    "right": {
+                                        "type": "Fixed",
+                                        "amount": 1
+                                    }
+                                }
+                            },
+                            "storeMatching": "playableOthers"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "mine"
+                        },
+                        {
+                            "type": "GrantPlayWithoutPayingCost",
+                            "from": "mine"
+                        },
+                        {
+                            "type": "GrantMayPlayFromExile",
+                            "from": "playableOthers"
+                        },
+                        {
+                            "type": "GrantPlayWithoutPayingCost",
+                            "from": "playableOthers"
+                        }
+                    ]
+                },
+                "descriptionOverride": "At the beginning of your upkeep, each player exiles the top card of their library. Until end of turn, you may play the card you own exiled this way and each other card exiled this way with lesser mana value than it without paying their mana costs."
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "166",
+        "rarity": "RARE",
+        "artist": "Ben Wootten",
+        "imageUri": "https://cards.scryfall.io/normal/front/d/9/d9a1de36-7f47-4b28-bb56-38d7e5bed82f.jpg?1782686477"
+    },
+    "colorIdentityOverride": [
+        "RED"
+    ]
+}
+
 // Ultima Weapon
 {
     "name": "Ultima Weapon",
@@ -19646,6 +19882,150 @@
         "imageUri": "https://cards.scryfall.io/normal/front/1/8/1867b5cb-2bb0-4f49-b302-036fdffa2344.jpg?1748705918"
     },
     "colorIdentityOverride": [
+        "WHITE"
+    ]
+}
+
+// Yuna, Hope of Spira
+{
+    "name": "Yuna, Hope of Spira",
+    "manaCost": "{3}{G}{W}",
+    "typeLine": "Legendary Creature — Human Cleric",
+    "oracleText": "During your turn, Yuna and enchantment creatures you control have trample, lifelink, and ward {2}.\nAt the beginning of your end step, return up to one target enchantment card from your graveyard to the battlefield with a finality counter on it. (If a permanent with a finality counter on it would be put into a graveyard from the battlefield, exile it instead.)",
+    "creatureStats": {
+        "power": 3,
+        "toughness": 5
+    },
+    "script": {
+        "triggeredAbilities": [
+            {
+                "id": "ability_1",
+                "trigger": {
+                    "type": "StepEvent",
+                    "step": "END"
+                },
+                "binding": "ANY",
+                "effect": {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "MoveToZone",
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target enchantment card from your graveyard"
+                            },
+                            "destination": "Battlefield",
+                            "fromZone": "Graveyard"
+                        },
+                        {
+                            "type": "AddCounters",
+                            "counterType": "finality",
+                            "count": 1,
+                            "target": {
+                                "type": "BoundVariable",
+                                "name": "up to one target enchantment card from your graveyard"
+                            }
+                        }
+                    ]
+                },
+                "targetRequirement": {
+                    "type": "TargetObject",
+                    "optional": true,
+                    "filter": {
+                        "baseFilter": "enchantment own:you",
+                        "zone": "Graveyard"
+                    },
+                    "id": "up to one target enchantment card from your graveyard"
+                },
+                "descriptionOverride": "At the beginning of your end step, return up to one target enchantment card from your graveyard to the battlefield with a finality counter on it."
+            }
+        ],
+        "staticAbilities": [
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "IsYourTurn"
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "TRAMPLE",
+                    "filter": {
+                        "baseFilter": "creature enchantment ctrl:you"
+                    }
+                },
+                "condition": "IsYourTurn"
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "IsYourTurn"
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantKeyword",
+                    "keyword": "LIFELINK",
+                    "filter": {
+                        "baseFilter": "creature enchantment ctrl:you"
+                    }
+                },
+                "condition": "IsYourTurn"
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantWard",
+                    "cost": {
+                        "type": "WardCost.Mana",
+                        "manaCost": "{2}"
+                    },
+                    "filter": {
+                        "baseFilter": "permanent",
+                        "scope": "Self"
+                    }
+                },
+                "condition": "IsYourTurn"
+            },
+            {
+                "type": "ConditionalStaticAbility",
+                "ability": {
+                    "type": "GrantWard",
+                    "cost": {
+                        "type": "WardCost.Mana",
+                        "manaCost": "{2}"
+                    },
+                    "filter": {
+                        "baseFilter": "creature enchantment ctrl:you"
+                    }
+                },
+                "condition": "IsYourTurn"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "250",
+        "rarity": "MYTHIC",
+        "artist": "NINNIN",
+        "imageUri": "https://cards.scryfall.io/normal/front/3/5/35b613ad-86f0-431b-af93-147d21041fde.jpg?1748706729"
+    },
+    "colorIdentityOverride": [
+        "GREEN",
         "WHITE"
     ]
 }
