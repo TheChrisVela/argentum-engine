@@ -11250,6 +11250,87 @@
     ]
 }
 
+// Sokka's Haiku
+{
+    "name": "Sokka's Haiku",
+    "manaCost": "{3}{U}{U}",
+    "typeLine": "Instant — Lesson",
+    "oracleText": "Counter target spell.\nDraw a card, then mill three cards.\nUntap target land.",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                "Counter",
+                {
+                    "type": "DrawCards",
+                    "count": {
+                        "type": "Fixed",
+                        "amount": 1
+                    }
+                },
+                {
+                    "type": "Composite",
+                    "effects": [
+                        {
+                            "type": "GatherCards",
+                            "source": {
+                                "type": "TopOfLibrary",
+                                "count": {
+                                    "type": "Fixed",
+                                    "amount": 3
+                                }
+                            },
+                            "storeAs": "milled"
+                        },
+                        {
+                            "type": "MoveCollection",
+                            "from": "milled",
+                            "destination": {
+                                "type": "ToZone",
+                                "zone": "Graveyard"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "TapUntap",
+                    "target": {
+                        "type": "BoundVariable",
+                        "name": "untap target land"
+                    },
+                    "tap": false
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": {},
+                    "zone": "Stack"
+                },
+                "id": "counter target spell"
+            },
+            {
+                "type": "TargetObject",
+                "filter": {
+                    "baseFilter": "land"
+                },
+                "id": "untap target land"
+            }
+        ]
+    },
+    "metadata": {
+        "collectorNumber": "71",
+        "rarity": "UNCOMMON",
+        "artist": "Bun Toujo",
+        "imageUri": "https://cards.scryfall.io/normal/front/0/0/004be4bc-ac3c-4026-8d36-f4687ab18c70.jpg?1764120446"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Sokka, Bold Boomeranger
 {
     "name": "Sokka, Bold Boomeranger",

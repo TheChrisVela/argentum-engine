@@ -275,7 +275,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [ ] Serpent of the Pass
 - [x] Serpent's Pass
 - [x] Shared Roots
-- [ ] Sokka's Haiku
+- [x] Sokka's Haiku
 - [x] Sokka, Bold Boomeranger
 - [x] Sokka, Lateral Strategist
 - [x] Sokka, Tenacious Tactician
