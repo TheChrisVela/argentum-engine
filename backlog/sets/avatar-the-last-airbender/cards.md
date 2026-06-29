@@ -205,7 +205,7 @@ The set is built around four **"bending" keyword families** plus a returning **E
 - [x] Joo Dee, One of Many
 - [x] June, Bounty Hunter
 - [x] Katara, Bending Prodigy
-- [ ] Katara, Water Tribe's Hope
+- [x] Katara, Water Tribe's Hope
 - [x] Katara, the Fearless
 - [x] Knowledge Seeker
 - [ ] Koh, the Face Stealer
