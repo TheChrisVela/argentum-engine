@@ -84,8 +84,11 @@ class ActionProcessor(
             return ProcessedAction(ExecutionResult.error(state, validationError))
         }
 
-        // Execute the action and compute undo policy
-        val result = registry.execute(state, action)
+        // Execute the action, then update which revealed/returned cards opponents may see
+        // (cards revealed into hand or bounced back to hand stay visible until a same-named
+        // card is played — see [RevealedInHandTracker]).
+        val result = com.wingedsheep.engine.mechanics.RevealedInHandTracker
+            .applyAfterAction(registry.execute(state, action))
         val undoPolicy = if (computeUndo) {
             UndoPolicyComputer.compute(action, state, result, services.cardRegistry)
         } else {

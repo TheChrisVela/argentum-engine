@@ -1126,6 +1126,11 @@ per-player view of the state that hides private information:
 - **Face-down cards:** Show as generic "Card back" to all players (even the controller cannot see
   the identity in the masked view — only when they choose to interact)
 - **Revealed cards:** `RevealedToComponent` overrides hiding for cards that have been explicitly revealed
+- **Revealed / returned hand cards:** A card revealed *into* a hand, or returned to a hand from a public
+  zone (battlefield, graveyard, the stack), stays visible to opponents until its owner *plays* a card with
+  the same name (the known copy then becomes indistinguishable from the one just played) or it leaves the
+  hand. `RevealedInHandTracker` (run over each action's events in `ActionProcessor`) manages this
+  `RevealedToComponent` lifecycle; the transformer just reads the component as above.
 
 **Why server-side masking instead of client-side filtering?**
 
