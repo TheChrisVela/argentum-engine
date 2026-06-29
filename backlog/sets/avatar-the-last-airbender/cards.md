@@ -127,7 +127,7 @@ up by Airbend, not Firebending).
 - [x] Combustion Technique
 - [x] Compassionate Healer
 - [x] Corrupt Court Official
-- [ ] Crashing Wave
+- [x] Crashing Wave
 - [x] Crescent Island Temple
 - [x] Cruel Administrator
 - [x] Cunning Maneuver

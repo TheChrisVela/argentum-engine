@@ -750,6 +750,60 @@
     ]
 }
 
+// Crashing Wave
+{
+    "name": "Crashing Wave",
+    "manaCost": "{U}{U}",
+    "typeLine": "Sorcery",
+    "oracleText": "As an additional cost to cast this spell, waterbend {X}. (While paying a waterbend cost, you can tap your artifacts and creatures to help. Each one pays for {1}.)\nTap up to X target creatures, then distribute three stun counters among any number of tapped creatures your opponents control. (If a permanent with a stun counter would become untapped, remove one from it instead.)",
+    "script": {
+        "spellEffect": {
+            "type": "Composite",
+            "effects": [
+                {
+                    "type": "ForEach",
+                    "space": "IterationSpace.Targets",
+                    "body": {
+                        "type": "TapUntap",
+                        "target": {
+                            "type": "ContextTarget",
+                            "index": 0
+                        }
+                    }
+                },
+                {
+                    "type": "DistributeCountersAmongFiltered",
+                    "totalCounters": 3,
+                    "counterType": "stun",
+                    "filter": "creature tapped ctrl:opponent"
+                }
+            ]
+        },
+        "targetRequirements": [
+            {
+                "type": "TargetObject",
+                "optional": true,
+                "filter": {
+                    "baseFilter": "creature"
+                },
+                "dynamicMaxCount": "XValue"
+            }
+        ],
+        "spellWaterbend": {
+            "isX": true
+        }
+    },
+    "metadata": {
+        "collectorNumber": "47",
+        "rarity": "UNCOMMON",
+        "artist": "Mitori",
+        "imageUri": "https://cards.scryfall.io/normal/front/9/f/9fd02eb4-1ef5-4a14-89a8-b25e720e8016.jpg?1764120208"
+    },
+    "colorIdentityOverride": [
+        "BLUE"
+    ]
+}
+
 // Cycle of Renewal
 {
     "name": "Cycle of Renewal",
