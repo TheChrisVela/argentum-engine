@@ -10,8 +10,8 @@ import { styles } from './styles'
 
 const CARD_RATIO = 1.4
 const LABEL_HEIGHT = 14
-// Deck + Graveyard + Exile are always present; a fourth "Plotted" pile appears
-// only when the player has plotted cards in exile (see `pileCount` below).
+// Deck + Graveyard + Exile are always present; extra "Plotted" and "Paradigm" piles
+// appear only when the player has those cards in exile (see `pileCount` below).
 const BASE_PILE_COUNT = 3
 // Reserve room above the opponent's pile column for the absolutely-positioned
 // Concede button so the top pile doesn't render under it.
@@ -31,6 +31,11 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
   // can see at a glance which spells are waiting, instead of digging through the exile pile.
   const plottedCards = exileCards.filter((c) => c.isPlotted)
   const topPlottedCard = plottedCards[plottedCards.length - 1]
+  // Active paradigm cards (Secrets of Strixhaven) are another public subset of exile: they stay
+  // exiled and recast a free copy of themselves each precombat main. Surface them in their own pile
+  // so both players can see the recurring threat without digging through the exile pile.
+  const paradigmCards = exileCards.filter((c) => c.isParadigm)
+  const topParadigmCard = paradigmCards[paradigmCards.length - 1]
   const libraryZone = useZone(library(player.playerId))
   const libraryEntityIds = libraryZone?.cardIds ?? []
   const hoverCard = useGameStore((state) => state.hoverCard)
@@ -38,11 +43,13 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
   const [browsingGraveyard, setBrowsingGraveyard] = useState(false)
   const [browsingExile, setBrowsingExile] = useState(false)
   const [browsingPlotted, setBrowsingPlotted] = useState(false)
+  const [browsingParadigm, setBrowsingParadigm] = useState(false)
   const [browsingLibrary, setBrowsingLibrary] = useState(false)
   const stackCards = useStackCards()
 
   const hasPlotted = plottedCards.length > 0
-  const pileCount = BASE_PILE_COUNT + (hasPlotted ? 1 : 0)
+  const hasParadigm = paradigmCards.length > 0
+  const pileCount = BASE_PILE_COUNT + (hasPlotted ? 1 : 0) + (hasParadigm ? 1 : 0)
 
   // Shrink piles to fit the column's actual height. The viewport-derived
   // pileWidth doesn't know about (a) the opponent's Concede button, which
@@ -253,6 +260,36 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
         </div>
       )}
 
+      {/* Paradigm (Secrets of Strixhaven) — only present when this player has active paradigm cards
+          in exile. A first-class, always-visible zone (for both players) so the recurring free-cast
+          threat can be read without opening the exile pile. */}
+      {hasParadigm && (
+        <div style={styles.zoneStack}>
+          <div
+            data-paradigm-id={player.playerId}
+            style={{ ...styles.paradigmPile, ...pileStyle, cursor: 'pointer' }}
+            onClick={() => setBrowsingParadigm(true)}
+            onMouseEnter={(e) => { if (topParadigmCard) hoverCard(topParadigmCard.id, { x: e.clientX, y: e.clientY }) }}
+            onMouseLeave={() => hoverCard(null)}
+          >
+            {topParadigmCard && (
+              <img
+                src={getCardImageUrl(topParadigmCard.name, topParadigmCard.imageUri, 'normal')}
+                alt={topParadigmCard.name}
+                style={styles.pileImage}
+                onError={(e) => handleImageError(e, topParadigmCard.name, 'normal')}
+              />
+            )}
+            <div style={{ ...styles.pileCount, ...styles.paradigmPileCount, fontSize: responsive.fontSize.small }}>
+              {paradigmCards.length}
+            </div>
+          </div>
+          <span style={{ ...styles.zoneLabel, ...styles.paradigmZoneLabel, fontSize: responsive.isMobile ? 8 : 10 }}>
+            ◈ Paradigm
+          </span>
+        </div>
+      )}
+
       {browsingGraveyard && (
         <GraveyardBrowser cards={graveyardCards} onClose={() => setBrowsingGraveyard(false)} />
       )}
@@ -264,6 +301,13 @@ export function ZonePile({ player, isOpponent = false }: { player: ClientPlayer;
           cards={plottedCards}
           ownerLabel={isOpponent ? "Opponent's Plotted Spells" : 'Your Plotted Spells'}
           onClose={() => setBrowsingPlotted(false)}
+        />
+      )}
+      {browsingParadigm && (
+        <ParadigmBrowser
+          cards={paradigmCards}
+          ownerLabel={isOpponent ? "Opponent's Paradigm Cards" : 'Your Paradigm Cards'}
+          onClose={() => setBrowsingParadigm(false)}
         />
       )}
       {browsingLibrary && (
@@ -638,6 +682,144 @@ function PlottedBrowser({
               fontSize: responsive.fontSize.normal,
               backgroundColor: '#a07b16',
               color: '#fff8e1',
+              border: 'none',
+              borderRadius: 8,
+              cursor: 'pointer',
+            }}
+          >
+            View Battlefield
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              padding: responsive.isMobile ? '10px 20px' : '12px 28px',
+              fontSize: responsive.fontSize.normal,
+              backgroundColor: '#333',
+              color: '#aaa',
+              border: '1px solid #555',
+              borderRadius: 8,
+              cursor: 'pointer',
+            }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Full-screen overlay for browsing active paradigm cards (Secrets of Strixhaven).
+ *
+ * Paradigm cards stay face-up in exile and recast a free copy of themselves at the start of each of
+ * their owner's precombat main phases. They're public knowledge, so both players can open this view.
+ */
+function ParadigmBrowser({
+  cards,
+  ownerLabel,
+  onClose,
+}: {
+  cards: readonly ClientCard[]
+  ownerLabel: string
+  onClose: () => void
+}) {
+  const hoverCard = useGameStore((state) => state.hoverCard)
+  const responsive = useResponsiveContext()
+  const [minimized, setMinimized] = useState(false)
+
+  const cardWidth = responsive.isMobile ? 120 : 160
+  const cardHeight = Math.round(cardWidth * 1.4)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (minimized) {
+          setMinimized(false)
+        } else {
+          onClose()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose, minimized])
+
+  if (minimized) {
+    return (
+      <button
+        onClick={() => setMinimized(false)}
+        style={{
+          position: 'fixed',
+          bottom: 70,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          padding: responsive.isMobile ? '10px 16px' : '12px 24px',
+          fontSize: responsive.fontSize.normal,
+          backgroundColor: '#15756d',
+          color: '#e6fffb',
+          border: 'none',
+          borderRadius: 8,
+          cursor: 'pointer',
+          fontWeight: 600,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+          zIndex: 100,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        ↑ Return to Paradigm
+      </button>
+    )
+  }
+
+  return (
+    <div style={styles.paradigmOverlay} onClick={onClose}>
+      <div style={styles.paradigmBrowserContent} onClick={(e) => e.stopPropagation()}>
+        <div style={styles.exileBrowserHeader}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <h2 style={styles.paradigmBrowserTitle}>◈ {ownerLabel} ({cards.length})</h2>
+            <span style={{ color: '#4ec4b8', fontSize: 11, letterSpacing: 0.5 }}>
+              Casts a free copy of itself each precombat main phase (Paradigm)
+            </span>
+          </div>
+          <button style={styles.paradigmCloseButton} onClick={onClose}>✕</button>
+        </div>
+        <div style={styles.exileCardGrid}>
+          {cards.map((card) => (
+            <div
+              key={card.id}
+              style={{
+                width: cardWidth,
+                height: cardHeight,
+                borderRadius: 6,
+                overflow: 'hidden',
+                flexShrink: 0,
+                position: 'relative',
+                boxShadow: '0 0 0 2px #5fded0, 0 0 14px rgba(95, 222, 208, 0.6)',
+              }}
+              onMouseEnter={(e) => hoverCard(card.id, { x: e.clientX, y: e.clientY })}
+              onMouseLeave={() => hoverCard(null)}
+            >
+              <img
+                src={getCardImageUrl(card.name, card.imageUri, 'normal')}
+                alt={card.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={(e) => handleImageError(e, card.name, 'normal')}
+              />
+              <div style={styles.paradigmGridBadge}>Paradigm</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
+          <button
+            onClick={() => setMinimized(true)}
+            style={{
+              padding: responsive.isMobile ? '10px 20px' : '12px 28px',
+              fontSize: responsive.fontSize.normal,
+              backgroundColor: '#15756d',
+              color: '#e6fffb',
               border: 'none',
               borderRadius: 8,
               cursor: 'pointer',

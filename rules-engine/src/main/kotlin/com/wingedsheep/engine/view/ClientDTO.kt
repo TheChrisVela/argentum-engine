@@ -260,6 +260,11 @@ data class ClientCard(
     /** Whether this card is plotted in exile (CR 718 — Plot keyword, castable for free on a later turn). Exile only. */
     val isPlotted: Boolean = false,
 
+    /** Whether this card is an active paradigm card in exile (Secrets of Strixhaven — Paradigm): it
+     * stays exiled and casts a free copy of itself at the start of each of its owner's precombat main
+     * phases. Surfaced so the client can show it in a dedicated, public pile. Exile only. */
+    val isParadigm: Boolean = false,
+
     /** Whether this permanent is prepared (Secrets of Strixhaven — Prepared keyword): a copy of its
      * prepare spell sits castable in its controller's exile until cast. Battlefield only. */
     val isPrepared: Boolean = false,
@@ -325,6 +330,9 @@ data class ClientCard(
      * Rendered as a badge on the permanent so the player can see which mode is active.
      */
     val chosenMode: String? = null,
+
+    /** Chosen card name for "as enters, choose a card name" permanents (e.g., Petrified Hamlet) */
+    val chosenCardName: String? = null,
 
     /** Triggering entity ID for triggered abilities on the stack (for source arrows) */
     val triggeringEntityId: EntityId? = null,

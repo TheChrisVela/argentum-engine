@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.CardSource
+import com.wingedsheep.sdk.scripting.effects.Chooser
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
@@ -57,6 +58,10 @@ val Erode = card("Erode") {
                     SelectFromCollectionEffect(
                         from = "searchable",
                         selection = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(1)),
+                        // "Its controller may search their library" — the destroyed permanent's
+                        // controller picks the land, not Erode's controller. Without this the
+                        // caster makes the choice and sees the opponent's entire library order.
+                        chooser = Chooser.ControllerOfTarget,
                         storeSelected = "found",
                     ),
                     MoveCollectionEffect(

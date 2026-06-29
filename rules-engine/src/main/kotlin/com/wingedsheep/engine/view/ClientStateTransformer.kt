@@ -1013,6 +1013,9 @@ class ClientStateTransformer(
                 modeOptions.firstOrNull { it.id == modeId }?.label ?: modeId
             }
 
+        // Get chosen card name for "as enters, choose a card name" permanents (e.g., Petrified Hamlet)
+        val chosenCardName = container.chosenCardName()
+
         // Get sacrificed creature types for spells with sacrifice-as-cost (e.g., Endemic Plague)
         val sacrificedCreatureTypes = spellOnStack?.sacrificedPermanents
             ?.flatMap { it.subtypes }?.toSet()
@@ -1077,6 +1080,12 @@ class ClientStateTransformer(
         // Plotted cards (CR 718) sit face-up in exile with a PlottedComponent; surface a flag so the
         // client can badge them as plotted (otherwise indistinguishable from any other exiled card).
         val isPlotted = zoneKey.zoneType == Zone.EXILE && container.has<PlottedComponent>()
+
+        // Active paradigm cards (Secrets of Strixhaven) sit face-up in exile with a ParadigmComponent,
+        // recasting a free copy of themselves each precombat main; surface a flag so the client can show
+        // them in a dedicated public pile (otherwise indistinguishable from any other exiled card).
+        val isParadigm = zoneKey.zoneType == Zone.EXILE &&
+            container.has<com.wingedsheep.engine.state.components.battlefield.ParadigmComponent>()
 
         // Prepared permanents (Secrets of Strixhaven) carry a PreparedComponent while a copy of their
         // prepare spell waits castable in exile; surface a flag so the client can badge the creature.
@@ -1171,6 +1180,7 @@ class ClientStateTransformer(
             isManifested = isFaceDown && container.has<ManifestedComponent>(),
             isSuspected = projectedValues?.isSuspected == true,
             isPlotted = isPlotted,
+            isParadigm = isParadigm,
             isPrepared = isPrepared,
             isPreparedSpell = isPreparedSpell,
             isWarped = isWarped,
@@ -1188,6 +1198,7 @@ class ClientStateTransformer(
             chosenCreatureType = chosenCreatureType,
             chosenColor = chosenColor,
             chosenMode = chosenMode,
+            chosenCardName = chosenCardName,
             sacrificedCreatureTypes = sacrificedCreatureTypes,
             playableFromExile = playableFromExile,
             copyOf = container.get<com.wingedsheep.engine.state.components.identity.CopyOfComponent>()?.let { copyComp ->

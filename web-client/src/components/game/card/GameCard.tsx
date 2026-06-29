@@ -1990,7 +1990,12 @@ function GameCardImpl({
 
       {/* Keyword ability icons (shown for face-up cards, and for face-down cards with granted keywords) */}
       {battlefield && !hideKeywordIcons && (card.keywords.length > 0 || (card.abilityFlags && card.abilityFlags.length > 0) || (card.protections && card.protections.length > 0) || (card.hexproofFromColors && card.hexproofFromColors.length > 0) || card.isSuspected) && (
-        <KeywordIcons keywords={card.keywords} abilityFlags={card.abilityFlags ?? []} protections={card.protections ?? []} hexproofFromColors={card.hexproofFromColors ?? []} hexproofFromMonocolored={card.hexproofFromMonocolored ?? false} isSuspected={card.isSuspected ?? false} {...(card.isRingBearer && !faceDown ? { topOffset: 3 + responsive.badges.ptFontSize * 1.7 + 3 } : {})} size={responsive.badges.keywordIconSize} />
+        <KeywordIcons keywords={card.keywords} abilityFlags={card.abilityFlags ?? []} protections={card.protections ?? []} hexproofFromColors={card.hexproofFromColors ?? []} hexproofFromMonocolored={card.hexproofFromMonocolored ?? false} isSuspected={card.isSuspected ?? false} {...(() => {
+          // The ring-bearer marker and the "Prepared" badge both pin to the top-left corner; push the
+          // keyword icons down past whichever is showing so they aren't hidden beneath the badge.
+          const topOffset = (card.isRingBearer && !faceDown ? 3 + responsive.badges.ptFontSize * 1.7 + 3 : 0) + (card.isPrepared ? 22 : 0)
+          return topOffset > 0 ? { topOffset } : {}
+        })()} size={responsive.badges.keywordIconSize} />
       )}
 
       {/* Revealed face-down eye icon (e.g., peeked via Spy Network) */}
@@ -2013,8 +2018,8 @@ function GameCardImpl({
         </div>
       )}
 
-      {/* Chosen creature type / color / mode badge (e.g., Doom Cannon, Riptide Replicator, Outpost Siege) */}
-      {!faceDown && (card.chosenCreatureType ?? card.chosenColor ?? card.chosenMode) && (
+      {/* Chosen creature type / color / mode / card name badge (e.g., Doom Cannon, Riptide Replicator, Outpost Siege, Petrified Hamlet) */}
+      {!faceDown && (card.chosenCreatureType ?? card.chosenColor ?? card.chosenMode ?? card.chosenCardName) && (
         <div style={{
           position: 'absolute',
           bottom: card.power != null ? 22 : 4,
@@ -2029,7 +2034,7 @@ function GameCardImpl({
           pointerEvents: 'none',
           zIndex: 5,
         }}>
-          {[card.chosenColor, card.chosenCreatureType, card.chosenMode].filter(Boolean).join(' ')}
+          {[card.chosenColor, card.chosenCreatureType, card.chosenMode, card.chosenCardName].filter(Boolean).join(' ')}
         </div>
       )}
 
