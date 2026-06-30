@@ -453,7 +453,7 @@ class CostPaymentService(private val services: EngineServices) {
                 is PayCost.OwnManaCost -> false
                 is PayCost.Choice -> c.options.any { canAfford(state, payerId, it, sourceId, manaSolver) }
                 is PayCost.Atom -> when (val atom = c.atom) {
-                    is CostAtom.Mana -> manaSolver.canPay(state, payerId, atom.cost)
+                    is CostAtom.Mana -> state.format is com.wingedsheep.sdk.core.Format.PaiGow || manaSolver.canPay(state, payerId, atom.cost)
                     // CR 119.4 — a player may pay life only if their life total is at least the amount; paying
                     // life that would reduce them to 0 or less is legal (they then lose as a state-based action).
                     is CostAtom.PayLife -> life(state, payerId) >= atom.amount

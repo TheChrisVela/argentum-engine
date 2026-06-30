@@ -25,6 +25,8 @@ fun payManaCostFromPool(
     cost: ManaCost,
     cardRegistry: CardRegistry
 ): EffectResult {
+    if (state.format is com.wingedsheep.sdk.core.Format.PaiGow) return EffectResult.success(state, emptyList())
+
     val playerEntity = state.getEntity(player)
         ?: return EffectResult.error(state, "Paying player not found")
 

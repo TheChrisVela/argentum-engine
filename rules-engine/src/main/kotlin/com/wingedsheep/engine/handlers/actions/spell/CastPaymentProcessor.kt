@@ -113,6 +113,8 @@ class CastPaymentProcessor(
         spellContext: SpellPaymentContext? = null,
         xManaRestriction: Set<Color> = emptySet()
     ): PaymentResult {
+        if (state.format is com.wingedsheep.sdk.core.Format.PaiGow) return PaymentResult(state, emptyList(), null)
+
         val poolComponent = state.getEntity(playerId)?.get<ManaPoolComponent>()
             ?: ManaPoolComponent()
         val pool = toManaPool(poolComponent)

@@ -153,6 +153,12 @@ sealed interface Format {
         val startingLife: Int = 20,
         val startingHandSize: Int = 7,
     ) : Format
+
+    @Serializable
+    data class PaiGow(
+        val startingLife: Int = 5,
+        val startingHandSize: Int = 3,
+    ) : Format
 }
 
 /**
