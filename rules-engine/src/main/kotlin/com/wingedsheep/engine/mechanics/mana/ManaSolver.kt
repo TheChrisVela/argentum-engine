@@ -293,6 +293,8 @@ class ManaSolver(
          */
         xManaRestriction: Set<Color> = emptySet()
     ): ManaSolution? {
+        if (state.format is com.wingedsheep.sdk.core.Format.PaiGow) return ManaSolution(emptyList(), emptyMap(), emptyList())
+
         // Get all untapped mana sources controlled by the player.
         //
         // The cached `precomputedSources` is built without a payment context, so for
@@ -1714,6 +1716,8 @@ class ManaSolver(
         /** Colors that may pay the `{X}` portion ("spend only [colors] on X"); empty = any. */
         xManaRestriction: Set<Color> = emptySet()
     ): Boolean {
+        if (state.format is com.wingedsheep.sdk.core.Format.PaiGow) return true
+
         // Get the player's floating mana pool
         val poolComponent = state.getEntity(playerId)?.get<ManaPoolComponent>()
         val pool = if (poolComponent != null) {

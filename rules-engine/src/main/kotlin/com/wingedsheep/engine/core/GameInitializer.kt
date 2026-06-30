@@ -194,7 +194,17 @@ class GameInitializer(
             is Format.TwoHeadedGiant -> f.startingLife
             // Team vs. Team (CR 808): each player has their own starting life total (no shared pool).
             is Format.TeamVsTeam -> f.startingLife
+            is Format.PaiGow -> f.startingLife
             else -> null
+        }
+
+        val formatStartingHandSize = when (val f = config.format) {
+            is Format.Commander -> f.startingHandSize
+            is Format.MomirBasic -> f.startingHandSize
+            is Format.TwoHeadedGiant -> f.startingHandSize
+            is Format.TeamVsTeam -> f.startingHandSize
+            is Format.PaiGow -> f.startingHandSize
+            else -> config.startingHandSize
         }
 
         // 1. Create player entities
@@ -373,9 +383,9 @@ class GameInitializer(
         // 5. Draw initial hands
         for (playerId in playerIds) {
             val (newState, drawEvents) = if (config.useHandSmoother) {
-                drawSmoothedHand(state, playerId, config.startingHandSize, config.handSmootherCandidates)
+                drawSmoothedHand(state, playerId, formatStartingHandSize, config.handSmootherCandidates)
             } else {
-                drawCards(state, playerId, config.startingHandSize)
+                drawCards(state, playerId, formatStartingHandSize)
             }
             state = newState
             events.addAll(drawEvents)

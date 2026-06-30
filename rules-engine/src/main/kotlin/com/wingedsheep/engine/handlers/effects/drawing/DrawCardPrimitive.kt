@@ -77,7 +77,7 @@ class DrawCardPrimitive(
         if (library.isEmpty()) {
             // Rule 704.5c: failed to draw from an empty library → lose the game,
             // unless a controlled permanent grants "can't lose the game" (Platinum Angel).
-            val cantLose = state.getBattlefield().any { entityId ->
+            val cantLose = state.format is com.wingedsheep.sdk.core.Format.PaiGow || state.getBattlefield().any { entityId ->
                 val c = state.getEntity(entityId) ?: return@any false
                 c.has<GrantsCantLoseGameComponent>() &&
                     c.get<ControllerComponent>()?.playerId == playerId

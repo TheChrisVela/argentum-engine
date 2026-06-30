@@ -560,7 +560,7 @@ class CostHandler(
         manaPool: ManaPool,
         abilityContext: SpellPaymentContext?,
     ): Boolean = when (atom) {
-        is CostAtom.Mana -> canPayManaCost(manaPool, atom.cost, abilityContext)
+        is CostAtom.Mana -> state.format is com.wingedsheep.sdk.core.Format.PaiGow || canPayManaCost(manaPool, atom.cost, abilityContext)
         is CostAtom.PayLife -> {
             // CR 810.9a — affordability uses the team's shared total in Two-Headed Giant.
             val life = state.lifeTotal(controllerId)
